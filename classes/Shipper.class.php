@@ -36,10 +36,6 @@ class Shipper
      * @const float */
     const MIN_UNITS = .0001;
 
-    /** Base tag used for caching.
-     * @var string */
-    static $base_tag = 'shipping';
-
     /** Shipper record ID.
      * @var integer */
     protected $id = 0;
@@ -222,7 +218,7 @@ class Shipper
         global $_TABLES;
 
         $id = (int)$id;
-        //$cache_key = self::$base_tag . ' _ ' . $id;
+        //$cache_key = self::$TABLE . ' _ ' . $id;
         //$A = Cache::get($cache_key);
         //if ($A === NULL) {
             $sql = "SELECT *
@@ -232,7 +228,7 @@ class Shipper
             $res = DB_query($sql);
             if ($res) {
                 $A = DB_fetchArray($res, false);
-          //      Cache::set($cache_key, $A, self::$base_tag);
+          //      Cache::set($cache_key, $A, self::$TABLE);
             }
         //}
         if (!empty($A)) {
@@ -653,7 +649,7 @@ class Shipper
             while ($A = DB_fetchArray($res, false)) {
                 $shippers[$A['id']] = $A;
             }
-            Cache::set($cache_key, $shippers, self::$base_tag);
+            Cache::set($cache_key, $shippers, self::$TABLE);
         }
         $retval = array();
         $modules = self::getCarrierNames();
@@ -847,7 +843,7 @@ class Shipper
 
         // Cache the shippers for a short time.
         // The cache is also cleared whenever a shipper or the order is updated.
-        Cache::set($cache_key, $shippers, array('orders', self::$base_tag));
+        Cache::set($cache_key, $shippers, array('orders', self::$TABLE));
         return $shippers;
     }
 
@@ -1007,7 +1003,7 @@ class Shipper
         DB_query($sql);
         $err = DB_error();
         if ($err == '') {
-            Cache::clear(self::$base_tag);
+            Cache::clear(self::$TABLE);
             Cache::clear('shippers');
             return true;
         } else {
@@ -1032,7 +1028,7 @@ class Shipper
 
         if (!self::isUsed($id)) {
             DB_delete($_TABLES['shop.shipping'], 'id', $id);
-            Cache::clear(self::$base_tag);
+            Cache::clear(self::$TABLE);
             return true;
         } else {
             return false;
@@ -1134,7 +1130,7 @@ class Shipper
     {
         $newval = self::_toggle($oldvalue, 'enabled', $id);
         if ($newval != $oldvalue) {
-            Cache::clear(self::$base_tag);
+            Cache::clear(self::$TABLE);
         }
         return $newval;
     }
@@ -2001,11 +1997,7 @@ class Shipper
                     }
                     break;
                 }
-                Cache::set(
-                    $cache_key,
-                    $retval,
-                    self::$base_tag
-                );
+                Cache::set($cache_key, $retval, self::$TABLE);
             }
             // Will prevent the shipper from appearing in the workflow, this
             // is just to ensure a valid return.

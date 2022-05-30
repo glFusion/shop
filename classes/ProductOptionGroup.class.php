@@ -36,7 +36,7 @@ class ProductOptionGroup
 
     /** Tag array used with caching, for consistency.
      * @var array */
-    private static $TAGS = array('products', 'options');
+    private static $TAGS = array('shop.products', 'shop.prod_opt_grps', 'options');
 
     /** Option Group record ID.
      * @var integer */

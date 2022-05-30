@@ -186,7 +186,7 @@ class Category
             return;
         }
 
-        $sql = "SELECT * FROM {$_TABLES['shop.categories']}
+        $sql = "SELECT * FROM {$_TABLES[self::$TABLE]}
                 WHERE cat_id='$id'";
         $result = DB_query($sql);
         if (!$result || DB_numRows($result) != 1) {
@@ -195,7 +195,7 @@ class Category
             $row = DB_fetchArray($result, false);
             $this->setVars($row, true);
             $this->isNew = false;
-            Cache::set(self::_makeCacheKey($id), $this, 'categories');
+            Cache::set(self::_makeCacheKey($id), $this, self::$TABLE);
             return true;
         }
     }
@@ -275,10 +275,10 @@ class Category
         // previous error didn't occur.
         if (empty($this->Errors)) {
             if ($this->isNew) {
-                $sql1 = "INSERT INTO {$_TABLES['shop.categories']} SET ";
+                $sql1 = "INSERT INTO {$_TABLES[self::$TABLE]} SET ";
                 $sql3 = '';
             } else {
-                $sql1 = "UPDATE {$_TABLES['shop.categories']} SET ";
+                $sql1 = "UPDATE {$_TABLES[self::$TABLE]} SET ";
                 $sql3 = " WHERE cat_id='{$this->cat_id}'";
             }
             $sql2 = "parent_id='" . $this->parent_id . "',
@@ -305,7 +305,7 @@ class Category
                         $_POST['old_grp'] != $this->grp_access) {
                     $this->_propagatePerms($_POST['old_grp']);
                 }*/
-                Cache::clear('categories');
+                Cache::clear(self::$TABLE);
                 Cache::clear('sitemap');
             } else {
                 $this->AddError('Failed to insert or update record');
@@ -339,10 +339,10 @@ class Category
         }
         if (!empty($upd_cats)) {
             $upd_cats = implode(',', $upd_cats);
-            $sql = "UPDATE {$_TABLES['shop.categories']}
+            $sql = "UPDATE {$_TABLES[self::$TABLE]}
                     SET grp_access = {$this->grp_access}
                     WHERE cat_id IN ($upd_cats)";
-            Cache::clear('categories');
+            Cache::clear(self::$TABLE);
             Cache::clear('sitemap');
             DB_query($sql);
         }
@@ -360,9 +360,9 @@ class Category
             return false;
 
         $this->deleteImage(false);
-        DB_delete($_TABLES['shop.categories'], 'cat_id', $this->cat_id);
+        DB_delete($_TABLES[self::$TABLE], 'cat_id', $this->cat_id);
         PLG_itemDeleted($this->cat_id, 'shop_category');
-        Cache::clear('categories');
+        Cache::clear(self::$TABLE);
         Cache::clear('sitemap');
         $this->cat_id = 0;
         return true;
@@ -385,10 +385,10 @@ class Category
         }
 
         if ($del_db) {
-            DB_query("UPDATE {$_TABLES['shop.categories']}
+            DB_query("UPDATE {$_TABLES[self::$TABLE]}
                     SET image=''
                     WHERE cat_id='" . $this->cat_id . "'");
-            Cache::clear('categories');
+            Cache::clear(self::$TABLE);
             Cache::clear('sitemap');
         }
         $this->image = '';
@@ -541,7 +541,7 @@ class Category
     {
         $newval = self::Toggle($oldvalue, $varname, $id);
         if ($newval != $oldvalue) {
-            Cache::clear('categories');
+            Cache::clear(self::$TABLE);
             Cache::clear('sitemap');
         }
         return $newval;
@@ -594,7 +594,7 @@ class Category
         }
 
         // Check if any categories are under this one.
-        if (DB_count($_TABLES['shop.categories'], 'parent_id', $cat_id) > 0) {
+        if (DB_count($_TABLES[self::$TABLE], 'parent_id', $cat_id) > 0) {
             return true;
         }
 
@@ -767,8 +767,8 @@ class Category
             $prefix = DB_escapeString($prefix);
             $sql = "SELECT node.cat_id,
                     CONCAT( REPEAT( '$prefix', (COUNT(parent.cat_name) - 1) ), node.cat_name) AS disp_name
-                FROM {$_TABLES['shop.categories']} AS node,
-                    {$_TABLES['shop.categories']} AS parent
+                FROM {$_TABLES[self::$TABLE]} AS node,
+                    {$_TABLES[self::$TABLE]} AS parent
                 WHERE node.lft BETWEEN parent.lft AND parent.rgt
                 $between
                 GROUP BY node.cat_id, node.cat_name
@@ -778,7 +778,7 @@ class Category
                 $All[$A['cat_id']] = new self($A['cat_id']);
                 $All[$A['cat_id']]->setDisplayName($A['disp_name']);
             }
-            Cache::set($cache_key, $All, 'categories');
+            Cache::set($cache_key, $All, self::$TABLE);
         }
         return $All;
     }
@@ -794,7 +794,7 @@ class Category
         global $_TABLES;
 
         $retval = array();
-        $sql = "SELECT * FROM {$_TABLES['shop.categories']}
+        $sql = "SELECT * FROM {$_TABLES[self::$TABLE]}
             WHERE lft < {$this->lft} AND rgt > {$this->rgt}
             ORDER BY lft DESC";
         $res = DB_query($sql);
@@ -838,7 +838,7 @@ class Category
             } else {
                 $path[$Cat->cat_id] = $Cat;
             }
-            Cache::set($key, $path, 'categories');
+            Cache::set($key, $path, self::$TABLE);
         }
         return $path;
     }
@@ -880,7 +880,7 @@ class Category
         global $_TABLES;
 
         $parent = (int)DB_getItem(
-            $_TABLES['shop.categories'],
+            $_TABLES[self::$TABLE],
             'cat_id',
             'parent_id = 0'
         );
@@ -920,7 +920,7 @@ class Category
         $right = $left + 1;
 
         // get all children of this node
-        $sql = "SELECT cat_id FROM {$_TABLES['shop.categories']}
+        $sql = "SELECT cat_id FROM {$_TABLES[self::$TABLE]}
                 WHERE parent_id ='$parent'";
         $result = DB_query($sql);
         while ($row = DB_fetchArray($result, false)) {
@@ -933,11 +933,11 @@ class Category
 
         // we've got the left value, and now that we've processed
         // the children of this node we also know the right value
-        $sql1 = "UPDATE {$_TABLES['shop.categories']}
+        $sql1 = "UPDATE {$_TABLES[self::$TABLE]}
                 SET lft = '$left', rgt = '$right'
                 WHERE cat_id = '$parent'";
         DB_query($sql1);
-        Cache::clear('categories');
+        Cache::clear(self::$TABLE);
         Cache::clear('sitemap');
 
         // return the right value of this node + 1
@@ -986,8 +986,8 @@ class Category
         $sql = "SELECT
                 cat.cat_id, cat.cat_name, cat.description, cat.enabled,
                 cat.grp_access, parent.cat_name as pcat
-            FROM {$_TABLES['shop.categories']} cat
-            LEFT JOIN {$_TABLES['shop.categories']} parent
+            FROM {$_TABLES[self::$TABLE]} cat
+            LEFT JOIN {$_TABLES[self::$TABLE]} parent
             ON cat.parent_id = parent.cat_id";
 
         $header_arr = array(
@@ -1051,7 +1051,7 @@ class Category
         ) );
 
         $query_arr = array(
-            'table' => 'shop.categories',
+            'table' => self::$TABLE,
             'sql' => $sql,
             'query_fields' => array('cat.cat_name', 'cat.description'),
             'default_filter' => 'WHERE 1=1',
@@ -1199,11 +1199,11 @@ class Category
             // No categories selected if this is a new product
             return array();
         }
-        $cache_key = 'shop.categories_' . $prod_id;
+        $cache_key = self::$TABLE . '_' . $prod_id;
         $retval = Cache::get($cache_key);
         if ($retval === NULL) {
             $sql = "SELECT c.* FROM {$_TABLES['shop.prodXcat']} px
-                LEFT JOIN {$_TABLES['shop.categories']} c
+                LEFT JOIN {$_TABLES[self::$TABLE]} c
                 ON c.cat_id = px.cat_id
                 WHERE px.product_id = $prod_id
                 ORDER BY c.lft DESC";
@@ -1220,7 +1220,7 @@ class Category
                 $Cat = self::getRoot();
                 $retval[$Cat->getID()] = $Cat;
             }
-            Cache::set($cache_key, $retval, array('products', 'categories'));
+            Cache::set($cache_key, $retval, array('products', self::$TABLE));
         }
         return $retval;
     }
@@ -1236,7 +1236,7 @@ class Category
         global $_TABLES;
 
         $retval = array();
-        $sql = "SELECT cat_id FROM {$_TABLES['shop.categories']}";
+        $sql = "SELECT cat_id FROM {$_TABLES[self::$TABLE]}";
         $res = DB_query($sql);
         while ($A = DB_fetchArray($res, false)) {
             $retval[$A['cat_id']] = self::getInstance($A['cat_id']);

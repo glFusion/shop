@@ -496,7 +496,7 @@ class Product
             $res = DB_query($sql);
             $A = DB_fetchArray($res, false);
             if (isset($A['id'])) {
-                Cache::set($cache_key, $A, array('products'));
+                Cache::set($cache_key, $A, array(self::$TABLE));
             }
         }
         return self::_getInstance($A);
@@ -529,7 +529,7 @@ class Product
                 $res = DB_query($sql);
                 $A = DB_fetchArray($res, false);
                 if (isset($A['id'])) {
-                    Cache::set($cache_key, $A, array('products'));
+                    Cache::set($cache_key, $A, array(self::$TABLE));
                 }
             }
             return self::_getInstance($A);
@@ -560,7 +560,7 @@ class Product
                     $retval[] = $A['id'];
                 }
             }
-            Cache::set($cache_key, $retval, array('products', 'categories'));
+            Cache::set($cache_key, $retval, array(self::$TABLE, 'shop.categories'));
         }
         return $retval;
     }
@@ -899,15 +899,17 @@ class Product
     public function getEffectiveZoneRule($incl_prod=true) : Rules\Zone
     {
         if ($this->_ZoneRule === NULL) {
+            $cache_key = 'prod_eff_rule_' . $this->id;
             $Rules = Rules\Zone::getAll(true);
             if (
                 $incl_prod &&
                 $this->zone_rule > 0 &&
                 isset($Rules[$this->zone_rule])
             ) {
+                // Get the zone rule assigned directly to the product
                 $this->_ZoneRule = $Rules[$this->zone_rule];
             } else {
-                $cache_key = 'prod_eff_rule_' . $this->id;
+                // Find the first zone rule in the category tree
                 $this->_ZoneRule = Cache::get($cache_key);
                 if ($this->_ZoneRule === NULL) {
                     $Cats = $this->getCategories();
@@ -929,7 +931,7 @@ class Product
                 // Final check to make sure there's a valid rule object returned.
                 $this->_ZoneRule = new Rules\Zone;
             }
-            Cache::set($cache_key, $this->_ZoneRule, array('categories', 'products', 'shop.zone_rules'));
+            Cache::set($cache_key, $this->_ZoneRule, array('shop.categories', self::$TABLE, 'shop.zone_rules'));
         }
         return $this->_ZoneRule;
     }
@@ -1127,7 +1129,7 @@ class Product
 
         // Clear all product caches since this save may affect availablity
         // and product lists.
-        Cache::clear('products');
+        Cache::clear(self::$TABLE);
         Cache::clear('sitemap');
 
         if ($status) {
@@ -1273,7 +1275,7 @@ class Product
         Feature::deleteProduct($this->id);
         self::deleteButtons($this->id);
         DB_delete($_TABLES['shop.products'], 'id', $this->id);
-        Cache::clear('products');
+        Cache::clear(self::$TABLE);
         Cache::clear('sitemap');
         PLG_itemDeleted($this->id, $_SHOP_CONF['pi_name']);
         $this->id = 0;
@@ -1577,7 +1579,7 @@ class Product
     {
         $newval = self::_toggle($oldvalue, $varname, $id);
         if ($newval != $oldvalue) {
-            Cache::clear('products');
+            Cache::clear(self::$TABLE);
             Cache::clear('sitemap');
         }
         return $newval;
@@ -2566,7 +2568,7 @@ class Product
         // update the qty on hand, if tracking and not already zero
         if ($this->track_onhand) {
             Stock::recordPurchase($this->id, $Item->getVariantId(), $Item->getQuantity());
-            Cache::clear('products');
+            Cache::clear(self::$TABLE);
             Cache::clear('sitemap');
         }
         return $status;
@@ -3359,7 +3361,7 @@ class Product
                     $this->deleteImage($prow['img_id']);
                 }
             }
-            Cache::set($cache_key, $this->Images, 'products');
+            Cache::set($cache_key, $this->Images, self::$TABLE);
         }
         return $this->Images;
     }
@@ -3405,7 +3407,7 @@ class Product
             votes = $votes
             WHERE id = $id";
         DB_query($sql);
-        Cache::clear('products');
+        Cache::clear(self::$TABLE);
         return DB_error() ? false : true;
     }
 
@@ -3445,7 +3447,7 @@ class Product
             while ($A = DB_fetchArray($res, false)) {
                 $retval[$A['id']] = self::getInstance($A);
             }
-            Cache::set($cache_key, $retval, 'products');
+            Cache::set($cache_key, $retval, self::$TABLE);
         }
         return $retval;
     }
@@ -3699,7 +3701,7 @@ class Product
             }
         }
 
-        Cache::clear('products');
+        Cache::clear(self::TABLE);
         return true;
     }
 

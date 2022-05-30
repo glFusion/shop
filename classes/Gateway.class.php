@@ -505,7 +505,7 @@ class Gateway
             return false;
         } else {
             $this->_postConfigSave();   // Run function for further setup
-            Cache::clear('gateways');
+            Cache::clear(self::$TABLE);
             self::ReOrder();
             return true;
         }
@@ -524,7 +524,7 @@ class Gateway
     {
         $newval = self::_toggle($oldvalue, $varname, $id);
         if ($newval != $oldvalue) {
-            Cache::clear('gateways');
+            Cache::clear(self::$TABLE);
         }
         return $newval;
     }
@@ -619,7 +619,7 @@ class Gateway
             DB_query($sql, 1);
             if (!DB_error()) {
                 self::ReOrder();
-                Cache::clear('gateways');
+                Cache::clear(self::$TABLE);
                 return true;
             }
         }
@@ -635,8 +635,8 @@ class Gateway
     {
         global $_TABLES;
 
-        DB_delete($_TABLES['shop.gateways'], 'id', $gw_name);
-        Cache::clear('gateways');
+        DB_delete($_TABLES[self::$TABLE], 'id', $gw_name);
+        Cache::clear(self::$TABLE);
     }
 
 
@@ -1396,7 +1396,7 @@ class Gateway
             while ($A = DB_fetchArray($res, false)) {
                 $tmp[] = $A;
             }
-            Cache::set($cache_key, $tmp, 'gateways');
+            Cache::set($cache_key, $tmp, self::$TABLE);
         }
         // For each available gateway, load its class file and add it
         // to the static array. Check that a valid object is
@@ -2473,7 +2473,7 @@ class Gateway
                 $key = $gw['id'];
                 $versions[$key] = self::_checkAvailableVersion($key);
             }
-            Cache::set('shop_gw_versions', $versions);
+            Cache::set('shop_gw_versions', $versions, self::$TABLE);
         }
 
         foreach ($data_arr as $key=>$gw) {

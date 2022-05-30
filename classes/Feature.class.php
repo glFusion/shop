@@ -32,7 +32,7 @@ class Feature
 
     /** Tag array used with caching, for consistency.
      * @var array */
-    private static $TAGS = array('products', 'features');
+    private static $TAGS = array('shop.products', 'shop.features');
 
     /** Feature record ID.
      * @var integer */
