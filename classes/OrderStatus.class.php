@@ -120,8 +120,6 @@ class OrderStatus extends Workflow
      */
     public static function Selection($order_id, $showlog=0, $selected = '')
     {
-        global $LANG_SHOP;
-
         /* TODO - glFusion 2.0 */
         $options = array();
         foreach (self::getAll() as $key => $data) {
@@ -216,9 +214,7 @@ class OrderStatus extends Workflow
      */
     public static function adminList()
     {
-        global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN;
-
-        $sql = "SELECT * FROM {$_TABLES['shop.orderstatus']}";
+        global $_SHOP_CONF, $_TABLES, $LANG_SHOP;
 
         $header_arr = array(
             array(
@@ -245,26 +241,20 @@ class OrderStatus extends Workflow
                 'align' => 'center',
             ),
         );
-
         $defsort_arr = array(
             'field'     => 'id',
             'direction' => 'ASC',
         );
-
         $display = COM_startBlock(
             '', '', COM_getBlockTemplate('_admin_block', 'header')
         );
-
         $query_arr = array(
             'table' => 'shop.orderstatus',
-            'sql' => $sql,
+            'sql' => "SELECT * FROM {$_TABLES['shop.orderstatus']}",
             'query_fields' => array('name'),
-            'default_filter' => 'WHERE id > 1',
         );
-
         $text_arr = array(
             'has_extras' => false,
-            'has_limit' => true,    // required, or default_filter is ignored
             'form_url' => SHOP_ADMIN_URL . '/index.php',
         );
 
@@ -292,8 +282,6 @@ class OrderStatus extends Workflow
      */
     public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr)
     {
-        global $_CONF, $_SHOP_CONF, $LANG_SHOP;
-
         $retval = '';
 
         switch($fieldname) {
