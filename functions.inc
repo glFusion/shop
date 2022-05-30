@@ -1883,6 +1883,65 @@ function plugin_configmanager_use_sku_shop_validate($val)
 
 
 /**
+ * Enroll all users or customers in the affiliate program if configured.
+ * Does not un-enroll anyone if the config is changed back to "no".
+ *
+ * @param   string  $value  Yes or No
+ * @return  string          Yes or No (does not change the value)
+ */
+function plugin_configmanager_aff_auto_enroll_shop_validate($value)
+{
+    global $_TABLES;
+
+    if ($value == 1) {
+        $eligible = isset($_POST['aff_eligible']) ? $_POST['aff_eligible'] : '';
+        switch ($eligible) {
+        case 'customers':
+            $sql = "SELECT ord.uid, count(ord.uid) FROM {$_TABLES['shop.orders']} ord
+                LEFT JOIN {$_TABLES['shop.userinfo']} ui ON ord.uid = ui.uid
+                WHERE ord.uid > 1 AND ui.affiliate_id = ''
+                GROUP BY ord.uid";
+            break;
+        case 'allusers':
+            $sql = "SELECT u.uid FROM {$_TABLES['users']} u
+                LEFT JOIN {$_TABLES['shop.userinfo']} ui ON u.uid = ui.uid
+                WHERE u.uid > 1 AND ui.affiliate_id = ''
+                GROUP BY u.uid";
+            break;
+        default:
+            return $value;
+        }
+    } else {
+        return $value;
+    }
+
+    $db = Database::getInstance();
+    try {
+        $data = $db->conn->executeQuery($sql);
+    } catch (\Exception $e) {
+        Log::write('system', Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
+        $data = false;
+    }
+    if (!empty($data)) {
+        foreach ($data as $A) {
+            try {
+                $aff_id = Shop\Models\Token::create();
+                $db->conn->executeUpdate(
+                    "INSERT INTO {$_TABLES['shop.userinfo']} (uid, affiliate_id) VALUES (?, ?)
+                    ON DUPLICATE KEY UPDATE affiliate_id = ?",
+                    array($A['uid'], $aff_id, $aff_id),
+                    array(Database::INTEGER, Database::STRING, Database::STRING)
+                );
+            } catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
+            }
+        }
+    }
+    return $value;
+}
+
+
+/**
  * Select the form to use for affiliate registrations.
  *
  * @return  array   Form Name => Form ID

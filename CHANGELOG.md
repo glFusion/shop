@@ -31,6 +31,7 @@ Release TBD
   * Accept an empty value for ProductVariant::setImageIDs().
   * Enable direct querying of release info for payment gateways.
   * Use fixed array of gateway names to determind if bundled or not.
+  * Users or customers are enrolled as affiliates if the config is change to "yes".
 
 ## v1.4.1
 Release 2022-04-07

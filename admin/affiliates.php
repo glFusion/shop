@@ -3,9 +3,9 @@
  * Admin page for managing Affiliates
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2021 Lee Garner
+ * @copyright   Copyright (c) 2021-2022 Lee Garner
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.5.0
  * @since       v1.3.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -37,7 +37,7 @@ if (isset($_REQUEST['msg'])) $msg[] = $_REQUEST['msg'];
 $action = 'affiliates';     // Default if no correct view specified
 $expected = array(
     // Actions to perform
-    'do_payout', 
+    'do_payout',
     // Views to display
     'affiliates', 'payout',
 );
@@ -57,7 +57,7 @@ switch ($action) {
 case 'do_payout':
     AffiliatePayment::generate($_POST['aff_uid']);
     AffiliatePayment::process();
-    COM_refresh(SHOP_ADMIN_URL . '/affiliates.php');
+    echo COM_refresh(SHOP_ADMIN_URL . '/affiliates.php');
     break;
 
 case 'payout':
@@ -92,4 +92,3 @@ $display .= \Shop\Menu::siteFooter();
 echo $display;
 exit;
 
-?>
