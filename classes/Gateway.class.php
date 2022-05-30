@@ -1810,6 +1810,11 @@ class Gateway
                 'field' => 'description',
                 'sort'  => true,
             ),
+            array (
+                'text'  => $LANG32[84],
+                'field' => 'bundled',
+                'align' => 'center',
+            ),
             array(
                 'text'  => $LANG_SHOP['grp_access'],
                 'field' => 'grp_name',
@@ -1931,14 +1936,15 @@ class Gateway
                     $retval .= $A['code_version'];
                 }
                 if (!COM_checkVersion($A['code_version'], $A['available'])) {
-                    $retval .= ' ' . COM_createLink(
-                        $A['available'],
-                        $A['upgrade_url'],
-                        array(
-                            'class' => 'uk-button uk-button-success uk-button-mini',
+                    $retval .= ' ' . FieldList::buttonLink(array(
+                        'text' => $A['available'],
+                        'url' => $A['upgrade_url'],
+                        'size' => 'mini',
+                        'style' => 'success',
+                        'attr' => array(
                             'target' => '_blank',
                         )
-                    );
+                    ) );
                 }
             }
             break;
@@ -1960,6 +1966,14 @@ class Gateway
                 )) ;
             } else {
                 $retval .= FieldList::space();
+            }
+            break;
+
+        case 'bundled':
+            if (in_array($A['id'], self::$_bundledGateways)) {
+                $retval .= FieldList::checkmark(array(
+                    'active' => true,
+                ) );
             }
             break;
 
