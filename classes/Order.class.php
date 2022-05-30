@@ -2385,7 +2385,7 @@ class Order
             //$quote = NULL;        // debugging
             if ($quote === NULL) {
                 $quote = $Shipper->getQuote($this);
-                Cache::set($cache_key, $quote, array('shipping'), 30);
+                Cache::set($cache_key, $quote, array('shop.shipping'), 30);
             }
             if ($this->getTaxShipping()) {
                 $tax_rate = $this->getTaxRate();

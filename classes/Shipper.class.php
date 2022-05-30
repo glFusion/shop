@@ -1004,7 +1004,6 @@ class Shipper
         $err = DB_error();
         if ($err == '') {
             Cache::clear(self::$TABLE);
-            Cache::clear('shippers');
             return true;
         } else {
             return false;
