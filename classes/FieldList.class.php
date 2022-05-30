@@ -159,6 +159,7 @@ class FieldList extends \glFusion\FieldList
     }
 
 
+    // Included in glFusion 2.1.0
     public static function add($args)
     {
         $t = self::init();
@@ -181,6 +182,33 @@ class FieldList extends \glFusion\FieldList
             }
         }
         $t->parse('output','field-add',true);
+        return $t->finish($t->get_var('output'));
+    }
+
+
+    // Included in glFusion 2.1.0
+    public static function update($args)
+    {
+        $t = self::init();
+        $t->set_block('up','field-update');
+
+        if (isset($args['url'])) {
+            $t->set_var('url',$args['url']);
+        } else {
+            $t->set_var('url','#');
+        }
+
+        if (isset($args['attr']) && is_array($args['attr'])) {
+            $t->set_block('field-update','attr','attributes');
+            foreach($args['attr'] AS $name => $value) {
+                $t->set_var(array(
+                    'name' => $name,
+                    'value' => $value)
+                );
+                $t->parse('attributes','attr',true);
+            }
+        }
+        $t->parse('output','field-update');
         return $t->finish($t->get_var('output'));
     }
 
