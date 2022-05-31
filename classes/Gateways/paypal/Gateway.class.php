@@ -504,7 +504,7 @@ class Gateway extends \Shop\Gateway
             'custom' => $this->custom->encode(),
             'return' => $this->returnUrl('', ''),
             'cancel_return' => $P->getCancelUrl(),
-            'amount' => $P->getPrice(),
+            'amount' => $P->getSalePrice(),
             'notify_url' => $this->ipn_url,
         );
 

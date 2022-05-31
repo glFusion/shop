@@ -4130,7 +4130,7 @@ class Product
             'allowed'   => true,
             'is_oos'    => false,
             'orig_price' => Currency::getInstance()->RoundVal($this->getBasePrice()),
-            'sale_price' => Currency::getInstance()->RoundVal($this->getPrice()),
+            'sale_price' => Currency::getInstance()->RoundVal($this->getSalePrice()),
             'onhand'    => $this->getOnhand(),
             'weight'    => $this->getWeight(),
             'sku'       => $this->getName(),
