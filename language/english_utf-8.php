@@ -790,6 +790,8 @@ $LANG_SHOP = array (
 'adm_mnu_region' => 'Purchases and shipping will be complegely disallowed for any region, country, or state that is unchecked.',
 'adm_mnu_states' => 'Uncheck any state for which sales should be disallowed.<br />You can also indicat whether a state charges sales tax on shipping and/or handling charges (USA only).',
 'redacted' => 'Redacted',
+'reject' => 'Reject',
+'approve' => 'Approve',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -849,6 +851,8 @@ $LANG_SHOP_HELP = array(
 'gw_order' => 'Enter a number to represent the order in which this gateway will appear in the payment options list (lower number means higher).',
 'msg_no_virt_delivery' => 'There is no delivery information required for virtual products.',
 'hlp_pi_products' => 'Enter the plugin name and set the default values for its products. These values will be used unless the plugin supplies its own values for these settings.',
+'hlp_aff_reject' => 'Remove and reject an affiliate for program misuse.',
+'hlp_aff_approve' => 'Approve or reinstate an affiliate to the program.',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';

@@ -29,7 +29,7 @@ class Menu
      */
     public static function User($view='')
     {
-        global $_CONF, $LANG_SHOP;
+        global $_CONF, $LANG_SHOP, $_USER;
 
         USES_lib_admin();
 
@@ -64,11 +64,14 @@ class Menu
 
         // Show the Affiliate Sales item only if enabled.
         if (Config::get('aff_enabled')) {
-            $menu_arr[] = array(
-                'url' => COM_buildUrl(SHOP_URL . '/affiliate.php'),
-                'text' => $LANG_SHOP['affiliates'],
-                'active' => $view == 'affiliate' ? true : false,
-            );
+            $Aff = new Affiliate($_USER['uid']);
+            if ($Aff->isValid()) {
+                $menu_arr[] = array(
+                    'url' => COM_buildUrl(SHOP_URL . '/affiliate.php'),
+                    'text' => $LANG_SHOP['affiliates'],
+                    'active' => $view == 'affiliate' ? true : false,
+                );
+            }
         }
         
         return \ADMIN_createMenu($menu_arr, $hdr_txt);

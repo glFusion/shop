@@ -22,6 +22,9 @@ use glFusion\Log\Log;
  */
 class Affiliate
 {
+    const REJECTED = 'rejected';
+    const PENDING = 'pending';
+
     /** User ID.
      * @var integer */
     private $aff_uid = 0;
@@ -190,8 +193,29 @@ class Affiliate
             $chkboxes = true;
         } else {
             $sess_key = 'all';
-            $bulk_update = '';
-            $chkboxes = false;
+            $bulk_update = FieldList::button(array(
+                'name' => 'reject',
+                'value' => 'x',
+                'style' => 'danger',
+                'size' => 'mini',
+                'text' => $LANG_SHOP['reject'],
+                'class' => 'tooltip',
+                'attr' => array(
+                    'title' => $LANG_SHOP_HELP['hlp_aff_reject'],
+                ),
+            ) );
+            $bulk_update .= FieldList::button(array(
+                'name' => 'approve',
+                'value' => 'x',
+                'style' => 'success',
+                'size' => 'mini',
+                'text' => $LANG_SHOP['approve'],
+                'class' => 'tooltip',
+                'attr' => array(
+                    'title' => $LANG_SHOP_HELP['hlp_aff_approve'],
+                ),
+            ) );
+            $chkboxes = true;
         }
 
         $text_arr = array(
@@ -429,6 +453,12 @@ class Affiliate
                 Config::get('admin_url') . '/orders.php?order=' . $fieldvalue
             );
             break;
+        case 'affiliate_id':
+            if ($fieldvalue == self::REJECTED) {
+                $fieldvalue = '<span class="uk-text-danger">' . $fieldvalue . '</span>';
+            }
+            $retval = $fieldvalue;
+            break;
         default:
             $retval = $fieldvalue;
             break;
@@ -490,8 +520,44 @@ class Affiliate
     public function Approve($moderated=false)
     {
         $this->Customer->createAffiliateId()->saveUser();
+        var_dump($this->Customer);die;
         if ($moderated) {
             // Send welcome email
+        }
+    }
+
+
+    /**
+     * Restore an affiliate to the program.
+     *
+     * @param   array|integer   One or an array of user IDs
+     */
+    public static function Restore($uids) : void
+    {
+        if (!is_array($uids)) {
+            $uids = array($uids);
+        }
+        foreach ($uids as $uid) {
+            Customer::getInstance($uid)
+                ->withAffiliateId(self::PENDING)
+                ->createAffiliateId()
+                ->saveUser();
+        }
+    }
+
+
+    /**
+     * Reject an affiliate from the program for misbehavior.
+     *
+     * @param   array|integer   One or an array of user IDs
+     */
+    public static function Reject($uids) : void
+    {
+        if (!is_array($uids)) {
+            $uids = array($uids);
+        }
+        foreach ($uids as $uid) {
+            Customer::getInstance($uid)->withAffiliateId(self::REJECTED)->saveUser();
         }
     }
 
@@ -508,6 +574,18 @@ class Affiliate
         } else {
             return $this->isActiveCustomer();
         }
+    }
+
+
+    /**
+     * Check if this affiliate is valid.
+     * Returns true if the affiliate ID is not empty, rejected or pending.
+     *
+     * @return  boolean     True if a valid affiliate
+     */
+    public function isValid() : bool
+    {
+        return !in_array($this->Customer->getAffiliateId(), array('', self::REJECTED, self::PENDING));
     }
 
 

@@ -26,6 +26,7 @@ if (
 
 require_once('../../auth.inc.php');
 USES_lib_admin();
+use Shop\Affiliate;
 use Shop\Models\AffiliatePayment;
 
 $content = '';
@@ -37,7 +38,7 @@ if (isset($_REQUEST['msg'])) $msg[] = $_REQUEST['msg'];
 $action = 'affiliates';     // Default if no correct view specified
 $expected = array(
     // Actions to perform
-    'do_payout',
+    'do_payout', 'reject', 'approve',
     // Views to display
     'affiliates', 'payout',
 );
@@ -54,6 +55,20 @@ foreach($expected as $provided) {
 }
 
 switch ($action) {
+case 'approve':
+    if (isset($_POST['aff_uid'])) {
+        Affiliate::Restore($_POST['aff_uid']);
+    }
+    echo COM_refresh(SHOP_ADMIN_URL . '/affiliates.php');
+    break;
+
+case 'reject':
+    if (isset($_POST['aff_uid'])) {
+        Affiliate::Reject($_POST['aff_uid']);
+    }
+    echo COM_refresh(SHOP_ADMIN_URL . '/affiliates.php');
+    break;
+
 case 'do_payout':
     AffiliatePayment::generate($_POST['aff_uid']);
     AffiliatePayment::process();
