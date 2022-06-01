@@ -13,7 +13,8 @@
  */
 namespace Shop\Models;
 use Shop\Customer;
-use Shop\Log;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 
 
 /**
@@ -48,36 +49,58 @@ class AffiliateSale
      *
      * @param   string|array    $val    Optonal initial properties
      */
-    public function __construct($id = 0)
+    public function __construct(int $id = 0)
     {
+        global $_TABLES;
+
         if ($id > 0) {
             $this->aff_sale_id = (int)$id;
-            $sql = "SELECT * FROM {$_TABLES['shop.affiliate_sales']}
-                WHERE aff_sale_id = {$this->aff_sale_id}";
-            $res = DB_query($sql);
-            if (DB_numRows($res) == 1) {
-                $A = DB_fetchArray($res, false);
+            $db = Database::getInstance();
+            try {
+                $A = $db->conn->executeQuery(
+                    "SELECT * FROM {$_TABLES['shop.affiliate_sales']}
+                    WHERE aff_sale_id = ?",
+                    array($this->aff_sale_id),
+                    array(Database::INTEGER)
+                )->fetchAssociative();
+            } catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $A = false;
+            }
+            if (!empty($A)) {
                 $this->setVars($A);
             }
         }
-
     }
 
 
-    public static function findByOrderId($order_id)
+    /**
+     * Find the affiliate sale record related to a specific order.
+     *
+     * @param   string  $order_id   Order ID
+     * @return  object  AffiliateSale object
+     */
+    public static function findByOrderId(string $order_id) : self
     {
         global $_TABLES;
 
         $retval = new self;
-        $sql = "SELECT * FROM {$_TABLES['shop.affiliate_sales']}
-                WHERE aff_order_id = '" . DB_escapeString($order_id) . "'";
-        $res = DB_query($sql);
-        if (DB_numRows($res) > 0) {
-            $A = DB_fetchArray($res, false);
+        $db = Database::getInstance();
+        try {
+            $A = $db->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.affiliate_sales']}
+                WHERE aff_order_id = ?",
+                array($order_id),
+                array(Database::STRING)
+            )->fetchAssociative();
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $A = false;
+        }
+        if (!empty($A)) {
             $retval->setVars($A);
         }
         return $retval;
-
     }
 
 
@@ -214,7 +237,6 @@ class AffiliateSale
             $AffSale->withOrderId($Order->getOrderId())
                     ->withUid($Affiliate->getUid())
                     ->withSaleDate()
-                    //->withOrderTotal($total);
                     ->Save();
             foreach ($AffSaleItems as $AffSaleItem) {
                 if ($AffSaleItem) {
@@ -234,30 +256,53 @@ class AffiliateSale
      *
      * @return  boolean     True on success, False on failure
      */
-    public function Save()
+    public function Save() : bool
     {
         global $_TABLES;
 
+        $db = Database::getInstance();
+        $params = array(
+            'aff_sale_uid' => $this->aff_uid,
+            'aff_sale_date' => $this->SaleDate->toMySQL(),
+            'aff_order_id' => $this->aff_order_id,
+            'aff_pmt_id' => $this->aff_pmt_id,
+            'aff_sale_id' => $this->aff_sale_id,
+        );
+        $types = array(
+            Database::INTEGER,
+            Database::STRING,
+            Database::STRING,
+            Database::INTEGER,
+            Database::INTEGER,
+        );
+
         if ($this->aff_sale_id == 0) {
-            $sql1 = "INSERT INTO {$_TABLES['shop.affiliate_sales']} SET ";
-            $sql3 = '';
+            try {
+                $db->conn->insert(
+                    $_TABLES['shop.affiliate_sales'],
+                    $params,
+                    $types
+                );
+            }  catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                return false;
+            }
+            $this->aff_sale_id = $db->conn->lastInsertId();
         } else {
-            $sql1 = "UPDATE {$_TABLES['shop.affiliate_sales']} SET ";
-            $sql3 = " WHERE aff_sale_id = {$this->aff_sale_id}";
+            try {
+                $types[] = Database::INTEGER;
+                $db->conn->update(
+                    $_TABLES['shop.affiliate_sales'],
+                    $params,
+                    array('aff_sale_id' => $this->aff_sale_id),
+                    $types
+                );
+            }  catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                return false;
+            }
         }
-        $sql2 = "aff_sale_uid = {$this->aff_uid},
-            aff_sale_date = '" . $this->SaleDate->toMySQL() . "',
-            aff_order_id = '" . DB_escapeString($this->aff_order_id) . "',
-            aff_pmt_id = {$this->aff_pmt_id}";
-        $sql = $sql1 . $sql2 . $sql3;
-        //echo $sql;die;
-        $res = DB_query($sql, 1);
-        if (!DB_error()) {
-            $this->withId(DB_insertId());
-            return true;
-        } else {
-            return false;
-        }
+        return true;
     }
 
 
@@ -268,16 +313,24 @@ class AffiliateSale
      * @param   integer $pmt_id     AffiliatePayment record ID
      * @param   array   $sale_ids   AffiliateSale IDs included in the payment
      */
-    public static function updatePmtId($pmt_id, $sale_ids)
+    public static function updatePmtId(int $pmt_id, array $sale_ids) : void
     {
         global $_TABLES;
 
         $pmt_id = (int)$pmt_id;
         $sale_ids = implode(',', $sale_ids);
-        $sql = "UPDATE {$_TABLES['shop.affiliate_sales']}
-            SET aff_pmt_id = $pmt_id
-            WHERE aff_sale_id IN ($sale_ids)";
-        DB_query($sql);
+        $db = Database::getInstance();
+        try {
+            $db->conn->executeUpdate(
+                "UPDATE {$_TABLES['shop.affiliate_sales']}
+                SET aff_pmt_id = ?
+                WHERE aff_sale_id IN (?)",
+                array($pmt_id, $sale_ids),
+                array(Database::INTGER, Database::PARAM_INT_ARRAY)
+            );
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
     }
 
 }
