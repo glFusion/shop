@@ -195,7 +195,7 @@ case 'thanks':
     $parts = explode('/', $actionval);
     $gw_name = $parts[0];
     $order_id = isset($parts[1]) ? $parts[1] : '';
-    $toke = isset($parts[2]) ? $parts[2] : '';
+    $token = isset($parts[2]) ? $parts[2] : '';
     $message = $LANG_SHOP['thanks_title'];
     if (!empty($gw_name)) {
         $gw = Shop\Gateway::getInstance($gw_name);
