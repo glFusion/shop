@@ -1456,6 +1456,9 @@ class Order
             'shop_phone'        => $Shop->getPhone(),
             'shop_email'        => $Shop->getEmail(),
             'shop_addr'         => $Shop->toHTML('address'),
+            'logo_url'          => Config::get('logo_url'),
+            'logo_height'       => Config::get('logo_height'),
+            'logo_width'        => Config::get('logo_width'),
         ) );
         if ($this->_amt_paid > 0) {
             $T->set_var(array(
