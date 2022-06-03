@@ -304,7 +304,7 @@ class payment extends \Shop\Report
                 break;
             case 1:
                 // Set the single ipn on the page, not in a dropdown block
-                $T->set_var('single_ipn', print_r(json_decode($ipns[0]['ipn_data'], true), true));
+                $T->set_var('single_ipn', var_export(json_decode($ipns[0]['ipn_data'], true), true));
                 break;
             default:
                 // Show the clickable links to expand each IPN log
@@ -315,7 +315,7 @@ class payment extends \Shop\Report
                         'ipn_id' => $ipn['id'],
                         'ipn_date' => $dt->toMySQL(true),
                         'ipn_event' => $ipn['event'],
-                        'ipn_data' => print_r(json_decode($ipn['ipn_data'], true), true),
+                        'ipn_data' => var_export(json_decode($ipn['ipn_data'], true), true),
                     ) );
                     $T->parse('ipnRow', 'ipnRows', true);
                 }
