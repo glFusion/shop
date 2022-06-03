@@ -274,6 +274,9 @@ class Invoice extends OrderBaseView
             'shipment_block' => $this->getShipmentBlock(),
             'shipper_id' => $this->Order->getShipperID(),
             'ship_method' => $this->Order->getShipperDscp(),
+            'logo_url' => $_SHOP_CONF['logo_url'],
+            'logo_width' => $_SHOP_CONF['logo_width'],
+            'logo_height' => $_SHOP_CONF['logo_height'],
         ) );
         if ($this->Order->getPmtMethod() != '') {
             $gw = Gateway::getInstance($this->Order->getPmtMethod());

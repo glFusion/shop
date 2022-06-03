@@ -32,6 +32,7 @@ Release TBD
   * Enable direct querying of release info for payment gateways.
   * Use fixed array of gateway names to determind if bundled or not.
   * Users or customers are enrolled as affiliates if the config is change to "yes".
+  * Add optional URL to logo image for invoices.
 
 ## v1.4.1
 Release 2022-04-07
