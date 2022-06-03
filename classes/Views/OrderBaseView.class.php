@@ -191,6 +191,7 @@ class OrderBaseView
     public function asPackingList()
     {
         $this->type = 'packinglist';
+        $this->is_invoice = false;
         return $this;
     }
 
