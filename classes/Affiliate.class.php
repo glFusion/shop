@@ -531,7 +531,6 @@ class Affiliate
     public function Approve($moderated=false)
     {
         $this->Customer->createAffiliateId()->saveUser();
-        var_dump($this->Customer);die;
         if ($moderated) {
             // Send welcome email
         }
