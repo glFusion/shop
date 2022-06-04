@@ -73,6 +73,17 @@ class Affiliate
 
 
     /**
+     * Wrapper to get the affiliate ID.
+     *
+     * @return  string      Affiliate ID
+     */
+    public function getAffiliateId() : ?string
+    {
+        return $this->Customer->getAffiliateId();
+    }
+
+
+    /**
      * Return the customer object.
      *
      * @return  object      Customer object
@@ -567,12 +578,15 @@ class Affiliate
      *
      * @return  boolean     True if eligible, False if not.
      */
-    public function isEligible()
+    public function isEligible() : bool
     {
-        if (Config::get('aff_eligible') == 'customers' && COM_isAnonUser()) {
+        if (COM_isAnonUser()) {
             return false;
-        } else {
+        } elseif (Config::get('aff_eligible') == 'customers') {
             return $this->isActiveCustomer();
+        } else {
+            // Config set to all users.
+            return true;
         }
     }
 
