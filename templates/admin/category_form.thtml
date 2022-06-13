@@ -72,7 +72,7 @@
 				<i class="uk-icon uk-icon-cloud-upload uk-icon-medium uk-text-muted uk-margin-small-right"></i>
 				<a class="uk-form-file">{$LANG_SHOP['drop_or_select']}<input id="upload-select" type="file"></a>
 			</div>
-			<div id="cat_image" class="uk-width-1-3">
+			<div id="cat_image" class="uk-width-1-3" uk-lightbox>
 {!if img_url}
 				<figure class="uk-overlay uk-overlay-hover">
 					<a href="{img_url}" data-uk-lightbox="{group:'shop'}">
