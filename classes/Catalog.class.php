@@ -546,8 +546,8 @@ class Catalog
                 foreach ($Rules as $Rule) {
                     $notes[] = $Rule->getDscp();
                 }
+                $T->set_var('rule_notes', '<li>' . implode('</li><li>', $notes) . '</li>');
             }
-            $T->set_var('rule_notes', '<li>' . implode('</li><li>', $notes) . '</li>');
         }
         $display .= $T->parse('', 'end');
         return $display;
