@@ -619,4 +619,56 @@ class Affiliate
         }
     }
 
+
+    /**
+     * Register all eligible users as affiliates if not already registered.
+     *
+     * @param   string  $eligible   Either `customer` or `allusers` from config
+     */
+    public static function registerAll(string $eligible='customer') : void
+    {
+        global $_TABLES;
+
+        switch ($eligible) {
+        case 'customers':
+            $sql = "SELECT ord.uid, count(ord.uid) FROM {$_TABLES['shop.orders']} ord
+                LEFT JOIN {$_TABLES['shop.userinfo']} ui ON ord.uid = ui.uid
+                WHERE ord.uid > 1 AND (ui.affiliate_id = '' OR ui.affiliate_id IS NULL)
+                GROUP BY ord.uid";
+            break;
+        case 'allusers':
+            $sql = "SELECT u.uid FROM {$_TABLES['users']} u
+                LEFT JOIN {$_TABLES['shop.userinfo']} ui ON u.uid = ui.uid
+                WHERE u.uid > 1 AND (ui.affiliate_id = '' OR ui.affiliate_id IS NULL)
+                GROUP BY u.uid";
+            break;
+        default:
+            return;
+        }
+
+        $db = Database::getInstance();
+        try {
+            $data = $db->conn->executeQuery($sql);
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
+            $data = false;
+        }
+        if (!empty($data)) {
+            foreach ($data as $A) {
+                try {
+                    $aff_id = Shop\Models\Token::create();
+                    $db->conn->executeUpdate(
+                        "INSERT INTO {$_TABLES['shop.userinfo']} (uid, affiliate_id) VALUES (?, ?)
+                        ON DUPLICATE KEY UPDATE affiliate_id = ?",
+                        array($A['uid'], $aff_id, $aff_id),
+                        array(Database::INTEGER, Database::STRING, Database::STRING)
+                    );
+                } catch (\Exception $e) {
+                    Log::write('system', Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
+                }
+            }
+        }
+
+    }
+
 }
