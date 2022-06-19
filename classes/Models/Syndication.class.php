@@ -35,7 +35,7 @@ class Syndication extends \glFusion\Syndication\Feed
     public function __construct($type)
     {
         if (is_array($type)) {
-            $this->type = $type['type'];
+            $this->setVars($type);
         }
     }
 
