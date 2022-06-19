@@ -851,8 +851,7 @@ class Order
             // Set field values that can only be set once and not updated
             $sql1 = "INSERT INTO {$_TABLES['shop.orders']} SET
                     order_id = '{$db_order_id}',
-                    token = '" . DB_escapeString($this->token) . "',
-                    uid = " . (int)$this->uid . ", ";
+                    token = '" . DB_escapeString($this->token) . "', ";
             $sql2 = '';
         } else {
             $sql1 = "UPDATE {$_TABLES['shop.orders']} SET ";
@@ -860,6 +859,7 @@ class Order
         }
 
         $fields = array(
+            "uid = " . (int)$this->uid,
             "order_date = '{$this->order_date->toUnix()}'",
             "status = '{$this->status}'",
             //"pmt_txn_id = '" . DB_escapeString($this->pmt_txn_id) . "'",
@@ -902,7 +902,6 @@ class Order
             }
         }
         $sql = $sql1 . implode(', ', $fields) . $sql2;
-        //Log::write('shop_system', Log::DEBUG, "Save: " . $sql);
         DB_query($sql);
         $this->isNew = false;
         $this->unTaint();
