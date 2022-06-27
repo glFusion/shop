@@ -1814,9 +1814,10 @@ class Product
                 foreach ($OG->getOptions() as $Opt) {
                     $checked = in_array($Opt->getID(), $this->sel_opts) ? 'checked="checked"' : '';
                     $T->set_var(array(
-                        'opt_id'   => $Opt->getID(),
-                        'opt_str'  => htmlspecialchars($Opt->getValue()),
-                        'checked'   => $checked,
+                        'frm_id' => $frm_id,
+                        'opt_id' => $Opt->getID(),
+                        'opt_str' => htmlspecialchars($Opt->getValue()),
+                        'checked' => $checked,
                     ) );
                     $T->parse('optSel', 'Option' . $OG->getType(), true);
                 }
