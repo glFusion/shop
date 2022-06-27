@@ -98,7 +98,7 @@
 {!if pv_id}
 			<select class="uk-select" name="pv_groups[{pog_id}]">
 {!else}
-			<select class="uk-select" multiple name="pv_groups[{pog_id}][]">
+			<select class="uk-select"  style="height:auto;" multiple name="pv_groups[{pog_id}][]">
 {!endif}
 				<option value="0">-- n/a --</option>
 <!-- BEGIN OptionValues -->
