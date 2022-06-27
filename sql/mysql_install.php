@@ -485,6 +485,14 @@ $_SQL = array(
   PRIMARY KEY (`pmt_id`),
   KEY `order_id` (`pmt_order_id`)
 ) ENGINE=MyISAM",
+'shop.features_values' => "CREATE TABLE `{$_TABLES['shop.features_values']}` (
+  `fv_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `ft_id` int(11) unsigned NOT NULL DEFAULT 0,
+  `fv_value` text,
+  PRIMARY KEY (`fv_id`),
+  UNIQUE KEY `id_txt` (`ft_id`,`fv_value`(128)),
+  KEY `feat_id` (`ft_id`)
+) ENGINE=MyISAM",
 );
 
 $SHOP_UPGRADE['0.7.1'] = array(
@@ -969,6 +977,9 @@ $SHOP_UPGRADE['1.5.0'] = array(
     "DROP TABLE {$_TABLES['shop.cache']}",
     "ALTER TABLE {$_TABLES['shop.ipnlog']} ADD `ref_id` varchar(127) NOT NULL DEFAULT '' AFTER `txn_id`",
     "ALTER TABLE {$_TABLES['shop.ipnlog']} ADD KEY `gw_ref` (`gateway`,`ref_id`)",
+    "ALTER TABLE {$_TABLES['shop.features_values']} DROP KEY `id_txt`",
+    "ALTER TABLE {$_TABLES['shop.features_values']} CHANGE fv_value fv_value text",
+    "ALTER TABLE {$_TABLES['shop.features_values']} ADD UNIQUE `id_txt` (`ft_id`, `fv_value`(128))",
 );
 
 
@@ -986,7 +997,6 @@ $_SQL['shop.variantXopt'] = $SHOP_UPGRADE['1.1.0'][4];
 $_SQL['shop.regions'] = $SHOP_UPGRADE['1.1.0'][6];
 $_SQL['shop.countries'] = $SHOP_UPGRADE['1.1.0'][7];
 $_SQL['shop.features'] = $SHOP_UPGRADE['1.2.0'][0];
-$_SQL['shop.features_values'] = $SHOP_UPGRADE['1.2.0'][1];
 $_SQL['shop.prodXfeat'] = $SHOP_UPGRADE['1.2.0'][2];
 $_SQL['shop.zone_rules'] = $SHOP_UPGRADE['1.2.0'][3];
 $_SQL['shop.packages'] = $SHOP_UPGRADE['1.3.0'][0];
