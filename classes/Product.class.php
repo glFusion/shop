@@ -1739,7 +1739,7 @@ class Product
 
         // Get custom text input fields.
         // Pre-filled values come from the OrderItem object, if any.
-        // Otherwise they're blank. Known issue: Anon users have no acess
+        // Otherwise they're blank. Known issue: Anon users have no access
         // to the OI object so the fields won't be pre-filled for them.
         if ('' != $this->custom) {
             $T->set_block('product', 'CustAttrib', 'cAttr');
@@ -1818,7 +1818,7 @@ class Product
                         'opt_str'  => htmlspecialchars($Opt->getValue()),
                         'checked'   => $checked,
                     ) );
-                    $T->parse('optSel', 'Option' . $OG->og_type, true);
+                    $T->parse('optSel', 'Option' . $OG->getType(), true);
                 }
                 break;
 

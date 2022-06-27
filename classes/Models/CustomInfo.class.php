@@ -25,7 +25,8 @@ class CustomInfo implements \ArrayAccess
     private $properties = array();
 
 
-    /** Initialize the properties from a supplied string or array.
+    /**
+     * Initialize the properties from a supplied string or array.
      *
      * @param   string|array    $val    Optonal initial properties
      */

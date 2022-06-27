@@ -991,6 +991,8 @@ class ProductVariant
                     'value' => $Opt->getValue(),
                 );
             }
+
+            $sku = '';
             if (empty($A['pv_sku'])) {
                 if (!empty($sku_parts) && !empty($P->getName())) {
                     $sku = $P->getName() . '-' . implode('-', $sku_parts);
@@ -1040,6 +1042,7 @@ class ProductVariant
         }
         self::reOrder($item_id);
         Cache::clear(self::TAG);
+        return true;
     }
 
 
