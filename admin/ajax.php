@@ -416,7 +416,7 @@ case 'toggle':
          default:
             exit;
         }
-       break;
+        break;
 
     case 'variant':
         switch ($_POST['type']) {
@@ -426,7 +426,7 @@ case 'toggle':
          default:
             exit;
         }
-       break;
+        break;
 
     case 'shipping':
         switch ($_POST['type']) {
@@ -559,4 +559,3 @@ header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
 echo json_encode($retval);
 exit;
 
-?>

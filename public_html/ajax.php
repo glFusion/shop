@@ -152,9 +152,11 @@ case 'addcartitem':
         'quantity'      => $req_qty,
         'price'         => $P->getPrice(),
         'options'       => SHOP_getVar($_POST, 'options', 'array'),
+        //'cboptions'     => SHOP_getVar($_POST, 'cboptions', 'array'),
         'extras'        => SHOP_getVar($_POST, 'extras', 'array'),
         'tax'           => SHOP_getVar($_POST, 'tax', 'float'),
     );
+
     $new_qty = $Cart->addItem($args);
     Log::write('shop_system', Log::DEBUG, "Adding $item_number, qty $new_qty");
     $msg = $LANG_SHOP['msg_item_added'];
@@ -244,18 +246,24 @@ case 'redeem_gc':
 
 case 'validateOpts':
     $qty = isset($_GET['quantity']) ? (int)$_GET['quantity'] : 1;
-    if (isset($_GET['options']) && !empty($_GET['options'])) {
+    $attribs = array('checkbox' => array());
+    $PVI = new Shop\Models\ProductVariantInfo;
+    if (isset($_GET['extras']['options'])) {
+        $attribs['checkbox'] = $_GET['extras']['options'];
+    }
+    if (isset($_GET['options']) && is_array($_GET['options'])) {
         // Checking a product that has options, see if the variant is in stock
         $PV = Shop\ProductVariant::getByAttributes($_GET['item_number'], $_GET['options']);
-        $output = $PV->Validate(array(
+        $PV->Validate($PVI, array(
             'quantity' => $qty,
         ) );
     } else {
-        // Product has no options, just check the product object
-        $output = Shop\Product::getByID($_GET['item_number'])->Validate(array(
+        Shop\Product::getByID($_GET['item_number'])->Validate($PVI, array(
             'quantity' => $qty,
+            'checkbox' => $attribs['checkbox'],
         ) );
     }
+    $output = $PVI->toArray();
     break;
 
 case 'validateAddress':

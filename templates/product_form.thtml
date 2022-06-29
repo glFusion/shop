@@ -22,6 +22,7 @@
 		<li id="tab-general" {tabactive_general}><a href="#">{$LANG_SHOP['product_info']}</a></li>
 		<li id="tab-images" {tabactive_images}><a href="#">{$LANG_SHOP['images']}</a></li>
 		<li id="tab-variants" {tabactive_variants}><a href="#">{$LANG_SHOP['variants']}</a></li>
+		<li id="tab-cboptions" {tabactive_cboptions}><a href="#">{$LANG_SHOP['options']}</a></li>
 		<li id="tab-discounts" {tabactive_discounts}><a href="#">{$LANG_SHOP['qty_discounts']}</a></li>
 		<li id="tab-supplier" {tabactive_supplier}><a href="#">{$LANG_SHOP['supplier']}</a></li>
 		<li id="tab-features" {tabactive_features}><a href="#">{$LANG_SHOP['features']}</a></li>
@@ -419,6 +420,11 @@
 	<li>
 		{variant_list}
 	</li>
+
+	<li>
+		{cboptions_list}
+	</li>
+
 
 	{# Discounts Page #}
 	<li>

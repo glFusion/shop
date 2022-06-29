@@ -19,6 +19,7 @@ namespace Shop;
 use Shop\Models\OrderState;
 use Shop\Models\Session;
 use Shop\Models\Stock;
+use Shop\Models\ProductCheckbox;
 use Shop\Products\Coupon;
 use Shop\Log;
 
@@ -202,6 +203,7 @@ class Cart extends Order
         $shipping   = SHOP_getVar($args, 'shipping', 'float', 0);
         $shipping_units = SHOP_getVar($args, 'shipping_units', 'float', $P->getShippingUnits());
         $shipping_weight= SHOP_getVar($args, 'shipping_weight', 'float', $P->getWeight());
+        $options_price = 0;
 
         if (isset($args['description'])) {
             $item_dscp  = $args['description'];
@@ -221,11 +223,12 @@ class Cart extends Order
 
         // Extract the attribute IDs from the options array to create
         // the item_id.
+        // This is for the product variant.
         // Options are an array(id1, id2, id3, ...)
         $opts = array();
         if (is_array($options) && !empty($options)) {
             foreach($options as $opt_id) {
-                $opts[] = new ProductOptionValue($opt_id);
+                $opts[$opt_id] = new ProductOptionValue($opt_id);
             }
             // Add the option numbers to the item ID to create a new ID
             // to check whether the product already exists in the cart.
@@ -234,6 +237,20 @@ class Cart extends Order
         } else {
             $opts = array();
         }
+        if (isset($args['extras']['options']) && is_array($args['extras']['options'])) {
+            // Checkbox option IDs. Get the item options to check against
+            // for pricing.
+            $cBoxes = ProductCheckbox::getByProduct($args['item_number']);
+            foreach ($args['extras']['options'] as $opt_id) {
+                if (isset($cBoxes[$opt_id])) {
+                    $opts[$opt_id] = new ProductOptionValue($opt_id);
+                    $opt_price = $cBoxes[$opt_id]->getPrice();
+                    $opts[$opt_id]->withPrice($opt_price);
+                    $options_price += $opt_price;
+                }
+            }
+        }
+
         if ($PV->getID() > 0) {
             $P->setVariant($PV);
             $item_id .= '|' . $PV->getID();
@@ -266,6 +283,7 @@ class Cart extends Order
                 'options_text' => $options_text,
                 'extras'    => $extras,
                 'override'  => $override,
+                'options_price' => $options_price,
                 'shipping'  => $shipping,
                 'shipping_units' => $shipping_units,
                 'shipping_weight' => $shipping_weight,

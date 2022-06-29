@@ -13,6 +13,7 @@
  */
 namespace Shop;
 use Shop\Models\Stock;
+use Shop\Models\ProductVariantInfo;
 
 
 /**
@@ -727,6 +728,9 @@ class ProductVariant
         $Groups = ProductOptionGroup::getAll();
         $T->set_block('form', 'OptionGroups', 'Grps');
         foreach ($Groups as $gid=>$Grp) {
+            if ($Grp->getType() == 'checkbox') {
+                continue;
+            }
             $T->set_var(array(
                 'pog_id'    => $gid,
                 'pog_name'  => $Grp->getName(),
@@ -798,6 +802,9 @@ class ProductVariant
         $optsInUse = $this->_optsInUse();
         $T->set_block('form', 'OptionGroups', 'Grps');
         foreach ($Groups as $gid=>$Grp) {
+            if ($Grp->getType() == 'checkbox') {
+                continue;
+            }
             $T->set_var(array(
                 'pog_id'    => $gid,
                 'pog_name'  => $Grp->getName(),
@@ -1678,7 +1685,7 @@ class ProductVariant
      * @param   array   $opts   Array of option value record IDs
      * @return  array       Array of status and message elements.
      */
-    public function Validate($opts)
+    public function Validate(ProductVariantInfo &$PVI, array $opts) : void
     {
         global $LANG_SHOP;
 
@@ -1688,10 +1695,16 @@ class ProductVariant
         if (!isset($opts['quantity'])) {
             $opts['quantity'] = 1;
         }
+        if (isset($opts['checkbox'])) {
+            var_dumP($opts);die;
+            $incr_price = ProductCheckbox::getPriceImpact($this->id, $opts['checkbox']);
+        } else {
+            $incr_price = 0;
+        }
 
         $P = Product::getByID($this->item_id);
         if ($P->getID() < 1 || $this->getID() < 1) {
-            $retval = array(
+            /*$retval = array(
                 'status'    => 0,
                 'msg'       => $LANG_SHOP['opts_not_avail'],
                 'allowed'   =>  false,
@@ -1702,44 +1715,41 @@ class ProductVariant
                 'sku'       => '',
                 'leadtime'  => '',
                 'images'    => array(),
-            );
+            );*/
         } else {
-            $price = ($P->getBasePrice() + $this->getPrice());
+            $price = ($P->getBasePrice() + $this->getPrice() + $incr_price);
             $price = $price * (100 - $P->getDiscount($opts['quantity'])) / 100;
             if ($this->Stock->getOnhand() == 0) {
                 $lt_msg = $P->getLeadTimeMessage();
             } else {
                 $lt_msg = '';
             }
-            $retval = array(
-                'status'    => 0,
-                'msg'       => $this->Stock->getOnhand() . ' ' . $LANG_SHOP['available'],
-                'allowed'   => true,
-                'is_oos'    => false,
-                'orig_price' => Currency::getInstance()->RoundVal($price),
-                'sale_price' => Currency::getInstance()->RoundVal($P->getSalePrice($price)),
-                'onhand'    => $this->Stock->getOnhand(),
-                'weight'    => $P->getWeight() + $this->weight,
-                'sku'       => empty($this->getSku()) ? $P->getName() : $this->getSku(),
-                'leadtime'  => $lt_msg,
-                'images'    => $this->images,
-            );
+            $PVI['status'] = 0;
+            $PVI['msg'] = $this->Stock->getOnhand() . ' ' . $LANG_SHOP['available'];
+            $PVI['allowed'] = true;
+            $PVI['is_oos'] = false;
+            $PVI['orig_price'] = Currency::getInstance()->RoundVal($price);
+            $PVI['sale_price'] = Currency::getInstance()->RoundVal($P->getSalePrice($price));
+            $PVI['onhand'] = $this->Stock->getOnhand();
+            $PVI['weight'] = $P->getWeight() + $this->weight;
+            $PVI['sku'] = empty($this->getSku()) ? $P->getName() : $this->getSku();
+            $PVI['leadtime'] = $lt_msg;
+            $PVI['images'] = $this->images;
         }
         if ($P->getTrackOnhand()) {
             if ($this->Stock->getOnhand() < $opts['quantity']) {
-                $retval['is_oos'] = true;
+                $PVI['is_oos'] = true;
                 if ($P->getOversell() > Product::OVERSELL_ALLOW) {
                     // Can't be sold
-                    $retval['status'] = 2;
-                    $retval['msg'] = 'Not Available';
-                    $retval['allowed'] = false;
+                    $PVI['status'] = 2;
+                    $PVI['msg'] = 'Not Available';
+                    $PVI['allowed'] = false;
                 } else {
-                    $retval['status'] = 1;
-                    $retval['msg'] = 'Backordered';
+                    $PVI['status'] = 1;
+                    $PVI['msg'] = 'Backordered';
                 }
             }
         }
-        return $retval;
     }
 
 

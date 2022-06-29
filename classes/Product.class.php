@@ -17,6 +17,8 @@ use Shop\Models\Dates;
 use Shop\Models\Views;
 use Shop\Models\Stock;
 use Shop\Models\IPN;
+use Shop\Models\ProductCheckbox;
+use Shop\Models\ProductVariantInfo;
 use Shop\Log;
 
 
@@ -1056,6 +1058,10 @@ class Product
         if ($old_rating_ena && !$this->rating_enabled) {
             RATING_resetRating($_SHOP_CONF['pi_name'], $this->id);
         }
+
+        // Delete any existing product options, just simpler to re-add them
+        ProductCheckbox::deleteByItem($this->id);
+
         $status = $this->saveToDB();
         if ($status && $this->id > 0) {
             if ($this->isNew) {
@@ -1124,6 +1130,11 @@ class Product
                 foreach ($A['del_ft'] as $ft_id=>$val) {
                     Feature::deleteProduct($this->id, $ft_id);
                 }
+            }
+
+            // Add any new product checkboxes.
+            if (isset($A['cbenabled']) && !empty($A['cbenabled'])) {
+                ProductCheckbox::add($this->id, $A['cbenabled'], $A['cbprice']);
             }
         }
 
@@ -1438,6 +1449,7 @@ class Product
             'avail_end'     => self::_InputDtFormat($this->avail_end),
             'ret_url'       => SHOP_getUrl(SHOP_ADMIN_URL . '/index.php?products'),
             'variant_list'  => $this->id > 0 ? ProductVariant::adminList($this->id) : ProductVariant::Create(),
+            'cboptions_list' => ProductCheckbox::adminList($this->id),
             'nonce'         => Images\Product::makeNonce(),
             'brand'         => $this->brand_id,
             'min_ord_qty'   => $this->min_ord_qty,
@@ -1704,6 +1716,8 @@ class Product
             $this->Variant = new ProductVariant;
         }
 
+        $cbOpts = ProductCheckbox::getByProduct($this->item_id);
+
         // Set the template dir based on the configured template version
         $T = new Template(array(
             'detail/' . $_SHOP_CONF['product_tpl_ver'],
@@ -1835,6 +1849,29 @@ class Product
             ) );
             $T->parse('AG', 'OptionGroup', true);
             $T->clear_var('optSel');
+        }
+
+        $cbrk = NULL;
+        if (!empty($cbOpts)) {
+            $T->set_block('product', 'checkboxGroups', 'cbGroup');
+            foreach ($cbOpts as $Opt) {
+                if ($cbrk != $Opt->getGroupID()) {
+                    $cbrk = $Opt->getGroupID();
+                    $T->set_var('cb_group_name', $Opt->getGroupName());
+                    $T->set_block('product', 'checkboxOptions', 'cbOptions');
+                }
+                $T->set_var(array(
+                    'frm_id' => $frm_id,
+                    'option_dscp' => $Opt->getOptionValue(),
+                    'option_id' => $Opt->getOptionID(),
+                ) );
+                $T->parse('cbOptions', 'checkboxOptions', true);
+                if ($cbrk != $Opt->getGroupID()) {
+                    $T->parse('cbGroup', 'checkboxGroups', true);
+                    //$T->clear_var('cbOptions');
+                }
+            }
+            $T->parse('cbGroup', 'checkboxGroups', true);
         }
 
         // Retrieve the photos and put into the templatea.
@@ -2402,12 +2439,13 @@ class Product
      *
      * @return  float       Base item price
      */
-    public function getBasePrice()
+    public function getBasePrice(float $incr_price=0)
     {
         $price = (float)$this->price;
         if (!is_null($this->Variant)) {
             $price += (float)$this->Variant->getPrice();
         }
+        $price += $incr_price;
         return $price;
     }
 
@@ -4118,40 +4156,46 @@ class Product
      * @param   array   $opts   Array of options for compatibility
      * @return  array       Array of validation result information
      */
-    public function Validate($opts = array())
+    public function Validate(ProductVariantInfo &$PVI, $opts = array())
     {
         global $LANG_SHOP;
 
         if (!isset($opts['quantity'])) {
             $opts['quantity'] = 1;
         }
-        $retval = array(
-            'status'    => 0,
-            'msg'       => $this->track_onhand ? $this->getOnhand() . ' ' . $LANG_SHOP['available'] : '',
-            'allowed'   => true,
-            'is_oos'    => false,
-            'orig_price' => Currency::getInstance()->RoundVal($this->getBasePrice()),
-            'sale_price' => Currency::getInstance()->RoundVal($this->getSalePrice()),
-            'onhand'    => $this->getOnhand(),
-            'weight'    => $this->getWeight(),
-            'sku'       => $this->getName(),
-            'leadtime'  => $this->getOnhand() == 0 ? $this->getLeadTimeMessage() : '',
-            'images'    => array_keys($this->Images),
-        );
+
+        if (isset($opts['checkbox'])) {
+            $incr_price = ProductCheckbox::getPriceImpact($this->id, $opts['checkbox']);
+        } else {
+            $incr_price = 0;
+        }
+
+        $base_price = $this->getBasePrice($incr_price);
+        $sale_price = $this->getSalePrice($base_price);
+        $PVI['status'] = 0;
+        $PVI['msg'] = $this->track_onhand ? $this->getOnhand() . ' ' . $LANG_SHOP['available'] : '';
+        $PVI['allowed'] = true;
+        $PVI['is_oos'] = false;
+        $PVI['orig_price'] = Currency::getInstance()->RoundVal($base_price);
+        $PVI['sale_price'] = Currency::getInstance()->RoundVal($sale_price);
+        $PVI['onhand'] = $this->getOnhand();
+        $PVI['weight'] = $this->getWeight();
+        $PVI['sku'] = $this->getName();
+        $PVI['leadtime'] = $this->getOnhand() == 0 ? $this->getLeadTimeMessage() : '';
+        $PVI['images'] = array_keys($this->Images);
         if ($this->track_onhand) {
             if ($this->getOnhand() < $opts['quantity']) {
-                $retval['is_oos'] = true;
+                $PVI['is_oos'] = true;
                 if ($this->getOversell() == self::OVERSELL_HIDE) {
-                    $retval['status'] = 2;
-                    $retval['msg'] = 'Not Available';
-                    $retval['allowed'] = false;
+                    $PVI['status'] = 2;
+                    $PVI['msg'] = 'Not Available';
+                    $PVI['allowed'] = false;
                 } else {
-                    $retval['status'] = 1;
-                    $retval['msg'] = 'Backordered';
+                    $PVI['status'] = 1;
+                    $PVI['msg'] = 'Backordered';
                 }
             }
         }
-        return $retval;
     }
 
 

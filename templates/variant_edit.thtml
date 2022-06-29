@@ -129,8 +129,8 @@
 	<div class="uk-form-row uk-margin" style="clear:both;text-align:center">
 		<button class="uk-button uk-button-success" type="submit" name="pv_save" value="{$LANG_SHOP['saveopt']}">{$LANG_SHOP['saveopt']}</button>
 		<button class="uk-button uk-button-default" type="reset" />{$LANG_SHOP['clearform']}</button>
-		<button class="uk-button uk-button-primary" type="reset"
-			onclick="document.location='{action_url}/index.php?editproduct&id={item_id}&tab=variants';">{$LANG_ADMIN['cancel']}</button>
+		<a class="uk-button uk-button-primary"
+			href="{action_url}/index.php?editproduct&id={item_id}&tab=variants">{$LANG_ADMIN['cancel']}</a>
 		<button style="float:right;" class="uk-button uk-button-danger" type="submit" name="pv_del" value="{$LANG_SHOP['deleteopt']}"
 			onclick="return confirm('{$LANG_SHOP['q_del_pov']}');">{$LANG_SHOP['deleteopt']}</button>
 	</div>

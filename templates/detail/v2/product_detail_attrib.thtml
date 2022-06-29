@@ -96,7 +96,7 @@
 						</select>
 {!!elseif {og_type} == "checkbox" !!}
 <!-- BEGIN Optioncheckbox -->
-						<input type="checkbox" name="options[]" value="{opt_id}" {checked} onclick="ProcessForm('{frm_id}');"/>&nbsp;{opt_str}<br />
+						<input type="checkbox" name="cboptions[]" value="{opt_id}" {checked} onclick="ProcessForm('{frm_id}');"/>&nbsp;{opt_str}<br />
 <!-- END Optioncheckbox -->
 {!!elseif {og_type} == "radio" !!}
 <!-- BEGIN Optionradio -->
@@ -107,6 +107,16 @@
 				</div>
 <!-- END OptionGroup -->
 
+<!-- BEGIN checkboxGroups -->
+				<div class=uk-form-row>
+					<label class="uk-form-label">{cb_group_name}:</label>
+					<div class="uk-form-controls">
+<!-- BEGIN checkboxOptions -->
+						<input class="uk-checkbox" type="checkbox" name="extras[options][]" value="{option_id}" onchange="ProcessForm('{frm_id}');"/>&nbsp;{option_dscp}<br />
+<!-- END checkboxOptions -->
+					</div>
+				</div>
+<!-- END checkboxGroups -->
 <!-- BEGIN CustAttrib -->
 				<div class=uk-form-row>
 					<label class="uk-form-label" for="{fld_id}">{fld_name}:</label>

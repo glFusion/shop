@@ -272,6 +272,19 @@ class ProductOptionValue
 
 
     /**
+     * Override the option price.
+     *
+     * @param   float   $price      Option Price
+     * @return  object  $this
+     */
+    public function withPrice(float $price) : self
+    {
+        $this->pov_price = $price;
+        return $this;
+    }
+
+
+    /**
      * Creates the edit form.
      *
      * @param   integer $id Optional ID, current record used if zero
@@ -561,7 +574,7 @@ class ProductOptionValue
                 'name' => 'ena_check',
                 'id' => "togenabled{$A['pov_id']}",
                 'checked' => $fieldvalue == 1,
-                'onclick' => "SHOP_toggle(this,'{$A['pov_id']}','enabled','option);",
+                'onclick' => "SHOP_toggle(this,'{$A['pov_id']}','enabled','option');",
             ) );
             break;
 

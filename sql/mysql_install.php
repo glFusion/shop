@@ -964,6 +964,14 @@ $SHOP_UPGRADE['1.5.0'] = array(
       `pr_zone_rule` int(11) unsigned NOT NULL DEFAULT 0,
       PRIMARY KEY (`pr_id`)
     ) ENGINE=MyIsam",
+    "CREATE TABLE `{$_TABLES['shop.prodXcbox']}` (
+      `x_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `item_id` int(11) unsigned DEFAULT NULL,
+      `pov_id` int(11) unsigned NOT NULL DEFAULT 0,
+      `price` decimal(8,4) DEFAULT 0.0000,
+      PRIMARY KEY (`x_id`),
+      UNIQUE KEY `idx_item` (`item_id`,`pov_id`)
+    ) ENGINE=MyISAM",
     "ALTER TABLE {$_TABLES['shop.orderitems']} ADD `shipping_units` decimal(9,4) unsigned NOT NULL DEFAULT 0.0000",
     "ALTER TABLE {$_TABLES['shop.coupon_log']} ADD `done_by` int(11) unsigned NOT NULL DEFAULT 0 AFTER `uid`",
     "ALTER TABLE {$_TABLES['shop.orders']} CHANGE `billto_id` `billto_id` int(11) NOT NULL DEFAULT 0",
@@ -1006,3 +1014,5 @@ $_SQL['shop.affiliate_payments'] = $SHOP_UPGRADE['1.3.0'][5];
 $_SQL['shop.stock'] = $SHOP_UPGRADE['1.3.1'][0];
 $_SQL['shop.plugin_products'] = $SHOP_UPGRADE['1.3.1'][1];
 $_SQL['shop.product_rules'] = $SHOP_UPGRADE['1.5.0'][0];
+$_SQL['shop.prodXcbox'] = $SHOP_UPGRADE['1.5.0'][1];
+

@@ -13,6 +13,7 @@
  */
 namespace Shop;
 use Shop\Models\Stock;
+use Shop\Models\ProductCheckbox;
 
 
 /**
@@ -197,14 +198,20 @@ class OrderItem
         if (isset($A['price'])) {
             $overrides['price'] = $A['price'];
         }
+
         $OI->setVars($A);
         if (!isset($A['base_price'])) {
-            $OI->setBasePrice(
-                $OI->getProduct()
-                   ->setVariant($OI->getVariantId())
-                   ->getPrice(array(), 1, $overrides)
-            );
+            $item_price = $OI->getProduct()
+                             ->setVariant($OI->getVariantId())
+                             ->getPrice(array(), 1, $overrides);
+        } else {
+            $item_price = $A['base_price'];
         }
+        if (isset($A['options_price'])) {
+            $item_price += $A['options_price'];
+        }
+        $OI->setBasePrice($item_price);
+
         if ($OI->getID() == 0) {
             // New item, add options from the supplied arguments.
             $OI->setPrice($OI->getBasePrice());
@@ -221,17 +228,40 @@ class OrderItem
                     $OI->addOption($OIO);
                 }
             }
-            if (
-                is_array($A['extras']) &&
-                isset($A['extras']['custom']) &&
-                is_array($A['extras']['custom']) &&
-                !empty($A['extras']['custom'])
-            ) {
-                $cust = $A['extras']['custom'];
-                $P = Product::getByID($OI->product_id);
-                foreach ($P->getCustom() as $id=>$name) {
-                    if (isset($cust[$id]) && !empty($cust[$id])) {
-                        $OI->addOptionText($name, $cust[$id]);
+            if (is_array($A['extras'])) {
+                if (
+                    isset($A['extras']['custom']) &&
+                    is_array($A['extras']['custom']) &&
+                    !empty($A['extras']['custom'])
+                ) {
+                    $cust = $A['extras']['custom'];
+                    $P = Product::getByID($OI->product_id);
+                    foreach ($P->getCustom() as $id=>$name) {
+                        if (isset($cust[$id]) && !empty($cust[$id])) {
+                            $OI->addOptionText($name, $cust[$id]);
+                        }
+                    }
+                }
+                // Now get custom/checkbox options
+                if (
+                    isset($A['extras']['options']) &&
+                    is_array($A['extras']['options']) &&
+                    !empty($A['extras']['options'])
+                ) {
+                    foreach ($A['extras']['options'] as $opt_id) {
+                        $OIO = new OrderItemOption;
+                        $POV = new ProductCheckbox;
+                        if ($POV->withItemId((int)$OI->product_id)
+                            ->withOptionId((int)$opt_id)
+                            ->Read()
+                        ) {
+                            $OIO->withOptionGroupId($POV->getGroupId())
+                                ->withOptionValueId($POV->getOptionId())
+                                ->withOptionName($POV->getGroupName())
+                                ->withOptionValue($POV->getOptionValue())
+                                ->withOptionPrice($POV->getPrice());
+                            $OI->addOption($OIO);
+                        }
                     }
                 }
             }
@@ -661,7 +691,6 @@ class OrderItem
             $this->quantity = (float)$newqty;
             $this->handling = $this->getProduct()->getHandling($newqty);
             if ($price === NULL) {
-                $this->setPrice($this->getItemPrice());
                 $this->setNetPrice($this->price);
             } else {
                 $this->setPrice($price);

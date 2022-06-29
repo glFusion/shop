@@ -227,7 +227,6 @@ class OrderItemOption
             oio_name = '" . DB_escapeString($this->oio_name) . "',
             oio_value = '" . DB_escapeString($this->oio_value) . "',
             oio_price = '{$this->oio_price}'";
-        //echo $sql;die;
         Log::write('shop_system', Log::DEBUG, $sql);
         DB_query($sql, 1);  // ignore dup key issues.
         if (!DB_error()) {
@@ -434,6 +433,84 @@ class OrderItemOption
     public function unTaint() : object
     {
         $this->_tainted = false;
+        return $this;
+    }
+
+
+    /**
+     * Set the OrderItem record ID.
+     *
+     * @param   integer $id     OrderItem ID
+     * @return  object  $this
+     */
+    public function withOrderItemId(int $id) : self
+    {
+        $this->oi_id = $id;
+        return $this;
+    }
+
+
+    /**
+     * Set the OptionGroup record ID.
+     *
+     * @param   integer $id     OptionGroup ID
+     * @return  object  $this
+     */
+    public function withOptionGroupId(int $id) : self
+    {
+        $this->pog_id = $id;
+        return $this;
+    }
+
+
+    /**
+     * Set the OptionValue record ID.
+     *
+     * @param   integer $id     OptionValue ID
+     * @return  object  $this
+     */
+    public function withOptionValueId(int $id) : self
+    {
+        $this->pov_id = $id;
+        return $this;
+    }
+
+
+    /**
+     * Set the Option Name text.
+     *
+     * @param   string  $name   Option Name
+     * @return  object  $this
+     */
+    public function withOptionName(string $name) : self
+    {
+        $this->oio_name = $name;
+        return $this;
+    }
+
+
+    /**
+     * Set the Option Value text.
+     *
+     * @param   string  $value  Option Value
+     * @return  object  $this
+     */
+    public function withOptionValue(string $value) : self
+    {
+        $this->oio_value = $value;
+        return $this;
+    }
+
+
+    /**
+     * Set the Option Price amount.
+     *
+     * @param   float   $value  Option price impact
+     * @return  object  $this
+     */
+    public function withOptionPrice(float $value) : self
+    {
+        $this->oio_price = $value;
         return $this;
     }
 
