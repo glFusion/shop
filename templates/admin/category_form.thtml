@@ -233,7 +233,6 @@ $(document).ready(function() {
 
         loadEnd: function (e) {
             console.log('loadEnd', arguments);
-console.log(e);
 				if (e.status) {
 					f = e.filenames;
 					for (var i = 0; i < f.length; i++) {
