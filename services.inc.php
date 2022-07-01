@@ -393,6 +393,7 @@ function service_sendcards_shop($args, &$output, &$svc_msg)
     if (empty($svc_msg)) {
         $uids = array_filter(array_unique($uids));
         foreach ($uids as $uid) {
+            $db = Database::getInstance();
             $code = Shop\Products\Coupon::Purchase($amt, $uid, $exp);
             $email = $db->getItem($_TABLES['users'], 'email', array('uid' => $uid));
             $name = COM_getDisplayName($uid);
