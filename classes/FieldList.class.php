@@ -212,4 +212,47 @@ class FieldList extends \glFusion\FieldList
         return $t->finish($t->get_var('output'));
     }
 
+
+    /**
+     * Need this function until base glFusion button function is fixed.
+     */
+    public static function button($args)
+    {
+        $def_args = array(
+            'name' => '',
+            'value' => '',
+            'size' => '',   // mini
+            'style' => '',  // success, danger, etc.
+            'type' => 'submit',   // submit, reset, etc.
+            'class' => '',  // additional classes
+        );
+        $args = array_merge($def_args, $args);
+
+        $t = self::init();
+        $t->set_block('field','field-button');
+
+        $t->set_var(array(
+            'button_name' => $args['name'],
+            'button_value' => $args['value'],
+            'size' => $args['size'],
+            'style' => $args['style'],
+            'type' => $args['type'],
+            'other_cls' => $args['class'],
+            'text' => $args['text'],
+        ) );
+
+        if (isset($args['attr']) && is_array($args['attr'])) {
+            $t->set_block('field-button','attr','attributes');
+            foreach($args['attr'] AS $name => $value) {
+                $t->set_var(array(
+                    'name' => $name,
+                    'value' => $value)
+                );
+                $t->parse('attributes','attr',true);
+            }
+        }
+        $t->parse('output','field-button',true);
+        return $t->finish($t->get_var('output'));
+    }
+
 }
