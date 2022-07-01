@@ -2617,11 +2617,13 @@ class Product
     /**
      * Handle a product refund.
      *
-     * @param   object  $Order      Order object.
-     * @param   array   $ipn_data   IPN data received
+     * @param   object  $OI     OrderItem being refunded
+     * @param   object  $IPN    Shop IPN data
+     * @return  boolean     True on success, False on error
      */
-    public function handleRefund($Order, $ipn_data = array())
+    public function handleRefund(OrderItem $OI, IPN $IPN) :bool
     {
+        return true;
     }
 
 

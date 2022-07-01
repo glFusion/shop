@@ -318,19 +318,23 @@ class Plugin extends \Shop\Product
     /**
      * Handle a refund for this product.
      *
-     * @param   object  $Order      Order being refunded
-     * @param   array   $pp_data    Shop IPN data
-     * @return  integer         Status from plugin's handleRefund function
+     * @param   object  $OI     OrderItem being refunded
+     * @param   object  $IPN    Shop IPN data
+     * @return  boolean     True on success, False on error
      */
-    public function handleRefund($Order, $pp_data = array())
+    public function handleRefund(OrderItem $OI, IPN $IPN) :bool
     {
-        if (empty($pp_data)) return false;
+        if ($IPN['pmt_gross'] > 0) {
+            // Should be negative.
+            return false;
+        }
+
         $args = array(
             'item_id'   => explode(':', $this->item_id),
-            'ipn_data'  => $pp_data,
+            'ipn_data'  => $IPN,
         );
         $status = PLG_callFunctionForOnePlugin(
-            'service_handleRefnd_' . $this->pi_name,
+            'service_handleRefund_' . $this->pi_name,
             array(
                 1 => $args,
                 2 => &$output,

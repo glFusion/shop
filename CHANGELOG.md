@@ -34,6 +34,7 @@ Release TBD
   * Users or customers are enrolled as affiliates if the config is change to "yes".
   * Add optional URL to logo image for invoices.
   * Increase text length for product features.
+  * Allow multiple checkbox options with price impacts (#71).
 
 ## v1.4.1
 Release 2022-04-07

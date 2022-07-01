@@ -18,6 +18,7 @@ use Shop\Loggers\IPN as logIPN;
 use Shop\Models\IPN as IPNModel;
 use Shop\Models\OrderState;
 use glFusion\Database\Database;
+use glFusion\Log\Log;
 
 
 /**
@@ -125,6 +126,11 @@ class Webhook
      * @var integer */
     protected $ipnLogId = 0;
 
+    /** Flag indicating that the payment is complete.
+     * Leave at zero for "created" webhooks, set when the status is complete.
+     * @var boolean */
+    protected $isComplete = 0;
+
 
     /**
      * Instantiate and return a Webhook object.
@@ -139,7 +145,7 @@ class Webhook
         if (class_exists($cls)) {
             return new $cls($blob);
         } else {
-            Log::write('shop_system', Log::ERROR, "Webhook::getInstance() - $cls doesn't exist");
+            Log::write('shop_system', Log::ERROR, __METHOD__ . ": - $cls doesn't exist");
             return NULL;
         }
     }
@@ -178,6 +184,19 @@ class Webhook
     public function getID()
     {
         return $this->whID;
+    }
+
+
+    /**
+     * Set the payment-complete flag.
+     *
+     * @param   boolean $flag   True if complete, False if not.
+     * @return  object  $this
+     */
+    public function setComplete(bool $flag=true) : self
+    {
+        $this->isComplete = $flag ? 1 : 0;
+        return $this;
     }
 
 
@@ -427,13 +446,13 @@ class Webhook
         }
 
         $Payment = new Payment();
-        $Payment->setRefID($this->getID())
+        $Payment->setRefID($this->refID)
             ->setAmount($this->getPayment())
             ->setGateway($this->getSource())
             ->setMethod($this->getPmtMethod())
-            ->setComment('Webhook ' . $this->getData()->id)
-            ->setComplete(1)
-            ->setStatus($this->getData()->type)
+            ->setComment('Webhook ' . $this->getID())
+            ->setComplete($this->isComplete)
+            ->setStatus($this->getEvent())
             ->setOrderID($this->getOrderID());
         $Payment->Save();
         // Get the latest order object for the new status and amt due.
@@ -547,10 +566,10 @@ class Webhook
         $msg = $Cur->FormatValue($this->getPayment()) . ' received, require ' .
             $Cur->FormatValue($bal_due);
         if ($bal_due <= $this->getPayment() + .0001) {
-            Log::write('shop_system', Log::DEBUG, "OK: $msg");
+            Log::write('shop_system', Log::DEBUG, __METHOD__ . ": OK: $msg");
             return true;
         } else {
-            Log::write('shop_system', Log::ERROR, "Insufficient Funds: $msg");
+            Log::write('shop_system', Log::ERROR, __METHOD__ . ": Insufficient Funds: $msg");
             return false;
         }
     }
@@ -592,7 +611,7 @@ class Webhook
         }
 
         if ($this->Order->isNew()) {
-            Log::write('shop_system', Log::ERROR, "Error: Order {$this->getOrderID()} is not valid");
+            Log::write('shop_system', Log::ERROR, __METHOD__ . ": Order {$this->getOrderID()} is not valid");
             return false;
         }
 
@@ -603,12 +622,32 @@ class Webhook
             // Handle the purchase for each order item
             $this->Order->handlePurchase($this->IPN);
         } else {
-            Log::write('shop_system', Log::ERROR, 'Cannot process order ' . $this->getOrderID());
-            Log::write('shop_system', Log::DEBUG, 'canprocess? ' . var_export($this->GW->okToProcess($this->Order),true));
-            Log::write('shop_system', Log::DEBUG, 'status ' . $this->Order->getStatus());
+            Log::write('shop_system', Log::ERROR, __METHOD__ . ': Cannot process order ' . $this->getOrderID());
+            Log::write('shop_system', Log::DEBUG, __METHOD__ . ': canprocess? ' . var_export($this->GW->okToProcess($this->Order),true));
+            Log::write('shop_system', Log::DEBUG, __METHOD__ . ': status ' . $this->Order->getStatus());
             return false;
         }
         return true;
+    }
+
+
+    /**
+     * Handle a complete refund.
+     *
+     * @param   object  $Order  Order object being refunded
+     */
+    protected function handleFullRefund($Order)
+    {
+        // Completely refunded, let the items handle any refund actions.
+        // None for catalog items since there's no inventory,
+        // but plugin items may need to do something.
+        foreach ($Order->getItems() as $key=>$OI) {
+            $OI->getProduct()->handleRefund($OI, $this->IPN);
+            // Don't care about the status, really.  May not even be
+            // a plugin function to handle refunds
+        }
+        // Update the order status to Refunded
+        $Order->updateStatus('refunded');
     }
 
 
@@ -619,23 +658,28 @@ class Webhook
      */
     protected function isUniqueTxnId()
     {
-        global $_TABLES, $_SHOP_CONF;
+        global $_TABLES;
 
-        if (isset($_SHOP_CONF['sys_test_ipn']) && $_SHOP_CONF['sys_test_ipn']) {
+        if (Config::get('sys_test_ipn')) {
             // Special config value set only in config.php for IPN testing
             return true;
         }
 
         // Count IPN log records with txn_id = this one.
         $db = Database::getInstance();
-        $count = $db->getCount(
-            $_TABLES['shop.ipnlog'],
-            array('gateway', 'txn_id', 'event'),
-            array($this->GW->getName(), $this->getID(), $this->getEvent()),
-            array(Database::STRING, Database::STRING, Database::STRING)
-        );
+        try {
+            $count = $db->getCount(
+                $_TABLES['shop.ipnlog'],
+                array('gateway', 'txn_id', 'event'),
+                array($this->GW->getName(), $this->getID(), $this->getEvent()),
+                array(Database::STRING, Database::STRING, Database::STRING)
+            );
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $count = 0;
+        }
         if ($count > 0) {
-            Log::write('shop_system', Log::ERROR, "Received duplicate IPN {$this->getID()} for {$this->GW->getName()}");
+            Log::write('shop_system', Log::ERROR, __METHOD__ . ": Received duplicate IPN {$this->getID()} for {$this->GW->getName()}");
             return false;
         } else {
             return true;

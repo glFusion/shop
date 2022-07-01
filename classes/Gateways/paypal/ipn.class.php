@@ -95,21 +95,24 @@ class ipn extends \Shop\IPN
             $this->setStatus(OrderState::PAID);
             break;
         case 'Refunded':
-            $this->setSTatus(OrderState::REFUNDED);
+            $this->setStatus(OrderState::REFUNDED);
+            $this->ipn_data['txn_type'] = 'refund';
+            $this->setEvent('refund');
             break;
         }
 
         switch (SHOP_getVar($A, 'txn_type')) {
         case 'web_accept':
         case 'send_money':
-            $this
-                ->setPmtShipping(SHOP_getVar($A, 'shipping', 'float'))
-                ->setPmtHandling(SHOP_getVar($A, 'handling', 'float'));
+            $this->setPmtShipping(SHOP_getVar($A, 'shipping', 'float'))
+                 ->setPmtHandling(SHOP_getVar($A, 'handling', 'float'));
             break;
         case 'cart':
-            $this
-                ->setPmtShipping(SHOP_getVar($A, 'mc_shipping', 'float'))
-                ->setPmtHandling(SHOP_getVar($A, 'mc_handling', 'float'));
+            $this->setPmtShipping(SHOP_getVar($A, 'mc_shipping', 'float'))
+                 ->setPmtHandling(SHOP_getVar($A, 'mc_handling', 'float'));
+            break;
+        default:
+            $this->setParentTxnId($A['parent_txn_id']);
             break;
         }
     }
