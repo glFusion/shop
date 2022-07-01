@@ -13,6 +13,7 @@
  *
  */
 namespace Shop\Products;
+use glFusion\Database\Database;
 use Shop\Payment;   // to record application of coupon amounts
 use Shop\Models\ProductType;
 use Shop\Models\Dates;
@@ -25,6 +26,7 @@ use Shop\Company;
 use Shop\Currency;
 use Shop\Cache;
 use Shop\Log;
+use Shop\Config;
 
 
 /**
@@ -190,7 +192,7 @@ class Coupon extends \Shop\Product
      * @param   string  $exp        Expiration date
      * @return  mixed       Coupon code, or false on error
      */
-    public static function Purchase($amount = 0, $uid = 0, $exp = self::MAX_EXP)
+    public static function Purchase(float $amount = 0, int $uid = 0, string $exp = self::MAX_EXP) : ?string
     {
         global $_TABLES, $_USER;
 
@@ -199,28 +201,43 @@ class Coupon extends \Shop\Product
             $uid = $_USER['uid'];
         }
         $options = array();     // Use all options from global config
+        $db = Database::getInstance();
         do {
             // Make sure there are no duplicates
             $code = self::generate($options);
-            $code = DB_escapeString($code);
-        } while (DB_count($_TABLES['shop.coupons'], 'code', $code));
+        } while ($db->getCount($_TABLES['shop.coupons'], 'code', $code, Database::STRING));
 
         $uid = (int)$uid;
         if (empty($exp)) {
             // Just in case an empty string gets passed in.
             $exp = self::MAX_EXP;
         }
-        $exp = DB_escapeString($exp);
         $amount = (float)$amount;
-        $sql = "INSERT INTO {$_TABLES['shop.coupons']} SET
-                code = '$code',
-                buyer = $uid,
-                amount = $amount,
-                balance = $amount,
-                purchased = UNIX_TIMESTAMP(),
-                expires = '$exp'";
-        DB_query($sql);
-        return DB_error() ? false : $code;
+        try {
+            $db->conn->insert(
+                $_TABLES['shop.coupons'],
+                array(
+                    'code' => $code,
+                    'buyer' => $uid,
+                    'amount' => $amount,
+                    'balance' => $amount,
+                    'purchased' => time(),
+                    'expires' => $exp,
+                ),
+                array(
+                    Database::STRING,
+                    Database::INTEGER,
+                    Database::STRING,
+                    Database::STRING,
+                    Database::INTEGER,
+                    Database::STRING,
+                )
+            );
+            return $code;
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return NULL;
+        }
     }
 
 
@@ -246,11 +263,20 @@ class Coupon extends \Shop\Product
             return array(2, sprintf($LANG_SHOP['coupon_apply_msg2'], $_CONF['site_email']));
         }
 
-        $code = DB_escapeString($code);
-        $sql = "SELECT * FROM {$_TABLES['shop.coupons']}
-                WHERE code = '$code'";
-        $res = DB_query($sql);
-        if (DB_numRows($res) == 0) {
+        $db = Database::getInstance();
+        try {
+            $data = $db->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.coupons']}
+                WHERE code = ?",
+                array($code),
+                array(Database::STRING)
+            )->fetchAssociative();
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $data = false;
+        }
+
+        if (!is_array($data) || count($data) == 0) {
             Log::write('shop_system', Log::ERROR, "Attempting to redeem coupon $code, not found in database");
             return array(
                 3,
@@ -260,8 +286,7 @@ class Coupon extends \Shop\Product
                 )
             );
         } else {
-            $A = DB_fetchArray($res, false);
-            if ($A['redeemed'] > 0 && $A['redeemer'] > 0) {
+            if ($data['redeemed'] > 0 && $data['redeemer'] > 0) {
                 Log::write('shop_system', Log::ERROR, "Coupon code $code was already redeemed");
                 return array(1, $LANG_SHOP['coupon_apply_msg1']);
             } elseif ($A['status'] != self::VALID) {
@@ -269,16 +294,22 @@ class Coupon extends \Shop\Product
                 return array(1, $LANG_SHOP['coupon_apply_msg3']);
             }
         }
-        $amount = (float)$A['amount'];
+        $amount = (float)$data['amount'];
         if ($amount > 0) {
-            DB_query("UPDATE {$_TABLES['shop.coupons']} SET
-                    redeemer = $uid,
-                    redeemed = UNIX_TIMESTAMP()
-                    WHERE code = '$code'");
-            Cache::clear('coupons');
-            self::writeLog($code, $uid, $amount, 'gc_redeemed');
-            if (DB_error()) {
-                Log::write('shop_system', Log::ERROR, "A DB error occurred marking coupon $code as redeemed");
+            try {
+                $db->conn->update(
+                    $_TABLES['shop.coupons'],
+                    array(
+                        'redeemer' => $uid,
+                        'redeemed' => time(),
+                    ),
+                    array('code' => $code),
+                    array(Database::INTEGER, Database::INTEGER, Database::STRING)
+                );
+                Cache::clear('coupons');
+                self::writeLog($code, $uid, $amount, 'gc_redeemed');
+            } catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 return array(2, sprintf($LANG_SHOP['coupon_apply_msg2'], $_CONF['site_email']));
             }
         }
@@ -310,7 +341,7 @@ class Coupon extends \Shop\Product
         if ($uid == 0) $uid = $_USER['uid'];
         $order_id = '';
         if (is_object($Order) && !$Order->isNew()) {
-            $order_id = DB_escapeString($Order->getOrderID());
+            $order_id = $Order->getOrderID();
             $uid = $Order->getUid();
         }
         if ($uid < 2 || $amount == 0) {
@@ -325,6 +356,7 @@ class Coupon extends \Shop\Product
         $coupons = self::getUserCoupons($uid);
         $remain = (float)$amount;
         $applied = 0;
+        $db = Database::getInstance();
         foreach ($coupons as $coupon) {
             $bal = (float)$coupon['balance'];
             $code = DB_escapeString($coupon['code']);
@@ -341,28 +373,21 @@ class Coupon extends \Shop\Product
                 $retval[$code] = $bal;
                 $bal = 0;
             }
-            $sql = "UPDATE {$_TABLES['shop.coupons']}
-                    SET balance = $bal
-                    WHERE code = '$code';";
-            //echo $sql . "\n";
-            DB_query($sql);
+            try {
+                $db->conn->update(
+                    $_TABLES['shop.coupons'],
+                    array('balance' => $bal),
+                    array('code' => $code),
+                    array(Database::STRING, Database::INTEGER)
+                );
+            } catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            }
             if ($remain == 0) break;
         }
         if ($applied > 0) {
             self::writeLog('', $uid, $applied, 'gc_applied', $order_id);
         }
-
-        /*if ($applied > 0) {
-            // Record one payment record for the coupon
-            $Pmt = new Payment;
-            $Pmt->setRefID(uniqid())
-                ->setAmount($applied)
-                ->setGateway('_coupon')
-                ->setMethod('Apply Coupon')
-                ->setComment($LANG_SHOP['gc_pmt_comment'])
-                ->setOrderID($order_id)
-                ->Save();
-        }*/
 
         Cache::clear('coupons_' . $uid);
         return $retval;     // return array of applied coupons and amounts
@@ -378,17 +403,24 @@ class Coupon extends \Shop\Product
      * @param   float   $amount Amount to restore
      * @return  boolean     True on success, False on error
      */
-    public static function Restore($code, $amount)
+    public static function Restore(string $code, float $amount) : bool
     {
         global $_TABLES;
 
-        $code = DB_escapeString($code);
-        $amount = (float)$amount;
-        $sql = "UPDATE {$_TABLES['shop.coupons']}
-            SET balance = balance + $amount
-            WHERE code = '$code'";
-        $res = DB_query($sql);
-        return DB_error() ? false : true;
+        $db = Database::getInstance();
+        try {
+            $db->conn->executeStatement(
+                "UPDATE {$_TABLES['shop.coupons']} SET
+                balance = balance + ?
+                WHERE code = ?",
+                array($amount, $code),
+                array(Database::STRING, Database::STRING)
+            );
+            return true;
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return false;
+        }
     }
 
 
@@ -412,13 +444,10 @@ class Coupon extends \Shop\Product
             $recip_email = $Order->getBuyerEmail();
             $Item->addSpecial('recipient_email', $recip_email);
         }
-        $sender_name = SHOP_getVar($IPN, 'payer_name', 'string');
+        $sender_name = $IPN['payer_name'];
         $msg = SHOP_getVar($special, 'message', 'string');
         $uid = $Item->getOrder()->getUid();
         $gc_code = self::Purchase($amount, $uid);
-        // Add the code to the options text. Saving the item will happen
-        // next during addSpecial
-        //$Item->addOptionText($LANG_SHOP['code'], $gc_code);
         $Item->addSpecial('gc_code', $gc_code);
         $Item->Save();
         parent::handlePurchase($Item, $IPN);
@@ -448,9 +477,13 @@ class Coupon extends \Shop\Product
             return;
         }
 
+        $Shop = new Company;
         Log::write('shop_system', Log::DEBUG, "Sending Coupon to " . $recip);
-        $T = new Template;
-        $T->set_file('message', 'coupon_email_message.thtml');
+        $T = new Template('notify');
+        $T->set_file(array(
+            'header_tpl' => 'header.thtml',
+            'message' => 'coupon_email_message.thtml',
+        ) );
         if ($exp < self::MAX_EXP) {
             $dt = new \Date($exp);
             $exp = $dt->format(Dates::FMT_FULLDATE);
@@ -461,7 +494,21 @@ class Coupon extends \Shop\Product
             'sender_name' => $sender,
             'submit_url' => self::redemptionUrl($gc_code),
             'message'   => strip_tags($msg),
+            // Elements for notification header or footer
+            'shop_name'         => $Shop->getCompany(),
+            'shop_addr1'        => $Shop->getAddress1(),
+            'shop_addr2'        => $Shop->getAddress2(),
+            'shop_city'         => $Shop->getCity(),
+            'shop_state'        => $Shop->getState(),
+            'shop_postal'       => $Shop->getPostal(),
+            'shop_phone'        => $Shop->getPhone(),
+            'shop_email'        => $Shop->getEmail(),
+            'shop_addr'         => $Shop->toHTML('address'),
+            'logo_url'          => Config::get('logo_url'),
+            'logo_height'       => Config::get('logo_height'),
+            'logo_width'        => Config::get('logo_width'),
         ) );
+        $T->set_var('header', $T->parse('', 'header_tpl'));
         $T->parse('output', 'message');
         $msg_text = $T->finish($T->get_var('output'));
         if (empty($recip_name)) {
@@ -551,6 +598,8 @@ class Coupon extends \Shop\Product
         $uid = (int)$uid;
         if ($uid < 2) return array();   // Can't get anonymous coupons here
 
+        $db = Database::getInstance();
+        $qb = $db->conn->createQueryBuilder();
         $all = $all ? 1 : 0;
         $cache_key = 'coupons_' . $uid . '_' . $all;
         $updatecache = false;       // indicator that cache must be updated
@@ -559,16 +608,29 @@ class Coupon extends \Shop\Product
         if ($coupons === NULL) {*/
             // cache not found, read all non-expired coupons
             $coupons = array();
-            $sql = "SELECT * FROM {$_TABLES['shop.coupons']}
-                WHERE status='" . self::VALID . "' AND redeemer = '$uid'";
-            if (!$all) {
-                $sql .= " AND (expires = '0000-00-00' OR expires >= '$today') AND balance > 0";
+            try {
+                $qb->select('*')
+                   ->from($_TABLES['shop.coupons'])
+                   ->where('status = :status')
+                   ->andWhere('redeemer = :uid')
+                   ->setParameter('status', self::VALID, Database::STRING)
+                   ->setParameter('uid', uid, Database::INTEGER);
+                if (!$all) {
+                    $qb->andWhere('expires = :nulldate OR expires >= :today')
+                       ->andWhere('balance > 0')
+                       ->setParameter('today', $today, Database::STRING)
+                       ->setParameter('nulldate', '0000-00-00', Database::STRING);
+                }
+                $qb->orderBy('redeemed', 'ASC');
+                $data = $qb->execute->fetchAllAssociative();
+            } catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $data = false;
             }
-            $sql .= " ORDER BY redeemed ASC";
-            //echo $sql;die;
-            $res = DB_query($sql);
-            while ($A = DB_fetchArray($res, false)) {
-                $coupons[] = $A;
+            if (is_array($data)) {
+                foreach ($data as $A) {
+                    $coupons[] = $A;
+                }
             }
             $updatecache = true;
         /*} else {
@@ -647,22 +709,36 @@ class Coupon extends \Shop\Product
     {
         global $_TABLES, $_USER;
 
-        $msg = DB_escapeString($msg);
-        $order_id = DB_escapeString($order_id);
-        $code = DB_escapeString($code);
+        $db = Database::getInstance();
         $amount = (float)$amount;
         $uid = (int)$uid;
         $done_by = (int)$_USER['uid'];
 
-        $sql = "INSERT INTO {$_TABLES['shop.coupon_log']} SET
-            code = '{$code}',
-            uid = {$uid},
-            done_by = {$done_by},
-            order_id = '{$order_id}',
-            ts = UNIX_TIMESTAMP(),
-            amount = {$amount},
-            msg = '{$msg}'";
-        DB_query($sql);
+        try {
+            $db->conn->insert(
+                $_TABLES['shop.coupon_log'],
+                array(
+                    'code' => $code,
+                    'uid' => $uid,
+                    'done_by' => $done_by,
+                    'order_id' => $order_id,
+                    'ts' => time(),
+                    'amount' => $amount,
+                    'msg' => $msg,
+                ),
+                array(
+                    Database::STRING,
+                    Database::INTEGER,
+                    Database::INTEGER,
+                    Database::STRING,
+                    Database::INTEGER,
+                    Database::STRING,
+                    Database::STRING,
+                )
+            );
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
     }
 
 
@@ -681,15 +757,26 @@ class Coupon extends \Shop\Product
 
         $log = array();
         $uid = (int)$uid;
+        $db = Database::getInstance();
         $sql = "SELECT * FROM {$_TABLES['shop.coupon_log']}
-                WHERE uid = $uid";
+                WHERE uid = ?";
+        $values = array($uid);
+        $types = array(Database::INTEGER);
         if ($code != '') {
-            $sql .= " AND code = '" . DB_escapeString($code) . "'";
+            $sql .= " AND code = ?";
+            $values[] = $code;
+            $types[] = Database::STRING;
         }
         $sql .= ' ORDER BY ts DESC';
-        $res = DB_query($sql);
-        if ($res) {
-            while ($A = DB_fetchArray($res, false)) {
+        try {
+            $data = $db->conn->executeQuery($sql, $values, $types)
+                             ->getchAllAssociative();
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $data = false;
+        }
+        if (is_array($data)) {
+            foreach ($data as $A) {
                 $log[] = $A;
             }
         }
@@ -781,44 +868,55 @@ class Coupon extends \Shop\Product
 
         // Check that the requested status is valid
         if ($newstatus != self::VOID && $newstatus != self::VALID) {
-            Log::write('shop_system', Log::ERROR, "Invalid status sent to Coupon::Void(): $newval");
+            Log::write('shop_system', Log::ERROR, __METHOD__ . ": Invalid status: $newstatus");
             return false;
         }
 
         Log::write('shop_system', Log::DEBUG, "Setting $code as $newstatus");
-        $code = DB_escapeString($code);
-        $sql = "SELECT * FROM {$_TABLES['shop.coupons']}
-                WHERE code = '$code'";
-        $res = DB_query($sql);
-        if (DB_numRows($res) == 1) {
-            $A = DB_fetchArray($res, false);
-        } else {
+        $db = Database::getInstance();
+        $qb = $db->conn->createQueryBuilder();
+        try {
+            $data = $db->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.coupons']}
+                WHERE code = ?",
+                array($code),
+                array(Database::STRING)
+            )->fetchAssociative();
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $data = false;
+        }
+        if (!is_array($data) || empty($data)) {
             return false;
         }
 
-        $balance = (float)$A['balance'];
-        $newstatus = DB_escapeString($newstatus);
+        $balance = (float)$data['balance'];
 
-        $sql = "UPDATE {$_TABLES['shop.coupons']}
-            SET status = '$newstatus'
-            WHERE code = '$code'";
+        $qb->update($_TABLES['shop.coupons'])
+           ->set('status', ':newstatus')
+           ->where('code = :code')
+           ->setParameter('newstatus', $newstatus, Database::STRING)
+           ->setParameter('code', $code, Database::STRING);
         if ($newstatus == self::VOID) {
             if ($balance <= 0) {
                 // break here, balance must be > 0 to void
                 return false;
             }
             $log_code = 'gc_voided';
-            $sql .= ' AND balance > 0';
+            $qb->andWhere("balance > 0");
         } else {
             $log_code = 'gc_unvoided';
         }
-        DB_query($sql);
-        if (!DB_error()) {
-            self::writeLog($code, $A['redeemer'], $balance, $log_code);
-            return true;
-        } else {
+        $values[] = $code;
+        $types[] = Database::STRING;
+        try {
+            $qb->execute();
+            self::writeLog($code, $data['redeemer'], $balance, $log_code);
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
+        return true;
     }
 
 
@@ -833,26 +931,42 @@ class Coupon extends \Shop\Product
     {
         global $_TABLES, $_CONF;
 
-        $sql = "SELECT * FROM {$_TABLES['shop.coupons']} ";
+        $db = Database::getInstance();
+        $qb = $db->conn->createQueryBuilder();
+        $qb->select('*')
+            ->from($_TABLES['shop.coupons']);
         if ($code == '') {
             $today = $_CONF['_now']->format('Y-m-d', true);
-            $sql .= "WHERE balance > 0 AND expires < '$today'";
+            $qb->where('balance > 0 AND expires < :today')
+               ->setParameter('today', $today, Database::STRING);
         } else {
-            $code = DB_escapeString($code);
-            $sql .= "WHERE balance > 0 AND code =  '$code'";
+            $qb->where('balance > 0 AND code = :code')
+               ->setParameter('code', $code, Database::STRING);
         }
-        $res = DB_query($sql);
-        while ($A = DB_fetchArray($res, false)) {
-            $c = DB_escapeString($A['code']);
-            $sql1 = "UPDATE {$_TABLES['shop.coupons']}
-                SET balance = 0
-                WHERE code = '$c';";
-            DB_query($sql1);
-            self::writeLog($c, $A['redeemer'], $A['balance'], 'gc_expired');
+        try {
+            $data = $qb->execute()->fetchAllAssociative();
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $data = false;
         }
-        if (DB_numRows($res) > 0) {
-            // If there were any updates, clear the coupon cache
-            Cache::clear('coupons');
+        if (is_array($data)) {
+            foreach ($data as $A) {
+                try {
+                    $db->conn->update(
+                        $_TABLES['shop.coupons'],
+                        array('balance' => 0),
+                        array('code' => $A['code']),
+                        array(Database::INTEGER, Database::STRING)
+                    );
+                } catch (\Exception $e) {
+                    Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                }
+                self::writeLog($c, $A['redeemer'], $A['balance'], 'gc_expired');
+            }
+            if (count($data) > 0) {
+                // If there were any updates, clear the coupon cache
+                Cache::clear('coupons');
+            }
         }
     }
 
@@ -883,8 +997,23 @@ class Coupon extends \Shop\Product
     {
         global $_TABLES;
 
-        DB_query("TRUNCATE {$_TABLES['shop.coupons']}");
-        DB_query("TRUNCATE {$_TABLES['shop.coupon_log']}");
+        $db = Database::getInstance();
+        try {
+            $db->conn->executeStatement(
+                "TRUNCATE {$_TABLES['shop.coupons']}"
+            );
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return false;
+        }
+        try {
+            $db->conn->executeStatement(
+                "TRUNCATE {$_TABLES['shop.coupon_log']}"
+            );
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return false;
+        }
     }
 
 
@@ -1144,6 +1273,38 @@ class Coupon extends \Shop\Product
         return false;
     }
 
+
+    /**
+     * Handle a product refund.
+     *
+     * @param   object  $OI     OrderItem being refunded
+     * @param   object  $IPN    Shop IPN data
+     * @return  boolean     True on success, False on error
+     */
+    public function handleRefund(OrderItem $OI, IPN $IPN) : bool
+    {
+        $retval = false;
+        $extras = $OI->getExtras();
+        if (isset($extras['special']) && is_array($extras['special'])) {
+            if (isset($extras['special']['gc_code'])) {
+                self::Void($extras['special']['gc_code']);
+                $retval = true;
+            }
+        }
+        return $retval;
+    }
+
+
+    /**
+     * Gift coupons can't be placed on sale.
+     *
+     * @param   float   $price      Base price to use for calculation
+     * @return  float       On-Sale price (same as base for coupons)
+     */
+    public function getSalePrice(?float $price = NULL) : float
+    {
+        return $this->getBasePrice();
+    }
+
 }
 
-?>

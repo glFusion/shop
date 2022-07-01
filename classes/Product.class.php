@@ -2802,7 +2802,7 @@ class Product
      * @param   float   $price  Optional price override
      * @return  float   Sale price, normal price if not on sale
      */
-    public function getSalePrice($price = NULL)
+    public function getSalePrice(?float $price = NULL) : float
     {
         if ($price === NULL) {
             $price = $this->getBasePrice();
