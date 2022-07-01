@@ -245,7 +245,7 @@ case 'pv_del':
     $from = SESS_getVar('shop.pv_view');
     Shop\ProductVariant::Delete($_REQUEST['pv_id']);
     if ($from === 'pv_bulk') {
-        echo COM_refresh(SHOP_ADMIN_URL . '/index.php?pv_bulk&item_id=' . $_REQUEST['item_id']);
+        echo COM_refresh(SHOP_ADMIN_URL . '/index.php?pv_bulk&item_id=' . $_REQUEST['pv_item_id']);
     } else {
         echo COM_refresh(SHOP_ADMIN_URL . '/index.php?editproduct&tab=variants&id=' . $_REQUEST['item_id']);
     }
