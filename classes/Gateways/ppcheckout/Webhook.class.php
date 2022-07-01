@@ -17,6 +17,7 @@ use Shop\Order;
 use Shop\Models\OrderState;
 use Shop\Models\IPN as IPNModel;
 use Shop\Log;
+use Shop\Config;
 
 
 /**
@@ -131,13 +132,52 @@ class Webhook extends \Shop\Webhook
                         ->setGateway($this->getSource())
                         ->setMethod($this->GW->getDisplayName())
                         ->setComment('Webhook ' . $this->getID())
+                        ->setComplete(true)
                         ->setOrderID($this->getOrderID());
                     if ($Pmt->Save()) {
                         $retval = $this->handlePurchase();
                     }
                 }
+                        $retval = $this->handlePurchase();
                 $this->setID($this->refID);  // use the payment ID
             }
+            break;
+
+        case 'PAYMENT.CAPTURE.REFUNDED':
+            $order_id = '';
+            $pmt_ref = '';
+            if (isset($resource->custom_id)) {
+                $this->setOrderId($resource->custom_id);
+            }
+            if (
+                isset($resource->links) &&
+                is_array($resource->links) &&
+                isset($resource->links[1])
+            ) {
+                $pmt = $resource->links[1];
+                if ($pmt->rel == 'up') {    // original payment reference
+                    $orig_pmt_ref = basename($pmt->href);
+                }
+            }
+            if (!empty($orig_pmt_ref)) {
+                $origPmt = Payment::getByReference($orig_pmt_ref);
+            } else {
+                $origPmt = NULL;
+            }
+
+            $refund_amount = (float)$resource->seller_payable_breakdown->total_refunded_amount->value;
+            $this->setCurrency($resource->seller_payable_breakdown->total_refunded_amount->currency_code);
+            if ($origPmt && !empty($this->getOrderId())) {
+                $Order = Order::getInstance($this->getOrderId());
+                if ($refund_amount >= $Order->getTotal()) {
+                    $this->handleFullRefund($Order);
+                }
+            }
+            $this->setPayment($refund_amount * -1);
+            $this->setComplete($resource->status == 'COMPLETED');
+            $this->setRefId($resource->id);
+            $this->setPmtMethod('refund');
+            $this->recordPayment();
             break;
 
         case 'CHECKOUT.ORDER.APPROVED_X':
@@ -290,32 +330,6 @@ class Webhook extends \Shop\Webhook
                 Log::write('shop_system', Log::ERROR, "Error processing webhook " . $this->getEvent());
             }
             break;
-
-        case 'PAYMENT.CAPTURE.REFUNDED':
-            if (isset($resource->custom_id)) {
-                $this->setOrderID($resource->custom_id);
-                $this->setPayment($resource->amount->value);
-                $this->setCurrency($resource->amount->currency_code);
-                $this->setRefID($resource->id);
-                // Get the payment by reference ID to make sure it's unique
-                $Pmt = Payment::getByReference($this->refID);
-                if ($Pmt->getPmtID() == 0) {
-                    $Pmt->setRefID($this->refID)
-                        ->setAmount($this->getPayment() * -1)
-                        ->setGateway($this->getSource())
-                        ->setMethod($this->getSource())
-                        ->setComment('Webhook ' . $this->getID())
-                        ->setOrderID($this->getOrderID());
-                    $retval = $Pmt->Save();
-                }
-                $this->setID($this->refID);  // use the payment ID
-                $this->logIPN();
-            } else {
-                Log::write('shop_system', Log::ERROR, "Order number not found for refund");
-                $retval = false;
-                break;
-            }
-            break;
         }
         return $retval;;
     }
@@ -340,7 +354,7 @@ class Webhook extends \Shop\Webhook
             return $status;
         }
 
-        if (isset($_SHOP_CONF['sys_test_ipn']) && $_SHOP_CONF['sys_test_ipn']) {
+        if (Config::get('sys_test_ipn')) {
             $this->setVerified(true);
             return true;
         }
