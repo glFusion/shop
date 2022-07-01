@@ -274,7 +274,6 @@ function SHOP_updateShipping(e)
         data: data,
         success: function(result) {
             try {
-console.log(result);
                 //location.reload(true);
                 $("#shipping_cell").html(result['method']['cost']);
                 $("#ord_tax_span").html(result['method']['order_tax']);
