@@ -15,13 +15,15 @@
  * @copyright   Copyright (c) 2009-2020 Lee Garner
  * @copyright   Copyright (c) 2005-2006 Vincent Furia
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 use Shop\Loggers\IPN as logIPN;
 use Shop\Products\Coupon;
 use Shop\Models\OrderState;
@@ -33,9 +35,6 @@ use Shop\Models\IPN as IPNModel;
 if (!defined ('GVERSION')) {
     die ('This file can not be used on its own.');
 }
-
-// Just for E_ALL. If "testing" isn't defined, define it.
-if (!isset($_SHOP_CONF['sys_test_ipn'])) $_SHOP_CONF['sys_test_ipn'] = false;
 
 
 /**
@@ -688,7 +687,7 @@ class IPN
         } else {
             $verified = 0;
         }
-        $order_id = $this->Order !== NULL ? DB_escapeString($this->Order->getOrderId()) : '';
+        $order_id = $this->Order !== NULL ? $this->Order->getOrderId() : '';
         $ipn = new logIPN();
         $ipn->setOrderID($order_id)
             ->setRefID($this->txn_id)   // same as TxnID for IPN messages
@@ -706,20 +705,22 @@ class IPN
      *
      * @return  boolean             True if unique, False otherwise
      */
-    protected function isUniqueTxnId()
+    protected function isUniqueTxnId() : bool
     {
-        global $_TABLES, $_SHOP_CONF;
+        global $_TABLES;
 
-        if (isset($_SHOP_CONF['sys_test_ipn']) && $_SHOP_CONF['sys_test_ipn']) {
+        if (Config::get('sys_test_ipn')) {
             // Special config value set only in config.php for IPN testing
             return true;
         }
 
+        $db = Database::getInstance();
         // Count purchases with txn_id, if > 0
-        $count = DB_count(
+        $count = $db->getCount(
             $_TABLES['shop.ipnlog'],
-            array('gateway', 'txn_id', 'event'),
-            array($this->GW->getName(), $this->txn_id, $this->event)
+            array('gateway', 'ref_id', 'event'),
+            array($this->GW->getName(), $this->txn_id, $this->event),
+            array(Database::STRING, Database::STRING, Database::STRING)
         );
         if ($count > 0) {
             Log::write('shop_system', Log::ERROR, "Received duplicate IPN {$this->txn_id} for {$this->gw_id}");
@@ -770,7 +771,7 @@ class IPN
      */
     protected function handlePurchase()
     {
-        global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP;
+        global $_TABLES, $_CONF, $LANG_SHOP;
 
         $status = is_null($this->Order) ? $this->createOrder() : 0;
         if ($status) {
@@ -854,16 +855,22 @@ class IPN
      */
     protected function createOrder()
     {
-        global $_TABLES, $_SHOP_CONF;
+        global $_TABLES;
 
         // See if an order already exists for this transaction.
         // If so, load it and update the status. If not, continue on
         // and create a new order
-        $order_id = DB_getItem(
-            $_TABLES['shop.orders'],
-            'order_id',
-            "pmt_txn_id='" . DB_escapeString($this->txn_id) . "'"
-        );
+        $db = Database::getInstance();
+        try {
+            $order_id = $db->getItem(
+                $_TABLES['shop.orders'],
+                'order_id',
+                array('pmt_txn_id' => $this->txn_id)
+            );
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return 1;
+        }
 
         if (!empty($order_id)) {
             $this->Order = Order::getInstance($order_id);
@@ -879,23 +886,29 @@ class IPN
             }
 
             foreach ($this->items as $id=>$item) {
-                $options = DB_escapeString($item['options']);
                 $option_desc = array();
-                //$tmp = explode('|', $item['item_number']);
-                //list($item_number,$options) =
-                //if (is_numeric($item_number)) {
                 $P = Product::getByID($item['item_id'], $this->custom);
                 $item['short_description'] = $P->getShortDscp();
-                if (!empty($options)) {
+                if (!empty($item['options'])) {
                     // options is expected as CSV
-                    $sql = "SELECT attr_name, attr_value
-                        FROM {$_TABLES['shop.prod_attr']}
-                        WHERE attr_id IN ($options)";
-                    $optres = DB_query($sql);
+                    try {
+                        $data = $db->conn->executeQuery(
+                            "SELECT attr_name, attr_value
+                            FROM {$_TABLES['shop.prod_attr']}
+                            WHERE attr_id IN (?)",
+                            array($item['options']),
+                            array(Database::PARAM_INT_ARRAY)
+                        )->fetchAllAssociative();
+                    } catch (\Exception $e) {
+                        Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                        $data = false;
+                    }
                     $opt_str = '';
-                    while ($O = DB_fetchArray($optres, false)) {
-                        $opt_str .= ', ' . $O['attr_value'];
-                        $option_desc[] = $O['attr_name'] . ': ' . $O['attr_value'];
+                    if (is_array($data)) {
+                        foreach ($data as $O) {
+                            $opt_str .= ', ' . $O['attr_value'];
+                            $option_desc[] = $O['attr_name'] . ': ' . $O['attr_value'];
+                        }
                     }
                 }
 
@@ -920,7 +933,7 @@ class IPN
                     'token' => md5(time()),
                     'price' => $item['price'],
                     'taxable' => $P->isTaxable(),
-                    'options' => $options,
+                    'options' => $item['options'],
                     'options_text' => $option_desc,
                     'extras' => $item['extras'],
                     'shipping' => SHOP_getVar($item, 'shipping', 'float'),
@@ -929,12 +942,6 @@ class IPN
                 );
                 $this->Order->addItem($args);
             }   // foreach item
-            /*if (
-                !$this->Order->hasItems() &&
-                !(isset($_SHOP_CONF['sys_test_ipn']) && $_SHOP_CONF['sys_test_ipn'])
-            ) {
-                return 1; // shouldn't normally be empty except during testing
-            }*/
         }
         $this->Order->setUid($this->uid);
         $this->Order->setBuyerEmail($this->payer_email);
@@ -978,26 +985,25 @@ class IPN
      */
     protected function handleRefund()
     {
-        global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP;
+        global $_TABLES, $_CONF, $LANG_SHOP;
 
         // Try to get original order information.  Use the "parent transaction"
         // or invoice number, if available from the IPN message
         $order_id = $this->getOrderId();
         if (empty($order_id)) {
-            $parent_txn = $this->getParentTxnId();
-            if ($parent_txn != '') {
-                $order_id = DB_getItem(
-                    $_TABLES['shop.orders'],
-                    'order_id',
-                    "pmt_txn_id = '" . DB_escapeString($parent_txn_id) . "'"
-                );
+            $parent_txn_id = $this->getParentTxnId();
+            if ($parent_txn_id != '') {
+                $parentPmt = Payment::getByReference($parent_txn_id);
+                if ($parentPmt->getPmtId() > 0) {  // valid payment found
+                    $order_id = $parentPmt->getOrderId();
+                }
             }
         }
 
         if (!empty($order_id)) {
             $Order = Order::getInstance($order_id);
         }
-        if (!$Order || $Order->isNew) {
+        if (!$Order || $Order->isNew()) {
             return false;
         }
 
@@ -1006,23 +1012,23 @@ class IPN
 
         $item_total = 0;
         foreach ($Order->getItems() as $key=>$Item) {
-            $item_total += $Item->quantity * $Item->price;
+            $item_total += $Item->getQuantity() * $Item->getPrice();
         }
         $item_total += $Order->miscCharges();
 
-        if ($item_total == $refund_amt) {
+        if ($item_total <= $refund_amt) {
             // Completely refunded, let the items handle any refund actions.
             // None for catalog items since there's no inventory,
             // but plugin items may need to do something.
-            foreach ($Order->getItems() as $key=>$data) {
-                $P = Product::getByID($data['product_id'], $this->custom);
+            foreach ($Order->getItems() as $key=>$OI) {
+                $OI->getProduct()->handleRefund($OI, $this->IPN);
                 // Don't care about the status, really.  May not even be
                 // a plugin function to handle refunds
-                $P->handleRefund($Order, $this->ipn_data);
             }
             // Update the order status to Refunded
             $Order->updateStatus('refunded');
         }
+        $this->recordPayment($order_id);
         $msg = sprintf($LANG_SHOP['refunded_x'], $this->getCurrency()->Format($refund_amt));
         $Order->Log($msg);
     }
@@ -1248,7 +1254,14 @@ class IPN
     {
         global $_TABLES;
 
-        DB_query("TRUNCATE {$_TABLES['shop.ipnlog']}");
+        $db = Database::getInstance();
+        try {
+            $db->conn->executeStatement(
+                "TRUNCATE {$_TABLES['shop.ipnlog']}"
+            );
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
     }
 
 
@@ -1259,10 +1272,12 @@ class IPN
      * @param   mixed   $value  Value of DB field.
      * @return  integer     Count of matching records
      */
-    public static function Count($id='', $value='')
+    public static function Count() : int
     {
         global $_TABLES;
-        return DB_count($_TABLES['shop.ipnlog'], $id, $value);
+
+        $db = Database::getInstance();
+        return $db->getCount($_TABLES['shop.ipnlog']);
     }
 
 
