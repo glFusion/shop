@@ -84,7 +84,6 @@ function SHOP_updateOrderStatus(order_id, oldstatus, newstatus, showlog, comment
         data: data,
         success: function(jsonObj) {
             try {
-                console.log(jsonObj);
                 if (jsonObj.showlog == 1) {
                     var tbl = document.getElementById("shopOrderLog");
                     if (tbl) {
@@ -185,7 +184,6 @@ function SHOP_voidItem(component, item_id, newval, elem)
         url: site_admin_url + "/plugins/shop/ajax.php",
         data: data,
         success: function(result) {
-            console.log(result);
             try {
                 if (result.status) {
                     elem.innerHTML = result.text;
