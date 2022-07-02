@@ -289,7 +289,7 @@ class Coupon extends \Shop\Product
             if ($data['redeemed'] > 0 && $data['redeemer'] > 0) {
                 Log::write('shop_system', Log::ERROR, "Coupon code $code was already redeemed");
                 return array(1, $LANG_SHOP['coupon_apply_msg1']);
-            } elseif ($A['status'] != self::VALID) {
+            } elseif ($data['status'] != self::VALID) {
                 Log::write('shop_system', Log::ERROR, "Coupon $code status is not valid");
                 return array(1, $LANG_SHOP['coupon_apply_msg3']);
             }
@@ -317,7 +317,7 @@ class Coupon extends \Shop\Product
             0,
             sprintf(
                 $LANG_SHOP['coupon_apply_msg0'],
-                Currency::getInstance()->Format($A['amount'])
+                Currency::getInstance()->Format($data['amount'])
             )
         );
     }
@@ -614,7 +614,7 @@ class Coupon extends \Shop\Product
                    ->where('status = :status')
                    ->andWhere('redeemer = :uid')
                    ->setParameter('status', self::VALID, Database::STRING)
-                   ->setParameter('uid', uid, Database::INTEGER);
+                   ->setParameter('uid', $uid, Database::INTEGER);
                 if (!$all) {
                     $qb->andWhere('expires = :nulldate OR expires >= :today')
                        ->andWhere('balance > 0')
@@ -622,7 +622,7 @@ class Coupon extends \Shop\Product
                        ->setParameter('nulldate', '0000-00-00', Database::STRING);
                 }
                 $qb->orderBy('redeemed', 'ASC');
-                $data = $qb->execute->fetchAllAssociative();
+                $data = $qb->execute()->fetchAllAssociative();
             } catch (\Exception $e) {
                 Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $data = false;
