@@ -2786,8 +2786,9 @@ class Product
      */
     public function isOnSale()
     {
+        $price = $this->getBasePRice();
         $sp = $this->getSalePrice();
-        return $this->price > 0 && $sp < $this->price ? true : false;
+        return $price > 0 && $sp < $price ? true : false;
     }
 
 
