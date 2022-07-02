@@ -17,8 +17,8 @@
 	<a data-uk-toggle="{target:'.toggle_ipn{ipn_id}'}">
 		<div class="uk-alert">
 			<div class="uk-margin-right tooltip" title="Click to view" style="display:inline;">
-				<i class="uk-icon uk-icon-compress toggle_ipn{ipn_id} uk-hidden"></i>
-				<i class="uk-icon uk-icon-expand toggle_ipn{ipn_id}"></i>
+				<i class="uk-icon uk-icon-chevron-down toggle_ipn{ipn_id} uk-hidden"></i>
+				<i class="uk-icon uk-icon-chefron-right toggle_ipn{ipn_id}"></i>
 			</div>
 			{ipn_date} {ipn_event}
 		</div>
