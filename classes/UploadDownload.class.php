@@ -18,6 +18,7 @@
  * @filesource
  */
 namespace Shop;
+use glFusion\Log\Log;
 
 
 /**
