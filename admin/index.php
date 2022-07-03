@@ -57,7 +57,7 @@ $expected = array(
     'ft_save', 'ft_del', 'ft_move',
     'savepayment', 'delpayment',
     'coup_bulk_void', 'coup_bulk_unvoid',
-    'pr_save', 'pr_del',
+    'pr_save', 'pr_del', 'saveorderstatus',
     // Views to display
     'ipnlog', 'editproduct', 'editcat', 'categories',
     'pov_edit', 'other',
@@ -74,6 +74,7 @@ $expected = array(
     'features', 'ft_view', 'ft_edit',
     'pi_products', 'pi_edit', 'pi_save', 'pi_del',
     'products', 'ipndetail', 'pr_edit', 'pr_list',
+    'editstatus',
     // deprecated
     'history', 'orders', 'shipments', 'ord_ship', 'ord_pmts',
 );
@@ -668,6 +669,15 @@ case 'coup_bulk_unvoid':
     echo COM_refresh(SHOP_ADMIN_URL . '/index.php?coupons');
     break;
 
+case 'saveorderstatus':
+    $OS = Shop\OrderStatus::getInstance($actionval);
+    if ($OS->Save($_POST)) {
+        echo COM_refresh(SHOP_ADMIN_URL . '/index.php?wfadmin');
+    } else {
+        echo COM_refresh(SHOP_ADMIN_URL . '/index.php?editstatus=' . $_POST['id']);
+    }
+    break;
+
 default:
     $view = $action;
     break;
@@ -930,7 +940,7 @@ case 'carrier_config':
     break;
 
 case 'wfadmin':
-    $content .= Shop\Workflow::adminList();
+    //$content .= Shop\Workflow::adminList();
     $content .= Shop\OrderStatus::adminList();
     break;
 
@@ -1104,6 +1114,10 @@ case 'none':
 case 'pi_products':
     $content .= Shop\Menu::adminCatalog($view);
     $content .= Shop\Products\Plugin::adminList();
+    break;
+
+case 'editstatus':
+    $content .= Shop\OrderStatus::getById($actionval)->edit();
     break;
 
 default:

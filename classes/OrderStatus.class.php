@@ -12,6 +12,8 @@
  * @filesource
  */
 namespace Shop;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 
 
 /**
@@ -20,7 +22,7 @@ namespace Shop;
  * individually enabled or disabled.
  * @package shop
  */
-class OrderStatus extends Workflow
+class OrderStatus
 {
     use \Shop\Traits\DBO;        // Import database operations
 
@@ -28,21 +30,35 @@ class OrderStatus extends Workflow
      * @var string */
     protected static $TABLE = 'shop.orderstatus';
 
+    /** Record ID.
+     * @var integer */
+    private $id = 0;
+
     /** Status Name.
      * @var string */
-    private $name;
+    private $name = '';
 
     /** Enabled flag.
      * @var integer */
-    public $enabled;
+    public $enabled = 1;
 
     /** True to notify the buyer when an order changes to this status.
      * @var boolean */
-    private $notify_buyer;
+    private $notify_buyer = 0;
 
     /** True to notify the administrator when an order changes to this status.
      * @var boolean */
-    private $notify_admin;
+    private $notify_admin = 0;
+
+    /** Flag indicating that this status represents a valid order.
+     * Canceled, Refunded mark an order as "invalid" for example.
+     * @var boolean */
+    private $order_valid = 1;
+
+    /** Flag indicating that this status is eligible for affiliate payments.
+     * @var boolean */
+    private $aff_eligible = 0;
+
 
     /**
      * Constructor.
@@ -51,19 +67,60 @@ class OrderStatus extends Workflow
      * @see     self::getAll()
      * @param   array   $A  Array of data from the DB
      */
-    public function __construct($A=array())
+    public function __construct(?array $A=NULL)
     {
         if (is_array($A)) {
-            $this->name         = SHOP_getVar($A, 'name', 'string', 'undefined');
-            $this->enabled      = SHOP_getVar($A, 'enabled', 'integer', 0);
-            $this->notify_buyer = SHOP_getVar($A, 'notify_buyer', 'integer', 1);
-            $this->notify_admin = SHOP_getVar($A, 'notify_admin', 'integer', 1);
-        } else {
-            $this->name         = 'undefined';
-            $this->enabled      = 0;
-            $this->notify_buyer = 0;
-            $this->notify_admin = 0;
+            $this->setVars($A);
         }
+    }
+
+
+    /**
+     * Set the record variables into the array.
+     *
+     * @param   array   $A      Array from DB or $_POST
+     * @return  object  $this
+     */
+    public function setVars(array $A) : self
+    {
+        $this->id           = SHOP_getVar($A, 'id', 'integer', 0);
+        $this->name         = SHOP_getVar($A, 'name', 'string', 'undefined');
+        $this->enabled      = SHOP_getVar($A, 'enabled', 'integer', 0);
+        $this->notify_buyer = SHOP_getVar($A, 'notify_buyer', 'integer', 0);
+        $this->notify_admin = SHOP_getVar($A, 'notify_admin', 'integer', 0);
+        $this->order_valid  = isset($A['order_valid']) ? (int)$A['order_valid'] : 0;
+        $this->aff_eligible = isset($A['aff_eligible']) ? (int)$A['aff_eligible'] : 0;
+        return $this;
+    }
+
+
+    /**
+     * Get a single status by its record ID.
+     * Normally used when editing and updating.
+     *
+     * @param   integer $id     Record ID
+     * @return  object      OrderStatus object
+     */
+    public static function getById(int $id) : self
+    {
+        global $_TABLES;
+
+        $db = Database::getInstance();
+        try {
+            $data = $db->conn->executeQuery(
+                "SELECT * FROM {$_TABLES[self::$TABLE]} WHERE id = ?",
+                array($id),
+                array(Database::INTEGER)
+            )->fetchAssociative();
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $data = false;
+        }
+        $retval = new self;
+        if (is_array($data)) {
+            $retval->setVars($data);
+        }
+        return $retval;
     }
 
 
@@ -72,7 +129,7 @@ class OrderStatus extends Workflow
      *
      * @param   object  $Cart   Not used, for compatibility with Workflow::getAll()
      */
-    public static function getAll($Cart=NULL)
+    public static function getAll()
     {
         global $_TABLES;
         static $statuses = NULL;
@@ -207,6 +264,48 @@ class OrderStatus extends Workflow
     }
 
 
+    private static function _getByFlagValue(?string $column=NULL, ?int $status=NULL) : array
+    {
+        global $_TABLES;
+
+        $retval = array();
+        $db = Database::getInstance();
+        $sql = "SELECT * FROM {$_TABLES['shop.orderstatus']}
+            WHERE enabled = ?";
+        $values = array(1);
+        $types = array(Database::INTEGER);
+        if ($column !== NULL && $status !== NULL) {
+            $sql .= " AND $column = ?";
+            $values[] = $status;
+            $types[] = Database::INTEGER;
+        }
+        try {
+            $data = $db->conn->executeQuery($sql, $values, $types)->fetchAllAssociative();
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $data = false;
+        }
+        if (is_array($data)) {
+            foreach ($data as $A) {
+                $retval[$A['name']] = new self($A);
+            }
+        }
+        return $retval;
+    }
+
+
+    public static function getOrderValid() : array
+    {
+        return self::_getByFlagValue('order_valid', 1);
+    }
+
+
+    public static function getAffiliateEligible() : array
+    {
+        return self::_getByFlagValue('aff_eligible', 1);
+    }
+
+
     /**
      * Display the admin list order statuses.
      *
@@ -214,19 +313,18 @@ class OrderStatus extends Workflow
      */
     public static function adminList()
     {
-        global $_SHOP_CONF, $_TABLES, $LANG_SHOP;
+        global $_SHOP_CONF, $_TABLES, $LANG_SHOP, $LANG_ADMIN;
 
         $header_arr = array(
+            array(
+                'text'  => $LANG_ADMIN['edit'],
+                'field' => 'edit',
+                'sort'  => false,
+            ),
             array(
                 'text'  => $LANG_SHOP['name'],
                 'field' => 'name',
                 'sort'  => false,
-            ),
-            array(
-                'text'  => $LANG_SHOP['enabled'],
-                'field' => 'enabled',
-                'sort'  => false,
-                'align' => 'center',
             ),
             array(
                 'text'  => $LANG_SHOP['notify_buyer'],
@@ -240,7 +338,24 @@ class OrderStatus extends Workflow
                 'sort'  => false,
                 'align' => 'center',
             ),
+            array(
+                'text'  => $LANG_SHOP['order_valid'],
+                'field' => 'order_valid',
+                'sort'  => false,
+                'align' => 'center',
+            ),
         );
+        if (Config::get('aff_enabled')) {
+            // Add the affiliate-eligible checkbox if the affiliate
+            // system is enabled.
+            $header_arr[] = array(
+                'text'  => $LANG_SHOP['aff_eligible'],
+                'field' => 'aff_eligible',
+                'sort'  => false,
+                'align' => 'center',
+            );
+        }
+
         $defsort_arr = array(
             'field'     => 'id',
             'direction' => 'ASC',
@@ -248,6 +363,12 @@ class OrderStatus extends Workflow
         $display = COM_startBlock(
             '', '', COM_getBlockTemplate('_admin_block', 'header')
         );
+        $display .= "<h2>{$LANG_SHOP['statuses']}</h2>\n";
+        $display .= FieldList::buttonLink(array(
+            'text' => $LANG_SHOP['new_item'],
+            'url' => SHOP_ADMIN_URL . '/index.php?editstatus=0',
+            'style' => 'success',
+        ) );
         $query_arr = array(
             'table' => 'shop.orderstatus',
             'sql' => "SELECT * FROM {$_TABLES['shop.orderstatus']}",
@@ -258,7 +379,6 @@ class OrderStatus extends Workflow
             'form_url' => SHOP_ADMIN_URL . '/index.php',
         );
 
-        $display .= "<h2>{$LANG_SHOP['statuses']}</h2>\n";
         $display .= $LANG_SHOP['admin_hdr_wfstatus'] . "\n";
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_statuslist',
@@ -285,9 +405,17 @@ class OrderStatus extends Workflow
         $retval = '';
 
         switch($fieldname) {
+        case 'edit':
+            $retval = FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . '/index.php?editstatus=' . $A['id'],
+            ) );
+            break;
+
         case 'enabled':
         case 'notify_buyer':
         case 'notify_admin':
+        case 'order_valid':
+        case 'aff_eligible':
             $retval .= FieldList::checkbox(array(
                 'name' => "{$fieldname}_check",
                 'id' => "tog{$fieldname}{$A['id']}",
@@ -306,6 +434,128 @@ class OrderStatus extends Workflow
         }
 
         return $retval;
+    }
+
+
+    /**
+     * Edit or create an order status record.
+     *
+     * @return  string      HTML for the editing form
+     */
+    public function edit() : string
+    {
+        $T = new Template('admin');
+        $T->set_file(array(
+            'form' => 'orderstatus.thtml',
+            'tips' => '../tooltipster.thtml',
+        ) );
+        $T->set_var(array(
+            'os_id' => $this->id,
+            'name' => $this->name,
+            'old_name' => $this->name,
+            'enabled_chk' => $this->enabled ? 'checked="checked"' : '',
+            'notify_buyer_chk' => $this->notify_buyer ? 'checked="checked"' : '',
+            'notify_admin_chk' => $this->notify_admin ? 'checked="checked"' : '',
+            'order_valid_chk' => $this->order_valid ? 'checked="checked"' : '',
+            'aff_eligible_chk' => $this->aff_eligible ? 'checked="checked"' : '',
+            'doc_url' => SHOP_getDocUrl('orderstatus_form'),
+        ) );
+        $T->parse('tooltipster_js', 'tips');
+        $T->parse('output', 'form');
+        return $T->finish($T->get_var('output'));
+    }
+
+
+    /**
+     * Save the current values to the database.
+     *
+     * @param   array   $A      Array of values from $_POST
+     * @return  boolean         True if no errors, False otherwise
+     */
+    public function Save(?array $A = NULL) : bool
+    {
+        global $_TABLES, $_SHOP_CONF;
+
+        $reorder = false;
+        if (is_array($A) && !empty($A)) {
+            $this->setVars($A);
+        }
+        $this->name = strtolower($this->name);
+
+        $db = Database::getInstance();
+        if ($this->id == 0) {
+            // Adding a new record, make sure one doesn't already exist.
+            $max = 0;
+        } elseif ($this->name == $A['old_name']) {
+            // Updating with no name change, one record should exist.
+            $max = 1;
+        } else {
+            // Changing the name, make sure it's not already in use.
+            $max = 0;
+        }
+        $count = $db->getCount(
+            $_TABLES['shop.orderstatus'],
+            array('name'),
+            array($this->name),
+            array(Database::STRING)
+        );
+        if ($count > $max) {
+            COM_setMsg('The item code exists', 'error');
+            return false;
+        }
+
+        if ($this->id > 0) {
+            try {
+                $db->conn->update(
+                    $_TABLES['shop.orderstatus'],
+                    array(
+                        'name' => $this->name,
+                        'notify_buyer' => $this->notify_buyer,
+                        'notify_admin' => $this->notify_admin,
+                        'order_valid' => $this->order_valid,
+                        'aff_eligible' => $this->aff_eligible,
+                    ),
+                    array('id' => $this->id),
+                    array(
+                        Database::STRING,
+                        Database::INTEGER,
+                        Database::INTEGER,
+                        Database::INTEGER,
+                        Database::INTEGER,
+                        Database::INTEGER,
+                    )
+                );
+                $this->id = $db->conn->lastInsertId();
+            } catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                return false;
+            }
+        } else {
+            try {
+                $db->conn->insert(
+                    $_TABLES['shop.orderstatus'],
+                    array(
+                        'name' => $this->name,
+                        'notify_buyer' => $this->notify_buyer,
+                        'notify_admin' => $this->notify_admin,
+                        'order_valid' => $this->order_valid,
+                        'aff_eligible' => $this->aff_eligible,
+                    ),
+                    array(
+                        Database::STRING,
+                        Database::INTEGER,
+                        Database::INTEGER,
+                        Database::INTEGER,
+                        Database::INTEGER,
+                    )
+                );
+                $this->id = $db->conn->lastInsertId();
+            } catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                return false;
+            }
+        }
+        return true;
     }
 
 }

@@ -288,11 +288,13 @@ $_SQL = array(
 
 'shop.orderstatus' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.orderstatus']}` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `orderby` int(3) unsigned NOT NULL DEFAULT '0',
-  `enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
+  `orderby` int(3) NOT NULL DEFAULT 999,
+  `enabled` tinyint(1) unsigned NOT NULL DEFAULT 1,
   `name` varchar(20) NOT NULL,
-  `notify_buyer` tinyint(1) NOT NULL DEFAULT '1',
-  `notify_admin` tinyint(1) unsigned NOT NULL DEFAULT '1',
+  `notify_buyer` tinyint(1) unsigned NOT NULL DEFAULT 0,
+  `notify_admin` tinyint(1) unsigned NOT NULL DEFAULT 0,
+  `order_valid` tinyint(1) unsigned NOT NULL DEFAULT 0,
+  `aff_eligible` tinyint(1) unsigned NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`),
   KEY `orderby` (`orderby`)
@@ -988,6 +990,10 @@ $SHOP_UPGRADE['1.5.0'] = array(
     "ALTER TABLE {$_TABLES['shop.features_values']} DROP KEY `id_txt`",
     "ALTER TABLE {$_TABLES['shop.features_values']} CHANGE fv_value fv_value text",
     "ALTER TABLE {$_TABLES['shop.features_values']} ADD UNIQUE `id_txt` (`ft_id`, `fv_value`(128))",
+    "ALTER TABLE {$_TABLES['shop.orderstatus']} ADD order_valid tinyint(1) unsigned not null default 0",
+    "ALTER TABLE {$_TABLES['shop.orderstatus']} ADD aff_eligible tinyint(1) unsigned not null default 0",
+    "ALTER TABLE {$_TABLES['shop.orderstatus']} CHANGE notify_buyer notify_buyer tinyint(1) unsigned not null default 0",
+    "ALTER TABLE {$_TABLES['shop.orderstatus']} CHANGE notify_admin notify_admin tinyint(1) unsigned not null default 0",
 );
 
 

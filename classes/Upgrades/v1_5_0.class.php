@@ -36,6 +36,14 @@ class v1_5_0 extends Upgrade
 
         // Update the payment ref_id column in the IPN log.
         $upd_ref_id = !self::tableHasColumn('shop.ipnlog', 'ref_id');
+        if (!self::tableHasColumn('shop.orderstatus', 'order_valid')) {
+            $SHOP_UPGRADE[self::$ver][] = "UPDATE {$_TABLES['shop.orderstatus']}
+                SET order_valid = 0 WHERE name IN ('refunded', 'canceled')";
+        }
+        if (!self::tableHasColumn('shop.orderstatus', 'order_valid')) {
+            $SHOP_UPGRADE[self::$ver][] = "UPDATE {$_TABLES['shop.orderstatus']}
+                SET aff_eligible = 1 WHERE name IN ('processing', 'shipped', 'closed', 'invoiced')";
+        }
         if ($upd_ref_id) {
             // For gateways that have only one webhook sent, do it the easy way.
             // Update the more complicated gateways after the column is added.
@@ -118,6 +126,36 @@ class v1_5_0 extends Upgrade
                 }
             }
         }
+
+        // Add the 'canceled' order status to the table
+        $count = $db->getCount(
+            $_TABLES['shop.orderstatus'],
+            array('name'),
+            array('canceled'),
+            array(Database::STRING)
+        );
+        if ($count == 0) {
+            // We'll use this flag to update other statuses as well.
+            try {
+                // DB field defaults are all appropriate for this status.
+                $db->conn->insert(
+                    $_TABLES['shop.orderstatus'],
+                    array(
+                        'name' => 'canceled',
+                    ),
+                    array(
+                        Database::STRING,
+                    )
+                );
+            } catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            }
+            self::updateOrderStatus('processing', 1, 0);
+            self::updateOrderStatus('shipped', 1, 1);
+            self::updateOrderStatus('closed', 1, 1);
+            self::updateOrderStatus('invoiced', 1, 1);
+        }
+
         return self::setVersion(self::$ver);
     }
 
@@ -152,6 +190,39 @@ class v1_5_0 extends Upgrade
             break;
         }
         return $retval;
+    }
+
+
+    /**
+     * Update new fields in the OrderStatus table with better values.
+     * Called only once here when the fields are added.
+     *
+     * @param   string  $name   OrderStatus name
+     * @param   integer $valid  Order Valid flag
+     * @param   integer $aff    Affiliate Eligible flag
+     */
+    private static function updateOrderStatus(string $name, int $valid, int $aff) : void
+    {
+        global $_TABLES;
+
+        $db = Database::getInstance();
+        try {
+            $db->conn->update(
+                $_TABLES['shop.orderstatus'],
+                array(
+                    'order_valid' => $valid,
+                    'aff_eligible' => $aff,
+                ),
+                array('name' => $name),
+                array(
+                    Database::INTEGER,
+                    Database::INTEGER,
+                    Database::STRING,
+                )
+            );
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
     }
 
 }

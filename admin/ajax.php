@@ -480,6 +480,8 @@ case 'toggle':
         case 'enabled':
         case 'notify_buyer':
         case 'notify_admin':
+        case 'order_valid':
+        case 'aff_eligible':
             $newval = Shop\OrderStatus::Toggle($_POST['oldval'], $field, $_POST['id']);
             break;
         default:

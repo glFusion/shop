@@ -1,0 +1,76 @@
+{# begin {templatelocation} #}
+{!if os_id}
+<h2>{$LANG_ADMIN['edit']}: {name}</h2>
+{!else}
+<h2>{$LANG_SHOP['create_orderstat']}</h2>
+{!endif}
+<form id="codeform" class="uk-form uk-form-horizontal" action="{site_admin_url}/plugins/shop/index.php" method="post">
+	<input type="hidden" name="id" value="{os_id}" />
+	<input type="hidden" name="old_name" value="{old_name}" />
+	<fieldset>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label">{$LANG_SHOP['code']}:
+			<span id="hlp_name" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls">
+			<input class="uk-input uk-form-width-medium" required type="text" name="name" value="{name}" size="40" maxlength="40" />&nbsp;<i class="uk-icon uk-icon-exclamation-triangle uk-text-danger tooltip" title="{$LANG_SHOP['required']}"></i>
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label">{$LANG_SHOP['notify_buyer']}:
+			<span id="hlp_notify_buyer" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls">
+			<input class="uk-checkbox" type="checkbox" value="1" name="notify_buyer" {notify_buyer_chk} />
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label">{$LANG_SHOP['notify_admin']}:
+			<span id="hlp_notify_admin" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls">
+			<input class="uk-checkbox" type="checkbox" value="1" name="notify_admin" {notify_admin_chk} />
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label">{$LANG_SHOP['order_valid']}:
+			<span id="hlp_order_valid" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls">
+			<input class="uk-checkbox" type="checkbox" value="1" name="order_valid" {order_valid_chk} />
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label">{$LANG_SHOP['aff_eligible']}:
+			<span id="hlp_aff_eligible" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls">
+			<input class="uk-checkbox" type="checkbox" value="1" name="aff_eligible" {aff_eligible_chk} />
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label">{$LANG_SHOP['enabled']}:
+			<span id="hlp_enabled" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls">
+			<input class="uk-checkbox" type="checkbox" value="1" name="enabled" {enabled_chk} />
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label"></label>
+		<div class="uk-form-controls">
+			<button class="uk-button uk-button-success type="submit" name="saveorderstatus" value="{$LANG_SHOP['save']}">{$LANG_ADMIN['save']}</button>
+			<button class="uk-button uk-button-primary" type="reset" />{$LANG_SHOP['clearform']}</button>
+			<a class="uk-button uk-button-default" href="{site_admin_url}/plugins/shop/index.php?wfadmin">{$LANG_ADMIN['cancel']}</a>
+		</div>
+	</div>
+</form>
+{tooltipster_js}
+{# end {templatelocation} #}

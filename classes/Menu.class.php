@@ -117,11 +117,11 @@ class Menu
                 'text' => $LANG_SHOP['gateways'],
                 'active' => $view == 'gwadmin' ? true : false,
             ),
-            array(
+            /*array(
                 'url'  => SHOP_ADMIN_URL . '/index.php?wfadmin=x',
                 'text' => $LANG_SHOP['mnu_wfadmin'],
                 'active' => $view == 'wfadmin' ? true : false,
-            ),
+            ),*/
             array(
                 'url'  => SHOP_ADMIN_URL . '/report.php',
                 'text' => $LANG_SHOP['reports'],
@@ -377,6 +377,11 @@ class Menu
                 'url' => SHOP_ADMIN_URL . '/payments.php?webhooks=x',
                 'text' => $LANG_SHOP['webhooks'],
                 'active' => $view == 'webhooks' ? true : false,
+            ),
+            array(
+                'url' => SHOP_ADMIN_URL . '/index.php?wfadmin=x',
+                'text' => $LANG_SHOP['statuses'],
+                'active' => $view == 'wfadmin' ? true : false,
             ),
         );
         return self::_makeSubMenu($menu_arr);
