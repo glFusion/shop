@@ -63,7 +63,7 @@ $LANG_SHOP = array (
 'admin_hdr_history' => 'This is a list of all purchases in the database. Click on a link for more information about that item',
 'admin_hdr_options' => 'Options can be associated with products. For instance, you may wish to offer small, medium and large sizes, and charge extra for large.<br /><span class="shopAlertText">Note: Products with attributes cannot be purchased via "Buy-Now" buttons. The shopping cart must be enabled.</span>',
 'admin_hdr_wfadmin' => 'Enable, Disable, and Re-order the items that must be completed before checkout. Workflow items cannot be deleted. &quot;Confirm Order&quot; is always the last item in the workflow.',
-'admin_hdr_wfstatus' => 'Update order status values. You can disable unused statuses and indicate whether the buyer and/or administrator is notified when a status becomes active.',
+'admin_hdr_wfstatus' => 'Update order status values. You can indicate whether the buyer and/or administrator is notified when a status becomes active for an order.',
 'username'          => 'User Name',
 //'pmt_status'        => 'ayment Status',
 'payments'          => 'Payments',
@@ -272,7 +272,7 @@ $LANG_SHOP = array (
     'shipped'   => 'Shipped',
     'closed'    => 'Closed',
     'refunded'  => 'Refunded',
-    'cancelled' => 'Cancelled',
+    'canceled' => 'Canceled',
 ),
 'message' => 'Message',
 'timestamp' => 'Timestamp',
@@ -792,6 +792,8 @@ $LANG_SHOP = array (
 'redacted' => 'Redacted',
 'reject' => 'Reject',
 'approve' => 'Approve',
+'order_valid' => 'Order is Valid',
+'aff_eligible' => 'Allow Affiliate Pmts',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -970,7 +972,6 @@ $LANG_confignames['shop'] = array(
     'aff_pct' => 'Default referral percentage',
     'aff_delay_days' => 'Days after order to wait before paying bonuses',
     'aff_min_payment' => 'Default minimum payout amount',
-    'aff_min_ordstatus' => 'Minimum order status before paying bonuses',
     'aff_key' => 'Affiliate URL Key',
     'aff_cookie_exp_days' => 'Affiliate cookie expiration (days)',
     'aff_cart_exp_days' => 'Affiliate cart expiration (days)',
@@ -1026,13 +1027,6 @@ $LANG_configSelect['shop'] = array(
         'name' => 'Name',
         'price' => 'Price',
         'id' => 'Product ID',
-    ),
-    11 => array(
-        'pending' => 'Pending',
-        'invoiced' => 'Invoiced',
-        'processing' => 'Processing',
-        'shipped' => 'Shipped',
-        'close' => 'Closed',
     ),
     12 => array(
         0 => 'Origin',

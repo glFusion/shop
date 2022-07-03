@@ -294,15 +294,36 @@ class OrderStatus
     }
 
 
+    /**
+     * Get all the statuses that mark an order as "valid".
+     *
+     * @return  array   Array of eligible OrderStatus objects
+     */
     public static function getOrderValid() : array
     {
         return self::_getByFlagValue('order_valid', 1);
     }
 
 
+    /**
+     * Get all the statuses that allow affiliate payments.
+     *
+     * @return  array   Array of eligible OrderStatus objects
+     */
     public static function getAffiliateEligible() : array
     {
         return self::_getByFlagValue('aff_eligible', 1);
+    }
+
+
+    /**
+     * Check if this order status allows affiliate payments.
+     *
+     * @return  boolean     True if eligible, False if not
+     */
+    public function isAffiliateEligible() : bool
+    {
+        return $this->aff_eligible != 0;
     }
 
 

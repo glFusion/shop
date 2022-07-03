@@ -1063,7 +1063,7 @@ class Order
         // Process affiliate bonus if the required status has been reached
         if (
             Config::get('aff_enabled') &&
-            $this->statusAtLeast(Config::get('aff_min_ordstatus'))
+            OrderStatus::getInstance($this->status)->isAffiliateEligible()
         ) {
             AffiliateSale::create($this);
         }

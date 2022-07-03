@@ -13,6 +13,8 @@
  */
 namespace Shop\Models;
 use Shop\Customer;
+use Shop\Order;
+use Shop\Config;
 use glFusion\Database\Database;
 use glFusion\Log\Log;
 
@@ -198,24 +200,25 @@ class AffiliateSale
      * Checks each line item to see if it qualifies to be included.
      *
      * @param   object  $Order      Order object
-     * @return  object  AffiliateSale object
+     * @return  object  AffiliateSale object, NULL if not available
      */
-    public static function create($Order)
+    public static function create(Order $Order) : ?self
     {
-        global $_SHOP_CONF;
-
-        if (!$_SHOP_CONF['aff_enabled']) {
-            return false;
+        // Is the affiliate system enabled?
+        if (!Config::get('aff_enabled')) {
+            return NULL;
         }
 
+        // Is the referral token valid?
         $Affiliate = Customer::findByAffiliate($Order->getReferralToken());
         if (!$Affiliate || $Affiliate->getUid() == $Order->getUid()) {
-            return false;
+            return NULL;
         }
 
+        // Has it already been created?
         $AffSale = self::findByOrderId($Order->getOrderId());
         if ($AffSale->getId() > 0) {
-            return false;
+            return NULL;
         }
 
         $total = 0;
@@ -246,7 +249,7 @@ class AffiliateSale
             return $AffSale;
         } else {
             Log::write('shop_system', Log::DEBUG, "No eligible referral bonus items found for {$Affiliate->getUid()}");
-            return false;
+            return NULL;
         }
     }
 
@@ -318,7 +321,6 @@ class AffiliateSale
         global $_TABLES;
 
         $pmt_id = (int)$pmt_id;
-        $sale_ids = implode(',', $sale_ids);
         $db = Database::getInstance();
         try {
             $db->conn->executeUpdate(
@@ -326,7 +328,7 @@ class AffiliateSale
                 SET aff_pmt_id = ?
                 WHERE aff_sale_id IN (?)",
                 array($pmt_id, $sale_ids),
-                array(Database::INTGER, Database::PARAM_INT_ARRAY)
+                array(Database::INTEGER, Database::PARAM_INT_ARRAY)
             );
         } catch (\Exception $e) {
             Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
