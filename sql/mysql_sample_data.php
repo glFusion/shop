@@ -36,10 +36,10 @@ $_SHOP_SAMPLEDATA = array(
     'shop.orderstatus' => "INSERT INTO {$_TABLES['shop.orderstatus']}
             (id, orderby, enabled, name, notify_buyer, notify_admin, order_valid, aff_eligible, cust_viewable)
         VALUES
-            (0, 10, 1, 'pending', 0, 0, 0, 0, 1),
+            (0, 10, 1, 'pending', 0, 1, 0, 0, 1),
             (0, 20, 1, 'processing', 1, 0, 1, 0, 1),
             (0, 30, 1, 'shipped', 1, 0, 1, 1, 1),
-            (0, 40, 1, 'closed', 1, 0, 1, 1, 1),
+            (0, 40, 1, 'closed', 0, 0, 1, 1, 1),
             (0, 50, 1, 'refunded', 1, 0, 0, 0, 1),
             (0, 60, 1, 'canceled', 0, 0, 0, 0, 0),
             (0, 70, 1, 'invoiced', 0, 0, 1, 1, 1)",
