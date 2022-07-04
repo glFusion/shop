@@ -2491,6 +2491,12 @@ class Product
         if (!empty($opts)) {
             if (!is_array($opts)) {
                 $opts = explode(',', $opts);
+            } elseif ($opts[0] instanceof OrderItemOption) {
+                $ids = array();
+                foreach ($opts as $OIO) {
+                    $ids[] = $OIO->getOptionId();
+                }
+                $opts = $ids;
             }
             $PV = ProductVariant::getByAttributes($this->id, $opts);
             $price += $PV->getPrice();

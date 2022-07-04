@@ -964,7 +964,6 @@ class Order
             $total_paid += $Pmt->getAmount();
         }
         $this->_amt_paid = $total_paid;
-
         if (
             (
                 $this->getStatus() == OrderStatus::CART ||
@@ -973,15 +972,12 @@ class Order
             ) &&
             $this->isPaid()
         ) {
-            // Automatically set the order status after payment, unless it has
-            // already been set to Processing or higher.
-            if (!$this->statusAtLeast(OrderStatus::PROCESSING)) {
-                if ($this->hasPhysical()) {
-                   $this->updateStatus(OrderStatus::PROCESSING, true, $notify);
-                } else {
-                    // No physical items, consider the order closed.
-                    $this->updateStatus(OrderStatus::CLOSED, true, $notify);
-                }
+            // Automatically set the order status after payment.
+            if ($this->hasPhysical()) {
+               $this->updateStatus(OrderStatus::PROCESSING, true, $notify);
+            } else {
+                // No physical items, consider the order closed.
+                $this->updateStatus(OrderStatus::CLOSED, true, $notify);
             }
         }
         return $this;
@@ -3976,18 +3972,6 @@ class Order
         } else {
             unset($_SESSION[self::$session_var][$key]);
         }
-    }
-
-
-    /**
-     * Check that the order status is at least a certain level.
-     *
-     * @param   string  $desired    Desired status
-     * @return  boolean     True if the order is at or past the status
-     */
-    public function statusAtLeast($desired)
-    {
-        return OrderStatus::atLeast($desired, $this->getStatus());
     }
 
 
