@@ -16,7 +16,6 @@ namespace Shop\Gateways\_coupon;
 use Shop\Config;
 use Shop\Order;
 use Shop\Payment;
-use Shop\Models\OrderState;
 use Shop\Products\Coupon;
 use Shop\Log;
 

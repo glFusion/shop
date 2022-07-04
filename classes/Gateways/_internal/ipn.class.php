@@ -13,7 +13,6 @@
  */
 namespace Shop\Gateways\_internal;
 use Shop\Cart;
-use Shop\Models\OrderState;
 use Shop\Log;
 
 

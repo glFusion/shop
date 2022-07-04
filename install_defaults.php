@@ -1216,17 +1216,6 @@ $shopConfigData = array(
         'group' => 'shop',
     ),
     array(
-        'name' => 'aff_min_ordstatus',
-        'default_value' => 'processing',
-        'type' => 'select',
-        'subgroup' => 50,
-        'fieldset' => 10,
-        'selection_array' => 11,
-        'sort' => 60,
-        'set' => true,
-        'group' => 'shop',
-    ),
-    array(
         'name' => 'aff_delay_days',
         'default_value' => 30,
         'type' => 'text',

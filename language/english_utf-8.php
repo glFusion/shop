@@ -793,6 +793,8 @@ $LANG_SHOP = array (
 'reject' => 'Reject',
 'approve' => 'Approve',
 'order_valid' => 'Order is Valid',
+'order_closed' => 'Order is Closed',
+'cust_viewable' => 'Viewable by Customer',
 'aff_eligible' => 'Allow Affiliate Pmts',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {

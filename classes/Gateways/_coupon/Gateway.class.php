@@ -191,7 +191,7 @@ class Gateway extends \Shop\Gateway
         } else {
             $Order->setByGC($Order->getTotal());
             $Order->Save();
-            $coupons = Coupon::Apply($Order->getTotal(), $Order->getUid());
+            $coupons = Coupon::Apply($Order->getTotal(), $Order->getUid(), $Order);
             SHOP_setMsg($this->getLang('pd_by_coupon', 'Paid by Coupon'));
 
             // Create the webhook object and add some data.
@@ -231,7 +231,7 @@ class Gateway extends \Shop\Gateway
      *
      * @param   array   $Payouts    Array of Payout objects
      */
-    public function sendPayouts(PayoutHeader $Header, array $Payouts)
+    public function sendPayouts(array &$Payouts) : void
     {
         global $_TABLES;
 

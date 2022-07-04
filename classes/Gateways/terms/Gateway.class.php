@@ -14,7 +14,7 @@
  * @filesource
  */
 namespace Shop\Gateways\terms;
-use Shop\Models\OrderState;
+use Shop\Models\OrderStatus;
 use Shop\Gateway as GW;
 use Shop\FieldList;
 
@@ -55,7 +55,7 @@ class Gateway extends \Shop\Gateway
             'global' => array(
                 'gateway'   => '',
                 'net_days'  => 30,
-                'after_inv_status' => OrderState::PROCESSING,
+                'after_inv_status' => OrderStatus::PROCESSING,
                 //'email_invoice' => 0,
             ),
         );
@@ -117,7 +117,7 @@ class Gateway extends \Shop\Gateway
             break;
         case 'after_inv_status':
             foreach (array(
-                OrderState::INVOICED, OrderState::PROCESSING
+                OrderStatus::INVOICED, OrderStatus::PROCESSING
             ) as $status) {
                 $opts[] = array(
                     'name' => $LANG_SHOP['orderstatus'][$status],

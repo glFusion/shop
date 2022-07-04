@@ -12,7 +12,6 @@
  * @filesource
  */
 namespace Shop;
-use Shop\Models\OrderState;
 use glFusion\Database\Database;
 use glFusion\Log\Log;
 

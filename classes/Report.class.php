@@ -13,6 +13,7 @@
  */
 namespace Shop;
 use Shop\Models\Session;
+use Shop\Models\OrderStatus;
 use Shop\Field;
 
 

@@ -17,13 +17,12 @@ use Shop\Address;
 use Shop\Currency;
 use Shop\Order;
 use Shop\Shipper;
-use Shop\Models\OrderState;
+use Shop\Models\OrderStatus;
 use Shop\Models\CustomInfo;
 use Shop\Template;
 use Shop\Cache;
 use Shop\Models\Token;
 use Shop\Models\Payout;
-use Shop\Models\PayoutHeader;
 use Shop\Log;
 
 
@@ -334,7 +333,7 @@ class Gateway extends \Shop\Gateway
         $Currency = $Order->getCurrency();
         $Billto = $Order->getBillto();
         $Shipto = $Order->getShipto();
-        $Order->updateStatus(OrderState::INVOICED);
+        $Order->updateStatus(OrderStatus::INVOICED);
         $order_num = $Order->getOrderId();
 
         $A = array(
@@ -475,7 +474,7 @@ class Gateway extends \Shop\Gateway
 
         // If the invoice was created successfully, send to the buyer
         if ($http_code == 201) {
-            $Order->updateStatus(OrderState::INVOICED);
+            $Order->updateStatus(OrderStatus::INVOICED);
             $json = json_decode($inv, true);
             if (isset($json['href'])) {
                 $ch = curl_init();
@@ -658,7 +657,13 @@ class Gateway extends \Shop\Gateway
     }
 
 
-    public function calcPayoutFee($amount)
+    /**
+     * Calculate the gateway fee for a payout amount.
+     *
+     * @param   float   $amount     Total payout amount
+     * @return  float       Amount of the vendor fee
+     */
+    public function calcPayoutFee(float $amount) : float
     {
         $fee = ((float)$amount * ($this->getConfig('fee_percent') / 100)) +
             $this->getConfig('fee_fixed');
@@ -666,7 +671,13 @@ class Gateway extends \Shop\Gateway
     }
 
 
-    public function calcPayout($amount)
+    /**
+     * Calculate the net payout amount after deducting feed.
+     *
+     * @param   float   $amount     Gross payout amount
+     * @return  float       Net payout amount
+     */
+    public function calcPayout(float $amount) : float
     {
 
         $payout = (float)$amount - $this->calcPayoutFee($amount);
@@ -674,13 +685,18 @@ class Gateway extends \Shop\Gateway
     }
 
 
-    public function sendPayouts(PayoutHeader $Header, array $Payouts)
+    /**
+     * Call the Paypal API to send payouts to affiliates.
+     *
+     * @param   array   $Payouts    Array of Payout objects
+     */
+    public function sendPayouts(array &$Payouts) : void
     {
         $A = array(
             'sender_batch_header' => array(
                 'sender_batch_id' => uniqid(),
-                'email_subject' => $Header['email_subject'],
-                'email_message' => $Header['email_message'],
+                'email_subject' => 'Your Affiliate Payment',
+                'email_message' => 'Your affiliate payment has been paid out.',
             ),
             'items' => array(),
         );

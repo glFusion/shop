@@ -12,7 +12,7 @@
  * @filesource
  */
 namespace Shop\Reports;
-use Shop\Models\OrderState;
+use Shop\Models\OrderStatus;
 use Shop\FieldList;
 
 
@@ -30,12 +30,12 @@ class orderlist extends \Shop\Report
      * Excludes cart.
      * @var array */
     private $default_statuses = array(
-        OrderState::INVOICED,
-        OrderState::PENDING,
-        OrderState::PROCESSING,
-        OrderState::SHIPPED,
-        OrderState::CLOSED,
-        OrderState::REFUNDED,
+        OrderStatus::INVOICED,
+        OrderStatus::PENDING,
+        OrderStatus::PROCESSING,
+        OrderStatus::SHIPPED,
+        OrderStatus::CLOSED,
+        OrderStatus::REFUNDED,
     );
 
     /**

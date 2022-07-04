@@ -26,7 +26,7 @@ use glFusion\Database\Database;
 use glFusion\Log\Log;
 use Shop\Loggers\IPN as logIPN;
 use Shop\Products\Coupon;
-use Shop\Models\OrderState;
+use Shop\Models\OrderStatus;
 use Shop\Models\CustomInfo;
 use Shop\Models\IPN as IPNModel;
 
@@ -583,19 +583,12 @@ class IPN
      * @param   string  $status Status string
      * @return  object  $this
      */
-    public function setStatus($status)
+    public function setStatus(string $status) : self
     {
-        switch ($status) {
-        case OrderState::PENDING:
-        case OrderState::PAID:
-        case OrderState::REFUNDED:
-        case OrderState::CLOSED:
-        case OrderState::CANCELED;
+        if (OrderStatus::isValid($status)) {
             $this->status = $status;
-            break;
-        default:
+        } else {
             $this->status = 'unknown';
-            break;
         }
         return $this;
     }

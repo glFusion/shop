@@ -18,7 +18,6 @@ use Shop\Config;
 use Shop\Order;
 use Shop\Payment;
 use Shop\Gateway;
-use Shop\Models\OrderState;
 use Shop\Log;
 
 

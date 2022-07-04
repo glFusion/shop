@@ -3,10 +3,10 @@
  * Paypal Webhook class for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     vTBD
- * @since       vTBD
+ * @version     v1.5.0
+ * @since       v1.3.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -14,7 +14,6 @@
 namespace Shop\Gateways\ppcheckout;
 use Shop\Payment;
 use Shop\Order;
-use Shop\Models\OrderState;
 use Shop\Models\IPN as IPNModel;
 use Shop\Log;
 use Shop\Config;

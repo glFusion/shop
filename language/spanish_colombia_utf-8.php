@@ -795,6 +795,12 @@ $LANG_SHOP = array (
 'adm_mnu_region' => 'Purchases and shipping will be complegely disallowed for any region, country, or state that is unchecked.',
 'adm_mnu_states' => 'Uncheck any state for which sales should be disallowed.<br />You can also indicat whether a state charges sales tax on shipping and/or handling charges (USA only).',
 'redacted' => 'Redacted',
+'reject' => 'Reject',
+'approve' => 'Approve',
+'order_valid' => 'Order is Valid',
+'order_closed' => 'Order is Closed',
+'cust_viewable' => 'Viewable by Customer',
+'aff_eligible' => 'Allow Affiliate Pmts',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -854,6 +860,8 @@ $LANG_SHOP_HELP = array(
 'msg_no_virt_delivery' => 'There is no delivery information required for virtual products.',
 'pi_products' => 'Plugins that supply products to the Shop can have default settings where values are not provided by the plugin itself.',
 'hlp_pi_products' => 'Enter the plugin name and set the default values for its products. These values will be used unless the plugin supplies its own values for these settings.',
+'hlp_aff_reject' => 'Remove and reject an affiliate for program misuse.',
+'hlp_aff_approve' => 'Approve or reinstate an affiliate to the program.',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';
@@ -979,6 +987,9 @@ $LANG_confignames['shop'] = array(
 'smartystreets_license' => 'SmartyStreets License',
 'def_google_category' => 'Default Google Category',
 'link_orders_new_user' => 'Link orders by email to new accounts',
+'logo_url' => 'URL to logo image',
+'logo_width' => 'Logo image width, in pixels',
+'logo_height' => 'Logo image height, in pixels',
 );
 
 /** Language strings for the subgroup names in the config section */

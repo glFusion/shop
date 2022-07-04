@@ -12,7 +12,7 @@
  * @filesource
  */
 namespace Shop;
-use Shop\Models\OrderState;
+use Shop\Models\OrderStatus;
 
 
 /**
@@ -305,9 +305,9 @@ class Shipment
                 }
             }
             if ($this->Order->isShippedComplete()) {
-                $this->Order->updateStatus(OrderState::SHIPPED);
+                $this->Order->updateStatus(OrderStatus::SHIPPED);
             } else {
-                $this->Order->updateStatus(OrderState::PROCESSING);
+                $this->Order->updateStatus(OrderStatus::PROCESSING);
             }
             return true;
         } else {

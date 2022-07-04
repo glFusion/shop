@@ -395,7 +395,7 @@ case 'wfmove':
         \Shop\Workflow::moveRow($_GET['id'], $actionval);
         break;
     case 'orderstatus':
-        \Shop\OrderStatus::moveRow($_GET['id'], $actionval);
+        \Shop\Models\OrderStatus::moveRow($_GET['id'], $actionval);
         break;
     }
     $view = 'wfadmin';
@@ -670,7 +670,7 @@ case 'coup_bulk_unvoid':
     break;
 
 case 'saveorderstatus':
-    $OS = Shop\OrderStatus::getInstance($actionval);
+    $OS = Shop\Models\OrderStatus::getInstance($actionval);
     if ($OS->Save($_POST)) {
         echo COM_refresh(SHOP_ADMIN_URL . '/index.php?wfadmin');
     } else {
@@ -941,7 +941,7 @@ case 'carrier_config':
 
 case 'wfadmin':
     //$content .= Shop\Workflow::adminList();
-    $content .= Shop\OrderStatus::adminList();
+    $content .= Shop\Models\OrderStatus::adminList();
     break;
 
 case 'reports':
@@ -1117,7 +1117,7 @@ case 'pi_products':
     break;
 
 case 'editstatus':
-    $content .= Shop\OrderStatus::getById($actionval)->edit();
+    $content .= Shop\Models\OrderStatus::getById($actionval)->edit();
     break;
 
 default:

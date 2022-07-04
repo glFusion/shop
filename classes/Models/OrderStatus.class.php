@@ -3,17 +3,20 @@
  * Class to manage order processing statuses.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2011-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2011-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
-namespace Shop;
+namespace Shop\Models;
 use glFusion\Database\Database;
 use glFusion\Log\Log;
+use Shop\FieldList;
+use Shop\Template;
+use Shop\Config;
 
 
 /**
@@ -25,6 +28,48 @@ use glFusion\Log\Log;
 class OrderStatus
 {
     use \Shop\Traits\DBO;        // Import database operations
+
+    /** Order is still in the shopping-cart phase.
+     */
+    public const CART = 'cart';
+
+    /** Indicates the order is open. Open orders may be updated.
+     */
+    public const PENDING = 'pending';
+
+    /** Order has been invoiced and is awaiting payment.
+     */
+    public const INVOICED = 'invoiced';
+
+    /** Order is in-process.
+     */
+    public const PROCESSING = 'processing';
+
+    /** Order has been shipped complete.
+     */
+    public const SHIPPED = 'shipped';
+
+    /** Order has been refunded.
+     */
+    public const REFUNDED = 'refunded';
+
+    /** Order is complete and paid. No further action needed.
+     */
+    public const CLOSED = 'closed';
+
+    /** Payment received.
+     * Not really an order status, but may be used for logging.
+     */
+    public const PAID = 'paid';
+
+    /** Order was cancelled.
+     */
+    public const CANCELED = 'canceled';
+
+    /** Order is archived.
+     * One use of this is after anonymous order data is redacted.
+     */
+    public const ARCHIVED = 'archived';
 
     /** Table name.
      * @var string */
@@ -54,6 +99,15 @@ class OrderStatus
      * Canceled, Refunded mark an order as "invalid" for example.
      * @var boolean */
     private $order_valid = 1;
+
+    /** Flag indicating that this order is closed and may be archived.
+     * @var boolean */
+    private $order_closed = 0;
+
+    /** Flag indicating that the order can be viewed by the customer.
+     * Also will appear in the customer's "My Account" order list.
+     * @var boolean */
+    private $cust_viewable = 1;
 
     /** Flag indicating that this status is eligible for affiliate payments.
      * @var boolean */
@@ -136,14 +190,21 @@ class OrderStatus
 
         if ($statuses === NULL) {
             $statuses = array();
-            $sql = "SELECT *
-                    FROM {$_TABLES[self::$TABLE]}
+            $db = Database::getInstance();
+            try {
+                $data = $db->conn->executeQuery(
+                    "SELECT * FROM {$_TABLES[self::$TABLE]}
                     WHERE enabled = 1
-                    ORDER BY orderby ASC";
-            //echo $sql;die;
-            $res = DB_query($sql);
-            while ($A = DB_fetchArray($res, false)) {
-                $statuses[$A['name']] = new self($A);
+                    ORDER BY orderby ASC"
+                )->fetchAllAssociative();
+            } catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $data = false;
+            }
+            if (is_array($data)) {
+                foreach ($data as $A) {
+                    $statuses[$A['name']] = new self($A);
+                }
             }
         }
         return $statuses;
@@ -260,7 +321,7 @@ class OrderStatus
     {
         global $LANG_SHOP;
 
-        return SHOP_getVar($LANG_SHOP['orderstatus'], $name, 'string', $name);
+        return SHOP_getVar($LANG_SHOP['orderstatus'], $name, 'string', ucfirst($name));
     }
 
 
@@ -317,6 +378,17 @@ class OrderStatus
 
 
     /**
+     * Get all the statuses that are customer-viewable.
+     *
+     * @return  array   Array of eligible OrderStatus objects
+     */
+    public static function getCustomerViewable() : array
+    {
+        return self::_getByFlagValue('cust_viewable', 1);
+    }
+
+
+    /**
      * Check if this order status allows affiliate payments.
      *
      * @return  boolean     True if eligible, False if not
@@ -324,6 +396,18 @@ class OrderStatus
     public function isAffiliateEligible() : bool
     {
         return $this->aff_eligible != 0;
+    }
+
+
+    /**
+     * Check if a requested status is valid.
+     *
+     * @param   string  $status     Status to check
+     * @return  boolean     True if valid, False if non-existent
+     */
+    public static function isValid(string $status) : bool
+    {
+        return array_key_exists($status, self::getAll());
     }
 
 
@@ -365,6 +449,18 @@ class OrderStatus
                 'sort'  => false,
                 'align' => 'center',
             ),
+            array(
+                'text'  => $LANG_SHOP['order_closed'],
+                'field' => 'order_closed',
+                'sort'  => false,
+                'align' => 'center',
+            ),
+            array(
+                'text'  => $LANG_SHOP['cust_viewable'],
+                'field' => 'cust_viewable',
+                'sort'  => false,
+                'align' => 'center',
+            ),
         );
         if (Config::get('aff_enabled')) {
             // Add the affiliate-eligible checkbox if the affiliate
@@ -385,11 +481,11 @@ class OrderStatus
             '', '', COM_getBlockTemplate('_admin_block', 'header')
         );
         $display .= "<h2>{$LANG_SHOP['statuses']}</h2>\n";
-        $display .= FieldList::buttonLink(array(
+        /*$display .= FieldList::buttonLink(array(
             'text' => $LANG_SHOP['new_item'],
             'url' => SHOP_ADMIN_URL . '/index.php?editstatus=0',
             'style' => 'success',
-        ) );
+        ) );*/
         $query_arr = array(
             'table' => 'shop.orderstatus',
             'sql' => "SELECT * FROM {$_TABLES['shop.orderstatus']}",
@@ -436,6 +532,8 @@ class OrderStatus
         case 'notify_buyer':
         case 'notify_admin':
         case 'order_valid':
+        case 'order_closed':
+        case 'cust_viewable':
         case 'aff_eligible':
             $retval .= FieldList::checkbox(array(
                 'name' => "{$fieldname}_check",
@@ -446,7 +544,7 @@ class OrderStatus
             break;
 
         case 'name':
-            $retval = \Shop\OrderStatus::getDscp($fieldvalue);
+            $retval = self::getDscp($fieldvalue);
             break;
 
         default:
@@ -478,6 +576,8 @@ class OrderStatus
             'notify_buyer_chk' => $this->notify_buyer ? 'checked="checked"' : '',
             'notify_admin_chk' => $this->notify_admin ? 'checked="checked"' : '',
             'order_valid_chk' => $this->order_valid ? 'checked="checked"' : '',
+            'order_closed_chk' => $this->order_closed ? 'checked="checked"' : '',
+            'cust_viewable_chk' => $this->cust_viewable ? 'checked="checked"' : '',
             'aff_eligible_chk' => $this->aff_eligible ? 'checked="checked"' : '',
             'doc_url' => SHOP_getDocUrl('orderstatus_form'),
         ) );

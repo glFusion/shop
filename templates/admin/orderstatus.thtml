@@ -46,6 +46,24 @@
 	</div>
 
 	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label">{$LANG_SHOP['order_closed']}:
+			<span id="hlp_order_closed" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls">
+			<input class="uk-checkbox" type="checkbox" value="1" name="order_closed" {order_closed_chk} />
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label">{$LANG_SHOP['cust_viewable']}:
+			<span id="hlp_cust_viewable" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls">
+			<input class="uk-checkbox" type="checkbox" value="1" name="cust_viewable" {cust_viewable_chk} />
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{$LANG_SHOP['aff_eligible']}:
 			<span id="hlp_aff_eligible" class="tooltip_cfg tooltipstered"></span>
 		</label>

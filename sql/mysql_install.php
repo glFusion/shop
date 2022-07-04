@@ -294,7 +294,9 @@ $_SQL = array(
   `notify_buyer` tinyint(1) unsigned NOT NULL DEFAULT 0,
   `notify_admin` tinyint(1) unsigned NOT NULL DEFAULT 0,
   `order_valid` tinyint(1) unsigned NOT NULL DEFAULT 0,
+  `order_closed` tinyint(1) unsigned NOT NULL DEFAULT 0,
   `aff_eligible` tinyint(1) unsigned NOT NULL DEFAULT 0,
+  `cust_viewable` tinyint(1) unsigned NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`),
   KEY `orderby` (`orderby`)
@@ -991,7 +993,9 @@ $SHOP_UPGRADE['1.5.0'] = array(
     "ALTER TABLE {$_TABLES['shop.features_values']} CHANGE fv_value fv_value text",
     "ALTER TABLE {$_TABLES['shop.features_values']} ADD UNIQUE `id_txt` (`ft_id`, `fv_value`(128))",
     "ALTER TABLE {$_TABLES['shop.orderstatus']} ADD order_valid tinyint(1) unsigned not null default 0",
+    "ALTER TABLE {$_TABLES['shop.orderstatus']} ADD order_closed tinyint(1) unsigned not null default 0",
     "ALTER TABLE {$_TABLES['shop.orderstatus']} ADD aff_eligible tinyint(1) unsigned not null default 0",
+    "ALTER TABLE {$_TABLES['shop.orderstatus']} ADD cust_viewable tinyint(1) unsigned not null default 0",
     "ALTER TABLE {$_TABLES['shop.orderstatus']} CHANGE notify_buyer notify_buyer tinyint(1) unsigned not null default 0",
     "ALTER TABLE {$_TABLES['shop.orderstatus']} CHANGE notify_admin notify_admin tinyint(1) unsigned not null default 0",
 );

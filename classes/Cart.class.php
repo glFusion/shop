@@ -16,7 +16,7 @@
  *
  */
 namespace Shop;
-use Shop\Models\OrderState;
+use Shop\Models\OrderStatus;
 use Shop\Models\Session;
 use Shop\Models\Stock;
 use Shop\Models\ProductCheckbox;
@@ -50,7 +50,7 @@ class Cart extends Order
 
         parent::__construct($cart_id);
         if ($this->isNew) {
-            $this->status = OrderState::CART;
+            $this->status = OrderStatus::CART;
             if (!COM_isAnonUser()) {
                 $this->buyer_email = $_USER['email'];
             }
@@ -87,7 +87,7 @@ class Cart extends Order
         // If the cart user ID doesn't match the requested one, then the
         // cookie may have gotten out of sync. This can happen when the
         // user leaves the browser and the glFusion session expires.
-        if ($Cart->getUid() != $uid || $Cart->getStatus() != OrderState::CART) {
+        if ($Cart->getUid() != $uid || $Cart->getStatus() != OrderStatus::CART) {
             self::_expireCookie();
             $Cart = new self();
         }
@@ -117,7 +117,7 @@ class Cart extends Order
 
         $retval = array();
         $sql = "SELECT order_id FROM {$_TABLES['shop.orders']}
-            WHERE status = '" . OrderState::CART . "'";
+            WHERE status = '" . OrderStatus::CART . "'";
         $res = DB_query($sql);
         if ($res) {
             while ($A = DB_fetchArray($res, false)) {
@@ -479,7 +479,7 @@ class Cart extends Order
         global $_TABLES, $_USER;
 
         // Only clear if this is actually a cart, not a finalized order.
-        if ($this->status == OrderState::CART) {
+        if ($this->status == OrderStatus::CART) {
             foreach ($this->Items as $Item) {
                 $Item->Delete();
             }
@@ -748,21 +748,21 @@ class Cart extends Order
             } else {
                 $status = NULL;
             }
-            if ($status != NULL && $status != OrderState::CART) {
+            if ($status != NULL && $status != OrderStatus::CART) {
                 $cart_id = NULL;
             }
         } else {
             $cart_id = DB_getItem(
                 $_TABLES['shop.orders'],
                 'order_id',
-                "uid = $uid AND status = '" . OrderState::CART .
+                "uid = $uid AND status = '" . OrderStatus::CART .
                 "' ORDER BY last_mod DESC limit 1"
             );
             if (!empty($cart_id) && !isset($read_cart[$uid])) {
                 // For logged-in usrs, delete superfluous carts
                 DB_query("DELETE FROM {$_TABLES['shop.orders']}
                     WHERE uid = $uid
-                    AND status = '" . OrderState::CART . "'
+                    AND status = '" . OrderStatus::CART . "'
                     AND order_id <> '" . DB_escapeString($cart_id) . "'");
             }
             $read_cart[$uid] = true;
@@ -788,7 +788,7 @@ class Cart extends Order
         if ($uid < 2) return;       // Don't delete anonymous carts
         $msg = "All carts for user {$uid} deleted";
         $sql = "DELETE FROM {$_TABLES['shop.orders']}
-            WHERE uid = $uid AND status = '" . OrderState::CART . "'";
+            WHERE uid = $uid AND status = '" . OrderStatus::CART . "'";
         if ($save != '') {
             $sql .= " AND order_id <> '" . DB_escapeString($save) . "'";
             $msg .= " except $save";
@@ -941,7 +941,7 @@ class Cart extends Order
         $canview = false;
 
         // Check that this is an existing record
-        if ($this->isNew() || $this->status != OrderState::CART) {
+        if ($this->isNew() || $this->status != OrderStatus::CART) {
             $canview  = false;
         } elseif ($this->getUid() > 1 && $_USER['uid'] == $this->getUid()) {
             // Logged-in cart owner
@@ -961,7 +961,7 @@ class Cart extends Order
     public static function Purge()
     {
         global $_TABLES;
-        DB_delete($_TABLES['shop.orders'], 'status', OrderState::CART);
+        DB_delete($_TABLES['shop.orders'], 'status', OrderStatus::CART);
         Log::write('shop_system', Log::INFO, "All carts for all users deleted");
     }
 

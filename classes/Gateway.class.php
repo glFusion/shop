@@ -14,7 +14,7 @@
  */
 namespace Shop;
 use Shop\Config;
-use Shop\Models\OrderState;
+use Shop\Models\OrderStatus;
 use Shop\Models\ProductType;
 use Shop\Models\CustomInfo;;
 use Shop\Models\ButtonKey;;
@@ -186,7 +186,7 @@ class Gateway
      */
     function __construct($A = array())
     {
-        global $_SHOP_CONF, $_TABLES, $_USER;
+        global $_TABLES, $_USER;
 
         if ($this->isBundled()) {
             $this->VERSION = Config::get('pi_version');
@@ -195,8 +195,10 @@ class Gateway
         $this->custom = new CustomInfo;
         $this->properties = array();
         $this->getIpnUrl();     // construct the IPN processor URL
-        $this->currency_code = empty($_SHOP_CONF['currency']) ? 'USD' :
-            $_SHOP_CONF['currency'];
+        $this->currency_code = Config::get('currency');
+        if (empty($this->currency_code)) {
+            $this->currency_code = 'USD';
+        }
 
         // Set the provider name if not supplied by the gateway
         if (empty($this->gw_provider)) {
@@ -484,30 +486,40 @@ class Gateway
         }
 
         $config = @serialize($this->config);
-        if (!$config) return false;
-
-        $config = DB_escapeString($config);
-        $services = DB_escapeString(@serialize($this->services));
-        $id = DB_escapeString($this->gw_name);
-
-        $sql = "UPDATE {$_TABLES['shop.gateways']} SET
-                config = '$config',
-                services = '$services',
-                orderby = '{$this->orderby}',
-                enabled = '{$this->enabled}',
-                grp_access = '{$this->grp_access}'
-                WHERE id='$id'";
-        //echo $sql;die;
-        //Log::write('shop_system', Log::DEBUG, $sql);
-        DB_query($sql);
-        $this->clearButtonCache();   // delete all buttons for this gateway
-        if (DB_error()) {
+        $services = @serialize($this->services);
+        if (!$config || !$services) {
             return false;
-        } else {
+        }
+
+        $this->clearButtonCache();   // delete all buttons for this gateway
+        $db = Database::getInstance();
+        try {
+            $db->conn->update(
+                $_TABLES['shop.gateways'],
+                array(
+                    'config' => $config,
+                    'services' => $services,
+                    'orderby' => $this->orderby,
+                    'enabled' => $this->enabled,
+                    'grp_access' => $this->grp_access,
+                ),
+                array('id' => $this->gw_name),
+                array(
+                    Database::STRING,
+                    Database::STRING,
+                    Database::INTEGER,
+                    Database::INTEGER,
+                    Database::INTEGER,
+                    Database::STRING,
+                )
+            );
             $this->_postConfigSave();   // Run function for further setup
             Cache::clear(self::$TABLE);
             self::ReOrder();
             return true;
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return false;
         }
     }
 
@@ -579,7 +591,16 @@ class Gateway
     {
         global $_TABLES;
 
-        DB_delete($_TABLES['shop.buttons'], 'gw_name', $this->gw_name);
+        $db = Database::getInstance();
+        try {
+            $db->conn->delete(
+                $_TABLES['shop.buttons'],
+                array('gw_name' => $this->gw_name),
+                array(Database::STRING)
+            );
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
     }
 
 
@@ -590,7 +611,7 @@ class Gateway
      *
      * @return  boolean     True on success, False on failure
      */
-    public function Install()
+    public function Install() : bool
     {
         global $_TABLES;
 
@@ -607,23 +628,39 @@ class Gateway
             } else {
                 $services = '';
             }
-            $sql = "INSERT INTO {$_TABLES['shop.gateways']} SET
-                    id = '" . DB_escapeString($this->gw_name) . "',
-                    orderby = 990,
-                    enabled = {$this->isEnabled()},
-                    description = '" . DB_escapeString($this->gw_desc) . "',
-                    config = '" . DB_escapeString($config) . "',
-                    services = '" . DB_escapeString($services) . "',
-                    version = '" . DB_escapeString($this->getCodeVersion()) . "',
-                    grp_access = {$this->grp_access}";
-            DB_query($sql, 1);
-            if (!DB_error()) {
+            $db = Database::getInstance();
+            try {
+                $db->conn->insert(
+                    $_TABLES['shop.gateways'],
+                    array(
+                        'id' => $this->gw_name,
+                        'orderby' => 990,
+                        'enabled' => $this->isEnabled(),
+                        'description' => $this->gw_desc,
+                        'config' => $config,
+                        'services' => $services,
+                        'version' => $this->getCodeVersion(),
+                        'grp_access' => $this->grp_access,
+                    ),
+                    array(
+                        Database::STRING,
+                        Database::INTEGER,
+                        Database::INTEGER,
+                        Database::STRING,
+                        Database::STRING,
+                        Database::STRING,
+                        Database::STRING,
+                        Database::INTEGER,
+                    )
+                );
                 self::ReOrder();
                 Cache::clear(self::$TABLE);
                 return true;
+            } catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                return false;
             }
         }
-        return false;
     }
 
 
@@ -631,12 +668,21 @@ class Gateway
      * Remove the current gateway.
      * This removes all of the configuration for the gateway, but not files.
      */
-    public static function Remove($gw_name)
+    public static function Remove(string $gw_name) : void
     {
         global $_TABLES;
 
-        DB_delete($_TABLES[self::$TABLE], 'id', $gw_name);
-        Cache::clear(self::$TABLE);
+        $db = Database::getInstance();
+        try {
+            $db->conn->delete(
+                $_TABLES[self::$TABLE],
+                array('id' => $gw_name),
+                array(Database::STRING)
+            );
+            Cache::clear(self::$TABLE);
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
     }
 
 
@@ -741,159 +787,11 @@ class Gateway
     public function getPaidStatus($Order)
     {
         if ($Order->hasPhysical()) {
-            $retval = OrderState::PROCESSING;
+            $retval = OrderStatus::PROCESSING;
         } else {
-            $retval = OrderState::CLOSED;
+            $retval = OrderStatus::CLOSED;
         }
         return $retval;
-    }
-
-
-    /**
-     * Processes the purchase, for purchases made without an IPN message.
-     *
-     * @param  array   $vals   Submitted values, e.g. $_POST
-     */
-    public function handlePurchase($vals = array())
-    {
-        global $_TABLES, $_CONF, $_SHOP_CONF;
-
-        Log::write('shop_system', Log::ERROR, 'Gateway::handlePurchase deprecated');
-        return;
-
-        if (!empty($vals['cart_id'])) {
-            $cart = Cart::getInstance($vals['cart_id']);
-            if (!$cart->hasItems()) return; // shouldn't be empty
-            $items = $cart->getItems();
-        } else {
-            $cart = new Cart();
-        }
-
-        // Create an order record to get the order ID
-        $Order = $this->createOrder($vals, $cart);
-        $db_order_id = DB_escapeString($Order->getOrderID());
-
-        $prod_types = 0;
-
-        // For each item purchased, record purchase in purchase table
-        foreach ($items as $id=>$item) {
-            list($item_number, $item_opts) = SHOP_explode_opts($id, true);
-
-            // If the item number is numeric, assume it's an
-            // inventory item.  Otherwise, it should be a plugin-supplied
-            // item with the item number like pi_name:item_number:options
-            if (SHOP_is_plugin_item($item_number)) {
-                Log::write('shop_system', Log::DEBUG, "Plugin item " . $item_number);
-
-                // Initialize item info array to be used later
-                $A = array();
-
-                // Split the item number into component parts.  It could
-                // be just a single string, depending on the plugin's needs.
-                $pi_info = explode(':', $item['item_number']);
-                Log::write('shop_system', Log::DEBUG, 'Paymentgw::handlePurchase() pi_info: ' . print_r($pi_info,true));
-
-                $status = PLG_callFunctionForOnePlugin(
-                    'service_' . $pi_info[0] . '_productinfo',
-                    array(
-                        1 => array($item_number, $item_opts),
-                        2 => &$product_info,
-                        3 => &$svc_msg,
-                    )
-                );
-                if (is_array($product_info)) {
-                    $items[$id]['name'] = $product_info['name'];
-                }
-                Log::write('shop_system', Log::DEBUG, "Paymentgw::handlePurchase() Got name " . $items[$id]['name']);
-                $vars = array(
-                    'item' => $item,
-                    'ipn_data' => array(),
-                );
-                $A = PLG_callFunctionForOnePlugin(
-                    'plugin_' . $pi_info[0] . '_handlepurchase',
-                    $vars
-                );
-                if (!is_array($A)) {
-                    $A = array();
-                }
-
-                // Mark what type of product this is
-                $prod_types |= ProductType::VIRTUAL;
-
-            } else {
-                Log::write('shop_system', Log::DEBUG, "Shop item " . $item_number);
-                $P = Product::getByID($item_number);
-                $A = array(
-                    'name' => $P->getName(),
-                    'short_description' => $P->getDscp(),
-                    'expiration' => $P->getExpiration(),
-                    'prod_type' => $P->getProductType(),
-                    'file' => $P->getFilename(),
-                    'price' => $item['price'],
-                );
-
-                if (!empty($item_opts)) {
-                    $opts = explode(',', $itemopts);
-                    $opt_str = $P->getOptionDesc($opts);
-                    if (!empty($opt_str)) {
-                        $A['short_description'] .= " ($opt_str)";
-                    }
-                    $item_number .= '|' . $item_opts;
-                }
-
-                // Mark what type of product this is
-                $prod_types |= $P->getProductType();
-            }
-
-            // An invalid item number, or nothing returned for a plugin
-            if (empty($A)) {
-                continue;
-            }
-
-            // If it's a downloadable item, then get the full path to the file.
-            // TODO: pp_data isn't available here, should be from $vals?
-            if (!empty($A['file'])) {
-                $this->items[$id]['file'] = $_SHOP_CONF['download_path'] . $A['file'];
-                $token_base = $this->pp_data['txn_id'] . time() . rand(0,99);
-                $token = md5($token_base);
-                $this->items[$id]['token'] = $token;
-            } else {
-                $token = '';
-            }
-            $items[$id]['prod_type'] = $A['prod_type'];
-
-            // If a custom name was supplied by the gateway's IPN processor,
-            // then use that.  Otherwise, plug in the name from inventory or
-            // the plugin, for the notification email.
-            if (empty($item['name'])) {
-                $items[$id]['name'] = $A['short_description'];
-            }
-
-            // Add the purchase to the shop purchase table
-            $uid = isset($vals['uid']) ? (int)$vals['uid'] : $_USER['uid'];
-
-            $sql = "INSERT INTO {$_TABLES['shop.orderitems']} SET
-                        order_id = '{$db_order_id}',
-                        product_id = '{$item_number}',
-                        description = '{$items[$id]['name']}',
-                        quantity = '{$item['quantity']}',
-                        txn_type = '{$this->gw_name}',
-                        txn_id = '',
-                        status = 'complete',
-                        token = '$token',
-                        price = " . (float)$item['price'] . ",
-                        options = '" . DB_escapeString($item_opts) . "'";
-
-            // add an expiration date if appropriate
-            if (is_numeric($A['expiration']) && $A['expiration'] > 0) {
-                $sql .= ", expiration = DATE_ADD('" . SHOP_now()->toMySQL() .
-                        "', INTERVAL {$A['expiration']} DAY)";
-            }
-            //echo $sql;die;
-            Log::write('shop_system', Log::DEBUG, $sql);
-            DB_query($sql);
-
-        }   // foreach item
     }
 
 
@@ -978,7 +876,7 @@ class Gateway
      */
     public function checkoutButton($cart, $text='')
     {
-        global $_SHOP_CONF, $_USER, $LANG_SHOP;
+        global $_USER, $LANG_SHOP;
 
         if (!$this->Supports('checkout')) return '';
 
@@ -1192,7 +1090,7 @@ class Gateway
      */
     public function Configure()
     {
-        global $_CONF, $LANG_SHOP, $_SHOP_CONF, $_TABLES;
+        global $_CONF, $LANG_SHOP, $_TABLES;
 
         $T = new Template;
         $T->set_file(array(
@@ -1345,7 +1243,7 @@ class Gateway
      */
     public static function getInstance($gw_name, $A=array())
     {
-        global $_TABLES, $_SHOP_CONF;
+        global $_TABLES;
 
         static $gateways = NULL;
         if ($gateways === NULL) {
@@ -1378,7 +1276,7 @@ class Gateway
      */
     public static function getAll($enabled = false)
     {
-        global $_TABLES, $_SHOP_CONF;
+        global $_TABLES;
 
         $gateways = array();
         $key = $enabled ? 1 : 0;
@@ -1388,13 +1286,21 @@ class Gateway
         if ($tmp === NULL) {
             $tmp = array();
             // Load the gateways
+            $db = Database::getInstance();
             $sql = "SELECT * FROM {$_TABLES['shop.gateways']}";
             // If not loading all gateways, get just then enabled ones
             if ($enabled) $sql .= ' WHERE enabled=1';
             $sql .= ' ORDER BY orderby';
-            $res = DB_query($sql);
-            while ($A = DB_fetchArray($res, false)) {
-                $tmp[] = $A;
+            try {
+                $data = $db->conn->executeQuery($sql)->fetchAllAssociative();
+            } catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $data = false;
+            }
+            if (is_array($data)) {
+                foreach ($data as $A) {
+                    $tmp[] = $A;
+                }
             }
             Cache::set($cache_key, $tmp, self::$TABLE);
         }
@@ -1698,10 +1604,11 @@ class Gateway
         $whitelisted = 0;
         if (function_exists('plugin_chkversion_bad_behavior2')) {
             try {
-                $whitelisted = DB_count(
+                $whitelisted = $db->getCount(
                     $_TABLES['bad_behavior2_whitelist'],
                     array('type', 'item'),
-                    array('url', $url['path'])
+                    array('url', $url['path']),
+                    array(Database::STRING, Database::STRING)
                 );
             } catch (\Exception $e) {
                 // Do nothing, $whitelisted is already zero
@@ -1733,19 +1640,27 @@ class Gateway
             LEFT JOIN {$_TABLES['groups']} g
                 ON g.grp_id = gw.grp_access
             ORDER BY orderby ASC";
-        $res = DB_query($sql);
-        while ($A = DB_fetchArray($res, false)) {
-            $gw = self::create($A['id']);
-            if ($gw) {
-                $data_arr[] = array(
-                    'id'    => $A['id'],
-                    'orderby' => $A['orderby'],
-                    'enabled' => $A['enabled'],
-                    'description' => $A['description'],
-                    'grp_name' => $A['grp_name'],
-                    'version' => $A['version'],
-                    'code_version' => $gw->getCodeVersion(),
-                );
+        $db = Database::getInstance();
+        try {
+            $data = $db->conn->executeQuery($sql);
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $msg);
+            $data = false;
+        }
+        if (is_array($data)) {
+            foreach ($data as $A) {
+                $gw = self::create($A['id']);
+                if ($gw) {
+                    $data_arr[] = array(
+                        'id'    => $A['id'],
+                        'orderby' => $A['orderby'],
+                        'enabled' => $A['enabled'],
+                        'description' => $A['description'],
+                        'grp_name' => $A['grp_name'],
+                        'version' => $A['version'],
+                        'code_version' => $gw->getCodeVersion(),
+                    );
+                }
             }
         }
     }
@@ -1758,7 +1673,7 @@ class Gateway
      */
     public static function adminList()
     {
-        global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN,
+        global $_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN,
             $LANG32;
 
         $data_arr = array();
@@ -1843,7 +1758,7 @@ class Gateway
         $T->parse('output', 'form');
         $display .= $T->finish($T->get_var('output'));
         $display .= ADMIN_listArray(
-            $_SHOP_CONF['pi_name'] . '_gwlist',
+            Config::PI_NAME . '_gwlist',
             array(__CLASS__,  'getAdminField'),
             $header_arr, $text_arr, $data_arr, $defsort_arr,
             '', $extra, '', ''
@@ -1865,7 +1780,7 @@ class Gateway
      */
     public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr, $extra)
     {
-        global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_ADMIN;
+        global $_CONF, $LANG_SHOP, $LANG_ADMIN;
 
         $retval = '';
 
@@ -2323,11 +2238,10 @@ class Gateway
             $this->version = $this->VERSION;
             $db = Database::getInstance();
             try {
-                $db->conn->executeStatement(
-                    "UPDATE {$_TABLES['shop.gateways']}
-                    SET version = ?
-                    WHERE id = ?",
-                    array($this->version, $this->gw_name),
+                $db->conn->update(
+                    $_TABLES['shop.gateways'],
+                    array('version' => $this->version),
+                    array('id' => $this->gw_name),
                     array(Database::STRING, Database::STRING)
                 );
                 return true;
@@ -2429,7 +2343,7 @@ class Gateway
      *
      * @param   array   $Payouts    Array of Payout objects
      */
-    public function sendPayouts(PayoutHeader $Header, array $Payouts)
+    public function sendPayouts(array &$Payouts) : void
     {
         Log::write('shop_system', Log::ERROR, "Payouts not implemented for gateway {$this->gw_name}");
         foreach ($Payouts as $Payout) {

@@ -15,7 +15,7 @@
 /** Require core glFusion code */
 require_once '../lib-common.php';
 
-use Shop\Models\OrderState;
+use Shop\Models\OrderStatus;
 use Shop\Template;
 
 // If plugin is installed but not enabled, display an error and exit gracefully
@@ -232,14 +232,7 @@ default:
     $R = \Shop\Report::getInstance('orderlist');
     $R->setAdmin(false);
     $R->setParams($_POST);
-    $R->setAllowedStatuses(array(
-        OrderState::INVOICED,
-        OrderState::PENDING,
-        OrderState::PROCESSING,
-        OrderState::SHIPPED,
-        OrderState::CLOSED,
-        OrderState::REFUNDED,
-    ));
+    $R->setAllowedStatuses(array_keys(OrderStatus::getCustomerViewable()));
     $content .= $R->Render();
     $menu_opt = $LANG_SHOP['purchase_history'];
     $page_title = $LANG_SHOP['purchase_history'];
@@ -252,4 +245,3 @@ $display .= $content;
 $display .= \Shop\Menu::siteFooter();
 echo $display;
 
-?>

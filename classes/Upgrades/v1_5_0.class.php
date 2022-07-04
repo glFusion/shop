@@ -150,10 +150,21 @@ class v1_5_0 extends Upgrade
             } catch (\Exception $e) {
                 Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             }
-            self::updateOrderStatus('processing', 1, 0);
-            self::updateOrderStatus('shipped', 1, 1);
-            self::updateOrderStatus('closed', 1, 1);
-            self::updateOrderStatus('invoiced', 1, 1);
+            self::updateOrderStatus('processing', array(
+                'valid' => 1, 'closed' => 0, 'aff' => 0, 'viewable' => 1,
+            ) );
+            self::updateOrderStatus('shipped', array(
+                'valid' => 1, 'closed' => 0, 'aff' => 1, 'viewable' => 1,
+            ) );
+            self::updateOrderStatus('closed', array(
+                'valid' => 1, 'closed' => 1, 'aff' => 1, 'viewable' => 1,
+            ) );
+            self::updateOrderStatus('invoiced', array(
+                'valid' => 1, 'closed' => 0, 'aff' => 1, 'viewable' => 1,
+            ) );
+            self::updateOrderStatus('canceled', array(
+                'valid' => 0, 'closed' => 1, 'aff' => 0, 'viewable' => 0,
+            ) );
         }
 
         return self::setVersion(self::$ver);
@@ -201,7 +212,7 @@ class v1_5_0 extends Upgrade
      * @param   integer $valid  Order Valid flag
      * @param   integer $aff    Affiliate Eligible flag
      */
-    private static function updateOrderStatus(string $name, int $valid, int $aff) : void
+    private static function updateOrderStatus(string $name, array($vals)) : void
     {
         global $_TABLES;
 
@@ -210,11 +221,15 @@ class v1_5_0 extends Upgrade
             $db->conn->update(
                 $_TABLES['shop.orderstatus'],
                 array(
-                    'order_valid' => $valid,
-                    'aff_eligible' => $aff,
+                    'order_valid' => $vals['order_valid'],
+                    'order_closed' => $vals['order_closed'],
+                    'aff_eligible' => $vals['aff_eligible'],
+                    'cust_viewable' => $vals['cust_viewable'],
                 ),
                 array('name' => $name),
                 array(
+                    Database::INTEGER,
+                    Database::INTEGER,
                     Database::INTEGER,
                     Database::INTEGER,
                     Database::STRING,

@@ -20,9 +20,8 @@ use Shop\Template;
 use Shop\Gateway;
 use Shop\Company;
 use Shop\Payment;
-use Shop\OrderStatus;
+use Shop\Models\OrderStatus;
 use Shop\ShipmentPackage;
-use Shop\Models\OrderState;
 
 
 /**

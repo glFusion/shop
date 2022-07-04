@@ -12,7 +12,7 @@
  * @filesource
  */
 namespace Shop;
-use Shop\Models\OrderState;
+use Shop\Models\OrderStatus;
 use Shop\Models\CustomInfo;
 use Shop\Models\Token;
 use Shop\Models\ReferralTag;
@@ -967,20 +967,20 @@ class Order
 
         if (
             (
-                $this->getStatus() == OrderState::CART ||
-                $this->getStatus() == OrderState::PENDING ||
-                $this->getStatus() == OrderState::INVOICED
+                $this->getStatus() == OrderStatus::CART ||
+                $this->getStatus() == OrderStatus::PENDING ||
+                $this->getStatus() == OrderStatus::INVOICED
             ) &&
             $this->isPaid()
         ) {
             // Automatically set the order status after payment, unless it has
             // already been set to Processing or higher.
-            if (!$this->statusAtLeast(OrderState::PROCESSING)) {
+            if (!$this->statusAtLeast(OrderStatus::PROCESSING)) {
                 if ($this->hasPhysical()) {
-                   $this->updateStatus(OrderState::PROCESSING, true, $notify);
+                   $this->updateStatus(OrderStatus::PROCESSING, true, $notify);
                 } else {
                     // No physical items, consider the order closed.
-                    $this->updateStatus(OrderState::CLOSED, true, $notify);
+                    $this->updateStatus(OrderStatus::CLOSED, true, $notify);
                 }
             }
         }
@@ -1148,9 +1148,9 @@ class Order
             $Item->getProduct()->handlePurchase($Item, $IPN);
         }
         /*if ($this->hasPhysical()) {
-            $this->updateStatus(OrderState::PROCESSING);
+            $this->updateStatus(OrderStatus::PROCESSING);
         } else {
-            $this->updateStatus(OrderState::SHIPPED);
+            $this->updateStatus(OrderStatus::SHIPPED);
         }*/
         return $this;
     }
@@ -2153,7 +2153,7 @@ class Order
      */
     public function isInvoiced()
     {
-        return $this->status == OrderState::INVOICED;
+        return $this->status == OrderStatus::INVOICED;
     }
 
 
@@ -2165,8 +2165,8 @@ class Order
     public function isShipped()
     {
         return (
-            $this->status == OrderState::SHIPPED ||
-            $this->status == OrderState::CLOSED
+            $this->status == OrderStatus::SHIPPED ||
+            $this->status == OrderStatus::CLOSED    // for virtual goods
         );
     }
 
@@ -3171,7 +3171,7 @@ class Order
     {
         global $LANG_SHOP;
 
-        if (OrderState::isValid($newstatus)) {
+        if (OrderStatus::isValid($newstatus)) {
             $this->status = $newstatus;
         } else {
             Log::write('shop_system', Log::ERROR, "Invalid log status '{$newstatus}' specified for order {$this->getOrderID()}");
@@ -3876,14 +3876,14 @@ class Order
         }
 
         if (
-            $this->status != OrderState::PENDING &&
-            $this->status != OrderState::CART
+            $this->status != OrderStatus::PENDING &&
+            $this->status != OrderStatus::CART
         ) {
             // Do nothing if already processing, shipped, etc.
             return $this;
         }
 
-        $newstatus = $status == OrderState::PENDING ? OrderState::PENDING : OrderState::CART;
+        $newstatus = $status == OrderStatus::PENDING ? OrderStatus::PENDING : OrderStatus::CART;
         $oldstatus = $this->status;
 
         if ($oldstatus != $newstatus) {
@@ -3925,7 +3925,7 @@ class Order
 
         // Set the order status back to "cart" and reset the token
         // to prevent duplication of this function.
-        $this->setStatus(OrderState::CART)
+        $this->setStatus(OrderStatus::CART)
              ->remInfo('applied_gc')
              ->setToken()
              ->Save(false);
@@ -3987,7 +3987,7 @@ class Order
      */
     public function statusAtLeast($desired)
     {
-        return OrderState::atLeast($desired, $this->getStatus());
+        return OrderStatus::atLeast($desired, $this->getStatus());
     }
 
 
@@ -4005,10 +4005,10 @@ class Order
         }
 
         switch ($this->status) {
-        case OrderState::INVOICED;
-        case OrderState::PROCESSING;
-        case OrderState::SHIPPED;
-        case OrderState::CLOSED;
+        case OrderStatus::INVOICED;
+        case OrderStatus::PROCESSING;
+        case OrderStatus::SHIPPED;
+        case OrderStatus::CLOSED;
             return true;
         default:
             return false;
@@ -4129,7 +4129,7 @@ class Order
         }
         $action = Config::get('redact_action');
 
-        $order_states = array_keys(OrderState::allAtLeast(OrderState::CLOSED));
+        $order_states = array_keys(OrderStatus::allAtLeast(OrderStatus::CLOSED));
         $cutoff = time() - ($years * 31536000); // convert to int timestamp
         $db = Database::getInstance();
         $qb = $db->conn->createQueryBuilder();

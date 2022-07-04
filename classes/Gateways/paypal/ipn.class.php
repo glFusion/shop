@@ -14,7 +14,7 @@
  */
 namespace Shop\Gateways\paypal;
 use Shop\Cart;
-use Shop\Models\OrderState;
+use Shop\Models\OrderStatus;
 use Shop\Log;
 
 
@@ -89,13 +89,13 @@ class ipn extends \Shop\IPN
         // Set the IPN status to one of the standard values
         switch ($this->ipn_data['payment_status']) {
         case 'Pending':
-            $this->setStatus(OrderState::PENDING);
+            $this->setStatus(OrderStatus::PENDING);
             break;
         case 'Completed':
-            $this->setStatus(OrderState::PAID);
+            $this->setStatus(OrderStatus::PAID);
             break;
         case 'Refunded':
-            $this->setStatus(OrderState::REFUNDED);
+            $this->setStatus(OrderStatus::REFUNDED);
             $this->ipn_data['txn_type'] = 'refund';
             $this->setEvent('refund');
             break;

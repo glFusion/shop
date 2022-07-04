@@ -75,10 +75,12 @@ class itempurchase extends \Shop\Report
             $has_custom = false;
         }
 
-        $sql = "SELECT purch.*, purch.quantity as qty, ord.order_date, ord.uid,
+        $sql = "SELECT oi.*, oi.quantity as qty, ord.order_date, ord.uid,
             ord.billto_name, ord.billto_company, ord.status, ord.buyer_email
-            FROM {$_TABLES['shop.orderitems']} purch
-            LEFT JOIN {$_TABLES['shop.orders']} ord ON ord.order_id = purch.order_id";
+            FROM {$_TABLES['shop.orderitems']} oi
+            LEFT JOIN {$_TABLES['shop.orders']} ord ON ord.order_id = oi.order_id";
+//            LEFT JOIN {$_TABLES['shop.prodXcbox']} x ON ord.product_id = x.item_id
+//            LEFT JOIN {$_TABLES['shop.product_option_vals']} pov ON x.item_id";
 
         $header_arr = array(
             array(
@@ -115,7 +117,7 @@ class itempurchase extends \Shop\Report
         );
 
         $where = " WHERE ord.status <> 'cart'
-            AND purch.product_id = '{$this->item_id}'
+            AND oi.product_id = '{$this->item_id}'
             AND (ord.order_date >= '$from_date'
             AND ord.order_date <= '$to_date')";
         if ($this->uid > 0) {

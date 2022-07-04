@@ -19,7 +19,6 @@ use Shop\Currency;
 use Shop\Order;
 use Shop\Shipper;
 use Shop\Models\CustomInfo;
-use Shop\Models\OrderState;
 use Shop\Models\Token;
 use Shop\Template;
 use Shop\Tax;

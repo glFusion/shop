@@ -20,7 +20,7 @@ use Shop\Template;
 use Shop\Gateway;
 use Shop\Company;
 use Shop\IPN;
-use Shop\OrderStatus;
+use Shop\Models\OrderStatus;
 
 
 /**

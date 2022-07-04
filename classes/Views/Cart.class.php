@@ -23,7 +23,7 @@ use Shop\Company;
 use Shop\Customer;
 use Shop\Address;
 use Shop\IPN;
-use Shop\OrderStatus;
+use Shop\Models\OrderStatus;
 use Shop\Country;
 use Shop\State;
 
