@@ -400,6 +400,30 @@ class OrderStatus
 
 
     /**
+     * Check an order status to make sure it's one of the validated ones.
+     *
+     * @param   string  $status     Order status
+     * @return  boolean     True if a validated status, False if not
+     */
+    public static function checkOrderValid(string $status) : bool
+    {
+        return array_key_exists($status, self::getOrderValid());
+    }
+
+
+    /**
+     * Check an order status to see if it's customer-viewable.
+     *
+     * @param   string  $status     Order status
+     * @return  boolean     True if a viewable status, False if not
+     */
+    public static function checkCustomerViewable(string $status) : bool
+    {
+        return array_key_exists($status, self::getCustomerViewable());
+    }
+
+
+    /**
      * Check if a requested status is valid.
      *
      * @param   string  $status     Status to check
