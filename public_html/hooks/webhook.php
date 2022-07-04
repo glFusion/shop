@@ -39,6 +39,7 @@ if (!empty($gw_name)) {
     if ($WH) {
         if ($WH->Verify()) {
             $status = $WH->Dispatch();
+            Log::write('shop_system', Log::DEBUG, 'Webhook Dispatch status: ' . var_export($status,true));
         } else {
             Log::write('shop_system', Log::ERROR, "Webhook verification failed for $gw_name");
             $status = false;

@@ -96,8 +96,7 @@ case 'cartaddone':
         $OI->setQuantity($qty + (int)$_POST['qty']);
         $OI->Save();
         $Order = $OI->getOrder();
-        $Order->Load();
-        $Order->Save();
+        $Order->refresh()->Save();
         $output = array(
             'new_oi_qty' => $OI->getQuantity(),
             'new_total' => $Order->getTotal(),

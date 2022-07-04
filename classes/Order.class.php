@@ -98,10 +98,6 @@ class Order
      * @var object */
     protected $Currency;
 
-    /** Statuses that indicate an order is still in a "cart" phase.
-     * @var array */
-    protected static $nonfinal_statuses = array('cart', 'pending');
-
     /** Order number.
      * @var string */
     protected $order_id = '';
@@ -258,6 +254,10 @@ class Order
      * @var object */
     private $Customer = NULL;
 
+    /** Cache orders per page load.
+     * @var array */
+    protected static $OrderCache = array();
+
 
     /**
      * Set internal variables and read the existing order if an id is provided.
@@ -272,12 +272,7 @@ class Order
         $this->currency = Config::get('currency');
         if (!empty($id)) {
             $this->order_id = $id;
-            if (!$this->Load($id)) {
-                $this->isNew = true;
-                $this->Items = array();
-            } else {
-                $this->isNew = false;
-            }
+            $this->refresh($id);
         }
         $this->Customer = Customer::getInstance($this->uid);
         if ($this->isNew) {
@@ -301,28 +296,16 @@ class Order
     /**
      * Get an object instance for an order.
      *
-     * @param   string|array    $key    Order ID or record
-     * @param   integer         $uid    User ID (used by Cart class)
-     * @return  object          Order object
+     * @param   string  $key    Order ID or record
+     * @param   integer $uid    User ID (used by Cart class)
+     * @return  object      Order object
      */
-    public static function getInstance($key, $uid = 0)
+    public static function getInstance(string $key, int $uid = 0) : self
     {
-        if (is_array($key)) {
-            $id = SHOP_getVar($key, 'order_id', 'string', '');
-        } else {
-            $id = $key;
+        if (!isset(self::$OrderCache[$key])) {
+            self::$OrderCache[$key] = new self($key);
         }
-
-        if (!empty($id)) {
-            if (!is_string($id)) {
-                var_dump(debug_backtrace(0));die;
-            }
-            $retval = new self($id);
-        } else {
-            $retval = new self;
-            $id = $retval->getOrderId();
-        }
-        return $retval;
+        return self::$OrderCache[$key];
     }
 
 
@@ -349,42 +332,43 @@ class Order
 
 
     /**
-     * Load the order information from the database.
+     * Read the order information from the database.
      *
      * @param   string  $id     Order ID
      * @return  boolean     True on success, False if order not found
      */
-    public function Load($id = '')
+    public function refresh(?string $id = NULL) : self
     {
         global $_TABLES;
 
-        if ($id != '') {
+        if (!empty($id)) {
             $this->order_id = $id;
         }
 
-        $sql = "SELECT ord.*,
-            ( SELECT sum(pmt_amount) FROM {$_TABLES['shop.payments']} pmt
-            WHERE pmt.pmt_order_id = ord.order_id AND is_complete = 1
-            ) as amt_paid
-            FROM {$_TABLES['shop.orders']} ord
-            WHERE ord.order_id='{$this->order_id}'";
-        //echo $sql;die;
-        $res = DB_query($sql);
-        if (!$res) {
-            return false;    // requested order not found
+        $db = Database::getInstance();
+        try {
+            $data = $db->conn->executeQuery(
+                "SELECT ord.*,
+                ( SELECT sum(pmt_amount) FROM {$_TABLES['shop.payments']} pmt
+                WHERE pmt.pmt_order_id = ord.order_id AND is_complete = 1
+                ) as amt_paid
+                FROM {$_TABLES['shop.orders']} ord
+                WHERE ord.order_id = ?",
+                array($this->order_id),
+                array(Database::STRING)
+            )->fetchAssociative();
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $data = false;
         }
-        $A = DB_fetchArray($res, false);
-        if (empty($A)) {
-            return false;
-        }
-        if ($this->setVars($A)) {
+        if (is_array($data) && $this->setVars($data)) {
             $this->isNew = false;
+            // Now load the items
+            $this->Items = OrderItem::getByOrder($this->order_id);
+            $this->unTaint();
+            self::$OrderCache[$this->order_id] = $this;
         }
-
-        // Now load the items
-        $this->Items = OrderItem::getByOrder($this->order_id);
-        $this->unTaint();
-        return true;
+        return $this;
     }
 
 
@@ -997,11 +981,10 @@ class Order
      * @param   boolean $notify         True to notify the buyer, False to not.
      * @return  string      New status, old status if not updated.
      */
-    public function updateStatus($newstatus, $log = true, $notify=true)
+    public function updateStatus(string $newstatus, bool $log = true, bool $notify=true) : string
     {
         global $_TABLES, $LANG_SHOP, $_SHOP_CONF;
 
-        //var_dump(debug_backtrace(0, 2));
         // When orders are paid by IPN, move the status to "processing"
         if ($newstatus == 'paid') {
             $newstatus = 'processing';
@@ -1020,7 +1003,7 @@ class Order
         $log_user = $this->log_user;
 
         // If promoting from a cart status to a real order, add the sequence number.
-        if (!$this->isFinal($oldstatus) && $this->isFinal() && $this->order_seq < 1) {
+        if ($this->isFinal() && $this->order_seq < 1) {
             if (!$this->verifyReferralTag()) {
                 // If the referrer is invalid, remove from the order record
                 $other_updates = ", referrer_uid = {$this->referrer_uid},
@@ -2519,7 +2502,7 @@ class Order
         if ($status === NULL) {     // checking current status
             $status = $this->status;
         }
-        return !in_array($status, self::$nonfinal_statuses);
+        return OrderStatus::checkOrderValid($status);
     }
 
 

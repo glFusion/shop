@@ -67,7 +67,7 @@ class Cart extends Order
      * @param   string  $cart_id    Specific cart ID to read
      * @return  object  Cart object
      */
-    public static function getInstance($cart_id = '', $uid = 0)
+    public static function getInstance(string $cart_id = '', int $uid = 0) : self
     {
         global $_TABLES, $_USER;
 
