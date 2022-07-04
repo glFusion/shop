@@ -383,24 +383,29 @@ class Order
         global $_TABLES;
 
         $retval = array();
+        $db = Database::getInstance();
+        $qb = $db->conn->createQueryBuilder();
+        $qb->select(
+            'ord.*',
+            'ord.order_total - ifnull(sum(pmt.pmt_amount),0) as amtDue',
+            'ifnull(sum(pmt.pmt_amount),0) as amt_paid'
+        )
+           ->from($_TABLES['shop.orders'], 'ord')
+           ->leftJoin('ord', $_TABLES['shop.payments'], 'pmt', 'pmt.pmt_order_id=ord.order_id')
+           ->groupBy('ord.order_id')
+           ->having('amtDue > 0');
         if ($uid > 0) {
-            $uid_where = " WHERE uid = " . (int)$uid;
-        } else {
-            $uid_where = '';
+            $qb->where('uid = :uid')
+               ->setParameter('uid', $uid, Database::INTEGER);
         }
-        $sql = "SELECT ord.*,
-            ord.order_total - ifnull(sum(pmt.pmt_amount),0) as amtDue,
-            ifnull(sum(pmt.pmt_amount),0) as amt_paid
-            FROM {$_TABLES['shop.orders']} ord
-            LEFT JOIN {$_TABLES['shop.payments']} pmt
-            ON pmt.pmt_order_id = ord.order_id
-            $uid_where
-            GROUP BY ord.order_id
-            HAVING amtDue > 0";
-        $res = DB_query($sql);
-        while ($A = DB_fetchArray($res, false)) {
-            $retval[$A['order_id']] = new self();
-            $retval[$A['order_id']]->setVars($A);
+        try {
+            $stmt = $qb->execute();
+            while ($A = $stmt->fetchAssociative()) {
+                $retval[$A['order_id']] = new self();
+                $retval[$A['order_id']]->setVars($A);
+            }
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
         return $retval;
     }
@@ -497,18 +502,32 @@ class Order
             $have_address = true;
         }
         if ($have_address) {
-            $this->updateRecord(array(
-                "billto_id   = '{$this->Billto->getID()}'",
-                "billto_name = '" . DB_escapeString($this->Billto->getName()) . "'",
-                "billto_company = '" . DB_escapeString($this->Billto->getCompany()) . "'",
-                "billto_address1 = '" . DB_escapeString($this->Billto->getAddress1()) . "'",
-                "billto_address2 = '" . DB_escapeString($this->Billto->getAddress2()) . "'",
-                "billto_city = '" . DB_escapeString($this->Billto->getCity()) . "'",
-                "billto_state = '" . DB_escapeString($this->Billto->getState()) . "'",
-                "billto_country = '" . DB_escapeString($this->Billto->getCountry()) . "'",
-                "billto_zip = '" . DB_escapeString($this->Billto->getPostal()) . "'",
-                "billto_phone = '" . DB_escapeString($this->Billto->getPhone()) . "'"
-            ) );
+            $this->updateRecord(
+                array(
+                    'billto_id' => $this->Billto->getID(),
+                    'billto_name' => $this->Billto->getName(),
+                    'billto_company' => $this->Billto->getCompany(),
+                    'billto_address1' => $this->Billto->getAddress1(),
+                    'billto_address2' => $this->Billto->getAddress2(),
+                    'billto_city' => $this->Billto->getCity(),
+                    'billto_state' => $this->Billto->getState(),
+                    'billto_country' => $this->Billto->getCountry(),
+                    'billto_zip' => $this->Billto->getPostal(),
+                    'billto_phone' => $this->Billto->getPhone(),
+                ),
+                array(
+                    Database::INTEGER,
+                    Database::STRING,
+                    Database::STRING,
+                    Database::STRING,
+                    Database::STRING,
+                    Database::STRING,
+                    Database::STRING,
+                    Database::STRING,
+                    Database::STRING,
+                    Database::STRING,
+                )
+            );
         }
         return $this;
     }
@@ -556,21 +575,38 @@ class Order
         }
 
         if ($have_address) {
-            $this->updateRecord(array(
-                "shipto_id   = '{$this->Shipto->getID()}'",
-                "shipto_name = '" . DB_escapeString($this->Shipto->getName()) . "'",
-                "shipto_company = '" . DB_escapeString($this->Shipto->getCompany()) . "'",
-                "shipto_address1 = '" . DB_escapeString($this->Shipto->getAddress1()) . "'",
-                "shipto_address2 = '" . DB_escapeString($this->Shipto->getAddress2()) . "'",
-                "shipto_city = '" . DB_escapeString($this->Shipto->getCity()) . "'",
-                "shipto_state = '" . DB_escapeString($this->Shipto->getState()) . "'",
-                "shipto_country = '" . DB_escapeString($this->Shipto->getCountry()) . "'",
-                "shipto_zip = '" . DB_escapeString($this->Shipto->getPostal()) . "'",
-                "shipto_phone = '" . DB_escapeString($this->Shipto->getPhone()) . "'",
-                "tax_rate = '{$this->getTaxRate()}'",
-                "tax = '{$this->getTax()}'",
-                "shipper_id = 0",   // clear to force shipper re-quoting
-            ) );
+            $this->updateRecord(
+                array(
+                    'shipto_id' => $this->Shipto->getID(),
+                    'shipto_name' => $this->Shipto->getName(),
+                    'shipto_company' => $this->Shipto->getCompany(),
+                    'shipto_address1' => $this->Shipto->getAddress1(),
+                    'shipto_address2' => $this->Shipto->getAddress2(),
+                    'shipto_city' => $this->Shipto->getCity(),
+                    'shipto_state' => $this->Shipto->getState(),
+                    'shipto_country' => $this->Shipto->getCountry(),
+                    'shipto_zip' => $this->Shipto->getPostal(),
+                    'shipto_phone' => $this->Shipto->getPhone(),
+                    'tax_rate' => $this->getTaxRate(),
+                    'tax' => $this->getTax(),
+                    'shipper_id' => 0,   // clear to force shipper re-quoting
+                ),
+                array(
+                    Database::INTEGER,
+                    Database::STRING,
+                    Database::STRING,
+                    Database::STRING,
+                    Database::STRING,
+                    Database::STRING,
+                    Database::STRING,
+                    Database::STRING,
+                    Database::STRING,
+                    Database::STRING,
+                    Database::STRING,
+                    Database::STRING,
+                    Database::INTEGER,
+                )
+            );
         }
         $this->setTaxRate(NULL);
         return $this;
@@ -789,16 +825,44 @@ class Order
         }
 
         // Checks passed, delete the order and items
-        $order_id = DB_escapeString($order_id);
-        $sql = "START TRANSACTION;
-            DELETE FROM {$_TABLES['shop.oi_opts']} WHERE oi_id IN (
-                SELECT id FROM {$_TABLES['shop.orderitems']} WHERE order_id = '$order_id'
+        $db = Database::getInstance();
+        $db->conn->beginTransaction();
+        try {
+            $db->conn->executeStatement(
+                "DELETE FROM {$_TABLES['shop.oi_opts']} WHERE oi_id IN
+                (SELECT id FROM {$_TABLES['shop.orderitems']} WHERE order_id = ?)",
+                array($order_id),
+                array(Database::STRING)
             );
-            DELETE FROM {$_TABLES['shop.orderitems']} WHERE order_id = '$order_id';
-            DELETE FROM {$_TABLES['shop.orders']} WHERE order_id = '$order_id';
-            COMMIT;";
-        DB_query($sql);
-        return DB_error() ? false : true;
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $db->conn->rollback();
+            return false;
+        }
+        try {
+            $db->conn->delete(
+                $_TABLES['shop.orderitems'],
+                array('order_id' => $order_id),
+                array(Database::STRING)
+            );
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $db->conn->rollback();
+            return false;
+        }
+        try {
+            $db->conn->delete(
+                $_TABLES['shop.orders'],
+                array('order_id' => $order_id),
+                array(Database::STRING)
+            );
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $db->conn->rollback();
+            return false;
+        }
+        $db->conn->commit();
+        return true;
     }
 
 
@@ -824,7 +888,6 @@ class Order
             }
         }
         $order_total = $this->calcOrderTotal();
-        $db_order_id = DB_escapeString($this->order_id);
         if ($this->isNew) {
             // Shouldn't have an empty order ID, but double-check
             if ($this->order_id == '') $this->order_id = self::_createID();
@@ -832,85 +895,126 @@ class Order
                 $this->billto_name = COM_getDisplayName($this->uid);
             }
             Session::set('order_id', $this->order_id);
-            // Set field values that can only be set once and not updated
-            $sql1 = "INSERT INTO {$_TABLES['shop.orders']} SET
-                    order_id = '{$db_order_id}',
-                    token = '" . DB_escapeString($this->token) . "', ";
-            $sql2 = '';
-        } else {
-            $sql1 = "UPDATE {$_TABLES['shop.orders']} SET ";
-            $sql2 = " WHERE order_id = '{$db_order_id}'";
         }
 
-        $fields = array(
-            "uid = " . (int)$this->uid,
-            "order_date = '{$this->order_date->toUnix()}'",
-            "status = '{$this->status}'",
-            //"pmt_txn_id = '" . DB_escapeString($this->pmt_txn_id) . "'",
-            "pmt_method = '" . DB_escapeString((string)$this->pmt_method) . "'",
-            "pmt_dscp = '" . DB_escapeString($this->pmt_dscp) . "'",
-            "by_gc = '{$this->by_gc}'",
-            //"phone = '" . DB_escapeString($this->phone) . "'",
-            "tax = '{$this->getTax()}'",
-            "shipping = '{$this->getShipping()}'",
-            "handling = '{$this->getHandling()}'",
-            "gross_items = '{$this->gross_items}'",
-            "net_nontax = '{$this->net_nontax}'",
-            "net_taxable = '{$this->net_taxable}'",
-            "instructions = '" . DB_escapeString($this->instructions) . "'",
-            "buyer_email = '" . DB_escapeString($this->buyer_email) . "'",
-            //"info = '" . DB_escapeString(@serialize($this->m_info)) . "'",
-            "info = '" . DB_escapeString((string)$this->m_info) . "'",
-            "tax_rate = {$this->getTaxRate()}",
-            "currency = '{$this->currency}'",
-            "discount_code = '" . DB_escapeString($this->discount_code) . "'",
-            "discount_pct = {$this->getDiscountPct()}",
-            "order_total = {$order_total}",
-            "shipper_id = {$this->getShipperID()}",
-            "shipping_method = '" . DB_escapeString($this->shipping_method) . "'",
-            "shipping_dscp = '" . DB_escapeString($this->shipping_dscp) . "'",
-            "gw_order_ref = '" . DB_escapeString($this->gw_order_ref) . "'",
-            "referral_token = '" . DB_escapeString($this->referral_token) . "'",
-            "referrer_uid = {$this->referrer_uid}",
-            "referral_exp = {$this->referral_exp}",
+        $values = array(
+            'uid' => $this->uid,
+            'order_date' => $this->order_date->toUnix(),
+            'status' => $this->status,
+            'pmt_method' => (string)$this->pmt_method,
+            'pmt_dscp' => $this->pmt_dscp,
+            'by_gc' => $this->by_gc,
+            'tax' => $this->getTax(),
+            'shipping' =>$this->getShipping(),
+            'handling' => $this->getHandling(),
+            'gross_items' => $this->gross_items,
+            'net_nontax' => $this->net_nontax,
+            'net_taxable' => $this->net_taxable,
+            'instructions' => $this->instructions,
+            'buyer_email' => $this->buyer_email,
+            'info' => (string)$this->m_info,
+            'tax_rate' => $this->getTaxRate(),
+            'currency' => $this->currency,
+            'discount_code' => $this->discount_code,
+            'discount_pct' => $this->getDiscountPct(),
+            'order_total' => $order_total,
+            'shipper_id' => $this->getShipperID(),
+            'shipping_method' => $this->shipping_method,
+            'shipping_dscp' => $this->shipping_dscp,
+            'gw_order_ref' => $this->gw_order_ref,
+            'referral_token' => $this->referral_token,
+            'referrer_uid' => $this->referrer_uid,
+            'referral_exp' => $this->referral_exp,
+        );
+        $types = array(
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::INTEGER,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::INTEGER,
+            Database::INTEGER,
         );
 
         $billto = $this->Billto->toArray();
         $shipto = $this->Shipto->toArray();
         foreach (array('billto', 'shipto') as $type) {
             $fld = $type . '_id';
-            $fields[] = "$fld = " . (int)$$type['id'];
+            $values[$fld] = (int)$$type['id'];
+            $types[] = Database::INTEGER;
             foreach ($this->_addr_fields as $name) {
                 $fld = $type . '_' . $name;
-                $fields[] = $fld . "='" . DB_escapeString($$type[$name]) . "'";
+                $values[$fld] = $$type[$name];
+                $types[] = Database::STRING;
             }
         }
-        $sql = $sql1 . implode(', ', $fields) . $sql2;
-        DB_query($sql);
-        $this->isNew = false;
-        $this->unTaint();
+        $db = Database::getInstance();
+        try {
+            if ($this->isNew) {
+                // Set field values that can only be set once and not updated
+                $values['order_id'] = $this->order_id;
+                $types[] = Database::STRING;
+                $values['token'] = $this->token;
+                $types[] = Database::STRING;
+                $db->conn->insert($_TABLES['shop.orders'], $values, $types);
+            } else {
+                $where = array('order_id' => $this->order_id);
+                $types[] = Database::STRING;
+                $db->conn->update($_TABLES['shop.orders'], $values, $where, $types);
+            }
+            $this->isNew = false;
+            $this->unTaint();
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
         return $this->order_id;
     }
-
 
 
     /**
      * Update some fields in the Orders table.
      * This is to avoid the overhead from calling Save().
      *
-     * @param   string|array    $vals   One or an array of value strings
+     * @param   array   $vals   One or an array of value strings
+     * @param   array   $types  Matching DBAL type values
      * @return  object  $this
      */
-    public function updateRecord($vals)
+    public function updateRecord(array $vals, array $types) : self
     {
         global $_TABLES;
 
-        if (is_array($vals)) {
-            $vals = implode(',', $vals);
+        $types[] = Database::STRING;    // for the where value
+        $db = Database::getInstance();
+        try {
+            $db->conn->update(
+                $_TABLES['shop.orders'],
+                $vals,
+                array('order_id' => $this->order_id),
+                $types
+            );
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
-        $sql = "UPDATE {$_TABLES['shop.orders']} SET $vals
-            WHERE order_id = '" . DB_escapeString($this->order_id) . "'";
-        DB_query($sql);
         return $this;
     }
 
@@ -920,11 +1024,9 @@ class Order
      * Access is controlled by the caller invoking canView() since a token
      * may be required.
      *
-     * @param  string  $view       View to display (cart, final order, etc.)
-     * @param  integer $step       Current step, for updating next_step in the form
      * @return string      HTML for order view
      */
-    public function View($view = 'order', $step = 0)
+    public function View() : string
     {
         $V = new \Shop\Views\Invoice;
         return $V->withOrder($this)->Render();
@@ -999,8 +1101,8 @@ class Order
         }
 
         $this->status = $newstatus;
-        $db_order_id = DB_escapeString($this->order_id);
         $log_user = $this->log_user;
+        $db = Database::getInstance();
 
         // If promoting from a cart status to a real order, add the sequence number.
         if ($this->isFinal() && $this->order_seq < 1) {
@@ -1011,31 +1113,49 @@ class Order
             } else {
                 $other_updates = '';
             }
-            $sql = "START TRANSACTION;
-                SELECT COALESCE(MAX(order_seq)+1,1) FROM {$_TABLES['shop.orders']} INTO @seqno FOR UPDATE;
-                UPDATE {$_TABLES['shop.orders']} SET
-                    status = '". DB_escapeString($this->status) . "',
+            $db->conn->beginTransaction();
+            try {
+                $db->conn->executestatement(
+                    "SELECT COALESCE(MAX(order_seq)+1,1)
+                    FROM {$_TABLES['shop.orders']} INTO @seqno FOR UPDATE"
+                );
+            } catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $db->conn->rollback();
+            }
+            try {
+                $db->conn->executestatement(
+                    "UPDATE {$_TABLES['shop.orders']} SET
+                    status = ?,
                     order_seq = @seqno
                     $other_updates
-                WHERE order_id = '$db_order_id';
-                COMMIT;";
-            DB_query($sql);
-            //Log::write('shop_system', Log::DEBUG, $sql);
-            // Now assign the sequence number
-            $this->order_seq = (int)DB_getItem(
+                    WHERE order_id = ?",
+                    array($this->status, $this->order_id),
+                    array(Database::STRING, Database::STRING)
+                );
+            } catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $db->conn->rollback();
+            }
+            $db->commit();
+
+            $this->order_seq = $db->getItem(
                 $_TABLES['shop.orders'],
                 'order_seq',
-                "order_id = '{$db_order_id}'"
+                array('order_id' => $this->order_id)
             );
         } else {
             // Update the status but leave the sequence alone
-            $sql = "UPDATE {$_TABLES['shop.orders']} SET
-                    status = '". DB_escapeString($this->status) . "'
-                WHERE order_id = '$db_order_id';";
-            DB_query($sql);
-            if (DB_error()) {
+            try {
+                $db->conn->update(
+                    $_TABLES['shop.orders'],
+                    array('status' => $this->status),
+                    array('order_id' => $this->order_id),
+                    array(Database::STRING, Database::STRING)
+                );
+            } catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $this->status = $oldstatus;     // update in-memory object
-                return $oldstatus;
             }
         }
 
@@ -1070,11 +1190,14 @@ class Order
         } else {
             $exp = 0;
         }
-        $this->updateRecord(array(
-            "referral_token = '" . DB_escapeString($this->referral_token) . "'",
-            "referrer_uid = " . $this->referrer_uid,
-            "referral_exp = " . $exp,
-        ) );
+        $this->updateRecord(
+            array(
+                'referral_token' => $this->referral_token,
+                'referrer_uid' => $this->referrer_uid,
+                'referral_exp' => $exp,
+            ),
+            array(Database::STRING, Database::INTEGER, Database::INTEGER)
+        );
         return $this;
     }
 
@@ -1150,11 +1273,21 @@ class Order
         if (isset($count[$uid])) {
             return $count[$uid];
         } else {
-            $sql = "SELECT order_id FROM {$_TABLES['shop.orders']}
-                WHERE uid = {$uid}
-                AND status NOT IN ('cart', 'pending', 'cancelled', 'refunded')";
-            $res = DB_query($sql);
-            $count[$uid] = DB_numRows($res);
+            $db = Database::getInstance();
+            $statuses = array_keys(OrderStatus::getOrderValid(false));
+            try {
+                $data = $db->conn->executeQuery(
+                    "SELECT COUNT(*) AS total FROM {$_TABLES['shop.orders']}
+                    WHERE uid = ?
+                    AND status NOT IN (?)",
+                    array($uid, $statuses),
+                    array(Database::INTEGER, Database::PARAM_INT_ARRAY)
+                )->fetchAssociative();
+                $count[$uid] = (int)$data['total'];
+            } catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $count[$uid] = 0;
+            }
         }
         return $count[$uid];
     }
@@ -1183,14 +1316,28 @@ class Order
             $log_user = COM_getDisplayName($_USER['uid']) .
                 ' (' . $_USER['uid'] . ')';
         }
-        $order_id = DB_escapeString($this->order_id);
-        $sql = "INSERT INTO {$_TABLES['shop.order_log']} SET
-            username = '" . DB_escapeString($log_user) . "',
-            order_id = '$order_id',
-            message = '" . DB_escapeString($msg) . "',
-            ts = UNIX_TIMESTAMP()";
-        DB_query($sql);
-        return !DB_error();
+        $db = Database::getInstance();
+        try {
+            $db->conn->insert(
+                $_TABLES['shop.order_log'],
+                array(
+                    'username' => $log_user,
+                    'order_id' => $order_id,
+                    'message' => $msg,
+                    'ts' => time(),
+                ),
+                array(
+                    Database::STRING,
+                    Database::STRING,
+                    Database::STRING,
+                    Database::INTEGER,
+                )
+            );
+            return true;
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return false;
+        }
     }
 
 
@@ -1590,11 +1737,17 @@ class Order
         global $_TABLES, $_CONF;
 
         $log = array();
-        $sql = "SELECT * FROM {$_TABLES['shop.order_log']}
-            WHERE order_id = '" . DB_escapeString($this->order_id) . "'";
-        $res = DB_query($sql);
-        while ($L = DB_fetchArray($res, false)) {
-            $log[] = $L;
+        $db = Database::getInstance();
+        try {
+            $log = $db->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.order_log']}
+                WHERE order_id = ?",
+                array($this->order_id),
+                array(Database::STRING)
+            )->fetchAllAssociative();
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $log = array();
         }
         return $log;
     }
@@ -1665,7 +1818,10 @@ class Order
     {
         if (!$this->isFinal()) {
             $this->token = Token::create();
-            return $this->updateRecord("token = '" . DB_escapeString($this->token) . "'");
+            return $this->updateRecord(
+                array('token' => $this->token),
+                array(Database::STRING)
+            );
         } else {
             return $this;
         }
@@ -1693,12 +1849,15 @@ class Order
         }
         $total += $this->shipping + $this->tax + $this->handling;
         $this->order_total = Currency::getInstance()->RoundVal($total);
-        $this->updateRecord(array(
-            "tax = {$this->tax}",
-            "shipping = {$this->shipping}",
-            "handling = {$this->handling}",
-            "order_total = {$this->order_total}"
-        ) );
+        $this->updateRecord(
+            array(
+                'tax' => $this->tax,
+                'shipping' => $this->shipping,
+                'handling' => $this->handling,
+                'order_total' => $this->order_total,
+            ),
+            array(Database::STRING, Database::STRING, Database::STRING, Database::STRING)
+        );
         return $this->order_total;
     }
 
@@ -1735,7 +1894,12 @@ class Order
         }
         do {
             $id = COM_sanitizeID($func());
-        } while (DB_getItem($_TABLES['shop.orders'], 'order_id', "order_id = '$id'") !== NULL);
+        } while ($db->getItem(
+            $_TABLES['shop.orders'],
+            'order_id',
+            array('order_id' => $id),
+            array(Database::STRING)
+        ) !== NULL);
         return $id;
     }
 
@@ -1929,9 +2093,10 @@ class Order
             $amt = min($gc_bal, \Shop\Products\Coupon::canPayByGC($this));
         }
         $this->by_gc = (float)$amt;
-        return $this->updateRecord(array(
-            "by_gc = {$this->by_gc}",
-        ) );
+        return $this->updateRecord(
+            array('by_gc' => $this->by_gc),
+            array(Database::STRING)
+        );
     }
 
 
@@ -2210,13 +2375,22 @@ class Order
             $this->shipping_dscp = $shipper_id['title'];
         }
         $this->setTaxRate(NULL);
-        return $this->updateRecord(array(
-            "shipper_id = {$this->shipper_id}",
-            "shipping = {$this->shipping}",
-            "shipping_method = '" . DB_escapeString($this->shipping_method) . "'",
-            "shipping_dscp = '" . DB_escapeString($this->shipping_dscp) . "'",
-            "order_total = " . $this->calcTotal(),
-        ) );
+        return $this->updateRecord(
+            array(
+                'shipper_id' => $this->shipper_id,
+                'shipping' => $this->shipping,
+                'shipping_method' => $this->shipping_method,
+                'shipping_dscp' => $this->shipping_dscp,
+                'order_total' => $this->calcTotal(),
+            ),
+            array(
+                Database::INTEGER,
+                Database::STRING,
+                Database::STRING,
+                Database::STRING,
+                Database::STRING,
+            )
+        );
     }
 
 
@@ -2566,14 +2740,18 @@ class Order
     {
         global $_TABLES;
 
-        return (
-            (int)DB_getItem(
-                $_TABLES['shop.orders'],
-                'count(*)',
-                "status <> 'cart'"
-            ) > 0 ||
-            IPN::Count() > 0
-        );
+        $db = Database::getInstance();
+        try {
+            $data = $db->conn->executeQuery(
+                "SELECT count(*) AS total FROM {$_TABLES['shop.orders']}
+                WHERE status <> 'cart'"
+            )->fetchAssociative();
+            $count = (int)$data['total'];
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $count = 0;
+        } 
+        return ($count > 0 || IPN::Count() > 0);
     }
 
 
@@ -2722,10 +2900,11 @@ class Order
     {
         global $_TABLES;
 
-        DB_query("TRUNCATE {$_TABLES['shop.orders']}");
-        DB_query("TRUNCATE {$_TABLES['shop.orderitems']}");
-        DB_query("TRUNCATE {$_TABLES['shop.oi_opts']}");
-        DB_query("TRUNCATE {$_TABLES['shop.order_log']}");
+        $db = Database::getInstance();
+        $db->conn->executeStatement("TRUNCATE {$_TABLES['shop.orders']}");
+        $db->conn->executeStatement("TRUNCATE {$_TABLES['shop.orderitems']}");
+        $db->conn->executeStatement("TRUNCATE {$_TABLES['shop.oi_opts']}");
+        $db->conn->executeStatement("TRUNCATE {$_TABLES['shop.order_log']}");
     }
 
 
@@ -3219,12 +3398,20 @@ class Order
                 $this->setTaxShipping(0)
                     ->setTaxHandling(0);
             }
-            $this->updateRecord(array(
-                "tax_rate = {$this->getTaxRate()}",
-                "tax_shipping = {$this->getTaxShipping()}",
-                "tax_handling = {$this->getTaxHandling()}",
-                "order_total = " . $this->calcTotal(),
-            ) );
+            $this->updateRecord(
+                array(
+                    'tax_rate' => $this->getTaxRate(),
+                    'tax_shipping' => $this->getTaxShipping(),
+                    'tax_handling' => $this->getTaxHandling(),
+                    'order_total' => $this->calcTotal(),
+                ),
+                array(
+                    Database::STRING,
+                    Database::STRING,
+                    Database::STRING,
+                    Database::STRING,
+                )
+            );
         }
         return $this;
     }
@@ -3436,10 +3623,13 @@ class Order
             $this->Items[$id]->applyDiscountPct($this->getDiscountPct());
             $this->Items[$id]->Save();
         }
-        $this->updateRecord(array(
-            "discount_code = '" . DB_escapeString($this->discount_code) . "'",
-            "discount_pct = '" . (float)$this->discount_pct . "'"
-        ) );
+        $this->updateRecord(
+            array(
+                'discount_code' =>$this->discount_code,
+                'discount_pct' =>  (float)$this->discount_pct,
+            ),
+            array(Database::STRING, Database::STRING)
+        );
         return $this;
     }
 
@@ -4008,11 +4198,24 @@ class Order
     public static function linkByEmail(int $uid) : void
     {
         global $_TABLES;
-        $email = DB_getItem($_TABLES['users'], 'email', "uid = $uid");
-        $sql = "UPDATE {$_TABLES['shop.orders']}
-            SET uid = $uid
-            WHERE uid = 1 AND buyer_email = '" . DB_escapeString($email) . "'";
-        DB_query($sql, 1);
+
+        $db = Database::getInstance();
+        $email = $db->getItem(
+            $_TABLES['users'],
+            'email',
+            array('uid' => $uid),
+            array(Database::INTEGER)
+        );
+        try {
+            $db->conn->update(
+                $_TABLES['shop.orders'],
+                array('uid' => $uid),
+                array('uid' => 1, 'buyer_email' => $email),
+                array(Database::INTEGER, Database::STRING)
+            );
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
     }
 
 
