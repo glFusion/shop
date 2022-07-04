@@ -137,7 +137,6 @@ class Webhook extends \Shop\Webhook
                         $retval = $this->handlePurchase();
                     }
                 }
-                        $retval = $this->handlePurchase();
                 $this->setID($this->refID);  // use the payment ID
             }
             break;
