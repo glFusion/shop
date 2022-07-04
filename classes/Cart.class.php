@@ -876,40 +876,11 @@ class Cart extends Order
 
         switch($wf_name) {
         case 'viewcart':
-            // Initial cart view. Check here and populate the billing and
-            // shipping addresses if not already set, and only for logged-in
-            // users.
-            // This allows subsequent steps to go directly to the checkout
-            // page if all other workflows are complete.
-            /*if ($this->uid > 1) {
-                // Determine the minimum value for a workflow to be "required"
-                $wf_required = $this->requiresShipto() ? 1 : 3;
-                $U = Customer::getInstance($this->uid);
-                if (
-                    $this->billto_id == 0 &&
-                    Workflow::getInstance(2)->enabled >= $wf_required
-                ) {
-                    $A = $U->getDefaultAddress('billto');
-                    if ($A) {
-                        $this->setAddress($A->toArray(), 'billto');
-                    }
-                }
-                if (
-                    $this->shipto_id == 0 &&
-                    Workflow::getInstance(3)->enabled >= $wf_required
-                ) {
-                    $A = $U->getDefaultAddress('shipto');
-                    if ($A) {
-                        $this->setAddress($A->toArray(), 'shipto');
-                    }
-                }
-        }*/
             // Fall through to the checkout view
         case 'checkout':
             $V = new Views\Cart;
             $V->withView($wf_name)->withOrderId($this->order_id);
             return $V->Render();
-            return $this->View($wf_name, $step);
         case 'billto':
         case 'shipto':
             $U = new \Shop\Customer();
@@ -919,7 +890,6 @@ class Cart extends Order
             $V = new Views\Cart;
             $V->withView('checkout')->withOrderId($this->order_id);
             return $V->Render();
-            return $this->View('checkout');
         default:
             return $this->View();
         }

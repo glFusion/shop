@@ -295,42 +295,6 @@ case 'shipto':
     $content .= $U->AddressForm($view, $A, $step);
     break;
 
-case 'order':
-    echo "deprecated";die;
-    // View a completed order record
-    $order = \Shop\Order::getInstance($actionval);
-    if ($order->canView()) {
-        $content .= $order->View();
-    } else {
-        COM_404();
-    }
-    break;
-
-case 'packinglist':
-case 'printorder':
-    echo "deprecated";die;
-    // Display a printed order or packing list and exit.
-    // This is expected to be shown in a _blank browser window/tab.
-    $order = \Shop\Order::getInstance($actionval);
-    if ($order->canView()) {
-        echo $order->View($view);
-        exit;
-    } else {
-        COM_404();
-    }
-    break;
-
-case 'vieworder':
-    echo "deprecated";die;
-    if (Config::get('anon_buy') == 1 || !COM_isAnonUser()) {
-        \Shop\Cart::setSession('prevpage', $view);
-        $content .= \Shop\Cart::getInstance()->View($view);
-        $page_title = $LANG_SHOP['vieworder'];
-    } else {
-        COM_404();
-    }
-    break;
-
 case 'pidetail':
     // Show detail for a plugin item wrapped in the catalog layout
     $item = explode(':', $actionval);
@@ -369,11 +333,6 @@ case 'viewcart':
         echo COM_refresh(SHOP_URL . '/index.php');
         exit;
     }
-    break;
-
-case 'checkoutcart':
-    echo "DEPRECATED";die;
-    $content .= \Shop\Cart::getInstance()->View(5);
     break;
 
 case 'orderhist':

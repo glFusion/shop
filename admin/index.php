@@ -1010,10 +1010,6 @@ case 'shiporder':
     }
     $V = new Shop\Views\ShipmentForm($_GET['order_id']);
     $content .= $V->Render();
-    /*$Ord = Shop\Order::getInstance($_GET['order_id']);
-    if (!$Ord->isNew()) {
-        $content .= $Ord->View('shipment');
-    }*/
     break;
 
 case 'order_pl':
