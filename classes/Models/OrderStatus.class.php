@@ -358,33 +358,39 @@ class OrderStatus
     /**
      * Get all the statuses that mark an order as "valid".
      *
+     * @param   boolean $flag   True for matching statuses, False for nonmatching
      * @return  array   Array of eligible OrderStatus objects
      */
-    public static function getOrderValid() : array
+    public static function getOrderValid(bool $flag=true) : array
     {
-        return self::_getByFlagValue('order_valid', 1);
+        $flag = $flag ? 1 : 0;
+        return self::_getByFlagValue('order_valid', $flag);
     }
 
 
     /**
      * Get all the statuses that allow affiliate payments.
      *
+     * @param   boolean $flag   True for matching statuses, False for nonmatching
      * @return  array   Array of eligible OrderStatus objects
      */
-    public static function getAffiliateEligible() : array
+    public static function getAffiliateEligible(bool $flag=true) : array
     {
-        return self::_getByFlagValue('aff_eligible', 1);
+        $flag = $flag ? 1 : 0;
+        return self::_getByFlagValue('aff_eligible', $flag);
     }
 
 
     /**
      * Get all the statuses that are customer-viewable.
      *
+     * @param   boolean $flag   True for matching statuses, False for nonmatching
      * @return  array   Array of eligible OrderStatus objects
      */
-    public static function getCustomerViewable() : array
+    public static function getCustomerViewable(bool $flag=true) : array
     {
-        return self::_getByFlagValue('cust_viewable', 1);
+        $flag = $flag ? 1 : 0;
+        return self::_getByFlagValue('cust_viewable', $flag);
     }
 
 
