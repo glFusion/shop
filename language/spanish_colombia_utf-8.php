@@ -990,6 +990,7 @@ $LANG_confignames['shop'] = array(
 'logo_url' => 'URL to logo image',
 'logo_width' => 'Logo image width, in pixels',
 'logo_height' => 'Logo image height, in pixels',
+'order_id_format' => 'Format for order reference ID',
 );
 
 /** Language strings for the subgroup names in the config section */
@@ -1033,6 +1034,11 @@ $LANG_configSelect['shop'] = array(
         'name' => 'Nombre',
         'price' => 'Pricio',
         'id' => 'Product ID',
+    ),
+    11 => array(
+        16 => 'Story ID style',
+        3 => 'Alphanumeric upper case',
+        7 => 'Alphanumeric mixed case',
     ),
     12 => array(
         0 => 'Origin',

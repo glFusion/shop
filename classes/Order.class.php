@@ -1106,38 +1106,32 @@ class Order
 
         // If promoting from a cart status to a real order, add the sequence number.
         if ($this->isFinal() && $this->order_seq < 1) {
-            if (!$this->verifyReferralTag()) {
-                // If the referrer is invalid, remove from the order record
-                $other_updates = ", referrer_uid = {$this->referrer_uid},
-                    info = '" . DB_escapeString((string)$this->m_info) . "'";
-            } else {
-                $other_updates = '';
-            }
+            $qb = $db->conn->createQueryBuilder();
             $db->conn->beginTransaction();
             try {
                 $db->conn->executestatement(
                     "SELECT COALESCE(MAX(order_seq)+1,1)
                     FROM {$_TABLES['shop.orders']} INTO @seqno FOR UPDATE"
                 );
+                $qb->update($_TABLES['shop.orders'])
+                   ->set('status', ':status')
+                   ->set('order_seq', '@seqno')
+                   ->where('order_id = :order_id')
+                   ->setParameter('order_id', $this->order_id, Database::STRING)
+                   ->setParameter('status', $this->status, Database::STRING);
+                if (!$this->verifyReferralTag()) {
+                    // If the referrer is invalid, remove from the order record
+                    $qb->set('referrer_uid', ':ref_id')
+                       ->set('info', ':m_info')
+                       ->setParameter('ref_id', $this->referrer_uid, Database::INTEGER)
+                       ->setParameter('m_info', (string)$this->m_info, Database::STRING);
+                }
+                $qb->execute();
+                $db->conn->commit();
             } catch (\Exception $e) {
                 Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $db->conn->rollback();
             }
-            try {
-                $db->conn->executestatement(
-                    "UPDATE {$_TABLES['shop.orders']} SET
-                    status = ?,
-                    order_seq = @seqno
-                    $other_updates
-                    WHERE order_id = ?",
-                    array($this->status, $this->order_id),
-                    array(Database::STRING, Database::STRING)
-                );
-            } catch (\Exception $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
-                $db->conn->rollback();
-            }
-            $db->commit();
 
             $this->order_seq = $db->getItem(
                 $_TABLES['shop.orders'],
@@ -1322,7 +1316,7 @@ class Order
                 $_TABLES['shop.order_log'],
                 array(
                     'username' => $log_user,
-                    'order_id' => $order_id,
+                    'order_id' => $this->order_id,
                     'message' => $msg,
                     'ts' => time(),
                 ),
@@ -1884,22 +1878,17 @@ class Order
      *
      * @return  string  Order ID
      */
-    protected static function _createID()
+    public static function _createID()
     {
         global $_TABLES;
-        if (function_exists('CUSTOM_shop_orderID')) {
-            $func = 'CUSTOM_shop_orderID';
-        } else {
-            $func = 'COM_makeSid';
-        }
+
+        $db = Database::getInstance();
         do {
-            $id = COM_sanitizeID($func());
-        } while ($db->getItem(
-            $_TABLES['shop.orders'],
-            'order_id',
-            array('order_id' => $id),
-            array(Database::STRING)
-        ) !== NULL);
+            $id = Token::create(16, Config::get('order_id_format'));
+        } while (
+            $db->getCount($_TABLES['shop.orders'], 'order_id', $id, Database::STRING)
+            > 0
+        );
         return $id;
     }
 

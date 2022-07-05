@@ -26,6 +26,7 @@ class Token
     public const RANDOM = 8;
     public const ALPHABETIC = 6;
     public const ALPHANUMERIC = 7;
+    public const SID = 16;      // create a story ID
 
     /**
      * Create a random token string.
@@ -43,7 +44,10 @@ class Token
             } catch (\Exception $e) {
                 Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             }
+        } elseif ($format & self::SID) {
+            $retval = COM_makeSid();
         }
+
         if ($retval == '') {    // other format requested, or random_bytes failed
             $str = '';
             if ($format & self::NUMERIC) {

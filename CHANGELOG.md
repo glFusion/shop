@@ -35,7 +35,8 @@ Release TBD
   * Add optional URL to logo image for invoices.
   * Increase text length for product features.
   * Allow multiple checkbox options with price impacts (#71).
-  * Use order status settings to control affiliate payments.
+  * More flexible order statuses, allow admin-defined settings.
+  * Add admin-selectable order ID format options, remove custom function.
 
 ## v1.4.1
 Release 2022-04-07
