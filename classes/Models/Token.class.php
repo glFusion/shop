@@ -49,10 +49,10 @@ class Token
             if ($format & self::NUMERIC) {
                 $str .= '0123456789';
             }
-            if ($format & self::UPPERCASE) {
+            if ($format & self::LOWERCASE) {
                 $str .= 'abcdefghijklmnopqrstuvwxyz';
             }
-            if ($format & self::LOWERCASE) {
+            if ($format & self::UPPERCASE) {
                 $str .= 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
             }
             $chars = strlen($str)-1;
