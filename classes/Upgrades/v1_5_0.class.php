@@ -212,7 +212,7 @@ class v1_5_0 extends Upgrade
      * @param   integer $valid  Order Valid flag
      * @param   integer $aff    Affiliate Eligible flag
      */
-    private static function updateOrderStatus(string $name, array($vals)) : void
+    private static function updateOrderStatus(string $name, array $vals) : void
     {
         global $_TABLES;
 
