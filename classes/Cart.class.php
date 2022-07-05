@@ -470,64 +470,13 @@ class Cart extends Order
 
     /**
      * Empty and destroy the cart.
-     *
-     * @param   boolean $del_order  True to delete any related order
-     * @return  object  $this
      */
-    public function Clear($del_order = true)
+    public function Clear() : void
     {
-        global $_TABLES, $_USER;
-
         // Only clear if this is actually a cart, not a finalized order.
         if ($this->status == OrderStatus::CART) {
-            foreach ($this->Items as $Item) {
-                $Item->Delete();
-            }
-            $this->Items = array();
-            $vals = array(
-                "gross_items = 0",
-                "net_nontax = 0",
-                "net_taxable = 0",
-                "order_total = 0",
-                "tax = 0",
-                "shipping = 0",
-                "handling = 0",
-                "by_gc = 0",
-                "tax_rate = 0",
-                "shipper_id = 0",
-                "discount_code = ''",
-                "discount_pct = 0",
-                "instructions = ''",
-                "tax_shipping = 0",
-                "tax_handling = 0",
-                "billto_id = 0",
-                "billto_name = ''",
-                "billto_company = ''",
-                "billto_address1 = ''",
-                "billto_address2 = ''",
-                "billto_city = ''",
-                "billto_state = ''",
-                "billto_country = ''",
-                "billto_zip = ''",
-                "billto_phone = ''",
-                "shipto_id = 0",
-                "shipto_name = ''",
-                "shipto_company = ''",
-                "shipto_address1 = ''",
-                "shipto_address2 = ''",
-                "shipto_city = ''",
-                "shipto_state = ''",
-                "shipto_country = ''",
-                "shipto_zip = ''",
-                "shipto_phone = ''",
-            );
-            $this->updateRecord($vals);
-            /*if ($del_order) {
-                DB_delete($_TABLES['shop.orders'], 'order_id', $this->cartID());
-                self::delAnonCart();
-            }*/
+            Order::Delete($this->order_id);
         }
-        return $this;
     }
 
 
