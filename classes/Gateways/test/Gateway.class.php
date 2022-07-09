@@ -20,6 +20,7 @@ use Shop\Cart;
 use Shop\Coupon;
 use Shop\Currency;
 use Shop\Template;
+use Shop\Product;
 use Shop\Models\Token;      // to create unique transaction IDs
 
 
@@ -108,9 +109,10 @@ class Gateway extends \Shop\Gateway
      * @uses    Gateway::_ReadButton()
      * @uses    Gateway::_SaveButton()
      * @param   object  $P      Product Item object
+     * @param   float   $price  Optional override price
      * @return  string          HTML code for the button.
      */
-    public function ProductButton($P)
+    public function ProductButton(Product $P, ?float $price=NULL) : string
     {
         global $LANG_SHOP, $_CONF;
 

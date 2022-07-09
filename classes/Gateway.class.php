@@ -862,7 +862,7 @@ class Gateway
      * @param   object  $P      Instance of a Product object for the product
      * @return  string          Complete HTML for the "Buy Now"-type button
      */
-    public function ProductButton($P)
+    public function ProductButton(Product $P, ?float $price=NULL) : string
     {
         return '';
     }

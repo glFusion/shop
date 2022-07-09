@@ -13,6 +13,7 @@
  */
 namespace Shop\Gateways\_internal;
 use Shop\Template;
+use Shop\Product;
 
 
 /**
@@ -88,9 +89,10 @@ class Gateway extends \Shop\Gateway
      * @uses    Gateway::_ReadButton()
      * @uses    Gateway::_SaveButton()
      * @param   object  $P      Product Item object
+     * @param   float   $price  Optional override price
      * @return  string          HTML code for the button.
      */
-    public function ProductButton($P)
+    public function ProductButton(Product $P, ?float $price=NULL) : string
     {
         global $LANG_SHOP;
 

@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Shop\Gateways\paypal;
+use Shop\Product;
 use Shop\Config;
 use Shop\Company;
 use Shop\Address;
@@ -476,7 +477,7 @@ class Gateway extends \Shop\Gateway
      * @param   object  $P      Product Item object
      * @return  string          HTML code for the button.
      */
-    public function ProductButton($P)
+    public function ProductButton(Product $P, ?float $set_price = NULL) : string
     {
         global $LANG_SHOP;
 
@@ -503,7 +504,7 @@ class Gateway extends \Shop\Gateway
             'custom' => $this->custom->encode(),
             'return' => $this->returnUrl('', ''),
             'cancel_return' => $P->getCancelUrl(),
-            'amount' => $P->getSalePrice(),
+            'amount' => $set_price !=- NULL ? $set_price : $P->getSalePrice(),
             'notify_url' => $this->ipn_url,
         );
 

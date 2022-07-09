@@ -47,6 +47,12 @@ function service_genButton_shop($args, &$output, &$svc_msg)
 {
     global $_CONF, $_SHOP_CONF;
 
+    if (isset($args['amount'])) {
+        $price = $args['amount'];
+    } else {
+        $price = NULL;
+    }
+
     $btn_type = isset($args['btn_type']) ? $args['btn_type'] : 'buy_now';
     $output = array();
 
@@ -61,7 +67,7 @@ function service_genButton_shop($args, &$output, &$svc_msg)
         foreach (Shop\Gateway::getall(true) as $gw) {
             if ($gw->Supports('external') && $gw->Supports($btn_type)) {
                 $P = Shop\Product::getByID($args['item_number']);
-                $output[] = $gw->ProductButton($P);
+                $output['buy_now'] = $gw->ProductButton($P, $price);
             }
         }
     }
