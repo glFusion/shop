@@ -4298,11 +4298,11 @@ class Order
             $rows = 0;
             try {
                 $ids = $db->conn->executeQuery(
-                    "SELECT id FROM {$_TABLES['shop.orders']}
+                    "SELECT order_id FROM {$_TABLES['shop.orders']}
                     WHERE UNIX_TIMESTAMP(last_mod) < ?
                     AND status IN (?)",
                     array($cutoff, $order_states),
-                    array(Database::INTEGER, Database::PARAM_INT_ARRAY)
+                    array(Database::INTEGER, Database::PARAM_STR_ARRAY)
                 )->fetchAllAssociative();
             } catch (\Exception $e) {
                 Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
