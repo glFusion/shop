@@ -2452,6 +2452,10 @@ function plugin_getfeedprovider_shop($format, $A=array())
  */
 function SHOP_getVar($A, $varname, $type = 'string', $default = NULL, $emptyok = true)
 {
+    if (!is_array($A)) {
+        Log::write('system', Log::ERROR, __FUNCTION__ . ': Invalid array provided ' . var_export($A,true));
+        return $default;
+    }
     if (!array_key_exists($varname, $A)) {
         return $default;
     } else {
