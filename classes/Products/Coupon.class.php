@@ -3,9 +3,9 @@
  * Class to handle coupon operations.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -333,7 +333,7 @@ class Coupon extends \Shop\Product
      * @param   object  $Order      Order object
      * @return  array|false     Array of codes and amounts, False on error
      */
-    public static function Apply($amount, $uid = 0, $Order = NULL)
+    public static function Apply(float $amount, ?int $uid = NULL, ?Order $Order = NULL) : ?array
     {
         global $_TABLES, $_USER, $LANG_SHOP;
 
@@ -344,14 +344,16 @@ class Coupon extends \Shop\Product
             $order_id = $Order->getOrderID();
             $uid = $Order->getUid();
         }
+
         if ($uid < 2 || $amount == 0) {
             // Nothing to do if amount is zero, and anon users not supported
             // at this time.
             return $retval;
         }
+
         $user_balance = self::getUserBalance($uid);
         if ($user_balance < $amount) {  // error: insufficient balance
-            return false;
+            return NULL;
         }
         $coupons = self::getUserCoupons($uid);
         $remain = (float)$amount;
@@ -359,7 +361,7 @@ class Coupon extends \Shop\Product
         $db = Database::getInstance();
         foreach ($coupons as $coupon) {
             $bal = (float)$coupon['balance'];
-            $code = DB_escapeString($coupon['code']);
+            $code = $coupon['code'];
             if ($bal > $remain) {
                 // Coupon balance is enough to cover the remaining amount
                 $bal -= $remain;
@@ -373,12 +375,13 @@ class Coupon extends \Shop\Product
                 $retval[$code] = $bal;
                 $bal = 0;
             }
+            $bal = round($bal, 4);
             try {
                 $db->conn->update(
                     $_TABLES['shop.coupons'],
                     array('balance' => $bal),
                     array('code' => $code),
-                    array(Database::STRING, Database::INTEGER)
+                    array(Database::STRING, Database::STRING)
                 );
             } catch (\Exception $e) {
                 Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
