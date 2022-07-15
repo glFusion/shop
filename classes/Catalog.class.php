@@ -26,15 +26,15 @@ class Catalog
      * @const integer */
     public const HP_PRODUCT = 1;
 
-    /** Homepage layout - category list, all categories.
+    /** Homepage layout - category list.
      * @const integer */
     public const HP_CAT = 2;
 
-    /** Homepage layout - category list, all categories including.
+    /** Homepage layout - category list, include home category.
      * @const integer */
     public const HP_CATHOME = 4;
 
-    /** Homepage layout - category list, top-level only, no root.
+    /** Homepage layout - category list, top-level only.
      * @const integer */
     public const HP_CATTOP = 8;
 
@@ -107,7 +107,7 @@ class Catalog
      */
     public function defaultCatalog()
     {
-        global $_SHOP_CONF, $LANG_SHOP;
+        global $LANG_SHOP;
 
         $content = '';
 
@@ -117,9 +117,9 @@ class Catalog
         }
 
         if (
-            ($_SHOP_CONF['hp_layout'] & self::HP_CAT) == self::HP_CAT &&
             $this->cat_id == 0 &&
-            empty($this->query)
+            empty($this->query) &&
+            (Config::get('hp_layout') & self::HP_CAT) == self::HP_CAT
         ) {
             $content .= $this->Categories();
         } else {
@@ -138,14 +138,12 @@ class Catalog
      */
     public function Products()
     {
-        global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_USER, $_PLUGINS;
+        global $_TABLES, $_CONF, $LANG_SHOP, $_USER, $_PLUGINS;
 
         $isAdmin = plugin_ismoderator_shop() ? true : false;
 
-        // Create product template
-        if (empty($_SHOP_CONF['list_tpl_ver'])) $_SHOP_CONF['list_tpl_ver'] = 'v1';
         $T = new Template(array(
-            'list/' . $_SHOP_CONF['list_tpl_ver'],
+            'list/' . Config::get('list_tpl_ver', 'v1'),
             'buttons',
             '',
         ) );
@@ -273,7 +271,7 @@ class Catalog
         if (isset($_REQUEST['sortby'])) {
             $sortby = $_REQUEST['sortby'];
         } else {
-            $sortby = SHOP_getVar($_SHOP_CONF, 'order', 'string', 'name');
+            $sortby = Config::get('order', 'name');
         }
         switch ($sortby){
         case 'price_l2h':   // price, low to high
@@ -358,7 +356,7 @@ class Catalog
         }
 
         // If applicable, handle pagination of query
-        $prod_per_page = SHOP_getVar($_SHOP_CONF, 'prod_per_page', 'integer', 20);
+        $prod_per_page = Config::get('prod_per_page', 20);
         if ($prod_per_page > 0) {
             // Make sure page requested is reasonable, if not, fix it
             if (!isset($_REQUEST['page']) || $_REQUEST['page'] <= 0) {
@@ -392,10 +390,10 @@ class Catalog
         $T->set_var(array(
             'pi_url'        => SHOP_URL,
             //'user_id'       => $_USER['uid'],
-            'currency'      => $_SHOP_CONF['currency'],
+            'currency'      => Config::get('currency'),
             'breadcrumbs'   => $this->cat_id > 0 ? $Cat->Breadcrumbs() : '',
             'search_text'   => $search,
-            'tpl_ver'       => $_SHOP_CONF['list_tpl_ver'],
+            'tpl_ver'       => Config::get('list_tpl_ver'),
             'sortby_options' => $sortby_options,
             'sortby'        => $sortby,
             'cat_id'        => $this->cat_id == 0 ? '' : $this->cat_id,
@@ -420,8 +418,8 @@ class Catalog
 
         $display .= $T->parse('', 'start');
 
-        if ($_SHOP_CONF['ena_ratings'] == 1) {
-            $SHOP_ratedIds = SHOP_getRatedIds($_SHOP_CONF['pi_name']);
+        if (Config::get('ena_ratings') == 1) {
+            $SHOP_ratedIds = SHOP_getRatedIds(Config::PI_NAME);
         }
 
         // Display each product
@@ -439,18 +437,17 @@ class Catalog
                 'item_id'       => $P->getID(),
                 'name'          => htmlspecialchars($P->getName()),
                 'short_description' => htmlspecialchars(PLG_replacetags($P->getShortDscp())),
-                'img_cell_width' => ($_SHOP_CONF['max_thumb_size'] + 20),
                 'encrypted'     => '',
                 'item_url'      => $link,
                 'aff_link'      => $P->getAffiliateLink(),
-                'img_cell_width' => ($_SHOP_CONF['max_thumb_size'] + 20),
+                'img_cell_width' => (Config::get('max_thumb_size') + 20),
                 'track_onhand'  => $P->trackOnhand() ? 'true' : '',
                 'has_discounts' => $P->hasDiscounts() ? 'true' : '',
                 'price'         => $P->getDisplayPrice(),
                 'orig_price'    => $P->getDisplayPrice($P->getBasePrice()),
                 'on_sale'       => $P->isOnSale(),
                 'small_pic'     => $P->getImage('', 200)['url'],
-                'tpl_ver'       => $_SHOP_CONF['list_tpl_ver'],
+                'tpl_ver'       => Config::get('list_tpl_ver'),
                 'nonce'         => $Cart->makeNonce($P->getID() . $P->getName()),
                 'can_add_cart'  => $P->canBuyNow(), // must have no attributes
                 'rating_bar'    => $P->ratingBar(true),
@@ -477,7 +474,7 @@ class Catalog
                     $T->parse('Btn', 'BtnBlock', true);
                 }
             } else {
-                if ($_SHOP_CONF['ena_cart']) {
+                if (Config::get('ena_cart')) {
                     // If the product has attributes, then the cart must be
                     // enabled to allow purchasing
                     $button = $T->parse('', 'btn_details') . '&nbsp;';
@@ -494,7 +491,7 @@ class Catalog
         // For now, this hack shows plugins only on the first page, since
         // they're not included in the page calculation.
         if (
-            $_SHOP_CONF['show_plugins']&&
+            Config::get('show_plugins') &&
             $page == 1 &&
             $this->brand_id == 0 &&
             ( $this->cat_id == 0 || $this->cat_id == $RootCat->getID()) &&
@@ -564,14 +561,14 @@ class Catalog
      */
     private function getPluginProducts(&$T, $pi_name='')
     {
-        global $_SHOP_CONF, $_PLUGINS, $_USER;
+        global $_PLUGINS, $_USER;
 
         $num_products = 0;
 
         // Get products from plugins.
         // For now, this hack shows plugins only on the first page, since
         // they're not included in the page calculation.
-        if (!$_SHOP_CONF['show_plugins']) {
+        if (!Config::get('show_plugins')) {
             return $num_products;
         }
 
@@ -646,7 +643,7 @@ class Catalog
 
                 // Skip button display if the item can't be purchased
                 if (!isset($A['canPurchase']) || $A['canPurchase']) {
-                    if ($price > 0 && $_USER['uid'] == 1 && !$_SHOP_CONF['anon_buy']) {
+                    if ($price > 0 && $_USER['uid'] == 1 && !Config::get('anon_buy')) {
                         $buttons .= $T->set_var('', 'login_req') . '&nbsp;';
                     /*} elseif (
                         (!isset($A['prod_type']) || $A['prod_type'] > ProductType::PHYSICAL) &&
@@ -680,27 +677,27 @@ class Catalog
      */
     public function Categories()
     {
-        global $_SHOP_CONF;
-
         $display = '';
 
         $RootCat = Category::getRoot();
         // If showing only top-level categories then get the children of Root,
         // otherwise get the whole category tree.
-        if (($_SHOP_CONF['hp_layout'] & self::HP_CATTOP) == self::HP_CATTOP) {
+        if ((Config::get('hp_layout') & self::HP_CATTOP) == self::HP_CATTOP) {
             $Cats = $RootCat->getChildren();
-            if (($_SHOP_CONF['hp_layout'] & self::HP_CATHOME) == self::HP_CATHOME) {
+            if ((Config::get('hp_layout') & self::HP_CATHOME) == self::HP_CATHOME) {
+                // Add the root category.
                 array_unshift($Cats, $RootCat);
             }
         } else {
             $Cats = \Shop\Category::getTree();
-            if (($_SHOP_CONF['hp_layout'] & self::HP_CATHOME) != self::HP_CATHOME) {
-                unset($Cats[$RootCat->cat_id]);
+            if ((Config::get('hp_layout') & self::HP_CATHOME) != self::HP_CATHOME) {
+                // Not including the root category.
+                unset($Cats[$RootCat->getID()]);
             }
         }
 
         $T = new Template(array(
-            'list/' . $_SHOP_CONF['list_tpl_ver'],
+            'list/' . Config::get('list_tpl_ver'),
             '',
         ) );
         $T->set_file(array(
@@ -719,10 +716,10 @@ class Catalog
             $T->set_var(array(
                 'item_id'       => $Cat->getID(),
                 'short_description' => htmlspecialchars($Cat->getName()),
-                'img_cell_width' => ($_SHOP_CONF['max_thumb_size'] + 20),
+                'img_cell_width' => (Config::get('max_thumb_size') + 20),
                 'item_url'      => SHOP_URL . '/index.php?category='. $Cat->getID(),
                 'small_pic'     => $Cat->getImage()['url'],
-                'tpl_ver'       => $_SHOP_CONF['list_tpl_ver'],
+                'tpl_ver'       => Config::get('list_tpl_ver'),
             ) );
             $T->parse('PI', 'ProductItems', true);
         }
