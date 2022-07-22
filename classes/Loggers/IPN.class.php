@@ -205,26 +205,29 @@ class IPN extends \Shop\Logger
         // Log to database
         $db = Database::getInstance();
         try {
-            $db->conn->executeUpdate(
-                "INSERT INTO {$_TABLES['shop.ipnlog']} SET
-                ip_addr = ?,
-                ts = ?,
-                verified = ?,
-                txn_id = ?,
-                ref_id = ?,
-                gateway = ?,
-                event = ?,
-                order_id = ?,
-                ipn_data = ?",
+            $db->conn->insert(
+                $_TABLES['shop.ipnlog'],
                 array(
-                    $this->ip_addr, time(), $this->verified,
-                    $this->txn_id, $this->ref_id, $this->gw_id, $this->event,
-                    $this->order_id, $data,
+                    'ip_addr' = $this->ip_addr,
+                    'ts' = time(),
+                    'verified' = $this->verified,
+                    'txn_id' = $this->txn_id,
+                    'ref_id' = $this->ref_id,
+                    'gateway' = $this->gw_id,
+                    'event' = $this->event,
+                    'order_id' = $this->order_id,
+                    'ipn_data' = $data,
                 ),
                 array(
-                    Database::STRING, Database::INTEGER, Database::INTEGER,
-                    Database::STRING, Database::STRING, Database::STRING, Database::STRING,
-                    Database::STRING, Database::STRING,
+                    Database::STRING,
+                    Database::INTEGER,
+                    Database::INTEGER,
+                    Database::STRING,
+                    Database::STRING,
+                    Database::STRING,
+                    Database::STRING,
+                    Database::STRING,
+                    Database::STRING,
                 )
             );
             return $db->conn->lastInsertId();

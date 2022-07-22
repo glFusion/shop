@@ -321,19 +321,23 @@ class Syndication extends \glFusion\Syndication\Feed
                 $Feed = new self($F['topic']);
                 fwrite($fp, $Feed->Render($update_data));
                 $db = Database::getInstance();
-                $db->conn->executeUpdate(
-                    "UPDATE {$_TABLES['syndication']} SET updated = ?, update_info = ? WHERE fid = ?",
-                    array(
-                        $_CONF['_now']->toMySQL(true),
-                        $update_data,
-                        $feed
-                    ),
-                    array(Database::STRING,Database::STRING,Database::STRING)
-                );
+                try {
+                    $db->conn->update(
+                        $_TABLES['syndication'],
+                        array(
+                            'updated' => $_CONF['_now']->toMySQL(true),
+                            'update_info' => $update_data,
+                        ),
+                        array(
+                            'fid' => $feed,
+                        ),
+                        array(Database::STRING,Database::STRING,Database::STRING)
+                    );
+                } catch (\Throwable $e) {
+                    Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                }
             }
             return NULL;
-                //$Feed = new self($F['topic']);
-                //return $Feed->Render();
             break;
         }
     }

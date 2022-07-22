@@ -736,7 +736,7 @@ class Payment
 
         $db = Database::getInstance();
         try {
-            $db->conn->executeUpdate("TRUNCATE {$_TABLES['shop.payments']}");
+            $db->conn->executeStatement("TRUNCATE {$_TABLES['shop.payments']}");
         } catch (\Exception $e) {
             Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }

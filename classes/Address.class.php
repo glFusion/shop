@@ -1041,7 +1041,7 @@ class Address
         }
         $db = Database::getInstance();
         try {
-            $db->conn->executeUpdate(
+            $db->conn->executeStatement(
                 "DELETE FROM {$_TABLES['shop.address']}
                 WHERE addr_id IN (?) AND uid = ?",
                 array($ids, $uid),

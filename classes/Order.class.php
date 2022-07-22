@@ -4239,9 +4239,10 @@ class Order
 
         $db = Database::getInstance();
         try {
-            $db->conn->executeUpdate(
-                "UPDATE {$_TABLES['shop.orders']} SET uid = ? WHERE uid = ?",
-                array($new_uid, $old_uid),
+            $db->conn->update(
+                $_TABLES['shop.orders'],
+                array('uid' => $new_uid),
+                array('uid' => $old_uid),
                 array(Database::INTEGER, Database::INTEGER)
             );
         } catch (\Exception $e) {
@@ -4261,10 +4262,11 @@ class Order
 
         $db = Database::getInstance();
         try {
-            $db->conn->executeUpdate(
-                "UPDATE {$_TABLES['shop.orders']} SET uid = 1 WHERE uid = ?",
-                array($uid),
-                array(Database::INTEGER)
+            $db->conn->update(
+                $_TABLES['shop.orders'],
+                array('uid' => 1),
+                array('uid' => $uid),
+                array(Database::INTEGER, Database::INTEGER)
             );
         } catch (\Exception $e) {
             Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());

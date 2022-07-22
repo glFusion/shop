@@ -457,15 +457,17 @@ class Product
                 array('pr_id' => $id),
                 array(Database::INTEGER)
             );
-            $db->conn->executeStatement(
-                "UPDATE {$_TABLES['shop.products']} SET prod_rule = 0 WHERE prod_rule = ?",
-                array($id),
-                array(Database::INTEGER)
+            $db->conn->update(
+                $_TABLES['shop.products'],
+                array('prod_rule' => 0),
+                array('prod_rule' => $id),
+                array(Database::INTEGER, Database::INTEGER)
             );
-            $db->conn->executeUpdate(
-                "UPDATE {$_TABLES['shop.categories']} SET prod_rule = 0 WHERE prod_rule = ?",
-                array($id),
-                array(Database::INTEGER)
+            $db->conn->update(
+                $_TABLES['shop.categories'],
+                array('prod_rule' => 0),
+                array('prod_rule' => $id),
+                array(Database::INTEGER, Database::INTEGER)
             );
         } catch (\Exception $e) {
             Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());

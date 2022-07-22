@@ -323,7 +323,7 @@ class AffiliateSale
         $pmt_id = (int)$pmt_id;
         $db = Database::getInstance();
         try {
-            $db->conn->executeUpdate(
+            $db->conn->executeStatement(
                 "UPDATE {$_TABLES['shop.affiliate_sales']}
                 SET aff_pmt_id = ?
                 WHERE aff_sale_id IN (?)",

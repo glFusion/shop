@@ -657,7 +657,7 @@ class Affiliate
             foreach ($data as $A) {
                 try {
                     $aff_id = Shop\Models\Token::create();
-                    $db->conn->executeUpdate(
+                    $db->conn->executeStatement(
                         "INSERT INTO {$_TABLES['shop.userinfo']} (uid, affiliate_id) VALUES (?, ?)
                         ON DUPLICATE KEY UPDATE affiliate_id = ?",
                         array($A['uid'], $aff_id, $aff_id),

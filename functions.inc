@@ -1614,7 +1614,7 @@ function plugin_runScheduledTask_shop()
 
     $db = Database::getInstance();
     try {
-        $db->conn->executeUpdate(
+        $db->conn->executeStatement(
             "INSERT INTO {$_TABLES['vars']} VALUES('shop_lastdaily', ?)
             ON DUPLICATE KEY UPDATE value = ?",
             array($today, $today),
@@ -1701,7 +1701,7 @@ function plugin_runScheduledTask_shop()
     // Delete old cached buttons which are keyed by item_id and price.
     // Sale-priced items will get stuck in the DB.
     try {
-        $db->conn->executeUpdate(
+        $db->conn->executeStatement(
             "DELETE FROM {$_TABLES['shop.buttons']}
             WHERE last_update < NOW() - INTERVAL 120 DAY"
         );

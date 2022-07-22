@@ -380,29 +380,31 @@ class Gateway extends \Shop\Gateway
             $uid = isset($vals['uid']) ? (int)$vals['uid'] : $_USER['uid'];
 
             try {
-                $db->conn->executeUpdate(
-                    "INSERT INTO {$_TABLES['shop.orderitems']} SET
-                        order_id = ?,
-                        product_id = ?,
-                        description = ?,
-                        quantity = ?,
-                        txn_type = ?,
-                        txn_id = '',
-                        status = 'pending',
-                        token = ?,
-                        price = ?,
-                        options = ?",
+                $db->conn->insert(
+                    $_TABLES['shop.orderitems'],
                     array(
-                        $order_id, $item_number,
-                        $items[$id]['name'], $item['quantity'],
-                        $this->gw_id, $token,
-                        $item['price'], $item_opts,
+                        'order_id' = $order_id,
+                        'product_id' = $item_number,
+                        'description' = $items[$id]['name'],
+                        'quantity' = $item['quantity'],
+                        'txn_type' = $this->gw_id,
+                        'txn_id' = '',
+                        'status' = 'pending',
+                        'token' = $token,
+                        'price' = $item['price'],
+                        'options' = $item_opts,
                     ),
                     array(
-                        Database::STRING, Database::STRING,
-                        Database::STRING, Database::STRING,
-                        Database::STRING, Database::STRING,
-                        Database::STRING, Database::STRING,
+                        Database::STRING,
+                        Database::STRING,
+                        Database::STRING,
+                        Database::STRING,
+                        Database::STRING,
+                        Database::STRING,
+                        Database::STRING,
+                        Database::STRING,
+                        Database::STRING,
+                        Database::STRING,
                     )
                 );
             } catch (\Exception $e) {
