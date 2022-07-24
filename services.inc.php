@@ -64,7 +64,7 @@ function service_genButton_shop($args, &$output, &$svc_msg)
     // Create the immediate purchase button, if requested.  As soon as a
     // gateway supplies the requested button type, break from the loop.
     if (!empty($btn_type)) {
-        foreach (Shop\Gateway::getall(true) as $gw) {
+        foreach (Shop\GatewayManager::getAll(true) as $gw) {
             if ($gw->Supports('external') && $gw->Supports($btn_type)) {
                 $P = Shop\Product::getByID($args['item_number']);
                 $output['buy_now'] = $gw->ProductButton($P, $price);

@@ -48,7 +48,7 @@ class ipnlog extends \Shop\Report
     {
         $retval = '';
         $T = $this->getTemplate('config');
-        $gws = \Shop\Gateway::getAll();
+        $gws = \Shop\GatewayManager::getAll();
         $gateway = self::_getSessVar('gateway');
         $T->set_block('config', 'gw_opts', 'opt');
         foreach ($gws as $GW) {

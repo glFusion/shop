@@ -102,7 +102,7 @@ class Upgrade
         // Clear caches, update the configuration options, delete old files.
         Cache::clear();
         self::updateConfig();
-        Gateway::upgradeAll(self::$current_ver);
+        GatewayManager::upgradeAll(self::$current_ver);
         self::removeOldFiles();
         CTL_clearCache();   // clear cache to ensure CSS updates come through
         Log::write('shop_system', Log::INFO, "Successfully updated the {$_SHOP_CONF['pi_display_name']} Plugin");

@@ -1,24 +1,20 @@
 <?php
 /**
- * Payment gateway class.
- * Provides the base class for actual payment gateway classes to use.
+ * Payment gateway manager class.
+ * Handles admin lists, uploading and installing gateways.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2011-2022 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.4.1
- * @since       v0.7.0
+ * @version     v1.5.0
+ * @since       v1.5.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
 use Shop\Config;
-use Shop\Models\OrderStatus;
-use Shop\Models\ProductType;
-use Shop\Models\CustomInfo;
-use Shop\Models\ButtonKey;
-use Shop\Models\PayoutHeader;
+use Shop\Models\ButtonKey;;
 use Shop\Models\GatewayInfo;
 use Shop\Cache;
 use glFusion\FileSystem;
@@ -31,247 +27,22 @@ use glFusion\Log\Log;
  * Provides common variables and methods required by payment gateway classes.
  * @package shop
  */
-class Gateway
+class GatewayManager
 {
-    use \Shop\Traits\DBO;        // Import database operations
-
-    /** Gateway logo width, in pixels.
-     * @const integer */
-    protected const LOGO_WIDTH = 240;
-
-    /** Gateway logo height, in pixels.
-     * @const integer */
-    protected const LOGO_HEIGHT = 40;
-
-    /** Gateway information from the JSON file.
-     * @var GatewayInfo */
-    protected $GatetwayInfo = NULL;
-
-    /** Table name, used by DBO class.
+   /** Table name, used by DBO class.
      * @var string */
     protected static $TABLE = 'shop.gateways';
-
-    /** Items on this order.
-     * @var array */
-    protected $items = array();
-
-    /** The short name of the gateway, e.g. "shop" or "amazon".
-     * @var string */
-    protected $gw_name = '';
-
-    /** The long name or description of the gateway, e.g. "Amazon SimplePay".
-     * @var string */
-    protected $gw_desc = 'Unknown Payment Gateway';
-
-    /** The provider name, e.g. "Amazon" or "Shop".
-     * @var string; */
-    protected $gw_provider = '';
-
-    /** Services (button types) provided by the gateway.
-     * This is an array of button_name=>0/1 to indicate which services are available.
-     * @var array */
-    protected $services = NULL;
-
-    /** The gateway's configuration items.
-     * This is an associative array of name=>value elements.
-     * @var array */
-    protected $config = array();
-
-    /** Configuration item names, to create the config form.
-     *@var array */
-    protected $cfgFields = array();
-
-    /** The URL to the gateway's IPN processor.
-     * @var string */
-    protected $ipn_url = '';
-
-    protected $ipn_filename = 'ipn.php';
-
-    /** Indicator of whether the gateway is enabled at all.
-     * @var boolean */
-    protected $enabled = 0;
-
-    /** Order in which the gateway is selected.
-     * Gateways are selected from lowest to highest order.
-     * @var integer */
-    protected $orderby = 999;
-
-    /** Gateway installed version.
-     * For bundled gateways this will be the plugin version.
-     * Other installable gateways will have their own versions.
-     * @var string */
-    protected $version = '';
-
-    /** Environment configuration for prod or test.
-     * Also contains global settings. This is a subset of `$config`.
-     * @var array */
-    private $envconfig = array();
-
-    /**
-     * This is a CustomInfo object containing custom data to be passed to the
-     * gateway and returned verbatim.
-     * @var object
-     */
-    protected $custom = NULL;
-
-    /**
-     * The URL to the payment gateway. This must be set by the derived class.
-     * getActionUrl() can be overriden by the derived class to apply additional
-     * logic to the url before it is used to create payment buttons.
-     *
-     * @var string
-     */
-    protected $gw_url = '';
-
-    /** The postback URL for verification of IPN messages.
-     * If not set the value of gw_url will be used.
-     * @var string */
-    protected $postback_url = NULL;
-
-    /** Checkout button url.
-     * @var string */
-    protected $button_url = '';
 
     /** Array to hold cached gateways.
      * @var array */
     private static $gateways = array();
 
-    /** Currency code.
-     * @var string */
-    protected $currency_code = 'USD';
-
-    /** Language strings specific to this gateway.
+    /** List of bundled gateways.
      * @var array */
-    protected $lang = array();
-
-    /** ID of user group authorized to use this gateway.
-     * This may be used for non-upfront payment terms such as check,
-     * net 30 or COD.
-     * @var integer */
-    protected $grp_access = 1;
-
-    /** Flag to indicate if the gateway requires a billing address.
-     * @var boolean */
-    protected $req_billto = 0;
-
-    /** Indicate that the checkout process redirects to the provider.
-     * Causes the spinner to stay on the page until redirected to avoid
-     * confusion for the buyer.
-     * @var boolean */
-    protected $do_redirect = true;
-
-    /** Are payments taken online?
-     * @var boolean */
-    protected $can_pay_online = 1;
-
-
-    /**
-     * Constructor. Initializes variables.
-     * Derived classes should set the gw_name, gw_desc and config values
-     * before calling this constructor, to make sure these properties are
-     * correct.  This function merges the config items read from the database
-     * into the existing config array.
-     *
-     * Optionally, the child can also create the services array if desired,
-     * to limit the services provided.
-     *
-     * @uses    self::AddCustom()
-     * @param   array   $A  Optional array of fields, used with getInstance()
-     */
-    function __construct($A = array())
-    {
-        global $_TABLES, $_USER;
-
-        $this->GatewayInfo = $this->readJSON();
-        $this->custom = new CustomInfo;
-        $this->properties = array();
-        $this->getIpnUrl();     // construct the IPN processor URL
-        $this->currency_code = Config::get('currency');
-        if (empty($this->currency_code)) {
-            $this->currency_code = 'USD';
-        }
-
-        // Set the provider name if not supplied by the gateway
-        if (empty($this->gw_provider)) {
-            $this->gw_provider = ucfirst($this->gw_name);
-        }
-
-        // The child gateway can override the services array.
-        if (!isset($this->services)) {
-            $this->services = array(
-                'buy_now'   => 0,
-                'donation'  => 0,
-                'pay_now'   => 0,
-                'subscribe' => 0,
-                'checkout'  => 0,
-                'external'  => 0,
-            );
-        }
-
-        if (empty($A)) {
-            $db = Database::getInstance();
-            try {
-                $A = $db->conn->executeQuery(
-                    "SELECT * FROM {$_TABLES['shop.gateways']}
-                    WHERE id = ?",
-                    array($this->gw_name),
-                    array(Database::STRING)
-                )->fetchAssociative();
-            } catch (\Exception $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
-                $A = false;
-            }
-        }
-
-        if (!empty($A)) {
-            $this->orderby = (int)$A['orderby'];
-            $this->enabled = (int)$A['enabled'];
-            $this->grp_access = SHOP_getVar($A, 'grp_access', 'integer', 2);
-            $this->version = SHOP_getVar($A, 'version');
-            $services = @unserialize($A['services']);
-            if ($services) {
-                foreach ($services as $name=>$status) {
-                    if (isset($this->services[$name])) {
-                        $this->services[$name] = $status;
-                    }
-                }
-            }
-            $cfg_arr = @unserialize($A['config']);
-            if (!empty($cfg_arr)) {
-                foreach ($cfg_arr as $env=>$props) {
-                    if (!is_array($props)) {
-                        continue;   // something bad happened
-                    }
-                    foreach ($props as $key=>$value) {
-                        if (array_key_exists($key, $this->cfgFields[$env])) {
-                            if ($this->cfgFields[$env][$key] == 'password') {
-                                $decrypted = COM_decrypt($value);
-                                if ($decrypted !== false) {
-                                    $value = $decrypted;
-                                }
-                            }
-                            $this->config[$env][$key] = $value;
-                        }
-                    }
-                }
-            } else {
-                $this->cfg = $this->cfgFields;
-            }
-        }
-
-        // Set the environment (sandbox vs. production)
-        $this->setEnv();
-
-        // The user ID is usually required, and doesn't hurt to add it here.
-        $this->AddCustom('uid', $_USER['uid']);
-
-        // If the actual gateway class doesn't define a postback url,
-        // then assume it's the gateway url.
-        if ($this->postback_url === NULL) {
-            $this->postback_url = $this->gw_url;
-        }
-        $this->loadLanguage();
-    }
+    public static $_bundledGateways = array(
+        'paypal', 'ppcheckout', 'test', '_coupon',
+        'check', 'terms', '_internal', 'free',
+    );
 
 
     /**
@@ -602,12 +373,12 @@ class Gateway
      *
      * @return  boolean     True on success, False on failure
      */
-    public function Install() : bool
+    public function XXInstall() : bool
     {
         global $_TABLES;
 
         // Only install the gateway if it isn't already installed
-        $installed = GatewayManager::getAll(false);
+        $installed = self::getAll(false);
         if (!array_key_exists($this->gw_name, $installed)) {
             if (is_array($this->config)) {
                 $config = @serialize($this->config);
@@ -659,7 +430,7 @@ class Gateway
      * Remove the current gateway.
      * This removes all of the configuration for the gateway, but not files.
      */
-    public static function Remove(string $gw_name) : void
+    public static function XRemove(string $gw_name) : void
     {
         global $_TABLES;
 
@@ -923,150 +694,6 @@ class Gateway
 
 
     /**
-     * Get the URL to a logo image for this gateway.
-     * Returns the description by default.
-     *
-     * @return  string  Gateway logo URL
-     */
-    public function getLogo()
-    {
-        global $_CONF;
-
-        $srcImage = $this->getLogoFile();
-        $tag = $this->gw_desc;  // default if no image or resizing fails
-        if (!empty($srcImage ) && is_file($srcImage)) {
-            $destPath = $_CONF['path_html'] . '/shop/images/gateways/';
-            $L = new Logo;
-            $L->withImage($srcImage)
-              ->withDestPath($destPath)
-              ->reSize(self::LOGO_WIDTH, self::LOGO_HEIGHT);
-            if ($L->isValid()) {
-                $tag = COM_createImage(
-                    $_CONF['site_url'] . '/shop/images/gateways/' . $L->getFilename(),
-                    $this->gw_desc,
-                    array(
-                        'width' => $L->getDestWidth(),
-                        'height' => $L->getDestHeight(),
-                    )
-                );
-            }
-        }
-        return $tag;
-    }
-
-
-    /**
-     * Abstract function to add an item to the custom string.
-     * This default just addes the value to an array; the child class
-     * can override this if necessary
-     *
-     * @param   string  $key        Item name
-     * @param   string  $value      Item value
-     * @return  object  $this
-     */
-    public function AddCustom($key, $value)
-    {
-        // The CustomInfo object implements ArrayAccess
-        $this->custom[$key] = $value;
-        return $this;
-    }
-
-
-    /**
-     * Check that the seller email address in an IPN message is valid.
-     * Default is true, override this function in the gateway to implement.
-     *
-     * @param   string  $email  Email address to check
-     * @return  boolean     True if valid, False if not.
-     */
-    public function isBusinessEmail($email)
-    {
-        return true;
-    }
-
-
-    /**
-     * Get the form action URL.
-     * This function may be overridden by the child class.
-     * The default is to simply return the configured URL
-     *
-     * This is public so that if it is not declared by the child class,
-     * it can be called during IPN processing.
-     *
-     * @return  string      URL to payment processor
-     */
-    public function getActionUrl()
-    {
-        return $this->gw_url;
-    }
-
-
-    /**
-     * Get the postback URL for transaction verification.
-     *
-     * @return  string      URL for postbacks
-     */
-    public function getPostBackUrl()
-    {
-        return $this->postback_url;
-    }
-
-
-    /**
-     * Get the values to show in the "Thank You" message when a customer returns to our site.
-     * The returned array should be formatted as shown.
-     * There are no parameters, any data will be via $_GET.
-     *
-     * This stub function returns only an empty array, which will cause
-     * a simple "Thanks for your order" message to appear, without any
-     * payment details.
-     *
-     * @return array   Array of name=>value pairs, empty for default msg
-     */
-    public function thanksVars()
-    {
-        $R = array(
-            //'gateway_url'   => Gateway URL for use to check purchase
-            //'gateway_name'  => self::getDscp(),
-        );
-        return $R;
-    }
-
-
-    /**
-     * Get the user information.
-     * Just a wrapper for the Customer class to save re-reading the
-     * database each time a Customer object is needed. Assumes only one
-     * user's information is needed per page load.
-     *
-     * @return  object  Customer object
-     */
-    protected static function Customer()
-    {
-        static $Customer = NULL;
-
-        if ($Customer === NULL) {
-            $Customer = Customer::getInstance();
-        }
-        return $Customer;
-    }
-
-
-    /**
-     * Get the variables to display with the IPN log.
-     * This gets the variables from the gateway's IPN data into standard
-     * array values to be displayed in the IPN log view.
-     *
-     * @param   array   $data       Array of original IPN data
-     * @return  array               Name=>Value array of data for display
-     */
-    public function ipnlogVars($data)
-    {
-        return array();
-    }
-
-
-    /**
      * Present the configuration form for a gateway.
      * This could almost be run within the parent class, but only
      * the gateway knows the types of its configuration variables (checkbox,
@@ -1204,60 +831,6 @@ class Gateway
     }
 
 
-    /**
-     * Create an instance of a gateway.
-     * This function ignores the `installed` state and simply creates an object
-     * from the class file, if present.
-     *
-     * @param   string  $gw_name    Gateway name
-     * @return  object      Gateway object
-     */
-    public static function create($gw_name)
-    {
-        $cls = __NAMESPACE__ . "\\Gateways\\{$gw_name}\\Gateway";
-        if (class_exists($cls)) {
-            $gw = new $cls;
-        } else {
-            $gw = NULL;
-        }
-        return $gw;
-    }
-
-
-    /**
-     * Get an instance of a gateway.
-     * Supports reading multiple gateways, but only one is normally needed.
-     *
-     * @param   string  $gw_name    Gateway name, or '_enabled' for all enabled
-     * @param   array   $A          Optional array of fields and values
-     * @return  object              Gateway object
-     */
-    public static function getInstance($gw_name, $A=array())
-    {
-        global $_TABLES;
-
-        static $gateways = NULL;
-        if ($gateways === NULL) {
-            // Load the gateways once
-            $gateways = GatewayManager::getAll(false);
-        }
-        if (!array_key_exists($gw_name, $gateways)) {
-            $gateways[$gw_name] = new self;
-        }
-        return $gateways[$gw_name];
-    }
-
-
-    /**
-     * Helper function to get only enabled gateways.
-     *
-     * @return  array       Array of installed and enabled gateways
-     */
-    public static function getEnabled()
-    {
-        return GatewayManager::getAll(true);
-    }
-
 
     /**
      * Get all gateways into a static array.
@@ -1265,7 +838,7 @@ class Gateway
      * @param   boolean $enabled    True to get only enabled gateways
      * @return  array       Array of gateways, enabled or all
      */
-    public static function XXgetAll($enabled = false)
+    public static function getAll($enabled = false)
     {
         global $_TABLES;
 
@@ -1316,592 +889,447 @@ class Gateway
 
 
     /**
-     * Get the value of a single configuration item.
-     * setEnv() must be called first to set up the environment config.
+     * Get an array of uninstalled gateways for the admin list.
      *
-     * @param   string  $cfgItem    Name of field to get
-     * @return  mixed       Value of field, empty string if not defined
+     * @param   array   $data_arr   Reference to data array
      */
-    public function getConfig($cfgItem = '')
+    private static function getUninstalled(&$data_arr)
     {
-        if ($cfgItem == '') {
-            // Get all items at once
-            return $this->envconfig;
-            // Get a single item
-        } elseif (array_key_exists($cfgItem, $this->envconfig)) {
-            return $this->envconfig[$cfgItem];
-        } else {
-            // Item specified but not found, return empty string
-            return '';
+        global $LANG32;
+
+        $installed = self::getAll(false);
+        $base_path = __DIR__ . '/Gateways';
+        $dirs = scandir($base_path);
+        if (is_array($dirs)) {
+            foreach ($dirs as $dir) {
+                if (
+                    $dir !== '.' && $dir !== '..' &&
+                    $dir[0] != '_' &&       // skip internal utility gateways
+                    is_dir("{$base_path}/{$dir}") &&
+                    is_file("{$base_path}/{$dir}/Gateway.class.php") &&
+                    !array_key_exists($dir, $installed)
+                ) {
+                    $clsfile = 'Shop\\Gateways\\' . $dir . '\\Gateway';
+                    $gw = new $clsfile;
+                    if (is_object($gw)) {
+                        $data_arr[] = array(
+                            'id'    => $gw->getName(),
+                            'description' => $gw->getDscp(),
+                            'enabled' => 'na',
+                            'orderby' => 999,
+                        );
+                    }
+                }
+            }
         }
     }
 
 
     /**
-     * See if this gateway is in Sandbox mode.
+     * Get all the installed gateways for the admin list.
      *
-     * @return  boolean     True if the test_mode config var is set
+     * @param   array   $data_arr   Reference to data array
      */
-    public function isSandbox()
+    private static function getInstalled(&$data_arr) : void
     {
-        if (
-            isset($this->config['global']['test_mode']) &&
-            $this->config['global']['test_mode']
-        ) {
-            return 1;
-        } else {
-            return 0;
+        global $_TABLES;
+
+        $sql = "SELECT *, g.grp_name
+            FROM {$_TABLES['shop.gateways']} gw
+            LEFT JOIN {$_TABLES['groups']} g
+                ON g.grp_id = gw.grp_access
+            ORDER BY orderby ASC";
+
+        $db = Database::getInstance();
+        try {
+            $data = $db->conn->executeQuery($sql)->fetchAllAssociative();
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $msg);
+            $data = false;
+        }
+        if (is_array($data)) {
+            foreach ($data as $A) {
+                $gw = Gateway::create($A['id']);
+                if ($gw) {
+                    $data_arr[] = array(
+                        'id'    => $A['id'],
+                        'orderby' => $A['orderby'],
+                        'enabled' => $A['enabled'],
+                        'description' => $A['description'],
+                        'grp_name' => $A['grp_name'],
+                        'version' => $A['version'],
+                        'code_version' => $gw->getCodeVersion(),
+                    );
+                }
+            }
         }
     }
 
 
     /**
-     * Get the configuration settings for a specific environment.
+     * Payment Gateway Admin View.
      *
-     * @param   string  $env    Environment (test, prod or global)
-     * @return  array       Configuration array
+     * @return  string      HTML for the gateway listing
      */
-    public function getEnvConfig($env='global')
+    public static function adminList()
     {
-        return $this->config[$env];
+        global $_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN,
+            $LANG32;
+
+        $data_arr = array();
+        self::getInstalled($data_arr);
+        self::getUninstalled($data_arr);
+        // Future - check versions of pluggable gateways
+        self::_checkAvailableVersions($data_arr);
+
+        $header_arr = array(
+            array(
+                'text'  => $LANG_SHOP['edit'],
+                'field' => 'edit',
+                'sort'  => false,
+                'align' => 'center',
+            ),
+            array(
+                'text'  => $LANG_SHOP['orderby'],
+                'field' => 'orderby',
+                'sort'  => false,
+                'align' => 'center',
+            ),
+            array(
+                'text'  => 'ID',
+                'field' => 'id',
+                'sort'  => true,
+            ),
+            array(
+                'text'  => $LANG_SHOP['description'],
+                'field' => 'description',
+                'sort'  => true,
+            ),
+            array (
+                'text'  => $LANG32[84],
+                'field' => 'bundled',
+                'align' => 'center',
+            ),
+            array(
+                'text'  => $LANG_SHOP['grp_access'],
+                'field' => 'grp_name',
+                'sort'  => false,
+            ),
+            array(
+                'text'  => $LANG_SHOP['version'],
+                'field' => 'version',
+            ),
+            array(
+                'text'  => $LANG_SHOP['control'],
+                'field' => 'enabled',
+                'sort'  => false,
+                'align' => 'center',
+            ),
+            array(
+                'text'  => $LANG_ADMIN['delete'],
+                'field' => 'delete',
+                'sort'  => 'false',
+                'align' => 'center',
+            ),
+        );
+
+        $extra = array(
+            'gw_count' => DB_count($_TABLES['shop.gateways']),
+        );
+
+        $defsort_arr = array(
+            'field' => 'orderby',
+            'direction' => 'ASC',
+        );
+
+        $display = COM_startBlock(
+            '', '',
+            COM_getBlockTemplate('_admin_block', 'header')
+        );
+
+        $text_arr = array(
+            'has_extras' => false,
+            'form_url' => SHOP_ADMIN_URL . '/gateways.php?gwadmin',
+        );
+        $T = new Template('admin');
+        $T->set_file('form', 'gw_adminlist_form.thtml');
+        $T->set_var('lang_select_file', $LANG_SHOP['select_file']);
+        $T->set_var('lang_upload', $LANG_SHOP['upload']);
+        $T->parse('output', 'form');
+        $display .= $T->finish($T->get_var('output'));
+        $display .= ADMIN_listArray(
+            Config::PI_NAME . '_gwlist',
+            array(__CLASS__,  'getAdminField'),
+            $header_arr, $text_arr, $data_arr, $defsort_arr,
+            '', $extra, '', ''
+        );
+        $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
+        return $display;
     }
 
 
     /**
-     * Set the current environment, normally 'prod' or 'test'.
-     * Gets the environment configuration into the `envconfig` property
-     * and merges in the global configuration.
-     * If an environment is not specified, either 'test' or 'prod is selected
-     * based on the `test_mode` setting.
+     * Get an individual field for the options admin list.
      *
-     * @param   string  $env    Selected Environment
-     * @return  object  $this
+     * @param   string  $fieldname  Name of field (from the array, not the db)
+     * @param   mixed   $fieldvalue Value of the field
+     * @param   array   $A          Array of all fields from the database
+     * @param   array   $icon_arr   System icon array (not used)
+     * @param   array   $extra      Extra information passed in verbatim
+     * @return  string              HTML for field display in the table
      */
-    public function setEnv($env=NULL)
+    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr, $extra)
     {
-        if ($env === NULL) {
-            $env = $this->isSandbox() ? 'test' : 'prod';
-        }
-        $cfg = array();
-        if (isset($this->config[$env])) {
-            $cfg = $this->config[$env];
-        }
-        if (isset($this->config['global'])) {
-            $cfg = array_merge($cfg, $this->config['global']);
-        }
-        $this->envconfig = $cfg;
-        return $this;
-    }
+        global $_CONF, $LANG_SHOP, $LANG_ADMIN;
 
+        $retval = '';
 
-    /**
-     * Get the radio button for this gateway to show on the checkout form.
-     *
-     * @param   boolean $selected   True if the button should be selected
-     * @return  string      HTML for radio button
-     */
-    public function checkoutRadio($Cart, $selected = false)
-    {
-        $retval = new \Shop\Models\PaymentRadio;
-        $retval['gw_name'] = $this->gw_name;
-        $retval['value'] = $this->gw_name;
-        $retval['selected'] = $selected ? 'checked="checked" ' : '';
-        $retval['logo'] = $this->getLogo();
+        switch($fieldname) {
+        case 'edit':
+            if ($A['enabled'] !== 'na') {
+                $retval .= FieldList::edit(array(
+                    'url' => SHOP_ADMIN_URL . "/gateways.php?gwedit&amp;gw_id={$A['id']}",
+                ) );
+            }
+            break;
+
+        case 'enabled':
+            if ($fieldvalue == 'na') {
+                return FieldList::add(array(
+                    'url' => SHOP_ADMIN_URL. '/gateways.php?gwinstall&gwname=' . urlencode($A['id']),
+                    array(
+                        'title' => $LANG_SHOP['ck_to_install'],
+                    )
+                ) );
+            } elseif ($fieldvalue == '1') {
+                $switch = ' checked="checked"';
+                $enabled = 1;
+                $tip = $LANG_SHOP['ck_to_disable'];
+            } else {
+                $switch = '';
+                $enabled = 0;
+                $tip = $LANG_SHOP['ck_to_enable'];
+            }
+            $retval .= FieldList::checkbox(array(
+                'name' => 'ena_check',
+                'id' => "togenabled{$A['id']}",
+                'checked' => $fieldvalue == 1,
+                'title' => $tip,
+                'onclick' => "SHOP_toggle(this,'{$A['id']}','{$fieldname}','gateway');",
+            ) );
+            break;
+
+        case 'version':
+            // Show the upgrade link if needed. Only display this for
+            // installed gateways.
+            if (isset($A['version'])) {
+                $retval = $fieldvalue;
+                if (!COM_checkVersion($fieldvalue, $A['code_version'])) {
+                    $retval .= ' ' . FieldList::update(array(
+                        'url' => Config::get('admin_url') . '/gateways.php?gwupgrade=' . $A['id'],
+                    ) );
+                    $retval .= $A['code_version'];
+                }
+                if (!COM_checkVersion($A['code_version'], $A['available'])) {
+                    $retval .= ' ' . FieldList::buttonLink(array(
+                        'text' => $A['available'],
+                        'url' => $A['upgrade_url'],
+                        'size' => 'mini',
+                        'style' => 'success',
+                        'attr' => array(
+                            'target' => '_blank',
+                        )
+                    ) );
+                }
+            }
+            break;
+
+        case 'orderby':
+            $fieldvalue = (int)$fieldvalue;
+            if ($fieldvalue == 999) {
+                return '';
+            } elseif ($fieldvalue > 10) {
+                $retval = FieldList::up(array(
+                    'url' => SHOP_ADMIN_URL . '/gateways.php?gwmove=up&id=' . $A['id'],
+                ) );
+            } else {
+                $retval = FieldList::space();
+            }
+            if ($fieldvalue < $extra['gw_count'] * 10) {
+                $retval .= FieldList::down(array(
+                    'url' => SHOP_ADMIN_URL . '/gateways.php?gwmove=down&id=' . $A['id'],
+                )) ;
+            } else {
+                $retval .= FieldList::space();
+            }
+            break;
+
+        case 'bundled':
+            if (in_array($A['id'], self::$_bundledGateways)) {
+                $retval .= FieldList::checkmark(array(
+                    'active' => $A['enabled'] != 'na',
+                ) );
+            }
+            break;
+
+        case 'delete':
+            if ($A['enabled'] != 'na' && $A['id'][0] != '_') {
+                $retval = FieldList::delete(array(
+                    'delete_url' => SHOP_ADMIN_URL. '/gateways.php?gwdelete&amp;id=' . $A['id'],
+                    'attr' => array(
+                        'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
+                        'title' => $LANG_SHOP['del_item'],
+                        'class' => 'tooltip',
+                    ),
+                ) );
+            }
+            break;
+
+        default:
+            $retval = htmlspecialchars($fieldvalue, ENT_QUOTES, COM_getEncodingt());
+            break;
+        }
         return $retval;
     }
 
 
     /**
-     * Stub function to get the gateway variables.
-     * The child class should provide this.
+     * Upload and install the files for a gateway package.
      *
-     * @param   object  $cart   Cart object
-     * @return  string      Gateay variable input fields
+     * @return  boolean     True on success, False on error
      */
-    public function gatewayVars($cart)
+    public static function upload() : bool
     {
-        return '';
-    }
+        global $_CONF;
 
+        $retval = '';
 
-    /**
-     * Stub function to get the HTML for a checkout button.
-     * Each child class must supply this if it supports checkout.
-     *
-     * @return  string  HTML for checkout button
-     */
-    public function getCheckoutButton()
-    {
-        return NULL;
-    }
-
-
-    /**
-     * Get additional javascript to be attached to the checkout button.
-     * The default is to finalize the cart via AJAX.
-     *
-     * @param   object  $cart   Shopping cart object
-     * @return  string  Javascript commands.
-     */
-    public function getCheckoutJS($cart)
-    {
-        return 'finalizeCart("' . $cart->getOrderID() . '","' . $cart->getUID() . '", ' . $this->do_redirect . '); return true;';
-    }
-
-
-    public function getButtonJS($cart)
-    {
-        return NULL;
-    }
-
-
-    /**
-     * Get the form method to use with the final checkout button.
-     * Return POST by default.
-     *
-     * @return  string  Form method
-     */
-    public function getMethod()
-    {
-        return 'post';
-    }
-
-
-    /**
-     * Run additional functions after saving the configuration.
-     * Default: Do nothing.
-     */
-    protected function _postConfigSave()
-    {
-        return;
-    }
-
-
-    /**
-     * Set a configuration value.
-     *
-     * @param   string  $key    Name of configuration item
-     * @param   mixed   $value  Value to set
-     * @param   string  $env    Environment (test, prod or global)
-     * @return  object  $this
-     */
-    public function setConfig($key, $value, $env)
-    {
-        $this->config[$env][$key] = $value;
-        return $this;
-    }
-
-
-    /**
-     * Set a gateway ID as the selected one to remember between orders.
-     *
-     * @param   string  $gw_id  Gateway ID
-     */
-    public static function setSelected($gw_id)
-    {
-        SESS_setVar('shop_gateway_sel', $gw_id);
-    }
-
-
-    /**
-     * Get the remembered gateway ID to use as the default on later orders.
-     *
-     * @return  string|null  Saved gateway, NULL if none previously saved
-     */
-    public static function getSelected()
-    {
-        return SESS_getVar('shop_gateway_sel');
-    }
-
-
-    /**
-     * Get gateway-specific instructions, if any.
-     * Gateways can override this and call adminWarnBB().
-     *
-     * @return  string  Instruction text
-     */
-    protected function getInstructions()
-    {
-        return '';
-    }
-
-
-    /**
-     * Check if this gateway allows an order to be processed without an IPN msg.
-     * Orders fully paid by gift card or otherwise free get processed without
-     * a payment gateway being used.
-     *
-     * @return  boolean     True if no IPN required, default = false
-     */
-    public function allowNoIPN()
-    {
-        return false;
-    }
-
-
-    /**
-     * Create a warning message about whitelisting the IPN in Bad Behavior.
-     * Common message applies to several gateways.
-     *
-     * @see     getInstructions()
-     * @return  string      Warning message
-     */
-    protected function adminWarnBB()
-    {
-        global $LANG_SHOP_HELP, $_CONF, $_TABLES;
-
-        $url = parse_url($this->ipn_url);
-        $ipn_url = $url['path'];
-        if (!empty($url['query'])) {
-            $ipn_url .= '?' . $url['query'];
-        }
-        $whitelisted = 0;
-        if (function_exists('plugin_chkversion_bad_behavior2')) {
-            try {
-                $whitelisted = $db->getCount(
-                    $_TABLES['bad_behavior2_whitelist'],
-                    array('type', 'item'),
-                    array('url', $url['path']),
-                    array(Database::STRING, Database::STRING)
-                );
-            } catch (\Exception $e) {
-                // Do nothing, $whitelisted is already zero
+        if (
+            count($_FILES) > 0 &&
+            $_FILES['gw_file']['error'] != UPLOAD_ERR_NO_FILE
+        ) {
+            $upload = new UploadDownload();
+            $upload->setMaxFileUploads(1);
+            $upload->setMaxFileSize(25165824);
+            $upload->setAllowedMimeTypes(array (
+                'application/x-gzip'=> array('.gz', '.gzip,tgz'),
+                'application/gzip'=> array('.gz', '.gzip,tgz'),
+                'application/zip'   => array('.zip'),
+                'application/octet-stream' => array(
+                    '.gz' ,'.gzip', '.tgz', '.zip', '.tar', '.tar.gz',
+                ),
+                'application/x-tar' => array('.tar', '.tar.gz', '.gz'),
+                'application/x-gzip-compressed' => array('.tar.gz', '.tgz', '.gz'),
+            ) );
+            $upload->setFieldName('gw_file');
+            if (!$upload->setPath($_CONF['path_data'] . 'temp')) {
+                Log::write('shop_system', Log::ERROR, "Error setting temp path: " . $upload->printErrors(false));
             }
-        }
-        $retval = sprintf($LANG_SHOP_HELP['gw_ipn_url_is'], $ipn_url). ' ';
-        if ($whitelisted) {
-            $cls = 'success';
-            $retval .= $LANG_SHOP_HELP['gw_bb2_wl_done'];
-        } else {
-            $cls = 'danger';
-            $retval .= '<br />' . sprintf($LANG_SHOP_HELP['gw_bb2_wl_needed'], $url['path']);
-        }
-        return SHOP_errorMessage($retval, $cls);
-    }
 
+            $filename = $_FILES['gw_file']['name'];
+            $upload->setFileNames($filename);
+            $upload->uploadFiles();
 
-    /**
-     * Check that the current user is allowed to use this gateway.
-     * This limits access to special gateways like 'check' or 'terms'.
-     * Actual gateways such as Paypal also won't handle an amount of zero.
-     *
-     * @param   float   $total  Total order amount
-     * @return  boolean     True if access is allowed, False if not
-     */
-    public function hasAccess($total=0)
-    {
-        return $total > 0 && $this->isEnabled() && SEC_inGroup($this->grp_access);
-    }
-
-
-    /**
-     * Set the return URL after payment is made.
-     * Creates url parameters `gwname/order/token` for gateways that might
-     * have issues with normal URL parameters.
-     *
-     * @param   string  $cart_id    Cart order ID
-     * @param   string  $token      Order token, to verify accessa
-     * @return  string      URL to pass to the gateway as the return URL
-     */
-    protected function returnUrl($cart_id, $token)
-    {
-        return SHOP_URL . '/index.php?thanks=' . $this->gw_name .
-            '/' . $cart_id .
-            '/' . $token;
-    }
-
-
-    /**
-     * Get the "enabled" flag value.
-     *
-     * @return  integer     1 if enabled, 0 if not
-     */
-    protected function isEnabled()
-    {
-        return $this->enabled ? 1 : 0;
-    }
-
-
-    /**
-     * Return a dummy value during AJAX finalizing cart.
-     *
-     * @param   string  $order_id   Order ID
-     * @return  boolean     False, indicating no action was taken
-     */
-    public function processOrder($order_id)
-    {
-        return false;
-    }
-
-
-    /**
-     * Check if the gateway is valid by checking that $gw_name is set.
-     * Used in case getInstance() returns a generic gateway instance when
-     * the requested gateway is not available.
-     *
-     * @return  boolean     True if valid, False if not
-     */
-    public function isValid()
-    {
-        return $this->gw_name != '';
-    }
-
-
-    /**
-     * Check if this gateway requires a billing address.
-     *
-     * @return  boolean     True if a billing address is required
-     */
-    public function requiresBillto()
-    {
-        return $this->req_billto ? 1 : 0;
-    }
-
-
-    /**
-     * Get the webhook url.
-     * Allows a custom base url for SSL if needed.
-     *
-     * @param   array   $args   Array of optional arguments
-     * @return  string      IPN URL
-     */
-    public function getWebhookUrl($args=array())
-    {
-        static $urls = array();
-        if (!array_key_exists($this->gw_name, $urls)) {
-            $url = Config::get('ipn_url');
-            if (empty($url)) {
-                // Use the default IPN url
-                $url = Config::get('url') . '/hooks/';
-            }
-            if (substr($url, -1) != '/') {
-                $url .= '/';
-            }
-            $url .= 'webhook.php?_gw=' . $this->gw_name;
-            $urls[$this->gw_name] = $url;
-        }
-        if (!empty($args)) {
-            $params = '&' . http_build_query($args);
-        } else {
-            $params = '';
-        }
-        return $urls[$this->gw_name] . $params;
-     }
-
-
-    /**
-     * Get the IPN processor URL.
-     *
-     * @param   array   $args   Array of optional arguments
-     * @return  string      IPN URL
-     */
-    public function getIpnUrl($args=array())
-    {
-        if ($this->ipn_url === '') {
-            $url = Config::get('ipn_url');
-            if (empty($url)) {
-                // Use the default IPN url
-                $url = Config::get('url') . '/ipn/';
-            }
-            if (substr($url, -1) != '/') {
-                $url .= '/';
-            }
-            $this->ipn_url = $url . $this->ipn_filename . '?_gw=' . $this->gw_name;
-        }
-        if (!empty($args)) {
-            $params = '&' . http_build_query($args);
-        } else {
-            $params = '';
-        }
-        return $this->ipn_url . $params;
-    }
-
-
-    /**
-     * Check if online payments can be made via this gateway.
-     * Most use online payments but some, like "check" and "terms"
-     * require out-of-band payments.
-     *
-     * @return  boolean     True of online payments accepted
-     */
-    public function canPayOnline()
-    {
-        return $this->can_pay_online ? 1 : 0;
-    }
-
-
-    /**
-     * Check if payments can be made "later", e.g. pay a pending order.
-     * Most gateways do not support this to avoid confusion, but invoiced
-     * orders can be paid later.
-     *
-     * @return  boolean     True if pay-later is supported, False if not
-     */
-    public function canPayLater()
-    {
-        return false;
-    }
-
-
-    /**
-     * Create the "pay now" button for orders.
-     * For most gateways this is the same as the checkout button.
-     *
-     * @return  string  HTML for payment button
-     */
-    public function payOnlineButton($Order)
-    {
-        global $LANG_SHOP;
-
-        return $this->checkoutButton($Order, $LANG_SHOP['buttons']['pay_now']);
-    }
-
-
-    /**
-     * Check if the order can be processed.
-     * For most payment methods the order can only be processed after
-     * it is paid.
-     *
-     * @return  boolean     True to process the order, False to hold
-     */
-    public function okToProcess($Order)
-    {
-        return $Order->isPaid();
-    }
-
-
-    /**
-     * Default gateway upgrade function.
-     * Just sets the current version for bundled gateways,
-     * ignores others.
-     */
-    public function doUpgrade() : bool
-    {
-        global $_TABLES;
-
-        if ($this->_doUpgrade()) {
-            $this->version = $this->getCodeVersion();
-            $db = Database::getInstance();
-            try {
-                $db->conn->update(
-                    $_TABLES['shop.gateways'],
-                    array('version' => $this->version),
-                    array('id' => $this->gw_name),
-                    array(Database::STRING, Database::STRING)
-                );
-                return true;
-            } catch (\Exception $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            if ($upload->areErrors()) {
+                Log::write('shop_system', Log::ERROR, "Errors during upload: " . $upload->printErrors());
                 return false;
             }
+            $Finalfilename = $_CONF['path_data'] . 'temp/' . $filename;
         } else {
+            Log::write('shop_system', Log::ERROR, "No file found to upload");
+            return false;
+        }
+
+        // decompress into temp directory
+        if (function_exists('set_time_limit')) {
+            @set_time_limit( 60 );
+        }
+        $tmp = FileSystem::mkTmpDir();
+        if ($tmp === false) {
+            Log::write('shop_system', Log::ERROR, "Failed to create temp directory");
+            return false;
+        }
+        $tmp_path = $_CONF['path_data'] . $tmp;
+        if (!COM_decompress($Finalfilename, $tmp_path)) {
+            Log::write('shop_system', Log::ERROR, "Failed to decompress $Finalfilename into $tmp_path");
+            FileSystem::deleteDir($tmp_path);
+            return false;
+        }
+        @unlink($Finalfilename);
+
+        if (!$dh = @opendir($tmp_path)) {
+            Log::write('shop_system', Log::ERROR, "Failed to open $tmp_path");
+            return false;
+        }
+        $upl_path = $tmp_path;
+        while (false !== ($file = readdir($dh))) {
+            if ($file == '..' || $file == '.') {
+                continue;
+            }
+            if (@is_dir($tmp_path . '/' . $file)) {
+                $upl_path = $tmp_path . '/' . $file;
+                break;
+            }
+        }
+        closedir($dh);
+
+        if (empty($upl_path)) {
+            Log::write('shop_system', Log::ERROR, "Could not find upload path under $tmp_path");
+            return false;
+        }
+
+        // Copy the extracted upload into the Gateways class directory.
+        $fs = new FileSystem;
+        $gw_name = '';
+        if (is_file($upl_path . '/gateway.json')) {
+            $json = @file_get_contents($upl_path . '/gateway.json');
+            if ($json) {
+                $json = @json_decode($json, true);
+                if ($json) {
+                    $gw_name = $json['name'];
+                    $gw_path = Config::get('path') . 'classes/Gateways/' . $gw_name;
+                    $status = $fs->dirCopy($upl_path, $gw_path);
+                    if ($status) {
+                        // Got the files copied, delete the uploaded files.
+                        FileSystem::deleteDir($tmp_path);
+                        if (@is_dir($gw_path . '/public_html')) {
+                            // Copy any public_html files, like custom webhook handles
+                            $fs->dirCopy($gw_path . '/public_html', $_CONF['path_html'] . Config::PI_NAME);
+                            FileSystem::deleteDir($gw_path . '/public_html');
+                        }
+                    }
+                }
+            }
+        }
+
+        // If there are any error messages, log them and return false.
+        // Otherwise return true.
+        if (empty($fs->getErrors())) {
+            if (!empty($gw_name)) {
+                $gw = Gateway::getInstance($gw_name);
+                $gw->doUpgrade();
+            }
+            return true;
+        } else {
+            foreach ($fs->getErrors() as $msg) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $msg);
+            }
             return false;
         }
     }
 
 
     /**
-     * Actually perform the gateway-specific upgrade functions.
+     * Upgrade all bundled gateways. Called during plugin update.
      *
-     * @return  boolean     True on success, False on error
+     * @param   string  $to     New version
      */
-    protected function _doUpgrade()
+    public static function upgradeAll() : void
     {
-        // nothing to do by default, just update the version.
-        $this->version = $this->getCodeVersion();
-        return true;
-    }
-
-
-    /**
-     * Get the current gateway code version.
-     *
-     * @return  string      Current version
-     */
-    public function getCodeVersion() : string
-    {
-        // Some backwards compatibility
-        if (isset($this->GatewayInfo['version']) && $this->GatewayInfo['version'] != 'unset') {
-            return $this->GatewayInfo['version'];
-        } elseif (isset($this->VERSION)) {
-            // legacy
-            return (string)$this->VERSION;
-        } else {
-            var_dump($this->readJSON());die;
-            return 'unknown';
-        }
-    }
-
-
-    /**
-     * Get the current gateway installed version.
-     *
-     * @return  string      Current version
-     */
-    public function getInstalledVersion()
-    {
-        return $this->version;
-    }
-
-
-    /**
-     * Check if this gateway is bundled with the Shop plugin.
-     *
-     * return   integer     1 if bundled, 0 if not.
-     */
-    public function isBundled() : bool
-    {
-        return in_array($this->gw_name, GatewayManager::$_bundledGateways);
-    }
-
-
-    /**
-     * Stub function to confirm an order.
-     * Some gateways will override this.
-     *
-     * @param   object  $Order  Order object
-     * @return  string      Redirect URL
-     */
-    public function confirmOrder($Order)
-    {
-        return '';
-    }
-
-
-    /**
-     * Check that the gateway is properly configured.
-     * Each gateway needs to override this.
-     *
-     * @return  boolean     True if a valid config is set, False if not
-     */
-    public function hasValidConfig()
-    {
-        return true;
-    }
-
-
-    /**
-     * Check if this gateway is configured to support affiliate payouts.
-     *
-     * @return  boolean     True if payouts are supported, otherwise false
-     */
-    public function supportsPayouts()
-    {
-        return $this->getConfig('supports_payouts') ? true : false;
-    }
-
-
-    /**
-     * Default stub function to handle payouts.
-     * Gateways that support this will supply their own function.
-     *
-     * @param   array   $Payouts    Array of Payout objects
-     */
-    public function sendPayouts(array &$Payouts) : void
-    {
-        Log::write('shop_system', Log::ERROR, "Payouts not implemented for gateway {$this->gw_name}");
-        foreach ($Payouts as $Payout) {
-            $Payout['txn_id'] = 'n/a';
+        foreach (self::getAll() as $gw) {
+            if ($gw->isBundled()) {
+                $gw->doUpgrade();
+            }
         }
     }
 
@@ -1914,7 +1342,7 @@ class Gateway
      *
      * @param   array   $data_arr   Reference to data array
      */
-    private static function XX_checkAvailableVersions(&$data_arr) : void
+    private static function _checkAvailableVersions(&$data_arr) : void
     {
         global $_VARS;
 
@@ -1949,7 +1377,7 @@ class Gateway
      * @param   string  $gwname     Gateway name
      * @return  array       Array of (available, download_link)
      */
-    private static function XX_checkAvailableVersion(string $gwname) : array
+    private static function _checkAvailableVersion(string $gwname) : array
     {
         $default = array(
             'available' => '0.0.0',
@@ -2021,28 +1449,6 @@ class Gateway
             'available' => $latest,
             'upgrade_url' => $releases_link,
         );
-    }
-
-
-    /**
-     * Get information about the gateway from the JSON config file.
-     *
-     * @return  object      GatewayInfo object
-     */
-    protected function readJSON() : GatewayInfo
-    {
-        $retval = new GatewayInfo;
-        $filespec = __DIR__ . '/Gateways/' . $this->gw_name . '/gateway.json';
-        if (is_file($filespec)) {
-            $json = @file_get_contents($filespec);
-            $arr = @json_decode($json, true);
-            if (is_array($arr)) {
-                $retval->merge($arr);
-            }
-        } else {
-            $retval['version'] = Config::get('pi_version');
-        }
-        return $retval;
     }
 
 }

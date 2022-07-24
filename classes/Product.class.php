@@ -2202,7 +2202,7 @@ class Product
                 $this->btn_type != ''
             ) {
                 // Gateway buy-now buttons only used if no options
-                foreach (Gateway::getAll() as $gw) {
+                foreach (GatewayManager::getAll() as $gw) {
                     if ($gw->Supports($this->btn_type)) {
                         $buttons[$gw->getName()] = $gw->ProductButton($this);
                     }

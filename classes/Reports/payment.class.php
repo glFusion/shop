@@ -14,6 +14,7 @@
 namespace Shop\Reports;
 use Shop\Currency;
 use Shop\Gateway;
+use Shop\GatewayManager;
 use Shop\Payment as pmtClass;
 use Shop\FieldList;
 use glFusion\Database\Database;
@@ -69,7 +70,7 @@ class payment extends \Shop\Report
     {
         $retval = '';
         $T = $this->getTemplate('config');
-        $gws = Gateway::getAll();
+        $gws = GatewayManager::getAll();
         $gateway = self::_getSessVar('gateway');
         $T->set_block('config', 'gw_opts', 'opt');
         foreach ($gws as $GW) {
