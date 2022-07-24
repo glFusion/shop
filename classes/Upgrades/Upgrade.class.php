@@ -291,6 +291,8 @@ class Upgrade
                 // 1.5.0
                 'classes/ipn',
                 'classes/Logger',   // renamed to "Loggers"
+                'classes/Gateways/paypal/gateway.json',
+                'classes/Gateways/ppcheckout/gateway.json',
             ),
             // public_html/shop
             $_CONF['path_html'] . 'shop' => array(

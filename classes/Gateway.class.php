@@ -19,6 +19,7 @@ use Shop\Models\ProductType;
 use Shop\Models\CustomInfo;;
 use Shop\Models\ButtonKey;;
 use Shop\Models\PayoutHeader;
+use Shop\Models\GatewayInfo;
 use Shop\Cache;
 use glFusion\FileSystem;
 use glFusion\Database\Database;
@@ -42,9 +43,9 @@ class Gateway
      * @const integer */
     protected const LOGO_HEIGHT = 40;
 
-    /** Gateway version.
-     * @var string */
-    protected $VERSION = NULL;
+    /** Gateway information from the JSON file.
+     * @var GatewayInfo */
+    protected $GatetwayInfo = NULL;
 
     /** Table name, used by DBO class.
      * @var string */
@@ -188,10 +189,7 @@ class Gateway
     {
         global $_TABLES, $_USER;
 
-        if ($this->isBundled()) {
-            $this->VERSION = Config::get('pi_version');
-        }
-
+        $this->GatewayInfo = $this->readJSON();
         $this->custom = new CustomInfo;
         $this->properties = array();
         $this->getIpnUrl();     // construct the IPN processor URL
@@ -1119,8 +1117,8 @@ class Gateway
                 $this->grp_access
             ),
             'inst_version'  => $this->version,
-            'code_version'  => $this->VERSION,
-            'need_upgrade'  => !COM_checkVersion($this->version, $this->VERSION),
+            'code_version'  => $this->getCodeVersion(),
+            'need_upgrade'  => !COM_checkVersion($this->version, $this->getCodeVersion()),
         ), false, false);
 
         foreach ($this->cfgFields as $env=>$flds) {
@@ -1631,7 +1629,7 @@ class Gateway
      *
      * @param   array   $data_arr   Reference to data array
      */
-    private static function getInstalled(&$data_arr)
+    private static function getInstalled(&$data_arr) : void
     {
         global $_TABLES;
 
@@ -1640,9 +1638,10 @@ class Gateway
             LEFT JOIN {$_TABLES['groups']} g
                 ON g.grp_id = gw.grp_access
             ORDER BY orderby ASC";
+
         $db = Database::getInstance();
         try {
-            $data = $db->conn->executeQuery($sql);
+            $data = $db->conn->executeQuery($sql)->fetchAllAssociative();
         } catch (\Exception $e) {
             Log::write('system', Log::ERROR, __METHOD__ . ': ' . $msg);
             $data = false;
@@ -2235,7 +2234,7 @@ class Gateway
         global $_TABLES;
 
         if ($this->_doUpgrade()) {
-            $this->version = $this->VERSION;
+            $this->version = $this->getCodeVersion();
             $db = Database::getInstance();
             try {
                 $db->conn->update(
@@ -2263,7 +2262,7 @@ class Gateway
     protected function _doUpgrade()
     {
         // nothing to do by default, just update the version.
-        $this->version = $this->VERSION;
+        $this->version = $this->getCodeVersion();
         return true;
     }
 
@@ -2273,9 +2272,18 @@ class Gateway
      *
      * @return  string      Current version
      */
-    public function getCodeVersion()
+    public function getCodeVersion() : string
     {
-        return $this->VERSION;
+        // Some backwards compatibility
+        if (isset($this->GatewayInfo['version']) && $this->GatewayInfo['version'] != 'unset') {
+            return $this->GatewayInfo['version'];
+        } elseif (isset($this->VERSION)) {
+            // legacy
+            return (string)$this->VERSION;
+        } else {
+            var_dump($this->readJSON());die;
+            return 'unknown';
+        }
     }
 
 
@@ -2381,7 +2389,7 @@ class Gateway
                 $data_arr[$key]['upgrade_url'] = $versions[$gw['id']]['upgrade_url'];
             } else {
                 // Bundled or no version available
-                $data_arr[$key]['available'] = '0.0.0';
+                $data_arr[$key]['available'] = $gw['version'];
                 $data_arr[$key]['upgrade_url'] = '';
             }
         }
@@ -2467,6 +2475,28 @@ class Gateway
             'available' => $latest,
             'upgrade_url' => $releases_link,
         );
+    }
+
+
+    /**
+     * Get information about the gateway from the JSON config file.
+     *
+     * @return  object      GatewayInfo object
+     */
+    protected function readJSON() : GatewayInfo
+    {
+        $retval = new GatewayInfo;
+        $filespec = __DIR__ . '/Gateways/' . $this->gw_name . '/gateway.json';
+        if (is_file($filespec)) {
+            $json = @file_get_contents($filespec);
+            $arr = @json_decode($json, true);
+            if (is_array($arr)) {
+                $retval->merge($arr);
+            }
+        } else {
+            $retval['version'] = Config::get('pi_version');
+        }
+        return $retval;
     }
 
 }

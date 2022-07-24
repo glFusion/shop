@@ -29,7 +29,7 @@ Release TBD
   * Add option to purge orders or redact PII after some years.
   * Fix getting actual enabled zone rule for a product.
   * Accept an empty value for ProductVariant::setImageIDs().
-  * Enable direct querying of release info for payment gateways.
+  * Enable direct querying of release info for payment gateways. (#3ee2908)
   * Use fixed array of gateway names to determind if bundled or not.
   * Users or customers are enrolled as affiliates if the config is change to "yes".
   * Add optional URL to logo image for invoices.
@@ -37,6 +37,7 @@ Release TBD
   * Allow multiple checkbox options with price impacts (#71).
   * More flexible order statuses, allow admin-defined settings.
   * Add admin-selectable order ID format options, remove custom function.
+  * Get version info from JSON file for installable gateways.
 
 ## v1.4.1
 Release 2022-04-07
@@ -54,6 +55,7 @@ Release 2021-09-25
   * Move quantity tracking to Stock table, reserve items as they go into carts.
   * Fix `No Product` message showing even if plugin products are displayed.
   * Add interface for plugin products to be sold where the plugin doesn't support Shop.
+    * Added a `plugin_products` table to set defaults for plugins.
 
 ## v1.3.0
 Release 2021-04-20
