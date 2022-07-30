@@ -63,7 +63,7 @@ case 'gwupgrade':
     break;
 
 case 'gwupload':
-    $status = Shop\Gateway::upload();
+    $status = Shop\GatewayManager::upload();
     if ($status) {
         SHOP_setMsg("The gateway was successfully uploaded");
     } else {
@@ -117,7 +117,7 @@ case 'gwedit':
 
 case 'gwadmin':
 default:
-    $content .= Shop\Gateway::adminList();
+    $content .= Shop\GatewayManager::adminList();
     break;
 }
 
