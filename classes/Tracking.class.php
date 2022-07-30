@@ -22,7 +22,7 @@ class Tracking
 {
     /** Time in minutes to cache tracking info.
      * @const integer */
-    private const CACHE_MINUTES = 60;
+    private const CACHE_MINUTES = 15;
 
     /** Steps recorded along the way.
      * @var array */
