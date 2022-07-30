@@ -15,6 +15,8 @@ namespace Shop\Models;
 use Shop\Template;
 use Shop\Category;
 use Shop\Log;
+use Shop\Product;
+use Shop\Currency;
 use glFusion\Database\Database;
 
 
@@ -55,7 +57,7 @@ class Syndication extends \glFusion\Syndication\Feed
 
     /**
      * Get the available feed formats.
-     * Only Google catalog is supporteb by Shop.
+     * Only Google catalog is supported by Shop.
      *
      * @return  array   Array of name & version arrays
      */
@@ -80,7 +82,7 @@ class Syndication extends \glFusion\Syndication\Feed
         static $Products = NULL;
 
         if ($Products === NULL) {
-            $Products = \Shop\Product::getAll();
+            $Products = Product::getAll();
             foreach ($Products as $id=>$P) {
                 if (!$P->canDisplay()) {
                     unset($Products[$id]);
@@ -132,7 +134,7 @@ class Syndication extends \glFusion\Syndication\Feed
             Log::write('shop_system', Log::ERROR, "Missing catalog feed template for {$this->type}");
             return false;
         }
-        $Cur = \Shop\Currency::getInstance();
+        $Cur = \Currency::getInstance();
         $Products = self::_getProducts();
         $T->set_var('newline', "\n");
         $T->set_block('feed', 'itemRow', 'iRow');
