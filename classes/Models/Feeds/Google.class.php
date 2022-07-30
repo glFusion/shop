@@ -28,8 +28,10 @@ class Google extends \Shop\Models\Syndication
     /**
      * Render a Catalog feed.
      * First checks the plugin configuration to verify that the feed is enabled.
+     *
+     * @return  boolean     True on success, False on error
      */
-    protected function _generate()
+    protected function _generate() : bool
     {
         global $_SHOP_CONF, $_CONF;
 
@@ -117,32 +119,6 @@ class Google extends \Shop\Models\Syndication
         } else {
             return false;
         } 
-    }
-
-
-    /**
-     * Fixes the text for the CSV file.
-     *
-     * @param   string  $str        Original text string
-     * @param   string  $default    Optional default if $str is empty
-     * @return  string      Sanitized string.
-     */
-    private static function _fixText($str, $default=NULL)
-    {
-        $search = array(
-            '"',
-            //"\n\n",
-        );
-        $replace = array(
-            '""',
-            //"\n",
-        );
-        $str = strip_tags($str);
-        $str = trim(str_replace($search, $replace, $str));
-        if ($str == '' && $default !== NULL) {
-            $str = $default;
-        }
-        return $str;
     }
 
 }

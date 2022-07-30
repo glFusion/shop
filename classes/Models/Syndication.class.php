@@ -26,13 +26,15 @@ use glFusion\Database\Database;
  */
 class Syndication extends \glFusion\Syndication\Feed
 {
+    /** Type of feed, e.g. "google".
+     * @var string */
     protected $type = '';
 
 
     /**
      * Set the feed type from the supplied parameter.
      *
-     * @param   string  $type       Type of feed
+     * @param   string|array    $type       Type of feed
      */
     public function __construct($type)
     {
@@ -124,7 +126,7 @@ class Syndication extends \glFusion\Syndication\Feed
      *
      * @uses    self::_getProducts()
      */
-    public function Render(&$update_data)
+    public function Render(string &$update_data) : string
     {
         global $_CONF;
 
@@ -169,25 +171,6 @@ class Syndication extends \glFusion\Syndication\Feed
             $img_link = $P->getImage($img, 480, 480)['url'];
             $Cats = $P->getCategories();
             $Cat = array_shift($Cats);  // get the first category (random)
-/*            $tmp = array(
-//                'description' => $title,
-//<item>
-                'g:id' => $P->getID(),
-                'g:title' => $title,
-                'g:description' => $dscp,
-                'g:link' => $P->getLink(),
-                'g:image_link' => $img_link,
-                'g:brand' => self::_fixText($P->getBrandName()),
-                'g:condition' => 'new',
-                'g:availability' => $P->isInStock() ? 'in stock' : 'preorder',
-                'g:price' => $Cur->Format($base_price, false),
-                'g:product_type' => self::_fixText($Cat->getName()),
-            );
-            $taxonomy = htmlspecialchars($Cat->getGoogleTaxonomy());
-            if (!empty($taxonomy)) {
-                $tmp['g:google_product_category'] = $taxonomy;
-            }
-            $content[] = $tmp;*/
 
             $T->set_var(array(
                 'product_id'    => $P->getID(),
@@ -221,7 +204,7 @@ class Syndication extends \glFusion\Syndication\Feed
      * @param   string  $default    Optional default if $str is empty
      * @return  string      Sanitized string.
      */
-    private static function _fixText($str, $default=NULL)
+    protected static function _fixText(string $str, ?string $default=NULL) : string
     {
         $search = array(
             '"',
@@ -246,7 +229,7 @@ class Syndication extends \glFusion\Syndication\Feed
      * @param   integer $fid    Feed ID
      * @return  array       Array of key->values from the DB
      */
-    private static function _getFeedInfo($fid)
+    private static function _getFeedInfo(int $fid) : array
     {
         global $_TABLES;
         static $feeds = array();
@@ -285,7 +268,12 @@ class Syndication extends \glFusion\Syndication\Feed
     }
 
 
-    public static function getFeedNames()
+    /**
+     * Get all the available feed ids and names.
+     *
+     * @return  array       Array of feed IDs and names
+     */
+    public static function getFeedNames() : array
     {
         global $LANG_SHOP;
 

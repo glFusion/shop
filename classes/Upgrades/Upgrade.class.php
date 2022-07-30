@@ -293,6 +293,7 @@ class Upgrade
                 'classes/Logger',   // renamed to "Loggers"
                 'classes/Gateways/paypal/gateway.json',
                 'classes/Gateways/ppcheckout/gateway.json',
+                'templates/feeds/catalog/facebook.thtml',
             ),
             // public_html/shop
             $_CONF['path_html'] . 'shop' => array(
