@@ -81,7 +81,7 @@ class Company extends Address
      * @param   integer $addr_id    Address ID to retrieve (not used)
      * @return  object      Company Address object
      */
-    public static function getInstance($addr_id=NULL)
+    public static function getInstance(?int $addr_id=NULL) : self
     {
         static $Obj = NULL;
 

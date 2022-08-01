@@ -166,23 +166,29 @@ class Address
      * @param   integer $addr_id    Address ID to retrieve
      * @return  object      Address object, empty if not found
      */
-    public static function getInstance($addr_id)
+    public static function getInstance(?int $addr_id=NULL) : self
     {
         global $_TABLES;
         static $addrs = array();
 
-        $addr_id = (int)$addr_id;
-        if ($addr_id > 0) {
+        if (is_integer($addr_id) && $addr_id > 0) {
             if (isset($addrs[$addr_id])) {
                 return new self($addrs[$addr_id]);
             } else {
-                $res = DB_query("SELECT *
-                    FROM {$_TABLES['shop.address']}
-                    WHERE addr_id = '{$addr_id}'");
-                if ($res) {
-                    $A = DB_fetchArray($res, true);
-                    $addrs[$addr_id] = $A;
-                    return new self($A);
+                try {
+                    $row = Database::getInstance()->conn->executeQuery(
+                        "SELECT * FROM {$_TABLES['shop.address']}
+                        WHERE addr_id = ?",
+                        array($addr_id),
+                        array(Database::INTEGER)
+                    )->fetchAssociative();
+                } catch (\Throwable $e) {
+                    Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                    $row = false;
+                }
+                if (!empty($row)) {
+                    $addrs[$addr_id] = $row;
+                    return new self($row);
                 } else {
                     return new self;
                 }
@@ -584,9 +590,9 @@ class Address
     public function toJSON($escape=false)
     {
         $str = json_encode($this->toArray());
-        if ($escape) {
+        /*if ($escape) {
             $str = DB_escapeString($str);
-        }
+        }*/
         return $str;
     }
 
@@ -608,11 +614,20 @@ class Address
         $uid = (int)$uid;
         $retval = array();
         if ($uid > 1) {
-            $res = DB_query(
-                "SELECT * FROM {$_TABLES['shop.address']} WHERE uid=$uid"
-            );
-            while ($A = DB_fetchArray($res, false)) {
-                $retval[$A['addr_id']] = new self($A);
+            try {
+                $data = Database::getInstance()->conn->executeQuery(
+                    "SELECT * FROM {$_TABLES['shop.address']} WHERE uid = ?",
+                    array($uid),
+                    array(Database::INTEGER)
+                )->fetchAllAssociative();
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $data = false;
+            }
+            if (!empty($data)) {
+                foreach ($data as $A) {
+                    $retval[$A['addr_id']] = new self($A);
+                }
             }
         }
         $cache[$uid] = $retval;
@@ -846,9 +861,10 @@ class Address
     /**
      * Save the address to the database.
      *
+     * @param   array   $A  Record array to save (not used)
      * @return  integer     Record ID of address, zero on error
      */
-    public function Save()
+    public function Save(?array $A=NULL) : int
     {
         global $_TABLES;
 
@@ -857,50 +873,77 @@ class Address
             return 0;
         }
 
-        if ($this->addr_id > 0) {
-            $sql1 = "UPDATE {$_TABLES['shop.address']} SET ";
-            $sql2 = " WHERE addr_id='" . $this->addr_id . "'";
-        } else {
-            $sql1 = "INSERT INTO {$_TABLES['shop.address']} SET ";
-            $sql2 = '';
+        $values = array(
+            'uid' => $this->uid,
+            'name' => $this->name,
+            'company' => $this->company,
+            'address1' => $this->address1,
+            'address2' => $this->address2,
+            'city' => $this->city,
+            'state' => $this->state,
+            'country' => $this->country,
+            'phone' => $this->getPhone(),
+            'zip' => $this->zip,
+            'billto_def' => $this->isDefaultBillto(),
+            'shipto_def' => $this->isDefaultShipto(),
+        );
+        $types = array(
+            Database::INTEGER,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::INTEGER,
+            Database::INTEGER,
+        );
+        $db = Database::getInstance();
+        try {
+            if ($this->addr_id == 0) {
+                $db->conn->insert(
+                    $_TABLES['shop.address'],
+                    $values,
+                    $types
+                );
+                $this->addr_id = $db->conn->lastInsertId();
+            } else {
+                $types[] = Database::INTEGER;
+                $db->conn->update(
+                    $_TABLES['shop.address'],
+                    $values,
+                    array('addr_id' => $this->addr_id),
+                    $types
+                );
+            }
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
 
-        $sql = "uid = '" . (int)$this->uid . "',
-                name = '" . DB_escapeString($this->name) . "',
-                company = '" . DB_escapeString($this->company) . "',
-                address1 = '" . DB_escapeString($this->address1) . "',
-                address2 = '" . DB_escapeString($this->address2) . "',
-                city = '" . DB_escapeString($this->city) . "',
-                state = '" . DB_escapeString($this->state) . "',
-                country = '" . DB_escapeString($this->country) . "',
-                phone = '" . $this->getPhone() . "',
-                zip = '" . DB_escapeString($this->zip) . "',
-                billto_def = '" . $this->isDefaultBillto() . "',
-                shipto_def = '" . $this->isDefaultShipto() . "'";
-        $sql = $sql1 . $sql . $sql2;
-        //echo $sql;die;
-        DB_query($sql);
-        if (!DB_error()) {
-            if ($this->addr_id == 0) {
-                $this->addr_id = DB_insertID();
-            }
-
+        if ($this->addr_id > 0) {
             // If this is the new default address, turn off the other default
             foreach (array('billto', 'shipto') as $type) {
                 if ($this->isDefault($type)) {
-                    $sql = "UPDATE {$_TABLES['shop.address']}
-                        SET {$type}_def = 0 WHERE
-                        uid = {$this->uid}
-                        AND addr_id <> {$this->addr_id}
-                        AND {$type}_def = 1";
-                    DB_query($sql);
+                    try {
+                        $colname = $db->conn->quoteIdentifier($type . '_def');
+                        $db->conn->executeStatement(
+                            "UPDATE {$_TABLES['shop.address']}
+                            SET $colname = 0 WHERE
+                            uid = {$this->uid}
+                            AND addr_id <> {$this->addr_id}
+                            AND $colname = 1"
+                        );
+                    } catch (\Throwable $e) {
+                        Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                    }
                 }
             }
             Cache::clear('shop.user_' . $this->uid);
-            return $this->addr_id;
-        } else {
-            return 0;
         }
+        return $this->addr_id;
     }
 
 
@@ -1019,7 +1062,16 @@ class Address
         if ($this->addr_id < 1) {
             return false;
         }
-        DB_delete($_TABLES['shop.address'], 'addr_id', $this->addr_id);
+        try {
+            Database::getInstance()->conn->delete(
+                $_TABLES['shop.address'],
+                array('addr_id' => $this->addr_id),
+                array(Database::INTEGER)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return false;
+        }
         Cache::clear('shop.user_' . $this->uid);
         Cache::clear('shop.address_' . $this->uid);
         return true;

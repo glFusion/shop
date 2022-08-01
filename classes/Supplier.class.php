@@ -12,6 +12,8 @@
  * @filesource
  */
 namespace Shop;
+use glFusion\Database\Database;
+
 
 /**
  * Class for supplier and brand information
@@ -67,12 +69,18 @@ class Supplier extends Address
         $this->setCountry($_SHOP_CONF['country']);
         $this->setState($_SHOP_CONF['state']);
         if ($this->getID() > 0) {
-            $res = DB_query(
-                "SELECT * FROM {$_TABLES['shop.suppliers']}
-                WHERE sup_id = {$this->getID()}"
-            );
-            if (DB_numRows($res) == 1) {
-                $A = DB_fetchArray($res, false);
+            try {
+                $A = Database::getInstance()->conn->executeQuery(
+                    "SELECT * FROM {$_TABLES['shop.suppliers']}
+                    WHERE sup_id = ?",
+                    array($this->getID()),
+                    array(Database::INTEGER)
+                )->fetchAssociative();
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $A = false;
+            }
+            if (is_array($A)) {
                 $this->setAddress($A);
             } else {
                 $this->setID(0);
@@ -87,7 +95,7 @@ class Supplier extends Address
      * @param   integer $id Record ID to retrieve
      * @return  object      Supplier object, empty if not found
      */
-    public static function getInstance($addr_id)
+    public static function getInstance(?int $addr_id=NULL) : self
     {
         static $addrs = array();
 
@@ -337,7 +345,7 @@ class Supplier extends Address
      *
      * @param   string  $fname  Optional filename override.
      */
-    public function deleteImage($fname=NULL)
+    public function deleteImage(?string $fname=NULL) : void
     {
         if ($fname === NULL) {
             $fname = $this->getLogoImage();
@@ -356,9 +364,9 @@ class Supplier extends Address
      * Save the supplier information.
      *
      * @param   array   $A  Optional data array from $_POST
-     * @return  boolean     True on success, False on failure
+     * @return  int     Record number saved
      */
-    public function Save($A=NULL)
+    public function Save(?array $A=NULL) : int
     {
         global $_TABLES;
 
@@ -386,42 +394,60 @@ class Supplier extends Address
                 $this->deleteImage();
             }
         }
-        if ($this->getID() > 0) {
-            $sql1 = "UPDATE {$_TABLES['shop.suppliers']} SET ";
-            $sql3 = " WHERE sup_id='" . $this->getID() . "'";
-        } else {
-            $sql1 = "INSERT INTO {$_TABLES['shop.suppliers']} SET ";
-            $sql3 = '';
-        }
-        $sql2 = "name = '" . DB_escapeString($this->getName()) . "',
-                company = '" . DB_escapeString($this->getCompany()) . "',
-                address1 = '" . DB_escapeString($this->getAddress1()) . "',
-                address2 = '" . DB_escapeString($this->getAddress2()) . "',
-                city = '" . DB_escapeString($this->getCity()) . "',
-                state = '" . DB_escapeString($this->getState()) . "',
-                country = '" . DB_escapeString($this->getCountry()) . "',
-                phone = '" . DB_escapeString($this->getPhone()) . "',
-                zip = '" . DB_escapeString($this->getPostal()) . "',
-                dscp = '" . DB_escapeString($this->getDscp()) . "',
-                is_supplier = {$this->getIsSupplier()},
-                is_brand = {$this->getIsBrand()},
-                lead_time = '" . DB_escapeString($this->getLeadTime()) . "',
-                logo_image = '" . DB_escapeString($this->logo_image) . "'";
-        $sql = $sql1 . $sql2 . $sql3;
-        //var_dump($this);die;
-        //echo $sql;die;
-        Log::write('shop_system', Log::DEBUG, $sql);
-        DB_query($sql);
-        if (!DB_error()) {
-            if ($this->getID() == 0) {
-                $this->setID(DB_insertID());
+        $values = array(
+            'name' => $this->getName(),
+            'company' => $this->getCompany(),
+            'address1' => $this->getAddress1(),
+            'address2' => $this->getAddress2(),
+            'city' => $this->getCity(),
+            'state' => $this->getState(),
+            'country' => $this->getCountry(),
+            'phone' => $this->getPhone(),
+            'zip' => $this->getPostal(),
+            'dscp' => $this->getDscp(),
+            'is_supplier' => $this->getIsSupplier(),
+            'is_brand' => $this->getIsBrand(),
+            'lead_time' => $this->getLeadTime(),
+            'logo_image' => $this->logo_image,
+        );
+        $types = array(
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::STRING,
+            Database::STRING,
+        );
+        $db = Database::getInstance();
+        try {
+            if ($this->getID() > 0) {
+                $types[] = Database::INTEGER;
+                $db->conn->update(
+                    $_TABLES['shop.suppliers'],
+                    $values,
+                    array('sup_id' => $this->getID()),
+                    $types
+                );
+            } else {
+                $db->conn->insert(
+                    $_TABLES['shop.suppliers'],
+                    $values,
+                    $types
+                );
+                $this->setID($db->conn->lastInsertId());
             }
-            $status = true;
-        } else {
-            $status = false;
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return 0;
         }
-
-        return $status;
+        return $this->getID();
     }
 
 
@@ -430,12 +456,20 @@ class Supplier extends Address
      *
      * @param   integer $sup_id     Supplier ID
      */
-    public static function deleteSupplier($sup_id)
+    public static function deleteSupplier(int $sup_id) : void
     {
         global $_TABLES;
 
         $sup_id = (int)$sup_id;
-        DB_delete($_TABLES['shop.suppliers'], 'sup_id', $sup_id);
+        try {
+            Database::getInstance()->conn->delete(
+                $_TABLES['shop.suppliers'],
+                array('sup_id' => $sup_id),
+                array(Database::INTEGER)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
     }
 
 

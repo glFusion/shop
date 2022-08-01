@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Shop;
+use glFusion\Database\Database;
 
 
 /**
@@ -48,10 +49,11 @@ class RegionBase
     {
         global $_TABLES;
 
-        if (is_array($id)) {
-            $id = implode(',', $id);
+        if (!is_array($id)) {
+            $id = array($id);
         }
-        $id = DB_escapeString($id);
+        $db = Database::getInstance();
+        $varname = $db->conn->quoteIdentifier($varname);
         switch ($varname) {     // allow only valid field names
         case static::$KEY . '_enabled':
         case 'tax_shipping':
@@ -60,18 +62,19 @@ class RegionBase
             $oldvalue = $oldvalue == 1 ? 1 : 0;
             $newvalue = $oldvalue == 1 ? 0 : 1;
 
-            $sql = "UPDATE {$_TABLES[static::$TABLE]}
-                SET $varname = $newvalue
-                WHERE " . static::$KEY . "_id IN ($id)";
-            // Ignore SQL errors since varname is indeterminate
-            //echo $sql;die;
-            DB_query($sql, 1);
-            if (DB_error()) {
-                Log::write('shop_system', Log::ERROR, "SQL error: $sql");
-                return $oldvalue;
-            } else {
+            try {
+                $db->conn->executeStatement(
+                    "UPDATE {$_TABLES[static::$TABLE]}
+                    SET $varname = ?
+                    WHERE " . static::$KEY . "_id IN (?)",
+                    array($newvalue, $id),
+                    array(Database::INTEGER, Database::PARAM_INT_ARRAY)
+                );
                 Cache::clear('regions');
                 return $newvalue;
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                return $oldvalue;
             }
         }
     }

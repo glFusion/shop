@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Shop;
+use glFusion\Database\Database;
 
 
 /**
@@ -78,11 +79,17 @@ class Region extends RegionBase
         if (isset($instances[$id])) {
             return $instances[$id];
         } else {
-            $sql = "SELECT * FROM {$_TABLES['shop.regions']} WHERE region_id = $id";;
-            $res = DB_query($sql);
-            if ($res && DB_numRows($res) == 1) {
-                $A = DB_fetchArray($res, false);
-            } else {
+            try {
+                $A = Database::getInstance()->conn->executeQuery(
+                    "SELECT * FROM {$_TABLES['shop.regions']} WHERE region_id = ?",
+                    array($id),
+                    array(Database::INTEGER)
+                )->fetchAssociative();
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $A = false;
+            }
+            if (!is_array($A)) {
                 // Create an empty region.
                 // Set enabled to true so isEnabled() will return true
                 // when there is no region assigned (e.g. Antarctica)
@@ -207,17 +214,29 @@ class Region extends RegionBase
         $cache_key = 'shop.regions_all_' . $enabled;
         $retval = Cache::get($cache_key);
         if ($retval === NULL) {
-            $sql = "SELECT * FROM {$_TABLES['shop.regions']}";
+            $qb = Database::getInstance()->conn->createQueryBuilder();
+            $qb->select('*')
+                ->from($_TABLES['shop.regions'])
+               ->orderBy('region_name', 'ASC');
             if ($enabled) {
-                $sql .= ' WHERE region_enabled =1';
+                $qb->where('region_enabled = 1');
             }
-            $sql .= ' ORDER BY region_name ASC';
-            $res = DB_query($sql);
-            while ($A = DB_fetchArray($res, false)) {
-                $retval[$A['region_id']] = new self($A);
+            try {
+                $stmt = $qb->execute();
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $stmt = false;
+            }
+            if ($stmt) {
+                while ($A = $stmt->fetchAssociative()) {
+                    $retval[$A['region_id']] = new self($A);
+                }
             }
             // Cache for a month, this doesn't change often
             Cache::set($cache_key, $retval, 'regions', 43200);
+        }
+        if (!is_array($retval)) {
+            $retval = array();
         }
         return $retval;
     }
@@ -283,27 +302,37 @@ class Region extends RegionBase
                 ->setName($A['region_name'])
                 ->setEnabled($A['region_enabled']);
         }
-        if ($this->getID() > 0) {
-            $sql1 = "UPDATE {$_TABLES['shop.regions']} SET ";
-            $sql3 = " WHERE region_id ='" . $this->getID() . "'";
-        } else {
-            $sql1 = "INSERT INTO {$_TABLES['shop.regions']} SET ";
-            $sql3 = '';
-        }
-        $sql2 = "region_name = '" . DB_escapeString($this->getName()) . "',
-            region_code = {$this->getCode()},
-            region_enabled = {$this->isEnabled()}";
-        $sql = $sql1 . $sql2 . $sql3;
-        //var_dump($this);die;
-        //echo $sql;die;
-        Log::write('shop_system', Log::DEBUG, $sql);
-        DB_query($sql);
-        if (!DB_error()) {
-            if ($this->getID() == 0) {
-                $this->setID(DB_insertID());
+        $db = Database::getInstance();
+        $values = array(
+            'region_name' => $this->getName(),
+            'region_code' => $this->getCode(),
+            'region_enabled' => $this->isEnabled(),
+        );
+        $types = array(
+            Database::STRING,
+            Database::STRING,
+            Database::INTEGER,
+        );
+        try {
+            if ($this->getID() > 0) {
+                $values[] = Database::INTEGER;
+                $db->conn->update(
+                    $_TABLES['shop.regions'],
+                    $values,
+                    array('region_id' => $this->getID()),
+                    $types
+                );
+            } else {
+                $db->conn->insert(
+                    $_TABLES['shop.regions'],
+                    $values,
+                    $types
+                );
             }
+            $this->setID($db->conn->lastInsertId());
             $status = true;
-        } else {
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $status = false;
         }
         return $status;

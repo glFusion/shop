@@ -5,13 +5,14 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2019-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.4.1
+ * @version     v1.5.0
  * @since       v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop\Tax;
+use glFusion\Database\Database;
 use Shop\Template;
 use Shop\Config;
 use Shop\FieldList;
@@ -39,19 +40,24 @@ class table extends \Shop\Tax
         $data = $this->default_rates;
 
         if ($this->hasNexus()) {
-            $country = DB_escapeString($this->Address->getCountry());
-            $zipcode = DB_escapeString($this->Address->getZip5());
             $sql = "SELECT * FROM {$_TABLES['shop.tax_rates']}
-                WHERE country = '$country'
+                WHERE country = ?
                 AND (
-                    zip_from = '$zipcode' OR
-                    '$zipcode' BETWEEN zip_from AND zip_to
+                    zip_from = ? OR ? BETWEEN zip_from AND zip_to
                 ) ORDER BY zip_from DESC, zip_to ASC
                 LIMIT 1";
-            //echo $sql;die;
-            $res = DB_query($sql, 1);
-            if ($res && DB_numRows($res) == 1) {
-                $A = DB_fetchArray($res, false);
+            try {
+                $A = Database::getInstance()->conn->executeQuery(
+                    $sql,
+                    array($country, $zipcode, $zipcode),
+                    array(Database::STRING, Database::STRING, Database::STRING)
+                )->fetchAssociative();
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $A = false;
+            }
+
+            if (is_array($A)) {
                 $data = array(
                     'totalRate' => SHOP_getVar($A, 'combined_rate', 'float'),
                     'rates' => array(
@@ -292,14 +298,18 @@ class table extends \Shop\Tax
 
         $A = NULL;
         if ($code != '') {
-            $sql = "SELECT * FROM {$_TABLES['shop.tax_rates']}
-                WHERE code = '" . DB_escapeString($code) . "'";
-            $res = DB_query($sql);
-            if ($res) {
-                $A = DB_fetchArray($res, false);
+            try {
+                $A = Database::getInstance()->conn->executeQuery(
+                    "SELECT * FROM {$_TABLES['shop.tax_rates']} WHERE code = ?",
+                    array($code),
+                    array(Database::STRING)
+                )->fetchAssociative();
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $A = false;
             }
         }
-        if (!$A) {
+        if (empty($A)) {
             $A = array(
                 'code' => '',
                 'country' => '',
@@ -343,20 +353,18 @@ class table extends \Shop\Tax
     {
         global $_TABLES;
 
-        if (is_array($code) && empty($code)) {
-            return;
+        if (!is_array($code)) {
+            $code = array($code);
         }
-        if (is_array($code)) {
-            foreach ($code as $idx=>$val) {
-                $code[$idx] = "'" . DB_escapeString($val) . "'";
-            }
-            $code_str = implode(',', $code);
-        } else {
-            $code_str = "'" . DB_escapeString($code) . "'";
+        try {
+            Database::getInstance()->conn->executeStatement(
+                "DELETE FROM {$_TABLES['shop.tax_rates']} WHERE code IN (?)",
+                array($code_str),
+                array(Database::PARAM_STR_ARRAY)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
-        $sql = "DELETE FROM {$_TABLES['shop.tax_rates']} WHERE code IN ($code_str)";
-        //echo $sql;die;
-        DB_query($sql);
     }
 
 
@@ -366,7 +374,7 @@ class table extends \Shop\Tax
      * @param   array   $A      Arra of data elements
      * @return  boolean     True on success, False on error
      */
-    public static function Save(array $A)
+    public static function Save(array $A) : bool
     {
         global $_TABLES;
 
@@ -378,36 +386,48 @@ class table extends \Shop\Tax
         if ($A['combined_rate'] == 0) {
             $A['combined_rate'] = $A['state_rate'] + $A['county_rate'] + $A['city_rate'] + $A['special_rate'];
         }
-        $sql = "INSERT INTO {$_TABLES['shop.tax_rates']} SET
-            code = '" . DB_escapeString(substr($A['code'], 0, 25)) . "',
-            country = '" . DB_escapeString($A['country']) . "',
-            state = '" . DB_escapeString($A['state']) . "',
-            region = '" . DB_escapeString(substr($A['region'],0,128)) . "',
-            zip_from = '" . DB_escapeString($A['zip_from']) . "',
-            zip_to = '" . DB_escapeString($A['zip_to']) . "',
-            combined_rate = {$A['combined_rate']},
-            state_rate = {$A['state_rate']},
-            county_rate = {$A['county_rate']},
-            city_rate = {$A['city_rate']},
-            special_rate = {$A['special_rate']}
-            ON DUPLICATE KEY UPDATE
-            country = '" . DB_escapeString($A['country']) . "',
-            state = '" . DB_escapeString($A['state']) . "',
-            region = '" . DB_escapeString($A['region']) . "',
-            zip_from = '" . DB_escapeString($A['zip_from']) . "',
-            zip_to = '" . DB_escapeString($A['zip_to']) . "',
-            combined_rate = {$A['combined_rate']},
-            state_rate = {$A['state_rate']},
-            county_rate = {$A['county_rate']},
-            city_rate = {$A['city_rate']},
-            special_rate = {$A['special_rate']}";
-        DB_query($sql);
-        if (DB_error()) {
-            Log::write('shop_system', Log::ERROR, "Error saving tax rate: $sql");
+        $db = Database::getInstance();
+        $values = array(
+            'country' => $A['country'],
+            'state' => $A['state'],
+            'region' => substr($A['region'],0,128),
+            'zip_from' => $A['zip_from'],
+            'zip_to' => $A['zip_to'],
+            'combined_rate' => $A['combined_rate'],
+            'state_rate' => $A['state_rate'],
+            'county_rate' => $A['county_rate'],
+            'city_rate' => $A['city_rate'],
+            'special_rate' => $A['special_rate'],
+            'code' => substr($A['code'], 0, 25),
+        );
+        $types = array(
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+        );
+        try {
+            $db->conn->insert($_TABLES['shop.tax_rates'], $values, $types);
+        } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $k) {
+            array_pop($values);     // remove code
+            $db->conn->update(
+                $_TABLES['shop.tax_rates'],
+                $values,
+                array('code' => substr($A['code'], 0, 25)),
+                $types
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
-        } else {
-            return true;
         }
+        return true;
     }
 
 
@@ -460,6 +480,7 @@ class table extends \Shop\Tax
         $failures = 0;
         $sql_values = array();
 
+        $db = Database::getInstance();
         foreach ($upload->getFilenames() as $fname) {
             $filename = $_CONF['path_data'] . $fname;
             switch($_POST['provider']) {
@@ -475,41 +496,72 @@ class table extends \Shop\Tax
                     }
                     // Set the field values. Limit length based on schema
                     $country = 'US';    // only US supported
-                    $code = substr(DB_escapeString($country . $data[0] . $data[1]), 0, 25);
-                    $state = substr(DB_escapeString($data[0]), 0, 10);
-                    $zip = substr(DB_escapeString($data[1]), 0, 10);
-                    $region = substr(DB_escapeString($data[2]), 0, 128);
-                    $state_rate = (float)$data[3];
-                    $combined_rate = (float)$data[4];
+                    $code = substr($country . $data[0] . $data[1], 0, 25);
+                    $state = substr($data[0], 0, 10);
+                    $zip = substr($data[1], 0, 10);
+                    $region = substr($data[2], 0, 128);
+                    $combined_rate = (float)$data[3];
+                    $state_rate = (float)$data[4];
                     $county_rate = (float)$data[5];
                     $city_rate = (float)$data[6];
                     $special_rate = (float)$data[7];
                     $risk_level = (int)$data[8];
 
-                    $sql = "INSERT INTO {$_TABLES['shop.tax_rates']} SET
-                        code = '$code',
-                        country = '$country',
-                        state = '$state',
-                        zip_from = '$zip',
-                        region = '$region',
-                        combined_rate = $combined_rate,
-                        state_rate = $state_rate,
-                        county_rate = $county_rate,
-                        city_rate = $city_rate,
-                        special_rate = $special_rate
-                    ON DUPLICATE KEY UPDATE
-                        region = '$region',
-                        combined_rate = $combined_rate,
-                        state_rate = $state_rate,
-                        county_rate = $county_rate,
-                        city_rate = $city_rate,
-                        special_rate = $special_rate";
-
-                    $result = DB_query($sql);
-                    if (!$result) {
-                        $failures++;
-                    } else {
+                    try {
+                        $db->conn->insert(
+                            $_TABLES['shop.tax_rates'],
+                            array(
+                                'code' => $code,
+                                'country' => $country,
+                                'state' => $state,
+                                'zip_from' => $zip,
+                                'region' => $region,
+                                'combined_rate' => $combined_rate,
+                                'state_rate' => $state_rate,
+                                'county_rate' => $county_rate,
+                                'city_rate' => $city_rate,
+                                'special_rate' => $special_rate,
+                            ),
+                            array(
+                                Database::STRING,
+                                Database::STRING,
+                                Database::STRING,
+                                Database::STRING,
+                                Database::STRING,
+                                Database::STRING,
+                                Database::STRING,
+                                Database::STRING,
+                                Database::STRING,
+                                Database::STRING,
+                            )
+                        );
                         $successes++;
+                    } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $k) {
+                        $db->conn->update(
+                            $_TABLES['shop.tax_rates'],
+                            array(
+                                'region' => $region,
+                                'combined_rate' => $combined_rate,
+                                'state_rate' => $state_rate,
+                                'county_rate' => $county_rate,
+                                'city_rate' => $city_rate,
+                                'special_rate' => $special_rate,
+                            ),
+                            array('code' => $code,),
+                            array(
+                                Database::STRING,
+                                Database::STRING,
+                                Database::STRING,
+                                Database::STRING,
+                                Database::STRING,
+                                Database::STRING,
+                                Database::STRING,
+                            )
+                        );
+                        $successes++;
+                    } catch (\Throwable $e) {
+                        Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                        $failures++;
                     }
                 }
                 break;
@@ -522,4 +574,3 @@ class table extends \Shop\Tax
 
 }
 
-?>

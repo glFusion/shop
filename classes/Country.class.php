@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Shop;
+use glFusion\Database\Database;
 
 
 /**
@@ -137,14 +138,23 @@ class Country extends RegionBase
         } else {
             $sql = "SELECT * FROM {$_TABLES['shop.countries']} WHERE ";
             if (is_integer($code)) {
-                $sql .= "country_id = $code";
+                $sql .= "country_id = ?";
+                $types = array(Database::INTEGER);
             } else {
-                $sql .= "alpha2 = '" . DB_escapeString($code) . "'";
+                $sql .= "alpha2 = ?";
+                $types = array(Database::STRING);
             }
-            $res = DB_query($sql);
-            if ($res && DB_numRows($res) == 1) {
-                $A = DB_fetchArray($res, false);
-            } else {
+            try {
+                $A = Database::getInstance()->conn->executeQuery(
+                    $sql,
+                    array($code),
+                    $types
+                )->fetchAssociative();
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $A = false;
+            }
+            if (!is_array($A)) {
                 $A = array(
                     'country_id'    => 0,
                     'region_id'     => 0,
@@ -416,17 +426,25 @@ class Country extends RegionBase
         $cache_key = 'shop.countries_all_' . $enabled;
         $retval = Cache::get($cache_key);
         if ($retval === NULL) {
-            $sql = "SELECT c.* FROM {$_TABLES['shop.countries']} c";
+            $qb = Database::getInstance()->conn->createQueryBuilder();
+            $qb->select('c.*')
+               ->from($_TABLES['shop.countries'], 'c')
+               ->orderBy('c.country_name', 'ASC');
             if ($enabled) {
-                $sql .= " LEFT JOIN {$_TABLES['shop.regions']} r
-                    ON c.region_id = r.region_id
-                    WHERE c.country_enabled = 1
-                    AND r.region_enabled =1";
+                $qb->leftJoin('c', $_TABLES['shop.regions'], 'r', 'c.region_id = r.region_id')
+                   ->where('c.country_enabled = 1')
+                   ->andWhere('r.region_enabled = 1');
             }
-            $sql .= ' ORDER BY c.country_name ASC';
-            $res = DB_query($sql);
-            while ($A = DB_fetchArray($res, false)) {
-                $retval[$A['alpha2']] = new self($A);
+            try {
+                $stmt = $qb->execute();
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $stmt = false;
+            }
+            if ($stmt) {
+                while ($A = $stmt->fetchAssociative()) {
+                    $retval[$A['alpha2']] = new self($A);
+                }
             }
             // Cache for a month, this doesn't change often
             Cache::set($cache_key, $retval, 'regions', 43200);
@@ -511,9 +529,9 @@ class Country extends RegionBase
      * @param   array   $A  Optional data array from $_POST
      * @return  boolean     True on success, False on failure
      */
-    public function Save($A=NULL)
+    public function Save(?array $A=NULL) : bool
     {
-        global $_TABLES;
+        global $_TABLES, $LANG_SHOP;
 
         if (is_array($A)) {
             $this->setID($A['country_id'])
@@ -526,33 +544,48 @@ class Country extends RegionBase
                 ->setEnabled($A['country_enabled'])
                 ->setDialCode($A['dial_code']);
         }
-        if ($this->getID() > 0) {
-            $sql1 = "UPDATE {$_TABLES['shop.countries']} SET ";
-            $sql3 = " WHERE country_id ='" . $this->getID() . "'";
-        } else {
-            $sql1 = "INSERT INTO {$_TABLES['shop.countries']} SET ";
-            $sql3 = '';
-        }
-        $sql2 = "alpha2 = '" . DB_escapeString($this->getAlpha2()) . "',
-            alpha3 = '" . DB_escapeString($this->getAlpha3()) . "',
-            region_id = {$this->getRegionID()},
-            country_code = {$this->getCode()},
-            country_name = '" . DB_escapeString($this->country_name) . "',
-            currency_code = '" . DB_escapeString($this->currency_code) . "',
-            dial_code = '" . DB_escapeString($this->dial_code) . "',
-            country_enabled = " . (int)$this->country_enabled;
-        $sql = $sql1 . $sql2 . $sql3;
-        //var_dump($this);die;
-        //echo $sql;die;
-        DB_query($sql, 1);  // suppress errors, show nice error message instead
-        if (!DB_error()) {
-            if ($this->getID() == 0) {
-                $this->setID(DB_insertID());
+        $values = array(
+            'alpha2' => $this->getAlpha2(),
+            'alpha3' => $this->getAlpha3(),
+            'region_id' => $this->getRegionID(),
+            'country_code' => $this->getCode(),
+            'country_name' => $this->country_name,
+            'currency_code' => $this->currency_code,
+            'dial_code' => $this->dial_code,
+            'country_enabled' => $this->country_enabled,
+        );
+        $types = array(
+            Database::STRING,
+            Database::STRING,
+            Database::INTEGER,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::INTEGER,
+        );
+        $db = Database::getInstance();
+        try {
+            if ($this->getID() > 0) {
+                $types[] = Database::INTGER;
+                $db->conn->update(
+                    $_TABLES['shop.countries'],
+                    $values,
+                    array('country_id' => $this->getID()),
+                    $types
+                );
+            } else {
+                $db->conn->update(
+                    $_TABLES['shop.countries'],
+                    $values,
+                    $types
+                );
             }
+            $this->setID($db->conn->lastInsertId());
             $status = true;
-        } else {
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $this->addError($LANG_SHOP['err_dup_iso']);
-            Log::write('shop_system', Log::ERROR, $sql);
             $status = false;
         }
         return $status;
