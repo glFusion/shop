@@ -86,7 +86,7 @@ class Coupon extends \Shop\Product
      * @param   array   $opts   Override options
      * @return  string      Coupon code
      */
-    public static function generate($opts = array())
+    public static function generate(array $opts = array()) : string
     {
         global $_SHOP_CONF;
 
@@ -102,8 +102,10 @@ class Coupon extends \Shop\Product
         );
 
         // Now overlay the requested options
-        foreach ($opts as $key=>$val) {
-            $options[$key] = $val;
+        if (is_array($opts)) {
+            foreach ($opts as $key=>$val) {
+                $options[$key] = $val;
+            }
         }
 
         $uppercase  = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -136,12 +138,6 @@ class Coupon extends \Shop\Product
         }
         $charcount = strlen($characters);
 
-        if (function_exists('random_int')) {
-            $rand_func = 'random_int';
-        } else {
-            $rand_func = 'mt_rand';
-        }
-
         // If a mask is specified, use it and substitute 'X' for coupon chars.
         // Otherwise use the specified length.
         if ($options['mask'] != '') {
@@ -149,7 +145,7 @@ class Coupon extends \Shop\Product
             $len = strlen($mask);
             for ($i = 0; $i < $len; $i++) {
                 if ($mask[$i] === 'X') {
-                    $coupon .= $characters[$rand_func(0, $charcount - 1)];
+                    $coupon .= $characters[random_int(0, $charcount - 1)];
                 } else {
                     $coupon .= $mask[$i];
                 }
@@ -160,7 +156,7 @@ class Coupon extends \Shop\Product
                 $options['length'] = 16;
             }
             for ($i = 0; $i < $options['length']; $i++) {
-                $coupon .= $characters[$rand_func(0, $charcount - 1)];
+                $coupon .= $characters[random_int(0, $charcount - 1)];
             }
         }
         return $options['prefix'] . $coupon . $options['suffix'];
@@ -174,7 +170,7 @@ class Coupon extends \Shop\Product
      * @param   array   $options    Options for code creation
      * @return  array       Array of coupon codes
      */
-    public static function generate_coupons($num = 1, $options = array())
+    public static function generate_coupons(int $num = 1, array $options = array()) : array
     {
         $coupons = array();
         for ($i = 0; $i < $num; $i++) {
@@ -251,11 +247,11 @@ class Coupon extends \Shop\Product
      * @param   integer $uid    Optional user ID, current user by default
      * @return  array       Array of (Status code, Message)
      */
-    public static function Redeem($code, $uid = 0)
+    public static function Redeem(string $code, ?int $uid = NULL) : array
     {
         global $_TABLES, $_USER, $LANG_SHOP, $_CONF;
 
-        if ($uid == 0) {
+        if (empty($uid)) {
             $uid = $_USER['uid'];
         }
         $uid = (int)$uid;
@@ -593,11 +589,13 @@ class Coupon extends \Shop\Product
      * @param   boolean $all    True to get all, False to get currently usable
      * @return  array           Array of gift card records
      */
-    public static function getUserCoupons($uid = 0, $all = false)
+    public static function getUserCoupons(?int $uid = NULL, ?bool $all = NULL) : array
     {
         global $_TABLES, $_USER;
 
-        if ($uid == 0) $uid = $_USER['uid'];
+        if (empty($uid)) {
+            $uid = $_USER['uid'];
+        }
         $uid = (int)$uid;
         if ($uid < 2) return array();   // Can't get anonymous coupons here
 
@@ -666,12 +664,16 @@ class Coupon extends \Shop\Product
      * @param   integer $uid    User ID, default = current user
      * @return  float           User's gift card balance
      */
-    public static function getUserBalance($uid = 0)
+    public static function getUserBalance(?int $uid = NULL) : float
     {
         global $_USER;
 
-        if ($uid == 0) $uid = $_USER['uid'];
-        if ($uid == 1) return 0;    // no coupon bal for anonymous
+        if (empty($uid)) {
+            $uid = $_USER['uid'];
+        }
+        if ($uid == 1) {
+            return 0;    // no coupon bal for anonymous
+        }
 
         // Total up the available balances from the coupons table
         $bal = (float)0;
@@ -691,7 +693,7 @@ class Coupon extends \Shop\Product
      * @param   integer $uid        User ID, default = current user
      * @return  boolean             True if the GC balance is sufficient.
      */
-    public static function verifyBalance($amount, $uid = 0)
+    public static function verifyBalance(float $amount, ?int $uid = NULL) : bool
     {
         $amount = (float)$amount;
         $balance = self::getUserBalance($uid);
@@ -708,7 +710,7 @@ class Coupon extends \Shop\Product
      * @param   string  $msg        Message to log
      * @param   string  $order_id   Order ID (when applying)
      */
-    public static function writeLog($code, $uid, $amount, $msg, $order_id = '')
+    public static function writeLog(string $code, int $uid, float $amount, string $msg, string $order_id = '') : void
     {
         global $_TABLES, $_USER;
 
@@ -754,7 +756,7 @@ class Coupon extends \Shop\Product
      * @param   string  $code   Optional gift card code
      * @return  array           Array of log messages
      */
-    public static function getLog($uid, $code = '')
+    public static function getLog(int $uid, ?string $code = NULL) : array
     {
         global $_TABLES, $LANG_SHOP;
 
@@ -765,7 +767,7 @@ class Coupon extends \Shop\Product
                 WHERE uid = ?";
         $values = array($uid);
         $types = array(Database::INTEGER);
-        if ($code != '') {
+        if (!empty($code)) {
             $sql .= " AND code = ?";
             $values[] = $code;
             $types[] = Database::STRING;
@@ -794,7 +796,7 @@ class Coupon extends \Shop\Product
      * @param   object  $cart   Shopping Cart
      * @return  float           Total payable by gift card
      */
-    public static function canPayByGC($cart)
+    public static function canPayByGC(Cart $cart) : float
     {
         $gc_can_apply = $cart->getTotal();
         $items = $cart->getItems();
@@ -839,7 +841,7 @@ class Coupon extends \Shop\Product
      *
      * @return  integer    Fixed quantity number, zero for varible qty
      */
-    public function getFixedQuantity()
+    public function getFixedQuantity() : int
     {
         return 1;
     }
@@ -850,7 +852,7 @@ class Coupon extends \Shop\Product
      *
      * @return  boolean     False, Gift cards are never accumulated.
      */
-    public function cartCanAccumulate()
+    public function cartCanAccumulate() : bool
     {
         return false;
     }
@@ -930,7 +932,7 @@ class Coupon extends \Shop\Product
      *
      * @param   string  $code   Optional code to expire one coupon
      */
-    public static function Expire($code='')
+    public static function Expire(? string $code=NULL) : void
     {
         global $_TABLES, $_CONF;
 
@@ -938,7 +940,7 @@ class Coupon extends \Shop\Product
         $qb = $db->conn->createQueryBuilder();
         $qb->select('*')
             ->from($_TABLES['shop.coupons']);
-        if ($code == '') {
+        if (empty($code)) {
             $today = $_CONF['_now']->format('Y-m-d', true);
             $qb->where('balance > 0 AND expires < :today')
                ->setParameter('today', $today, Database::STRING);
@@ -981,10 +983,10 @@ class Coupon extends \Shop\Product
      * @param   string  $code   Coupon Code
      * @return  string      URL to redeem the code
      */
-    public static function redemptionUrl($code = '')
+    public static function redemptionUrl(?string $code = '') : string
     {
         $url = SHOP_URL . '/coupon.php?mode=redeem';
-        if ($code !== '') {
+        if (!empty($code)) {
             $url .= '&id=' . $code;
         }
         return COM_buildUrl($url);
@@ -995,8 +997,10 @@ class Coupon extends \Shop\Product
      * Purge all coupons and transactions from the database.
      * No safety check or confirmation is done; that should be done before
      * calling this function.
+     *
+     * @return  boolean     True on success, False on error
      */
-    public static function Purge()
+    public static function Purge() : bool
     {
         global $_TABLES;
 
@@ -1017,6 +1021,7 @@ class Coupon extends \Shop\Product
             Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
+        return true;
     }
 
 
@@ -1028,7 +1033,7 @@ class Coupon extends \Shop\Product
      * @param   array   $values     Special field values
      * @return  array       Array of text=>value
      */
-    public function getSpecialFields($values = array())
+    public function getSpecialFields(array $values = array()) : array
     {
         global $LANG_SHOP;
 
@@ -1054,7 +1059,7 @@ class Coupon extends \Shop\Product
      * @param   integer $cat_id     Category ID to limit listing
      * @return  string      Display HTML
      */
-    public static function adminList($cat_id=0)
+    public static function adminList(?int $cat_id=NULL) : string
     {
         global $_TABLES, $LANG_SHOP, $_SHOP_CONF;
 
@@ -1271,7 +1276,7 @@ class Coupon extends \Shop\Product
      *
      * @return  boolean     True if a code can apply, False if not
      */
-    public function canApplyDiscountCode()
+    public function canApplyDiscountCode() : bool
     {
         return false;
     }

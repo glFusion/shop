@@ -594,7 +594,7 @@ class Plugin extends \Shop\Product
      * @param   integer $cat_id     Optional category ID to limit listing (not used)
      * @return  string      HTML for the product list.
      */
-    public static function adminList($cat_id=0)
+    public static function adminList(?int $cat_id=NULL) : string
     {
         global $_SHOP_CONF, $_TABLES, $LANG_SHOP,
             $LANG_ADMIN, $LANG_SHOP_HELP;

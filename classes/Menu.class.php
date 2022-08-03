@@ -13,6 +13,7 @@
  */
 namespace Shop;
 use Shop\Template;
+use Shop\Cart;
 
 
 /**
@@ -611,7 +612,7 @@ class Menu
      * @param   string  $step   Current step name
      * @return  string      HTML for workflow menu
      */
-    public static function checkoutFlow($Cart, $step = 'viewcart')
+    public static function checkoutFlow(Cart $Cart, string $step = 'viewcart') : string
     {
         $Flows = Workflow::getAll();
         $flow_count = 0;
@@ -620,6 +621,7 @@ class Menu
         $T->set_block('menu', 'Flows', 'Flow');
         foreach ($Flows as $Flow) {
             if (!$Flow->isNeeded($Cart)) {
+                // Skip unneeded flows, such as shipping for virtual goods.
                 continue;
             }
             $flow_count++;

@@ -3064,7 +3064,7 @@ class Product
      * @param   array   $values     Special field values
      * @return  array       Array of text=>value
      */
-    public function getSpecialFields($values = array())
+    public function getSpecialFields(array $values = array()) : array
     {
         global $LANG_SHOP;
 
@@ -3760,7 +3760,7 @@ class Product
      * @param   integer $cat_id     Optional category ID to limit listing
      * @return  string      HTML for the product list.
      */
-    public static function adminList($cat_id=0)
+    public static function adminList(?int $cat_id=NULL) : string
     {
         global $_SHOP_CONF, $_TABLES, $LANG_SHOP,
             $LANG_ADMIN, $LANG_SHOP_HELP;
