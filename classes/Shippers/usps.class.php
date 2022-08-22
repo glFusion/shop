@@ -295,7 +295,7 @@ class usps extends \Shop\Shipper
             }
             $request = 'API=RateV4&XML=' . urlencode($xml->asXML());
         } else {
-            $countryname = \Shop\Country::getInstance($Addr->getCountry())->getName();
+            $countryname = \Shop\Country::getByIsoCode($Addr->getCountry())->getName();
             if ($countryname) {
                 $xml = new SimpleXMLElement(
                     '<IntlRateV2Request USERID="' . $this->getConfig('user_id') . '"></IntlRateV2Request>'

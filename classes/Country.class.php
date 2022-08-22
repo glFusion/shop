@@ -13,6 +13,7 @@
  */
 namespace Shop;
 use glFusion\Database\Database;
+use glFusion\Log\Log;
 
 
 /**
@@ -79,9 +80,11 @@ class Country extends RegionBase
      *
      * @param   array   $A      Array from form or DB record
      */
-    public function __construct($A)
+    public function __construct(?array $A=NULL)
     {
-        $this->setVars($A);
+        if (is_array($A)) {
+            $this->setVars($A);
+        }
     }
 
 
@@ -123,52 +126,55 @@ class Country extends RegionBase
 
 
     /**
-     * Get an instance of a country object.
+     * Get a Country based on the DB record ID.
      *
-     * @param   string  $code   2-letter country code
-     * @return  object  Country object
+     * @param   integer $id     Record ID
+     * @return  object      Country object
      */
-    public static function getInstance($code)
+    public static function getByRecordId(int $id) : self
+    {
+        $qb = Database::getInstance()->conn->createQueryBuilder();
+        $qb->where('country_id = :id')
+           ->setParameter('id', $id, Database::INTEGER);
+        return self::_getInstance($qb);
+    }
+
+
+    /**
+     * Get a Country based on the alpha string, e.g. `US`.
+     *
+     * @param   string  $code   Alpha code for the country
+     * @return  object      Country object
+     */
+    public static function getByIsoCode(string $code) : self
+    {
+        $qb = Database::getInstance()->conn->createQueryBuilder();
+        $qb->where('alpha2 = :code')
+           ->setParameter('code', $code, Database::STRING);
+        return self::_getInstance($qb);
+    }
+
+
+    /**
+     * Internal function to get a country using a pre-built QueryBuilder.
+     *
+     * @param   object  $qb     QueryBuilder object
+     * @return  object      Country object
+     */
+    private static function _getInstance(\Doctrine\DBAL\Query\QueryBuilder $qb) : self
     {
         global $_TABLES;
-        static $instances = array();
 
-        if (isset($instances[$code])) {
-            return $instances[$code];
-        } else {
-            $sql = "SELECT * FROM {$_TABLES['shop.countries']} WHERE ";
-            if (is_integer($code)) {
-                $sql .= "country_id = ?";
-                $types = array(Database::INTEGER);
-            } else {
-                $sql .= "alpha2 = ?";
-                $types = array(Database::STRING);
-            }
-            try {
-                $A = Database::getInstance()->conn->executeQuery(
-                    $sql,
-                    array($code),
-                    $types
-                )->fetchAssociative();
-            } catch (\Throwable $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
-                $A = false;
-            }
-            if (!is_array($A)) {
-                $A = array(
-                    'country_id'    => 0,
-                    'region_id'     => 0,
-                    'country_code'  => 0,
-                    'currency_code' => '',
-                    'alpha2'      => '',
-                    'alpha3'      => '',
-                    'country_name'  => '',
-                    'dial_code'     => '',
-                    'country_enabled' => 1,
-                );
-            }
-            return new self($A);
+        try {
+            $A = $qb->select('*')
+                    ->from($_TABLES['shop.countries'])
+                    ->execute()
+                    ->fetchAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $A = false;
         }
+        return new self($A);
     }
 
 

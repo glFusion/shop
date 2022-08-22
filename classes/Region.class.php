@@ -13,6 +13,7 @@
  */
 namespace Shop;
 use glFusion\Database\Database;
+use glFusion\Log\Log;
 
 
 /**
@@ -55,12 +56,14 @@ class Region extends RegionBase
      *
      * @param   array   $A      Array from form or DB record
      */
-    public function __construct($A)
+    public function __construct(?array $A=NULL)
     {
-        $this->setID($A['region_id'])
-            ->setCode($A['region_code'])
-            ->setName($A['region_name'])
-            ->setEnabled($A['region_enabled']);
+        if (is_array($A)) {
+            $this->setID($A['region_id'])
+                 ->setCode($A['region_code'])
+                 ->setName($A['region_name'])
+                 ->setEnabled($A['region_enabled']);
+        }
     }
 
 
@@ -88,17 +91,6 @@ class Region extends RegionBase
             } catch (\Throwable $e) {
                 Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $A = false;
-            }
-            if (!is_array($A)) {
-                // Create an empty region.
-                // Set enabled to true so isEnabled() will return true
-                // when there is no region assigned (e.g. Antarctica)
-                $A = array(
-                    'region_id'     => 0,
-                    'region_code'   => 0,
-                    'region_name'   => '',
-                    'region_enabled' => 1,
-                );
             }
             return new self($A);
         }

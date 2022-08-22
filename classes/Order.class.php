@@ -3380,7 +3380,7 @@ class Order
             $this->calcTax();
             // See if tax is charged on shipping and handling.
             if ($this->tax_rate > 0) {
-                $State = State::getInstance($this->Shipto);
+                $State = State::getByAddress($this->Shipto);
                 $this->setTaxShipping($State->taxesShipping())
                     ->setTaxHandling($State->taxesHandling());
             } else {

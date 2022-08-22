@@ -733,7 +733,7 @@ class Address
                 break;
             case 'country':
                 if ($this->country != Config::get('country')) {
-                    $retval[] = Country::getInstance($this->country)->getName();
+                    $retval[] = Country::getByIsoCode($this->country)->getName();
                 }
                 break;
             default:

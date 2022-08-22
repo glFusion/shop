@@ -84,7 +84,7 @@ case 'saveregion':
 
 case 'savecountry':
     // Save a country record
-    $C = Shop\Country::getInstance($_POST['country_id']);
+    $C = Shop\Country::getByRecordId($_POST['country_id']);
     if ($C->Save($_POST)) {
         SHOP_setMsg($LANG_SHOP['msg_updated']);
         echo COM_refresh(SHOP_ADMIN_URL . '/regions.php?countries');
@@ -96,7 +96,7 @@ case 'savecountry':
 
 case 'savestate':
     // Save a state record
-    $S = Shop\State::getInstance((int)$_POST['state_id']);
+    $S = Shop\State::getByRecordId((int)$_POST['state_id']);
     if ($S->Save($_POST)) {
         SHOP_setMsg($LANG_SHOP['msg_updated']);
         echo COM_refresh(SHOP_ADMIN_URL . '/regions.php?states');
@@ -164,13 +164,13 @@ case 'editregion':
 case 'editcountry':
     $country_id = (int)$actionval;
     $content .= Shop\Menu::adminRules('countries');
-    $content .= Shop\Country::getInstance($country_id)->Edit();
+    $content .= Shop\Country::getByRecordId($country_id)->Edit();
     break;
 
 case 'editstate':
     $state_id = (int)$actionval;
     $content .= Shop\Menu::adminRules('states');
-    $content .= Shop\State::getInstance($state_id)->Edit();
+    $content .= Shop\State::getByRecordId($state_id)->Edit();
     break;
 
 case 'countries':

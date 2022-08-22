@@ -219,15 +219,15 @@ class Zone
                 ) {
                     return true;    // default to OK if unable to geocode
                 } else {
-                    $State = State::getInstance($data['state_code']);
-                    $Country = Country::getInstance($data['country_code']);
+                    $State = State::getByIsoCode($data['state_code']);
+                    $Country = Country::getByIsoCode($data['country_code']);
                 }
             } else {
                 return true;    // no geolocation configured
             }
         } else {
-            $State = State::getInstance($Addr);
-            $Country = Country::getInstance($Addr->getCountry());
+            $State = State::getByAddress($Addr);
+            $Country = Country::getByIsoCode($Addr->getCountry());
         }
         $state_id = $State->getID();
         $country_id = $State->getCountryID();
@@ -590,7 +590,7 @@ class Zone
 
         $T->set_block('form', 'countryBlk', 'CB');
         foreach ($this->countries as $id) {
-            $Obj = Country::getInstance($id);
+            $Obj = Country::getByRecordId($id);
             $T->set_var(array(
                 'id'    => $id,
                 'name'  => $Obj->getName(),
@@ -600,7 +600,7 @@ class Zone
 
         $T->set_block('form', 'stateBlk', 'SB');
         foreach ($this->states as $id) {
-            $Obj = State::getInstance($id);
+            $Obj = State::getByRecordId($id);
             $T->set_var(array(
                 'id'    => $id,
                 'name'  => $Obj->getName(),
@@ -614,4 +614,3 @@ class Zone
 
 }
 
-?>

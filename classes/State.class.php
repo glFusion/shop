@@ -3,15 +3,17 @@
  * Class to handle State information.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2020-2021 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2020-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.4.2
  * @since       v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 
 
 /**
@@ -38,27 +40,27 @@ class State extends RegionBase
 
     /** Country DB record ID.
      * @var integer */
-    private $country_id;
+    private $country_id = '';
 
     /** Country ISO code.
      * @var string */
-    private $country_iso;
+    private $country_iso = '';
 
     /** Country Name.
      * @var string */
-    private $state_name;
+    private $state_name = '';
 
     /** Country ISO code.
      * @var string */
-    private $iso_code;
+    private $iso_code = '';
 
     /** Sales are allowed to this state?
      * @var integer */
-    private $state_enabled;
+    private $state_enabled = 1;
 
     /** Country object.
      * @var object */
-    private $Country;
+    private $Country = NULL;
 
     /** Does this state charge tax on shipping?
      * @var boolean */
@@ -74,78 +76,93 @@ class State extends RegionBase
      *
      * @param   array   $A  DB record array
      */
-    public function __construct($A)
+    public function __construct(?array $A=NULL)
     {
-        $this->setID(SHOP_getVar($A, 'state_id', 'integer'))
-            ->setCountryID(SHOP_getVar($A, 'country_id', 'integer'))
-            ->setCountryISO(SHOP_getVar($A, 'country_iso'))
-            ->setISO(SHOP_getVar($A, 'iso_code'))
-            ->setName(SHOP_getVar($A, 'state_name'))
-            ->setEnabled(SHOP_getVar($A,'state_enabled', 'integer', 1))
-            ->setTaxHandling(SHOP_getVar($A, 'tax_handling', 'integer'))
-            ->setTaxShipping(SHOP_getVar($A, 'tax_shipping', 'integer'));
+        if (is_array($A)) {
+            $this->setID(SHOP_getVar($A, 'state_id', 'integer'))
+                 ->setCountryID(SHOP_getVar($A, 'country_id', 'integer'))
+                 ->setCountryISO(SHOP_getVar($A, 'country_iso'))
+                 ->setISO(SHOP_getVar($A, 'iso_code'))
+                 ->setName(SHOP_getVar($A, 'state_name'))
+                 ->setEnabled(SHOP_getVar($A,'state_enabled', 'integer', 1))
+                 ->setTaxHandling(SHOP_getVar($A, 'tax_handling', 'integer'))
+                 ->setTaxShipping(SHOP_getVar($A, 'tax_shipping', 'integer'));
+        }
     }
 
 
     /**
-     * Get an instance of a state object.
-     * The code may be a combination of country and state ISO, such as
-     * `US-CA`, or a DB record ID for the state.
+     * Get a State object based on the DB record ID.
      *
-     * @param   mixed   $code    Record ID, Address object or country-state code
-     * @return  object  Country object
+     * @param   integer $id     Record ID
+     * @return  object      State object
      */
-    public static function getInstance($code)
+    public static function getByRecordId(int $id) : self
+    {
+        $qb = Database::getInstance()->conn->createQueryBuilder();
+        $qb->where('s.state_id = :id')
+           ->setParameter('id', $id, Database::INTEGER);
+        return self::getInstance($qb);
+    }
+
+
+    /**
+     * Get a State object based on an ISO code, e.g. `US-CA`.
+     *
+     * @param   string  $code       ISO code
+     * @return  object      State object
+     */
+    public static function getByIsoCode(string $code) : self
+    {
+        $qb = Database::getInstance()->conn->createQueryBuilder();
+        $parts = explode('-', $code);
+        if (count($parts) == 2) {
+            $qb->where('s.iso_code = :s_iso')
+               ->andWhere('c.alpha2 = :c_iso')
+               ->setParameter('s_iso', $parts[1], Database::STRING)
+               ->setParameter('c_iso', $parts[0], Database::STRING);
+        } else {
+            // Try with just the state, but this is unpredictable
+            $qb->where('s.iso_code = :s_iso')
+               ->setParameter('s_iso', $parts[0], Database::STRING);
+        }
+        return self::_getInstance($qb);
+    }
+
+
+    /**
+     * Get a state object by passing in an Address object.
+     *
+     * @param   object  $Addr   Address object
+     * @return  object      State object
+     */
+    public static function getByAddress(Address $Addr) : self
+    {
+        $code = $Addr->getCountry() . '-' . $Addr->getState();
+        return self::getByIsoCode($code);
+    }
+
+
+    /**
+     * Create the final query to retrieve a state object.
+     *
+     * @param   object  $qb     QueryBuilder object
+     * @return  object      State object
+     */
+    private static function _getInstance(\Doctrine\DBAL\Query\QueryBuilder $qb) : self
     {
         global $_TABLES;
-        static $instances = array();
 
-        if ($code instanceof Address) {
-            $code = $code->getCountry() . '-' . $code->getState();
-        }
-
-        if (isset($instances[$code])) {
-            return $instances[$code];
-        } elseif (is_integer($code)) {
-            $sql = "SELECT s.*, c.alpha2 as country_iso
-                    FROM {$_TABLES['shop.states']} s
-                    LEFT JOIN {$_TABLES['shop.countries']} c
-                        ON c.country_id = s.country_id
-                    WHERE s.state_id = $code";
-        } else {
-            $parts = explode('-', $code);
-            if (count($parts) == 2) {
-                $s_iso = DB_escapeString($parts[1]);
-                $c_iso = DB_escapeString($parts[0]);
-                $sql = "SELECT s.*, c.alpha2 as country_iso
-                    FROM {$_TABLES['shop.states']} s
-                    LEFT JOIN {$_TABLES['shop.countries']} c
-                    ON c.country_id = s.country_id
-                    WHERE s.iso_code = '$s_iso'
-                    AND c.alpha2 = '$c_iso'";
-            } else {
-                // Try with just the state, but this is unpredictable
-                $s_iso = DB_escapeString($parts[0]);
-                $c_iso = '';
-                $sql = "SELECT s.*, c.alpha2 as country_iso
-                    FROM {$_TABLES['shop.states']} s
-                    LEFT JOIN {$_TABLES['shop.countries']} c
-                    ON c.country_id = s.country_id
-                    WHERE s.iso_code = '$s_iso'";
-            }
-        }
-        $sql .= ' LIMIT 1';
-        $res = DB_query($sql);
-        if ($res && DB_numRows($res) == 1) {
-            $A = DB_fetchArray($res, false);
-        } else {
-            $A = array(
-                'state_id'    => 0,
-                'state_id'     => 0,
-                'iso_code'      => '',
-                'state_name'  => '',
-                'state_enabled' => 0,
-            );
+        $qb->select('s.*', 'c.alpha2 AS country_iso')
+           ->from($_TABLES['shop.states'], 's')
+           ->leftJoin('s', $_TABLES['shop.countries'], 'c', 'c.country_id = s.country_id')
+           ->setFirstResult(0)
+           ->setMaxResults(1);
+        try {
+            $A = $qb->execute()->fetchAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $A = false;
         }
         return new self($A);
     }
@@ -309,7 +326,7 @@ class State extends RegionBase
     public function getCountry()
     {
         if ($this->Country === NULL) {
-            $this->Country = Country::getInstance($this->getCountryID());
+            $this->Country = Country::getByRecordId($this->getCountryID());
         }
         return $this->Country;
     }
@@ -370,32 +387,38 @@ class State extends RegionBase
      * @param   boolean $enabled    True to get only enabled states
      * @return  array       Array of State objects
      */
-    public static function getAll($country, $enabled=true)
+    public static function getAll(string $country, bool $enabled=true) : array
     {
         global $_TABLES;
 
-        $country = DB_escapeString($country);
         $enabled = $enabled ? 1 : 0;
         $cache_key = 'shop.states.' . $country . '_' . $enabled;
         $retval = Cache::get($cache_key);
         if ($retval === NULL) {
             $retval = array();
-            $sql = "SELECT s.state_name, s.iso_code
-                FROM {$_TABLES['shop.states']} s
-                LEFT JOIN {$_TABLES['shop.countries']} c
-                    ON c.country_id = s.country_id
-                LEFT JOIN {$_TABLES['shop.regions']} r
-                    ON r.region_id = c.region_id
-                WHERE c.alpha2 = '$country'";
-            if ($enabled) {
-                $sql .= " AND s.state_enabled = 1
-                    AND c.country_enabled = 1
-                    AND r.region_enabled = 1";
+            $qb = Database::getInstance()->conn->createQueryBuilder();
+            try {
+                $qb->select('s.state_name', 's.iso_code')
+                   ->from($_TABLES['shop.states'], 's')
+                   ->leftJoin('s', $_TABLES['shop.countries'], 'c', 'c.country_id = s.country_id')
+                   ->leftJoin('c', $_TABLES['shop.regions'], 'r', 'r.region_id = c.region_id')
+                   ->where('c.alpha2 = :country')
+                   ->setParameter('country', $country, Database::STRING)
+                   ->orderBy('s.state_name', 'ASC');
+                if ($enabled) {
+                    $qb->andWhere('s.state_enabled = 1')
+                       ->andWhere('c.country_enabled = 1')
+                       ->andWhere('r.region_enabled = 1');
+                }
+                $stmt = $qb->execute();
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $stmt = false;
             }
-            $sql .= " ORDER BY s.state_name ASC";
-            $res = DB_query($sql);
-            while ($A = DB_fetchArray($res, false)) {
-                $retval[$A['iso_code']] = new self($A);
+            if ($stmt) {
+                while ($A = $stmt->fetchAssociative()) {
+                    $retval[$A['iso_code']] = new self($A);
+                }
             }
             Cache::set($cache_key, $retval, 'regions', 43200);
         }
@@ -460,7 +483,7 @@ class State extends RegionBase
     {
         global $_TABLES, $LANG_SHOP;
 
-        $this->Country = Country::getInstance($A['country_iso']);
+        $this->Country = Country::getByIsoCode($A['country_iso']);
         $country_id = $this->Country->getID();
         if (is_array($A)) {
             $this->setID($A['state_id'])
@@ -470,34 +493,48 @@ class State extends RegionBase
                 ->setName($A['state_name'])
                 ->setEnabled($A['state_enabled']);
         }
-        if ($this->getID() > 0) {
-            $sql1 = "UPDATE {$_TABLES['shop.states']} SET ";
-            $sql3 = " WHERE state_id ='" . $this->getID() . "'";
-        } else {
-            $sql1 = "INSERT INTO {$_TABLES['shop.states']} SET ";
-            $sql3 = '';
-        }
+        $values = array(
+            'country_id' => $this->getCountryID(),
+            'iso_code' => $this->getISO(),
+            'state_name' => $this->getName(),
+            'state_enabled' => $this->getEnabled(),
+            'tax_shipping' =>$this->taxesShipping(),
+            'tax_handling' => $this->taxesShipping(),
+        );
+        $types = array(
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::INTEGER,
+        );
 
-        $sql2 = "country_id = {$this->getCountryID()},
-            iso_code = '" . DB_escapeString($this->getISO()) . "',
-            state_name = '" . DB_escapeString($this->getName()) . "',
-            state_enabled = {$this->getEnabled()},
-            tax_shipping = {$this->taxesShipping()},
-            tax_handling = {$this->taxesShipping()}";
-        $sql = $sql1 . $sql2 . $sql3;
-        //var_dump($this);die;
-        //echo $sql;die;
-        DB_query($sql, 1);  // suppress errors, show nice error message instead
-        if (!DB_error()) {
-            if ($this->getID() == 0) {
-                $this->setID(DB_insertID());
+        $db = Database::getInstance();
+        try {
+            if ($this->getID() > 0) {
+                $types[] = Database::INTEGER;
+                $db->conn->update(
+                    $_TABLES['shop.states'],
+                    $values,
+                    array('state_id' => $this->getID()),
+                    $types
+                );
+            } else {
+                $db->conn->insert(
+                    $_TABLES['shop.states'],
+                    $values,
+                    $types
+                );
+                $this->setID($db->conn->lastInsertId());
             }
             $status = true;
-        } else {
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $this->addError($LANG_SHOP['err_dup_iso']);
-            Log::write('shop_system', Log::ERROR, $sql);
             $status = false;
         }
+
         return $status;
     }
 
@@ -680,24 +717,31 @@ class State extends RegionBase
      * @param   string  $state_name Full state name
      * @return  string      2-letter ISO code for state
      */
-    public static function isoFromName($alpha2, $state_name)
+    public static function isoFromName(string $alpha2, string $state_name) : string
     {
         global $_TABLES;
 
+        $retval = '';
         if (empty($state_name)) {
-            return '';
+            return $retval;
         }
 
-        $retval = '';
-        $alpha2 = DB_escapeString($alpha2);
-        $state_name = DB_escapeString($state_name);
-        $sql = "SELECT s.iso_code FROM {$_TABLES['shop.states']} s
-            LEFT JOIN {$_TABLES['shop.countries']} c
-                ON c.country_id = s.country_id
-            WHERE c.alpha2='$alpha2' AND  s.state_name='$state_name'";
-        $res = DB_query($sql);
-        if ($res && DB_numRows($res) > 0) {
-            $A = DB_fetchArray($res, false);
+        $qb = Database::getInstance()->conn->createQueryBuilder();
+        try {
+            $A = $qb->select('s.iso_code')
+               ->from($_TABLES['shop.states'], 's')
+               ->leftJoin('s', $_TABLES['shop.countries'], 'c', 'c.country_id = s.country_id')
+               ->where('c.alpha2 = :alpha2')
+               ->andWhere('s.state_name = :state_name')
+               ->setParameter('alpha2', $alpha2, Database::STRING)
+               ->setParameter('state_name', $state_name, Database::STRING)
+               ->execute()
+               ->fetchAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $A = false;
+        }
+        if (is_array($A)) {
             $retval = $A['iso_code'];
         }
         return $retval;
@@ -710,22 +754,29 @@ class State extends RegionBase
      * @param   integer $sel    Selected country ID
      * @return  array       Array of country_id=>array(country_name, selected)
      */
-    private static function countrySelection($sel = 0)
+    private static function countrySelection(int $sel = 0) : array
     {
         global $_TABLES;
 
-        $sql = "SELECT DISTINCT(s.country_id), c.country_name
-            FROM {$_TABLES['shop.states']} s
-            LEFT JOIN {$_TABLES['shop.countries']} c
-            ON s.country_id = c.country_id
-            ORDER BY c.country_name ASC";
-        $res = DB_query($sql);
-        $retval = array();
-        while ($A = DB_fetchArray($res, false)) {
-            $retval[$A['country_id']] = array(
-                'country_name' => $A['country_name'],
-                'selected' => $A['country_id'] == $sel,
-            );
+        $qb = Database::getInstance()->conn->createQueryBuilder();
+        try {
+            $stmt = $qb->select('s.country_id', 'c.country_name')
+                    ->from($_TABLES['shop.states'], 's')
+                    ->leftJoin('s', $_TABLES['shop.countries'], 'c', 's.country_id = c.country_id')
+                    ->groupBy('s.country_id')
+                    ->orderBy('c.country_name', 'ASC')
+                    ->execute();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $stmt = false;
+        }
+        if ($stmt) {
+            while ($A = $stmt->fetchAssociative()) {
+                $retval[$A['country_id']] = array(
+                    'country_name' => $A['country_name'],
+                    'selected' => $A['country_id'] == $sel,
+                );
+            }
         }
         return $retval;
     }
