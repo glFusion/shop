@@ -132,7 +132,7 @@ class Workflow
         if (!$workflows) {
             $workflows = array();
             try {
-                $stmt = $qb->executeQuery();
+                $stmt = $qb->execute();
             } catch (\Throwable $e) {
                 Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $stmt = false;
