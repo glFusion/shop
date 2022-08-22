@@ -4,16 +4,19 @@
  * Workflows are the steps that a buyer goes through during the purchase process.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2011-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2011-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.4.2
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 use Shop\Models\Session;
+use Shop\Cart;
 
 
 /**
@@ -76,8 +79,9 @@ class Workflow
 
     /**
      * Load the workflows into the global workflow array.
+     * @deprecated
      */
-    public static function Load()
+    public static function XLoad()
     {
         global $_TABLES, $_SHOP_CONF;
 
@@ -108,25 +112,35 @@ class Workflow
     {
         global $_TABLES;
 
+        $qb = Database::getInstance()->conn->createQueryBuilder();
+        $qb->select('*')
+            ->from($_TABLES[self::$TABLE])
+            ->orderBy('id', 'ASC');
         if ($Cart) {
             $statuses = array(self::REQ_ALL, self::REQ_VIRTUAL);
-            if ($Cart->hasPhysical()) $statuses[] = self::REQ_PHYSICAL;
-            $statuslist = implode(',', $statuses);
-            $where = " WHERE enabled IN ($statuslist)";
+            if ($Cart->hasPhysical()) {
+                $statuses[] = self::REQ_PHYSICAL;
+            }
+            $keystr = implode('', $statuses);
+            $qb->where('enabled IN (:statuses)')
+               ->setParameter('statuses', $statuses, Database::PARAM_INT_ARRAY);
         } else {
-            $where = '';
-            $statuslist = '0';
+            $keystr = '0';
         }
-        $cache_key = 'workflows_enabled_' . $statuslist;
+        $cache_key = 'workflows_enabled_' . $keystr;
         $workflows = Cache::get($cache_key);
         if (!$workflows) {
             $workflows = array();
-            $sql = "SELECT * FROM {$_TABLES[self::$TABLE]}
-                $where
-                ORDER BY id ASC";
-            $res = DB_query($sql);
-            while ($A = DB_fetchArray($res, false)) {
-                $workflows[] = new self($A);
+            try {
+                $stmt = $qb->executeQuery();
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $stmt = false;
+            }
+            if ($stmt) {
+                while ($A = $stmt->fetchAssociative()) {
+                    $workflows[] = new self($A);
+                }
             }
             Cache::set($cache_key, $workflows, 'workflows');
         }
@@ -308,10 +322,10 @@ class Workflow
      *
      * @param   integer $id         ID number of element to modify
      * @param   string  $field      Database fieldname to change
-     * @param   integer $newvalue   New value to set
+     * @param   integer $newvalue   New value to set, -1 on error
      * @return  integer     New value, or old value upon failure
      */
-    public static function setValue($id, $field, $newvalue)
+    public static function setValue(int $id, string $field, int $newvalue) : int
     {
         global $_TABLES;
 
@@ -319,22 +333,20 @@ class Workflow
         if ($id < 1) {
             return -1;
         }
-        $field = DB_escapeString($field);
 
-        // Determing the new value (opposite the old)
-        $newvalue = (int)$newvalue;
-
-        $sql = "UPDATE {$_TABLES[self::$TABLE]}
-                SET $field = $newvalue
-                WHERE id='$id'";
-        DB_query($sql, 1);
-        if (!DB_error()) {
-            Cache::clear('workflows');
-            return $newvalue;
-        } else {
-            Log::write('shop_system', Log::ERROR, "SQL error: $sql");
+        try {
+            Database::getInstance()->conn->update(
+                $_TABLES[self::$TABLE],
+                array($field => $newvalue),
+                array('id' => $id),
+                array(Database::INTEGER, Database::INTEGER)
+            );
+        } catch (\Throwable $e) {
+            Log::write('shop_system', Log::ERROR, $e->getMessage());
             return -1;
         }
+        Cache::clear('workflows');
+        return $newvalue;
     }
 
 
@@ -346,30 +358,32 @@ class Workflow
      * physical items, are skipped.
      *
      * @param   string  $currview   Current view
-     * @return  string              Next view in line
+     * @return  object      Next view in line
      */
-    public static function getNextView($currview, $Cart)
+    public static function getNextView(string $currview, Cart $Cart) : ?self
     {
-        global $_SHOP_CONF;
-
         // Load the views, if not done already done
         $workflows = self::getAll();
+        $max_count = count($workflows) - 1; // for zero-bias array
 
         // Bypass any workflows before the current step
-        for ($i = 0; $i < count($workflows) - 1; $i++) {
+        for ($i = 0; $i < $max_count; $i++) {
             if ($workflows[$i]->getName() == $currview) {
                 break;
             }
         }
 
         // Search remaining workflows for the first one still needed.
-        $i++;
-        for (; $i < count($workflows) -1; $i++) {
+        for ($i++; $i < $max_count; $i++) {
             if ($workflows[$i]->isNeeded($Cart)) {
                 break;
             }
         }
-        return $workflows[$i];
+        if (array_key_exists($i, $workflows)) {
+            return $workflows[$i];
+        } else {
+            return NULL;
+        }
     }
 
 
