@@ -72,13 +72,6 @@ define('SHOP_COMMENTS_ENABLED',   0);
 define('SHOP_COMMENTS_CLOSED' ,   1);
 define('SHOP_COMMENTS_DISABLED',  -1);
 
-// Session variables for TimThumb image url, if used
-// This needs to be an array var named for the plugin,
-// can't use the Session class
-SESS_setVar($_SHOP_CONF['pi_name'], array(
-    'origpath' => $_SHOP_CONF['image_dir'],
-));
-
 // Load the site's language file, falling back to English.
 $langpath = __DIR__ . '/language';
 $langfile = "{$_CONF['language']}.php";
@@ -739,11 +732,22 @@ function plugin_getheadercss_shop()
 
 /**
  * Execute additional functions when COM_siteHeader() is called.
+ * - Set session vars for the smart resizer.
  * - Check for a Shop referral token and save it if found.
+ *
+ * @return  string      Empty string, no actual header code is used.
  */
-function plugin_getheadercode_shop()
+function plugin_getheadercode_shop() : string
 {
-    global $_USER;
+    global $_USER, $_SHOP_CONF;
+
+    // Session variables for TimThumb image url, if used
+    // This needs to be an array var named for the plugin,
+    // can't use the Session class
+    SESS_setVar($_SHOP_CONF['pi_name'], array(
+        'origpath' => $_SHOP_CONF['image_dir'],
+    ));
+
 
     $aff_key = Config::get('aff_key', 'shop_ref');
     if (isset($_GET[$aff_key]) && !empty($_GET[$aff_key])) {
@@ -752,6 +756,8 @@ function plugin_getheadercode_shop()
             Shop\Models\ReferralTag::set($_GET[$aff_key]);
         }
     }
+
+    return '';
 }
 
 
