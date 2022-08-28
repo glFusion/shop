@@ -1,17 +1,19 @@
 <?php
 /**
- * Class to manage order shipments
+ * Class to manage order shipments.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.2.0
+ * @version     v1.4.2
  * @since       v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 use Shop\Models\OrderStatus;
 
 
@@ -104,17 +106,22 @@ class Shipment
     * @param    integer $rec_id     DB record ID of item
     * @return   boolean     True on success, False on failure
     */
-    public function Read($rec_id)
+    public function Read(int $rec_id) : bool
     {
         global $_TABLES;
 
-        $rec_id = (int)$rec_id;
-        $sql = "SELECT * FROM {$_TABLES['shop.shipments']}
-                WHERE shipment_id = $rec_id";
-        //echo $sql;die;
-        $res = DB_query($sql);
-        if ($res) {
-            $this->setVars(DB_fetchArray($res, false));
+        try {
+            $data = Database::getInstance()->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.shipments']} WHERE shipment_id = ?",
+                array($rec_id),
+                array(Database::INTEGER)
+            )->fetchAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $data = false;
+        }
+        if (is_array($data)) {
+            $this->setVars($data);
             $this->getItems();
             $this->getPackages();
             return true;
@@ -194,12 +201,22 @@ class Shipment
         global $_TABLES;
 
         $retval = array();
-        $sql = "SELECT * FROM {$_TABLES['shop.shipments']}
-            WHERE order_id = '" . DB_escapeString($order_id) . "'
-            ORDER BY ts ASC";
-        $res = DB_query($sql);
-        while ($A = DB_fetchArray($res, false)) {
-            $retval[] = new self($A);
+        try {
+            $stmt = Database::getInstance()->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.shipments']}
+                WHERE order_id = ?
+                ORDER BY ts ASC",
+                array($order_id),
+                array(Database::STRING)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $stmt = false;
+        }
+        if ($stmt) {
+            while ($A = $stmt->fetchAssociative()) {
+                $retval[] = new self($A);
+            }
         }
         return $retval;
     }
@@ -251,42 +268,59 @@ class Shipment
      * @param   array   $form   Optional array of data to save ($_POST)
      * @return  boolean     True on success, False on DB error
      */
-    public function Save($form = NULL)
+    public function Save(?array $form = NULL) : bool
     {
         global $_TABLES;
 
         if (is_array($form)) {
+            if (!$this->_isValidRecord($form)) {
+                return false;
+            }
             // This sets the base info, ShipmentItems are created after saving
             // the shipment.
             $this->setVars($form);
         }
 
-        if (!$this->_isValidRecord($form)) {
-            return false;
-        }
-
         $this->getOrder();
-
-        if ($this->shipment_id > 0) {
-            // New shipment
-            $sql1 = "UPDATE {$_TABLES['shop.shipments']} ";
-            $sql3 = " WHERE shipment_id = '{$this->shipment_id}'";
-        } else {
-            $sql1 = "INSERT INTO {$_TABLES['shop.shipments']} ";
-            $sql3 = '';
-        }
         $this->shipping_addr = $this->Order->getShipto()->toArray();
-        $sql2 = "SET 
-            order_id = '" . DB_escapeString($this->order_id) . "',
-            ts = UNIX_TIMESTAMP(),
-            shipping_address = '" . DB_escapeString(json_encode($this->shipping_addr)) . "',
-            comment = '" . DB_escapeString($this->comment) . "'";
-        $sql = $sql1 . $sql2 . $sql3;
-        //echo $sql;die;
-        Log::write('shop_system', Log::DEBUG, $sql);
-        DB_query($sql);
-        if (!DB_error()) {
-            $this->shipment_id = DB_insertID();
+
+        $values = array(
+            'order_id' => $this->order_id,
+            'ts' => time(),
+            'shipping_address' => json_encode($this->shipping_addr),
+            'comment' => $this->comment,
+        );
+        $types = array(
+            Database::STRING,
+            Database::INTEGER,
+            Database::STRING,
+            Database::STRING,
+        );
+
+        try {
+            if ($this->shipment_id > 0) {
+                // Updating a shipment
+                $types[] = Database::INTEGER;
+                $db->conn->update(
+                    $_TABLES['shop.shipments'],
+                    $values,
+                    array('shipment_id' => $this->shipment_id),
+                    $types
+                );
+            } else {
+                $db->conn->insert(
+                    $_TABLES['shop.shipments'],
+                    $values,
+                    $types
+                );
+            }
+            $db_err = false;
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $db_err = true;
+        }
+        if (!$db_err) {
+            $this->shipment_id = $db->conn->lastInsertId();
             foreach ($form['ship_qty'] as $oi_id=>$qty) {
                 $qty = min($form['maxship'][$oi_id], $qty);
                 $qty = (float)$qty;
@@ -325,7 +359,7 @@ class Shipment
      * @param   array   $form   Array of form fields ($_POST)
      * @return  boolean     True if the record is OK to save, False if not
      */
-    private function _isValidRecord(&$form)
+    private function _isValidRecord(array &$form) : bool
     {
         // Check that only physical items are being shipped.
         // Remove any download or virtual items. If the resulting dataset has
@@ -402,9 +436,12 @@ class Shipment
         global $_TABLES;
 
         if ($this->shipment_id > 0) {
-            DB_delete($_TABLES['shop.shipment_packages'], 'shipment_id', $this->shipment_id);
-            DB_delete($_TABLES['shop.shipment_items'], 'shipment_id', $this->shipment_id);
-            DB_delete($_TABLES['shop.shipments'], 'shipment_id', $this->shipment_id);
+            $db = Database::getInstance();
+            $criteria = array('shipment_id' => $this->shipment_id);
+            $types = array(Database::INTEGER);
+            $db->conn->delete($_TABLES['shop.shipment_packages'], $criteria, $types);
+            $db->conn->delete($_TABLES['shop.shipment_items'], $criteria, $types);
+            $db->conn->delete($_TABLES['shop.shipments'], $criteria, $types);
             $this->getOrder()->updateStatus('processing', true, false);
             return true;
         } else {
@@ -615,13 +652,14 @@ class Shipment
      * No safety check or confirmation is done; that should be done before
      * calling this function.
      */
-    public static function Purge()
+    public static function Purge() : void
     {
         global $_TABLES;
 
-        DB_query("TRUNCATE {$_TABLES['shop.shipments']}");
-        DB_query("TRUNCATE {$_TABLES['shop.shipment_items']}");
-        DB_query("TRUNCATE {$_TABLES['shop.shipment_packages']}");
+        $db = Database::getInstance();
+        $db->conn->executeStatement("TRUNCATE {$_TABLES['shop.shipments']}");
+        $db->conn->executeStatement("TRUNCATE {$_TABLES['shop.shipment_items']}");
+        $db->conn->executeStatement("TRUNCATE {$_TABLES['shop.shipment_packages']}");
     }
 
 
@@ -637,4 +675,3 @@ class Shipment
 
 }
 
-?>

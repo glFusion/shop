@@ -3,15 +3,17 @@
  * Class to handle shipping costs based on quantity, total weight and class.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018-2021 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.4.1
+ * @version     v1.4.2
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 use Shop\Models\Dates;
 use Shop\Models\ShippingQuote;
 use Shop\Config;
@@ -184,7 +186,9 @@ class Shipper
             $this->isNew = false;
         } elseif (is_numeric($A) && $A > 0) {
             // single ID passed in, e.g. from admin form
-            if ($this->Read($A)) $this->isNew = false;
+            if ($this->Read($A)) {
+                $this->isNew = false;
+            }
         } else {
             // New entry, set defaults
             $this->setValidFrom(NULL);
@@ -213,25 +217,22 @@ class Shipper
      * @param   integer $id     DB record ID
      * @return  boolean     True on success, False on failure
      */
-    public function Read($id)
+    public function Read(int $id) : bool
     {
         global $_TABLES;
 
         $id = (int)$id;
-        //$cache_key = self::$TABLE . ' _ ' . $id;
-        //$A = Cache::get($cache_key);
-        //if ($A === NULL) {
-            $sql = "SELECT *
-                    FROM {$_TABLES['shop.shipping']}
-                    WHERE id = $id";
-            //echo $sql;die;
-            $res = DB_query($sql);
-            if ($res) {
-                $A = DB_fetchArray($res, false);
-          //      Cache::set($cache_key, $A, self::$TABLE);
-            }
-        //}
-        if (!empty($A)) {
+        try {
+            $A = Database::getInstance()->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.shipping']} WHERE id = ?",
+                array($id),
+                array(Database::INTEGER)
+            )->fetchAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $A = false;
+        }
+        if (is_array($A)) {
             $this->setVars($A);
             return true;
         } else {
@@ -510,7 +511,7 @@ class Shipper
      * @param   string  $value  DateTime string
      * @return  object  $this
      */
-    private function setValidFrom($value)
+    private function setValidFrom(?string $value) : self
     {
         global $_CONF;
 
@@ -528,7 +529,7 @@ class Shipper
      * @param   string  $value  DateTime string
      * @return  object  $this
      */
-    private function setValidTo($value)
+    private function setValidTo(?string $value) : self
     {
         global $_CONF;
 
@@ -584,7 +585,7 @@ class Shipper
      * @param   integer $shipper_id     ID of shipper to retrieve
      * @return  object      Shipper object, new object if not found.
      */
-    public static function getInstance($shipper_id)
+    public static function getInstance(int $shipper_id) : self
     {
         static $shippers = NULL;
         if ($shippers === NULL) {
@@ -630,24 +631,34 @@ class Shipper
         global $_TABLES, $_GROUPS;
 
         $cache_key = 'shippers_all_' . (int)$valid . (float)$units;
-        $now = time();
         $shippers = Cache::get($cache_key);
-        $shippers = NULL;
+        //$shippers = NULL;
         if ($shippers === NULL) {
             $shippers = array();
-            $sql = "SELECT * FROM {$_TABLES['shop.shipping']}";
-            if ($valid) {
-                $sql .= " WHERE enabled = 1
-                    AND valid_from < '$now'
-                    AND valid_to > '$now'";
+            $qb = Database::getInstance()->conn->createQueryBuilder();
+            try {
+                $qb->select('*')
+                   ->from($_TABLES['shop.shipping']);
+                if ($valid) {
+                    $qb->andWhere('enabled = 1')
+                       ->andWhere('valid_from < :now')
+                       ->andWhere('valid_to > :now')
+                       ->setParameter('now', time(), Database::INTEGER);
+                }
+                if ($units > -1) {
+                    $qb->andWhere('min_units <= :units')
+                       ->andWhere('max_units >= :units')
+                       ->setParameter('units', $units, Database::STRING);
+                }
+                $stmt = $qb->execute();
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $stmt = false;
             }
-            if ($units > -1) {
-                $units = (float)$units;
-                $sql .= " AND min_units <= $units AND max_units >= $units";
-            }
-            $res = DB_query($sql);
-            while ($A = DB_fetchArray($res, false)) {
-                $shippers[$A['id']] = $A;
+            if ($stmt) {
+                while ($A = $stmt->fetchAssociative()) {
+                    $shippers[$A['id']] = $A;
+                }
             }
             Cache::set($cache_key, $shippers, self::$TABLE);
         }
@@ -964,7 +975,7 @@ class Shipper
      * @param   array   $A      Optional array of values from $_POST
      * @return  boolean         True if no errors, False otherwise
      */
-    public function Save($A =NULL)
+    public function Save(?array $A =NULL) : bool
     {
         global $_TABLES, $_SHOP_CONF;
 
@@ -972,42 +983,67 @@ class Shipper
             $this->setVars($A, false);
         }
 
-        // Insert or update the record, as appropriate.
-        if ($this->isNew) {
-            $sql1 = "INSERT INTO {$_TABLES['shop.shipping']}";
-            $sql3 = '';
-        } else {
-            $sql1 = "UPDATE {$_TABLES['shop.shipping']}";
-            $sql3 = " WHERE id={$this->id}";
+        $values = array(
+            'name' => $this->name,
+            'module_code' => $this->module_code,
+            'enabled' => $this->enabled,
+            'req_shipto' => $this->requiresShipto(),
+            'tax_loc' => $this->getTaxLocation(),
+            'min_units' => $this->min_units,
+            'max_units' => $this->max_units,
+            'valid_from' => max(0, $this->valid_from->toUnix()),
+            'valid_to' => $this->valid_to->toUnix(),
+            'use_fixed' => $this->use_fixed,
+            'free_threshold' => $this->free_threshold,
+            'grp_access' => $this->grp_access,
+            'quote_method' => $this->quote_method,
+            'rates' => json_encode($this->rates),
+        );
+        $types = array(
+            Database::STRING,
+            Database::STRING,
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::STRING,
+            Database::STRING,
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::STRING,
+        );
+
+        $db = Database::getInstance();
+        try {
+            // Insert or update the record, as appropriate.
+            if ($this->isNew) {
+                $db->conn->insert(
+                    $_TABLES['shop.shipping'],
+                    $values,
+                    $types,
+                );
+            } else {
+                $types[] = Database::INTEGER;
+                $db->conn->update(
+                    $_TABLES['shop.shipping'],
+                    $values,
+                    array('id' => $this->id),
+                    $types
+                );
+            }
+            Cache::clear(self::$TABLE);
+            $status = true;
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $status = false;
         }
+
         usort($this->rates, function($a, $b) {
             return $a['units'] <=> $b['units'];
         });
-        $sql2 = " SET name = '" . DB_escapeString($this->name) . "',
-            module_code= '" . DB_escapeString($this->module_code) . "',
-            enabled = '{$this->enabled}',
-            req_shipto = '{$this->requiresShipto()}',
-            tax_loc = '{$this->getTaxLocation()}',
-            min_units = '{$this->min_units}',
-            max_units = '{$this->max_units}',
-            valid_from = " . max(0, $this->valid_from->toUnix()) . ",
-            valid_to = '{$this->valid_to->toUnix()}',
-            use_fixed = '{$this->use_fixed}',
-            free_threshold = '{$this->free_threshold}',
-            grp_access = '{$this->grp_access}',
-            quote_method = '{$this->quote_method}',
-            rates = '" . DB_escapeString(json_encode($this->rates)) . "'";
-        $sql = $sql1 . $sql2 . $sql3;
-        //echo $sql;die;
-        Log::write('shop_system', Log::DEBUG, $sql);
-        DB_query($sql);
-        $err = DB_error();
-        if ($err == '') {
-            Cache::clear(self::$TABLE);
-            return true;
-        } else {
-            return false;
-        }
+        return $status;
     }
 
 
@@ -1017,7 +1053,7 @@ class Shipper
      * @param   integer $id     Record ID
      * @return  boolean     True on success, False on invalid ID
      */
-    public static function Delete($id)
+    public static function Delete(int $id) : bool
     {
         global $_TABLES;
 
@@ -1026,11 +1062,18 @@ class Shipper
         }
 
         if (!self::isUsed($id)) {
-            DB_delete($_TABLES['shop.shipping'], 'id', $id);
-            Cache::clear(self::$TABLE);
-            return true;
-        } else {
-            return false;
+            try {
+                Database::getInstance()->conn->delete(
+                    $_TABLES['shop.shipping'],
+                    array('id' => $id),
+                    array(Database::INTEGER)
+                );
+                Cache::clear(self::$TABLE);
+                return true;
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                return false;
+            }
         }
     }
 
@@ -1504,9 +1547,20 @@ class Shipper
         global $_TABLES;
 
         $shipper_id = (int)$shipper_id;
+        $db = Database::getInstance();
         if (
-            DB_count($_TABLES['shop.orders'], 'shipper_id', $shipper_id) > 0 ||
-            DB_count($_TABLES['shop.shipment_packages'], 'shipper_id', $shipper_id) > 0
+            $db->getCount(
+                $_TABLES['shop.orders'],
+                'shipper_id',
+                $shipper_id,
+                Database::INTEGER
+            ) > 0 ||
+            $db->getCount(
+                $_TABLES['shop.shipment_packages'],
+                'shipper_id',
+                $shipper_id,
+                Database::INTEGER
+            ) > 0
         ) {
             return true;
         } else {
@@ -1524,11 +1578,10 @@ class Shipper
     {
         global $_TABLES;
 
-        $code = DB_escapeString($this->key);
-        $data = DB_getItem(
+        $data = Database::getInstance()->getItem(
             $_TABLES['shop.carrier_config'],
             'data',
-            "code = '$code'"
+            array('code' => $this->key)
         );
         if ($data) {        // check that a data item was retrieved
             $config = @json_decode($data, true);
@@ -1663,7 +1716,6 @@ class Shipper
     {
         global $_TABLES;
 
-        $code = DB_escapeString($this->key);
         // Seed data with common data for all shippers
         $cfg_data = array(
             'ena_quotes'    => isset($form['ena_quotes']) ? 1 : 0,
@@ -1696,19 +1748,25 @@ class Shipper
             $cfg_data['services'] = $form['services'];
         }
 
-        $data = DB_escapeString(json_encode($cfg_data));
-        $sql = "INSERT INTO {$_TABLES['shop.carrier_config']} SET
-            code = '$code',
-            data = '$data'
-            ON DUPLICATE KEY UPDATE data = '$data'";
-        //echo $sql;die;
-        DB_query($sql);
-        if (DB_error()) {
-            Log::write('shop_system', Log::ERROR, "Shipper::saveConfig() error: $sql");
+        $data = json_encode($cfg_data);
+        try {
+            $db->conn->insert(
+                $_TABLES['shop.carrier_config'],
+                array('code' => $code, 'data' => $data),
+                array(Database::STRING, Database::STRING)
+            );
+        } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $k) {
+            $db->conn->update(
+                $_TABLES['shop.carrier_config'],
+                array('data' => $data),
+                array('code' => $code),
+                array(Database::STRING, Database::STRING)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
-        } else {
-            return true;
         }
+        return true;
     }
 
 

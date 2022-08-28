@@ -4,16 +4,18 @@
  * Handles tracking numbers.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.2.0
+ * @version     v1.4.2
  * @since       v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
-
 namespace Shop;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
+
 
 /**
  * Class for order line items.
@@ -81,12 +83,22 @@ class ShipmentPackage
 
         $retval = array();
         $shipment_id = (int)$shipment_id;
-        $sql = "SELECT * FROM {$_TABLES['shop.shipment_packages']}
-            WHERE shipment_id = $shipment_id
-            ORDER BY pkg_id ASC";
-        $res = DB_query($sql);
-        while ($A = DB_fetchArray($res, false)) {
-            $retval[] = new self($A);
+        try {
+            $data = Database::getInstance()->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.shipment_packages']}
+                WHERE shipment_id = ?
+                ORDER BY pkg_id ASC",
+                array($shipment_id),
+                array(Database::INTEGER)
+            )->fetchAllAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $data = false;
+        }
+        if (is_array($data)) {
+            foreach ($data as $A) {
+                $retval[] = new self($A);
+            }
         }
         return $retval;
     }
@@ -102,13 +114,18 @@ class ShipmentPackage
     {
         global $_TABLES;
 
-        $rec_id = (int)$rec_id;
-        $sql = "SELECT * FROM {$_TABLES['shop.shipment_packages']}
-                WHERE pkg_id = $rec_id";
-        //echo $sql;die;
-        $res = DB_query($sql);
-        if ($res) {
-            $this->setVars(DB_fetchArray($res, false));
+        try {
+            $row = Database::getInstance()->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.shipment_packages']} WHERE pkg_id = ?",
+                array($rec_id),
+                array(Database::INTEGER)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $row = false;
+        }
+        if (is_array($row)) {
+            $this->setVars($row);
             return true;
         } else {
             $this->shipment_id = 0;
@@ -250,7 +267,7 @@ class ShipmentPackage
      * @param   array   $form   Array of data to save
      * @return  boolean     True on success, False on DB error
      */
-    public function Save($form = NULL)
+    public function Save(?array $form = NULL) : bool
     {
         global $_TABLES;
 
@@ -264,31 +281,42 @@ class ShipmentPackage
             return false;
         }
 
-        if ($this->pkg_id > 0) {
-            // New shipment
-            $sql1 = "UPDATE {$_TABLES['shop.shipment_packages']} ";
-            $sql3 = " WHERE pkg_id = '{$this->pkg_id}'";
-        } else {
-            $sql1 = "INSERT INTO {$_TABLES['shop.shipment_packages']} ";
-            $sql3 = '';
-        }
-        $sql2 = "SET
-            shipment_id = '{$this->shipment_id}',
-            shipper_id = '{$this->shipper_id}',
-            shipper_info = '" . DB_escapeString($this->shipper_info) . "',
-            tracking_num = '" . DB_escapeString($this->tracking_num) . "'";
-        $sql = $sql1 . $sql2 . $sql3;
-        //echo $sql;die;
-        Log::write('shop_system', Log::DEBUG, $sql);
-        DB_query($sql);
-        if (!DB_error()) {
-            if ($this->pkg_id <= 0) {
-                $this->pkg_id = DB_insertID();
+        $values = array(
+            'shipment_id' => $this->shipment_id,
+            'shipper_id' => $this->shipper_id,
+            'shipper_info' => $this->shipper_info,
+            'tracking_num' => $this->tracking_num,
+        );
+        $types = array(
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::STRING,
+            Database::STRING,
+        );
+
+        $db = Database::getInstance();
+        try {
+            if ($this->pkg_id > 0) {
+                $types[] = Database::INTEGER;
+                $db->conn->update(
+                    $_TABLES['shop.shipment_packages'],
+                    $values,
+                    array('pkg_id' => $this->pkg_id),
+                    $types
+                );
+            } else {
+                $db->conn->insert(
+                    $_TABLES['shop.shipment_packages'],
+                    $values,
+                    $types
+                );
+                $this->pkg_id = $db->conn->lastInsertId();
             }
             return true;
-        } else {
-            return false;
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
+        return false;
     }
 
 
@@ -298,11 +326,20 @@ class ShipmentPackage
      * @param   integer $pkg_id     Record ID for tracking item
      * @return  boolean     True
      */
-    public static function Delete($pkg_id)
+    public static function Delete(int $pkg_id) : bool
     {
         global $_TABLES;
 
-        DB_delete($_TABLES['shop.shipment_packages'], 'pkg_id', $pkg_id);
+        try {
+            Database::getInstance()->conn->delete(
+                $_TABLES['shop.shipment_packages'],
+                array('pkg_id' => $pkg_id),
+                array(Database::INTEGER)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return false;
+        }
         return true;
     }
 
@@ -345,4 +382,3 @@ class ShipmentPackage
 
 }
 
-?>
