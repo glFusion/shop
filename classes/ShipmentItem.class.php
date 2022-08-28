@@ -199,7 +199,7 @@ class ShipmentItem
                 "SELECT * FROM {$_TABLES['shop.shipment_items']} WHERE shipment_id = ?",
                 array($shipment_id),
                 array(Database::INTEGER)
-            )->fetchAssociative();
+            )->fetchAllAssociative();
         } catch (\Exception $e) {
             Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $data = false;
