@@ -53,8 +53,7 @@ use Shop\Config;
 use Shop\Log;
 use glFusion\Database\Database;
 
-Config::getInstance();      // to load $_SHOP_CONF
-global $_SHOP_CONF;
+Config::getInstance();
 
 /** Include plugin config file  */
 require_once __DIR__ . '/shop.php';
@@ -62,10 +61,10 @@ require_once __DIR__ . '/shop.php';
 /** Define base path to plugin */
 define('SHOP_PI_PATH', __DIR__);
 /** Define base URL to plugin */
-define('SHOP_URL', "{$_CONF['site_url']}/{$_SHOP_CONF['pi_name']}");
+define('SHOP_URL', "{$_CONF['site_url']}/" . Config::PI_NAME);
 /** Define URL to plugin admin interface */
 define('SHOP_ADMIN_URL',
-    "{$_CONF['site_admin_url']}/plugins/{$_SHOP_CONF['pi_name']}");
+    "{$_CONF['site_admin_url']}/plugins/" . Config::PI_NAME);
 
 // Define comment status
 define('SHOP_COMMENTS_ENABLED',   0);
@@ -163,7 +162,7 @@ function plugin_upgrade_shop($dvlp = false)
  */
 function plugin_getmenuitems_shop()
 {
-    global $_CONF, $_SHOP_CONF, $LANG_SHOP;
+    global $_CONF, $LANG_SHOP;
 
     $menuitems = array();
     if (Config::get('catalog_enabled') && Config::get('menuitem') && SHOP_access_check()) {
@@ -185,8 +184,7 @@ function plugin_getmenuitems_shop()
  */
 function plugin_commentsupport_shop()
 {
-    global $_SHOP_CONF;
-    return $_SHOP_CONF['ena_comments'] == 0 ? false : true;
+    return Config::get('ena_comments') == 0 ? false : true;
 }
 
 
@@ -202,7 +200,7 @@ function plugin_commentsupport_shop()
  */
 function plugin_savecomment_shop($title,$comment,$item_id,$pid,$postmode)
 {
-    global $LANG03, $_SHOP_CONF;
+    global $LANG03;
 
     // Without comment support, we shouldn't get here unless something
     // nefarious is going on, but just in case...
@@ -215,7 +213,7 @@ function plugin_savecomment_shop($title,$comment,$item_id,$pid,$postmode)
     $postmode = COM_applyFilter ($postmode);
 
     // Actually save the comment
-    $ret = CMT_saveComment($title, $comment, $item_id, $pid, $_SHOP_CONF['pi_name'], $postmode);
+    $ret = CMT_saveComment($title, $comment, $item_id, $pid, Config::PI_NAME, $postmode);
 
     if ($ret > 0) {     // failure
         return COM_siteHeader()
@@ -224,7 +222,7 @@ function plugin_savecomment_shop($title,$comment,$item_id,$pid,$postmode)
                 $comment,
                 $item_id,
                 $pid,
-                $_SHOP_CONF['pi_name'],
+                Config::PI_NAME,
                 $LANG03[14],
                 $postmode
             )
@@ -249,7 +247,7 @@ function plugin_savecomment_shop($title,$comment,$item_id,$pid,$postmode)
  */
 function plugin_displaycomment_shop($id, $cid, $title, $order,$format, $page, $view)
 {
-    global $_USER, $LANG_ACCESS, $_SHOP_CONF;
+    global $_USER, $LANG_ACCESS;
 
     $retval = '';
 
@@ -268,7 +266,7 @@ function plugin_displaycomment_shop($id, $cid, $title, $order,$format, $page, $v
     if ($allowed == 1) {
         $delete_option = plugin_ismoderator_shop();
         $retval .= CMT_userComments(
-            $id, $title, $_SHOP_CONF['pi_name'], $order, $format,
+            $id, $title, Config::PI_NAME, $order, $format,
             $cid, $page, $view, $delete_option,
             $P->commentsEnabled() , $_USER['uid']);
     } else {
@@ -292,13 +290,13 @@ function plugin_displaycomment_shop($id, $cid, $title, $order,$format, $page, $v
  */
 function plugin_deletecomment_shop($cid, $id)
 {
-    global $_CONF, $_TABLES, $_SHOP_CONF;
+    global $_CONF, $_TABLES;
 
     if (plugin_ismoderator_shop()) {
-        if (CMT_deleteComment($cid, $id, $_SHOP_CONF['pi_name']) == 0) {
+        if (CMT_deleteComment($cid, $id, Config::PI_NAME) == 0) {
             $count = DB_count($_TABLES['comments'],
                         array('sid', 'type'),
-                        array($id, $_SHOP_CONF['pi_name']));
+                        array($id, Config::PI_NAME));
             $count--;
             if ($count < 0) $count = 0;
             DB_query("UPDATE {$_TABLES['shop.products']}
@@ -364,12 +362,12 @@ function plugin_ismoderator_shop()
  */
 function plugin_cclabel_shop()
 {
-    global $_SHOP_CONF;
-
     if (plugin_ismoderator_shop()) {
-        return array($_SHOP_CONF['pi_display_name'],
-                    Config::get('admin_url') . '/index.php',
-                    plugin_geticon_shop());
+        return array(
+            Config::get('pi_display_name'),
+            Config::get('admin_url') . '/index.php',
+            plugin_geticon_shop()
+        );
     }
 }
 
@@ -381,11 +379,11 @@ function plugin_cclabel_shop()
  */
 function plugin_getadminoption_shop()
 {
-    global $_TABLES, $_SHOP_CONF;
+    global $_TABLES;
 
     if (plugin_ismoderator_shop()) {
         return array(
-            $_SHOP_CONF['pi_display_name'],
+            Config::get('pi_display_name'),
             Config::get('admin_url') . '/index.php',
             0
         );
@@ -429,9 +427,7 @@ function plugin_getuseroption_shop()
  */
 function plugin_chkVersion_shop()
 {
-    global $_SHOP_CONF;
-
-    return $_SHOP_CONF['pi_version'];
+    return Config::get('pi_version');
 }
 
 
@@ -477,9 +473,9 @@ function plugin_user_move_shop($origUID, $destUID)
  */
 function plugin_autotags_shop ($op, $content = '', $autotag = '')
 {
-    global $_CONF, $_TABLES, $_SHOP_CONF, $LANG_SHOP;
+    global $_CONF, $_TABLES, $LANG_SHOP;
 
-    $pi_name = $_SHOP_CONF['pi_name'];
+    $pi_name = Config::PI_NAME;
     switch ($op) {
     case 'tagname':
         $tags = array(
@@ -593,7 +589,7 @@ function plugin_autotags_shop ($op, $content = '', $autotag = '')
  */
 function SHOP_access_check($rights = 'shop.admin,shop.view')
 {
-    global $_PLUGINS, $_SHOP_CONF;
+    global $_PLUGINS;
     static $access = array();
 
     if (!array_key_exists($rights, $access)) {
@@ -601,7 +597,7 @@ function SHOP_access_check($rights = 'shop.admin,shop.view')
         $acc = true;
         if (
             // If shop is closed and user is not an admin...
-            (!$_SHOP_CONF['shop_enabled'] && !plugin_ismoderator_shop()) ||
+            (!Config::get('shop_enabled') && !plugin_ismoderator_shop()) ||
             // or this plugin or a required plugin isn't available...
             !in_array('lglib', $_PLUGINS) ||
             !SEC_hasRights($rights, 'OR')
@@ -612,74 +608,6 @@ function SHOP_access_check($rights = 'shop.admin,shop.view')
         $access[$rights] = $acc;
     }
     return $access[$rights];
-}
-
-
-/**
- * Return the types to list in the search types selection.
- *
- * @return  array   Associative array (typename => title)
- */
-function plugin_searchtypes_shop()
-{
-    global $_SHOP_CONF, $LANG_SHOP;
-
-    return array($_SHOP_CONF['pi_name'] => $LANG_SHOP['srchtitle']);
-}
-
-
-/**
- * Create a plugin search object to search this plugin.
- *
- * @param   string  $query      Search query string
- * @param   string  $datestart  Starting date for search
- * @param   string  $dateend    Ending date for search
- * @param   string  $topic      Topic selected for search
- * @param   string  $keyType    Type selected during search
- * @param   string  $author     Limit results to this author (not used)
- * @return  object              Search object to be processed by Search class
- */
-function plugin_dopluginsearch_shop(
-    $query, $datestart, $dateend, $topic, $keyType, $author
-)
-{
-    global $_CONF, $_TABLES, $_SHOP_CONF, $LANG_SHOP;
-
-    // Products aren't "auhored", so return null if searching by author
-    if (!empty($author) ||
-            !SEC_hasRights('shop.user,shop.admin,shop.view', 'OR')) {
-        return NULL;
-    }
-
-    if (empty($keyType)) {
-        $type = 'all';
-    }
-
-    // Encode query for inclusion in result's url
-    $htmlquery = urlencode($query);
-
-    $query = trim(DB_escapeString(htmlspecialchars($query), ENT_QUOTES, COM_getEncodingt()));
-    // Use the SKU or item ID in the resulting url?
-    $url_id = $_SHOP_CONF['use_sku'] ? 'p.name' : 'p.id';
-    $sql = "SELECT
-                p.id, p.short_description as title, p.description as description,
-                dt_add as date,  views as hits,
-                CONCAT('/{$_SHOP_CONF['pi_name']}/detail.php?id=',{$url_id},'&query=$htmlquery') as url
-            FROM {$_TABLES['shop.products']} p
-            LEFT JOIN {$_TABLES['shop.prodXcat']} pxc
-                ON pxc.product_id = p.id
-            LEFT JOIN {$_TABLES['shop.categories']} c
-                ON pxc.cat_id=c.cat_id
-            WHERE p.enabled = 1
-            AND (c.enabled=1 OR c.enabled IS NULL)";
-
-    $search = new SearchCriteria($_SHOP_CONF['pi_name'], $LANG_SHOP['blocktitle']);
-    $columns = array('p.name', 'p.short_description', 'p.description',
-                    'p.keywords', 'c.cat_name', 'c.description');
-    list($sql, $ftsql) =
-            $search->buildSearchSQL($keyType, $query, $columns, $sql);
-    $search->setSQL($sql);
-    return $search;
 }
 
 
@@ -708,11 +636,11 @@ function plugin_getheaderjs_shop()
  */
 function plugin_getheadercss_shop()
 {
-    global $_CONF, $_SHOP_CONF;
+    global $_CONF;
 
     $styles = array();
     $pi_css = $_CONF['path_html'] . 'shop/css/';
-    $layout_css = "{$_CONF['path_layout']}plugins/{$_SHOP_CONF['pi_name']}/";
+    $layout_css = "{$_CONF['path_layout']}plugins/" . Config::PI_NAME . '/';
 
     $files = array('style.css');
 
@@ -732,23 +660,23 @@ function plugin_getheadercss_shop()
 
 /**
  * Execute additional functions when COM_siteHeader() is called.
- * - Set session vars for the smart resizer.
+ * - Set session vars for the image resizer.
  * - Check for a Shop referral token and save it if found.
  *
  * @return  string      Empty string, no actual header code is used.
  */
 function plugin_getheadercode_shop() : string
 {
-    global $_USER, $_SHOP_CONF;
+    global $_USER;
 
     // Session variables for TimThumb image url, if used
     // This needs to be an array var named for the plugin,
     // can't use the Session class
-    SESS_setVar($_SHOP_CONF['pi_name'], array(
-        'origpath' => $_SHOP_CONF['image_dir'],
+    SESS_setVar(Config::PI_NAME, array(
+        'origpath' => Config::get('image_dir'),
     ));
 
-
+    // Set the affiliate referrer key if provided.
     $aff_key = Config::get('aff_key', 'shop_ref');
     if (isset($_GET[$aff_key]) && !empty($_GET[$aff_key])) {
         $Referrer = Shop\Customer::findByAffiliate($_GET[$aff_key]);
@@ -928,14 +856,14 @@ function plugin_autouninstall_shop()
  */
 function plugin_enablestatechange_shop($enabled)
 {
-    global $_TABLES, $_PLUGINS, $_SHOP_CONF;
+    global $_TABLES, $_PLUGINS;
 
     $enabled = $enabled == true ? 1 : 0;
     // If trying to enable the plugin but lgLib is not available,
     // take no action and return
     if ($enabled && !in_array('lglib', $_PLUGINS)) {
         // Re-disable the plugin
-        DB_change($_TABLES['plugins'], 'pi_enabled', 0, 'pi_name', $_SHOP_CONF['pi_name']);
+        DB_change($_TABLES['plugins'], 'pi_enabled', 0, 'pi_name', Config::PI_NAME);
     }
     if (!$enabled) {
         // Disable any blocks that rely on this plugin.
@@ -952,14 +880,14 @@ function plugin_enablestatechange_shop($enabled)
  */
 function plugin_itemdeleted_shop($id, $type)
 {
-    global $_TABLES, $_SHOP_CONF;
+    global $_TABLES;
 
     // If the lgLib plugin is disabled or removed, disable thie plugin
     if ($type == 'lglib' && $id == '*') {
         plugin_enablestatechange_shop(false);
-        DB_change($_TABLES['plugins'], 'pi_enabled', 0, 'pi_name', $_SHOP_CONF['pi_name']);
-        unset($_POST['enabledplugins'][$_SHOP_CONF['pi_name']]);
-        unset($_POST['pluginarray'][$_SHOP_CONF['pi_name']]);
+        DB_change($_TABLES['plugins'], 'pi_enabled', 0, 'pi_name',Config::PI_NAME);
+        unset($_POST['enabledplugins'][Config::PI_NAME]);
+        unset($_POST['pluginarray'][Config::PI_NAME]);
     } elseif ($type == 'shop' && $id != '*') {
         $type = DB_escapeString($type);
         $id = DB_escapeString($id);
@@ -1017,7 +945,7 @@ function phpblock_shop_cart()
  */
 function phpblock_shop_cart_contents()
 {
-    global $_SHOP_CONF, $LANG_SHOP;
+    global $LANG_SHOP;
 
     // Cache since it may be called multiple times
     static $contents = NULL;
@@ -1026,7 +954,7 @@ function phpblock_shop_cart_contents()
         $contents = '';
         if (
             !SHOP_access_check() ||
-            $_SHOP_CONF['ena_cart'] == 0
+            Config::get('ena_cart') == 0
         ) {
             return $contents;
         }
@@ -1126,11 +1054,9 @@ function phpblock_shop_search()
  */
 function phpblock_shop_random($cat='')
 {
-    global $_SHOP_CONF;
-
     if (!SHOP_access_check()) return '';
 
-    $limit = (int)$_SHOP_CONF['blk_random_limit'];
+    $limit = (int)Config::get('blk_random_limit');
     if ($limit < 1)
         $limit = 1;
 
@@ -1153,11 +1079,9 @@ function phpblock_shop_random($cat='')
  */
 function phpblock_shop_featured($cat='')
 {
-    global $_SHOP_CONF;
-
     if (!SHOP_access_check()) return '';
 
-    $limit = (int)$_SHOP_CONF['blk_featured_limit'];
+    $limit = (int)Config::get('blk_featured_limit');
     if ($limit < 1)
         $limit = 1;
 
@@ -1245,11 +1169,11 @@ function phpblock_shop_categories()
  */
 function phpblock_shop_popular()
 {
-    global $_TABLES, $_SHOP_CONF;
+    global $_TABLES;
 
     if (!SHOP_access_check()) return '';
 
-    $limit = (int)$_SHOP_CONF['blk_popular_limit'];
+    $limit = (int)Config::get('blk_popular_limit');
     if ($limit < 1)
         $limit = 1;
 
@@ -1284,11 +1208,11 @@ function phpblock_shop_popular()
  */
 function phpblock_shop_recent($cat='')
 {
-    global $_TABLES, $_SHOP_CONF;
+    global $_TABLES;
 
     if (!SHOP_access_check()) return '';
 
-    $limit = (int)$_SHOP_CONF['blk_popular_limit'];
+    $limit = (int)Config::get('blk_popular_limit');
     if ($limit < 1)
         $limit = 1;
 
@@ -1380,7 +1304,7 @@ function SHOP_errorMessage($msg = '', $type = '', $header = '')
  */
 function SHOP_phpblock_product_sql($where, $limit=1)
 {
-    global $_TABLES, $_SHOP_CONF, $LANG_SHOP;
+    global $_TABLES, $LANG_SHOP;
 
     $retval = '';
 
@@ -1423,7 +1347,7 @@ function SHOP_phpblock_product_sql($where, $limit=1)
  */
 function SHOP_phpblock_product($sql)
 {
-    global $_SHOP_CONF, $_TABLES, $_CONF;
+    global $_TABLES, $_CONF;
 
     // By default, return nothing
     $retval = '';
@@ -1460,7 +1384,7 @@ function SHOP_phpblock_product($sql)
                 'descrip'   => $P->getShortDscp(),
                 'price'     => $price,
                 'price_was' => $price_was,
-                'currency'  => $_SHOP_CONF['currency'],
+                'currency'  => Config::get('currency'),
                 'rec_num'   => $i,      // to separate items by <hr/>
                 'id'        => $A['id'],
                 'pi_url'    => Config::get('url'),
@@ -1475,7 +1399,7 @@ function SHOP_phpblock_product($sql)
                 }
                 $T->set_var('button', $btn_txt);
             } else {
-                if ($_SHOP_CONF['ena_cart']) {
+                if (Config::get('ena_cart')) {
                     // If the product has attributes, then the cart must be
                     // enabled to allow purchasing
                     $B = new \Template(__DIR__ . '/templates/buttons');
@@ -1523,11 +1447,10 @@ function plugin_itemrated_shop($id, $rating, $votes)
  */
 function plugin_canuserrate_shop($item_id, $uid)
 {
-    global $_SHOP_CONF;
     static $canRate = NULL;
 
     if ($canRate === NULL) {
-        if ($_SHOP_CONF['anon_can_rate'] == 0 && COM_isAnonUser()) {
+        if (Config::get('anon_can_rate') == 0 && COM_isAnonUser()) {
             $canRate = false;
         } else {
             $canRate = true;
@@ -1545,9 +1468,9 @@ function plugin_canuserrate_shop($item_id, $uid)
  */
 function plugin_user_login_shop($uid)
 {
-    global $_SHOP_CONF;
-
-    if ($uid < 2 /*|| $_SHOP_CONF['ena_cart'] == 0*/) return;
+    if ($uid < 2) {
+        return;
+    }
 
     // Check that the user logging in isn't the same as the affiliate.
     $token = Shop\Models\ReferralTag::get();
@@ -1558,7 +1481,7 @@ function plugin_user_login_shop($uid)
         }
     }
 
-    if ($_SHOP_CONF['ena_cart']) {
+    if (Config::get('ena_cart')) {
         $anon_cart = Shop\Cart::getAnonCartID();  // get the anonymous cart ID
         if (!empty($anon_cart)) {
             $user_cart = Shop\Cart::getInstance('', $uid);    // get the logged-in user's cart
@@ -1943,7 +1866,7 @@ function plugin_configmanager_select_aff_form_id_shop()
  */
 function plugin_profileedit_shop($uid, $panel, $fieldset)
 {
-    global $_SHOP_CONF, $_USER, $_TABLES, $LANG_SHOP;
+    global $_USER, $_TABLES, $LANG_SHOP;
 
     $retval = '';
     // Make sure that a valid UID was passed in.
@@ -1958,7 +1881,7 @@ function plugin_profileedit_shop($uid, $panel, $fieldset)
             'block' => 'profileblock.thtml',
         ));
         $U = Shop\Customer::getInstance($uid);
-        if ($_SHOP_CONF['gc_enabled']) {
+        if (Config::get('gc_enabled')) {
             $gc_bal = Shop\Products\Coupon::getUserBalance($uid);
             $LT->set_var('gc_bal', Shop\Currency::getInstance()->Format($gc_bal));
         }
@@ -2101,7 +2024,7 @@ function SHOP_now()
  */
 function plugin_getiteminfo_shop($id, $what, $uid=0, $options=array())
 {
-    global $_TABLES, $_CONF, $LANG_SHOP, $_SHOP_CONF, $_USER, $_GROUPS;
+    global $_TABLES, $_CONF, $LANG_SHOP, $_USER, $_GROUPS;
 
     $properties = explode(',', $what);
     $fields = array('p.id', 'p.name');  // always get item name and id
@@ -2111,7 +2034,7 @@ function plugin_getiteminfo_shop($id, $what, $uid=0, $options=array())
     // If a user is getting this info, e.g. via a search, and the shop is not
     // open to the public, then return nothing unless the user is an admin.
     if ($uid > 0) {
-        if ($_SHOP_CONF['shop_enabled'] || SHOP_access_check('shop.admin')) {
+        if (Config::get('shop_enabled') || SHOP_access_check('shop.admin')) {
             // If user is anonymous, this might actually be the admin
             // regenerating the sitemap. In that case, override $_GROUPS
             // to create the category access SQL.
@@ -2253,7 +2176,7 @@ function plugin_getiteminfo_shop($id, $what, $uid=0, $options=array())
                 break;
             }
         }
-        $url_id = $_SHOP_CONF['use_sku'] ? $A['name'] : $A['id'];
+        $url_id = Config::get('use_sku') ? $A['name'] : $A['id'];
         $props['url'] = COM_buildUrl(
             $_CONF['site_url'] . '/shop/detail.php?id=' . urlencode($url_id)
         );
@@ -2511,7 +2434,7 @@ function SHOP_getVar($A, $varname, $type = 'string', $default = NULL, $emptyok =
  */
 function SHOP_isMinVersion($required = '')
 {
-    global $_SHOP_CONF, $_PLUGIN_INFO, $LANG_SHOP;
+    global $_PLUGIN_INFO, $LANG_SHOP;
 
     static $isMinVer = NULL;
     if ($isMinVer !== NULL) {
@@ -2520,7 +2443,7 @@ function SHOP_isMinVersion($required = '')
 
     // If not specified, use the current code version as required.
     if ($required == '') {
-        $required = $_SHOP_CONF['pi_version'];
+        $required = Config::get('pi_version');
     }
 
     // Check for a patchlevel and remove if present.
@@ -2530,7 +2453,7 @@ function SHOP_isMinVersion($required = '')
         $required = implode('.', $parts);
     }
 
-    $pi_name = $_SHOP_CONF['pi_name'];
+    $pi_name = Config::PI_NAME;
     if (isset($_PLUGIN_INFO[$pi_name])) {
         if (is_array($_PLUGIN_INFO[$pi_name])) {
             // glFusion > = 1.6.6
@@ -2544,7 +2467,7 @@ function SHOP_isMinVersion($required = '')
         if (plugin_ismoderator_shop()) {
             SHOP_setMsg(sprintf($LANG_SHOP['err_not_curr_ver'], $installed, $required), 'error');
         }
-        $_SHOP_CONF['shop_enabled'] = 0;    // close the shop
+        Config::set('shop_enabled', 0);     // close the shop
         $isMinVer = false;
     } else {
         $isMinVer = true;
