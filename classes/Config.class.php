@@ -60,7 +60,7 @@ final class Config
 
         $this->properties['pi_name'] = self::PI_NAME;
         $this->properties['pi_display_name'] = 'Shop';
-        $this->properties['pi_url'] = 'http://www.glfusion.org';
+        $this->properties['pi_url'] = 'https://www.glfusion.org';
         $this->properties['url'] = $_CONF['site_url'] . '/' . self::PI_NAME;
         $this->properties['admin_url'] = $_CONF['site_admin_url'] . '/plugins/' . self::PI_NAME;
         $this->properties['logfile'] = "{$_CONF['path']}/logs/" . self::PI_NAME . '_downloads.log';
