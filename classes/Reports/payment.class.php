@@ -136,6 +136,12 @@ class payment extends \Shop\Report
                 'align' => 'right',
             ),
             array(
+                'text'  => $LANG_SHOP['complete'],
+                'field' => 'is_complete',
+                'sort'  => true,
+                'align' => 'center',
+            ),
+            array(
                 'text'  => $LANG_ADMIN['delete'],
                 'field' => 'delete',
                 'sort'  => 'false',
@@ -371,6 +377,14 @@ class payment extends \Shop\Report
         case 'pmt_ts':
             $D = new \Date($fieldvalue, $_CONF['timezone']);
             $retval = $D->toMySQL(true);
+            break;
+
+        case 'is_complete':
+            if ((int)$fieldvalue > 0) {
+                $retval = FieldList::checkmark(array(
+                    'active' => true,
+                ) );
+            }
             break;
 
         case 'delete':
