@@ -49,7 +49,11 @@ class table extends \Shop\Tax
             try {
                 $A = Database::getInstance()->conn->executeQuery(
                     $sql,
-                    array($country, $zipcode, $zipcode),
+                    array(
+                        $this->Address->getCountry(),
+                        $this->Address->getPostal(),
+                        $this->Address->getPostal(),
+                    ),
                     array(Database::STRING, Database::STRING, Database::STRING)
                 )->fetchAssociative();
             } catch (\Throwable $e) {
