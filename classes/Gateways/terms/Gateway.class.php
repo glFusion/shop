@@ -16,6 +16,7 @@
 namespace Shop\Gateways\terms;
 use Shop\Models\OrderStatus;
 use Shop\Gateway as GW;
+use Shop\GatewayManager;
 use Shop\FieldList;
 
 
@@ -104,7 +105,7 @@ class Gateway extends \Shop\Gateway
         $opts = array();
         switch ($name) {
         case 'gateway':
-            foreach (self::getAll() as $gw) {
+            foreach (GatewayManager::getAll() as $gw) {
                 if (!$gw->Supports($this->gw_name)) {
                     continue;
                 }
@@ -159,9 +160,12 @@ class Gateway extends \Shop\Gateway
         }
         $gw = parent::getInstance($gw_name);
         if ($gw && $gw->Supports($this->gw_name)) {
-            $status = parent::getInstance($gw_name)->createInvoice($Order, $this);
+            $status = $gw->createInvoice($Order, $this);
         } else {
             $status = false;
+        }
+        if ($status) {      // if invoice creation was successful
+            $Order->updateStatus($this->getConfig('after_inv_status'));
         }
         return $status;
     }
