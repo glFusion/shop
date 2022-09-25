@@ -801,6 +801,8 @@ $LANG_SHOP = array (
 'order_closed' => 'Order is Closed',
 'cust_viewable' => 'Viewable by Customer',
 'aff_eligible' => 'Allow Affiliate Pmts',
+'complete' => 'Complete',
+'invoice' => 'Invoice',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
