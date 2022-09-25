@@ -1184,15 +1184,30 @@ class Gateway
                 ) );
                 break;
             default:
-                if (isset($this->config[$env][$name])) {
-                    $val = $this->config[$env][$name];
+                if (is_array($type)) {
+                    // Create a selection of the options available
+                    $options = array();
+                    foreach ($type as $value) {
+                        $options[$value] = array(
+                            'value' => $value,
+                            'selected' => $this->config[$env][$name] == $value,
+                        );
+                    }
+                    $field = FieldList::select(array(
+                        'name' => $fld_name,
+                        'options' => $options,
+                    ) );
                 } else {
-                    $val = '';
+                    if (isset($this->config[$env][$name])) {
+                        $val = $this->config[$env][$name];
+                    } else {
+                        $val = '';
+                    }
+                    $field = FieldList::text(array(
+                        'name' => $fld_name,
+                        'value' => $val,
+                    ) );
                 }
-                $field = FieldList::text(array(
-                    'name' => $fld_name,
-                    'value' => $val,
-                ) );
                 break;
             }
             $fields[$name] = array(
@@ -1789,6 +1804,7 @@ class Gateway
                     array('id' => $this->gw_name),
                     array(Database::STRING, Database::STRING)
                 );
+                Cache::clear(self::$TABLE);
                 return true;
             } catch (\Exception $e) {
                 Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
