@@ -164,6 +164,10 @@ class State extends RegionBase
             Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $A = false;
         }
+        if (!$A) {
+            // Expected by the constructor.
+            $A = NULL;
+        }
         return new self($A);
     }
 
