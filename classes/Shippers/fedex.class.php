@@ -422,8 +422,14 @@ class fedex extends \Shop\Shipper
         }
         if ($fixed_pkgs < count($Packages)) {
             $req = $this->_buildSoapRequest('crs', $request);
-            $response = $_soapClient->getRates($req);
+            try {
+                $response = $_soapClient->getRates($req);
+            } catch (\Exception $e) {
+                Log::write('shop_system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $response = NULL;
+            }
             if (
+                $response &&
                 $response->HighestSeverity != 'FAILURE' &&
                 $response->HighestSeverity != 'ERROR'
             ) {
