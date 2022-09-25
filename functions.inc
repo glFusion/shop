@@ -1287,11 +1287,11 @@ function phpblock_shop_recent($cat='')
     try {
         $stmt = $qb->select('DISTINCT (pr.id)',
                 "(SELECT count(*) FROM {$_TABLES['shop.orderitems']} pu
-                    WHERE product_id = pr.id) AS cnt"
+                    WHERE pu.product_id = pr.id) AS cnt"
             )
            ->from($_TABLES['shop.products'], 'pr')
            ->leftJoin('pr', $_TABLES['shop.prodXcat'], 'pxc', 'pr.id = pxc.product_id')
-           ->leftJoin('pr', $_TABLES['shop.categories'], 'c', 'pr.cat_id = c.cat_id')
+           ->leftJoin('pxc', $_TABLES['shop.categories'], 'c', 'pxc.cat_id = c.cat_id')
            ->where('pr.enabled = 1')
            ->andWhere('c.enabled=1 OR c.enabled IS NULL')
            ->andWhere($db->getAccessSql('', 'c.grp_access'))
@@ -2046,7 +2046,7 @@ function SHOP_child_cat_product_count($p_cat)
             FROM {$_TABLES['shop.categories']} c
             WHERE c.lft BETWEEN ? AND ?
             AND c.enabled = 1 " .
-            $db->getAccessSql('', 'c.grp_access') .
+            $db->getAccessSql('AND', 'c.grp_access') .
             " ORDER BY c.cat_name",
             array($lft, $rgt),
             array(Database::INTEGER, Database::INTEGER)
