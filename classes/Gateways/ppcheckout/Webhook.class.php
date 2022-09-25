@@ -14,7 +14,6 @@
 namespace Shop\Gateways\ppcheckout;
 use Shop\Payment;
 use Shop\Order;
-use Shop\Models\IPN as IPNModel;
 use Shop\Log;
 use Shop\Config;
 
@@ -226,7 +225,7 @@ class Webhook extends \Shop\Webhook
                             $this->setCurrency($unit->amount->currency_code);
                         }
                         $Pmt = Payment::getByReference($this->refID);
-                        //if ($Pmt->getPmtID() == 0) {
+                        if ($Pmt->getPmtID() == 0) {
                             $Pmt->setRefID($this->refID)
                                 ->setAmount($this->getPayment())
                                 ->setGateway($this->getSource())
@@ -235,7 +234,7 @@ class Webhook extends \Shop\Webhook
                                 ->setOrderID($this->getOrderID());
                             return $Pmt->Save();
                             $this->handlePurchase();
-                        //}
+                        }
                         $this->setID($this->refID);  // use the payment ID for logging
                         $this->logIPN();
                     }
@@ -247,22 +246,8 @@ class Webhook extends \Shop\Webhook
             if (isset($resource->invoice)) {
                 $invoice = $resource->invoice;
             }
+
             if ($invoice) {
-                $this->IPN = new IPNModel(array(
-                    'sql_date' => '',       // SQL-formatted date string
-                    'uid' => 0,             // user ID to receive credit
-                    'pmt_gross' => 0,       // gross amount paid
-                    'txn_id' => '',         // transaction ID
-                    'gw_name' => '',        // gateway short name
-                    'memo' => '',           // misc. comment
-                    'first_name' => '',     // payer's first name
-                    'last_name' => '',      // payer's last name
-                    'payer_name' => '',     // payer's full name
-                    'payer_email' => '',    // payer's email address
-                    'custom' => array(  // backward compatibility for plugins
-                        'uid' => 0,
-                    ),
-                ) );
                 if (isset($invoice->detail)) {
                     $this->setOrderId($invoice->detail->reference);
                 } else {
@@ -279,7 +264,6 @@ class Webhook extends \Shop\Webhook
                     ) {
                         // Get just the latest payment.
                         // If there are multiple payments for the order, all are included.
-                        $this->logIPN();
                         $payment = array_pop($payments->transactions);
                         if ($payment) {
                             $this->setRefID($payment->payment_id);
@@ -297,6 +281,7 @@ class Webhook extends \Shop\Webhook
                             }
                         }
                         $this->setID($this->refID);  // use the payment ID
+                        $this->logIPN();
                      }
                 }
             }
