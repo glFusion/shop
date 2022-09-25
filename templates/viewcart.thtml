@@ -86,6 +86,7 @@
 {!endif}
                                 name="quantity[{cart_item_id}]" value="{item_quantity}" class="uk-form-width-mini"/>
 {!endif}
+							{del_link}
                             <a href="{del_item_url}"><i
                                 class="uk-icon uk-icon-remove uk-text-danger tooltip"
                                 title="{$LANG_SHOP['remove_item']}"></i></a>

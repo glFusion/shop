@@ -20,6 +20,7 @@ use Shop\Template;
 use Shop\Gateway;
 use Shop\Company;
 use Shop\IPN;
+use Shop\FieldList;
 use Shop\Models\OrderStatus;
 
 
@@ -511,6 +512,13 @@ class OrderBaseView
                 'is_invoice'    => $this->is_invoice,
                 'del_item_url'  => COM_buildUrl(SHOP_URL . "/cart.php?action=delete&id={$Item->getID()}"),
                 'embargoed'     => $Item->getInvalid(),
+                'del_item_link' => FieldList::delete(array(
+                    'delete_url' => COM_buildUrl(SHOP_URL . "/cart.php?action=delete&id={$Item->getID()}"),
+                    'attr' => array(
+                        'title' => $LANG_SHOP['remove_item'],
+                        'class' => 'tooltip',
+                    )
+                ) ),
             ) );
 
             if ($P->isPhysical()) {

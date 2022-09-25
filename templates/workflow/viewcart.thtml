@@ -69,23 +69,7 @@
 {!endif}
 								name="quantity[{cart_item_id}]" value="{item_quantity}" class="uk-form-width-mini"/>
 {!endif}
-							<a href="{del_item_url}"><i
-								class="uk-icon uk-icon-remove uk-text-danger tooltip"
-								title="{$LANG_SHOP['remove_item']}"></i></a>
-{!if fixed_q}
-{!else}
-{!if 0}
-							<div>
-								<span class="uk-button uk-button-mini" title="Subtract">
-									<i class="uk-icon uk-icon-minus" onclick="incrementItemQty({cart_item_id}, -1);return false;"></i>
-								</span>
-								<a rel="nofollow" class="uk-button uk-button-mini" href="#!"title="Subtract">
-									<i class="uk-icon uk-icon-plus"></i>
-								</a>
-							</div>
-{!endif}
-{!endif}
-
+							{del_item_link}
 						</div>
 						<div class="uk-width-medium-1-6 uk-width-1-1 uk-width-1-6@m cart-item-total money">
 							<div class="mobile-label">{$LANG_SHOP['total']}</div>{item_total}
