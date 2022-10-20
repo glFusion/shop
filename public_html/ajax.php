@@ -282,9 +282,9 @@ case 'validateAddress':
             $T->set_file('popup', 'address_select.thtml');
             $T->set_var(array(
                 'address1_html' => $A1->toHTML(),
-                'address1_json' => htmlentities($A1->toJSON(false)),
+                'address1_json' => htmlentities($A1->toJSON()),
                 'address2_html' => $A2->toHTML(),
-                'address2_json' => htmlentities($A2->toJSON(false)),
+                'address2_json' => htmlentities($A2->toJSON()),
                 'ad_type'       => $_POST['ad_type'],
 //                'next_step'     => $_POST['next_step'],
                 'save_url'      => $save_url,

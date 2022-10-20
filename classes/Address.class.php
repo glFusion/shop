@@ -584,16 +584,11 @@ class Address
     /**
      * Convert the address fields to a single JSON string.
      *
-     * @param   boolean $escape     True to escape for DB storage
-     * @return  string  Address string
+     * @return  string  JSON string
      */
-    public function toJSON($escape=false)
+    public function toJSON() : string
     {
-        $str = json_encode($this->toArray());
-        /*if ($escape) {
-            $str = DB_escapeString($str);
-        }*/
-        return $str;
+        return json_encode($this->toArray());
     }
 
 
