@@ -12,6 +12,8 @@
  * @filesource
  */
 namespace Shop;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 use Shop\Models\Dates;
 
 
@@ -94,19 +96,25 @@ class DiscountCode
      * @param   string  $code   Discount code string
      * @return  object  $this
      */
-    public static function getInstance($code)
+    public static function getInstance(string $code) : self
     {
         global $_TABLES;
 
         static $retval = array();
 
         if (!isset($retval[$code])) {
-            $sql = "SELECT * FROM {$_TABLES['shop.discountcodes']}
-                WHERE code = '" . DB_escapeString(strtoupper($code)) . "'";
-            $res = DB_query($sql);
-            if ($res && DB_numRows($res) == 1) {
-                $A = DB_fetchArray($res, false);
-                $retval[$code] = new self($A);
+            try {
+                $row = Database::getInstance()->conn->executeQuery(
+                    "SELECT * FROM {$_TABLES['shop.discountcodes']} WHERE code = ?",
+                    array(strtoupper($code)),
+                    array(Database::STRING)
+                )->fetchAssociative();
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $row = false;
+            }
+            if (is_array($row)) {
+                $retval[$code] = new self($row);
                 $retval[$code]->setValid(true);
             } else {
                 $retval[$code] = new self;
@@ -122,17 +130,22 @@ class DiscountCode
      * @param   integer $id     DB record ID
      * @return  boolean     True on success, False on failure
      */
-    public function Read($id)
+    public function Read(int $id) : bool
     {
         global $_TABLES;
 
-        $id = (int)$id;
-        $sql = "SELECT * FROM {$_TABLES['shop.discountcodes']}
-                WHERE code_id = $id";
-        $res = DB_query($sql);
-        if ($res && DB_numRows($res) == 1) {
-            $A = DB_fetchArray($res, false);
-            $this->setVars($A);
+        try {
+            $row = Database::getInstance()->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.discountcodes']} WHERE code_id = ?",
+                array($id),
+                array(Database::INTEGER)
+            )->fetchAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $row = false;
+        }
+        if (is_array($row)) {
+            $this->setVars($row);
             $this->setValid(true);
             return true;
         }
@@ -347,7 +360,7 @@ class DiscountCode
      * @param   array   $A      Array of values from $_POST
      * @return  boolean         True if no errors, False otherwise
      */
-    public function Save($A = array())
+    public function Save(?array $A = NULL) : bool
     {
         global $_TABLES, $_SHOP_CONF;
 
@@ -356,27 +369,38 @@ class DiscountCode
             $this->setVars($A, false);
         }
 
-        // Insert or update the record, as appropriate.
-        $sql = "INSERT INTO {$_TABLES['shop.discountcodes']} SET
-            code_id = '" . (int)$this->code_id . "',
-            code = '" . DB_escapeString($this->code) . "',
-            percent = '" . (float)$this->percent . "',
-            min_order  = '" . (float)$this->min_order . "',
-            start = '" . DB_escapeString($this->start->toMySQL(true)) . "',
-            end = '" . DB_escapeString($this->end->toMySQL(true)) . "'
-            ON DUPLICATE KEY UPDATE
-            code = '" . DB_escapeString($this->code) . "',
-            percent = '" . (float)$this->percent . "',
-            start = '" . DB_escapeString($this->start->toMySQL(true)) . "',
-            end = '" . DB_escapeString($this->end->toMySQL(true)) . "',
-            min_order = '" . (float)$this->min_order . "'";
-        //echo $sql;die;
-        DB_query($sql, 1);
-        $err = DB_error('An invalid or duplicate code was entered');
-        if ($err == '') {
-            return true;
-        } else {
-            SHOP_setMsg($err);
+        $values = array(
+            'code' => $this->code,
+            'percent' => (float)$this->percent,
+            'min_order' => (float)$this->min_order,
+            'start' => $this->start->toMySQL(true),
+            'end' => $this->end->toMySQL(true),
+        );
+        $types = array(
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+        );
+
+        $db = Database::getInstance();
+        try {
+            if ($this->code_id > 0) {
+                $db->conn->insert($_TABLES['shop.discountcodes'], $values, $types);
+                $this->code_id = $db->conn->lastInsertId();
+            } else {
+                $types[] = Database::INTEGER;
+                $db->conn->update(
+                    $_TABLES['shop.discountcodes'],
+                    $values,
+                    array('code_id' => $this->code_id),
+                    $types
+                );
+            }
+            return tue;
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
     }
@@ -396,7 +420,16 @@ class DiscountCode
             return false;
         }
 
-        DB_delete($_TABLES['shop.discountcodes'], 'code_id', $id);
+        try {
+            Database::getInstance()->conn->delete(
+                $_TABLES['shop.discountcodes'],
+                array('code_id' => $id),
+                array(Database::INTEGER)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return false;
+        }
         return true;
     }
 
@@ -409,10 +442,15 @@ class DiscountCode
     {
         global $_CONF, $_TABLES;
 
-        $now = $_CONF['_now']->toMySQL(true);
-        $sql = "DELETE FROM {$_TABLES['shop.discountcodes']}
-                WHERE end < '$now'";
-        DB_query($sql);
+        try {
+            Database::getInstance()->conn->executeQuery(
+                "DELETE FROM {$_TABLES['shop.discountcodes']} WHERE end < ?",
+                array($_CONF['_now']->toMySQL(true)),
+                array(Database::STRING)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
     }
 
 
@@ -740,10 +778,22 @@ class DiscountCode
         static $count = -1;
         if ($count === -1) {
             $now = $_CONF['_now']->toMySQL(true);
-            $sql = "SELECT code FROM {$_TABLES['shop.discountcodes']}
-                WHERE '$now' > `start` AND '$now' < `end`";
-            $res = DB_query($sql);
-            $count = (int)DB_numRows($res);
+            try {
+                $row = Database::getInstance()->conn->executeQuery(
+                    "SELECT count(*) AS cnt FROM {$_TABLES['shop.discountcodes']}
+                    WHERE ? > `start` AND ? < `end`",
+                    array($now, $now),
+                    array(Database::STRING, Database::STRING)
+                )->fetchAssociative();
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $row = false;
+            }
+            if (is_array($row)) {
+                $count = (int)$row['cnt'];
+            } else {
+                $count = 0;
+            }
         }
         return $count;
     }

@@ -154,18 +154,20 @@ class Zone
      * @param   integer $rule_id    Rule record ID
      * @return  object  $this
      */
-    public static function getInstance($rule_id)
+    public static function getInstance(int $rule_id) : self
     {
         global $_TABLES;
 
-        $rule_id = (int)$rule_id;
-        $sql = "SELECT * FROM {$_TABLES['shop.zone_rules']}
-            WHERE rule_id = $rule_id
-            LIMIT 1";
-        $res = DB_query($sql);
-        if ($res && DB_numRows($res) == 1) {
-            $A = DB_fetchArray($res, false);
-            $retval = new self($A);
+        try {
+            $row = Database::getInstance()->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.zone_rules']} WHERE rule_id = ?",
+            )->fetchAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $row = false;
+        }
+        if (is_array($row)) {
+            $retval = new self($row);
         } else {
             $retval = new self;
         }
@@ -324,12 +326,19 @@ class Zone
      *
      * @param   integer $rule_id    Rule record ID
      */
-    public static function deleteRule($rule_id)
+    public static function deleteRule(int $rule_id) : void
     {
         global $_TABLES;
 
-        $rule_id = (int)$rule_id;
-        DB_delete($_TABLES['shop.zone_rules'], 'rule_id', $rule_id);
+        try {
+            Database::getInstance()->conn->delete(
+                $_TABLES['shop.zone_rules'],
+                array('rule_id' => $rule_id),
+                array(Database::INTEGER)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
     }
 
 
@@ -359,7 +368,7 @@ class Zone
      * @param  array   $A      Optional array of values from $_POST
      * @return boolean         True if no errors, False otherwise
      */
-    public function Save($A = NULL)
+    public function Save(?array $A = NULL) : bool
     {
         global $_TABLES, $_SHOP_CONF;
 
@@ -370,32 +379,44 @@ class Zone
             $this->enabled = isset($A['enabled']) ? 1 : 0;
         }
 
-        if ($this->rule_id == 0) {
-            $sql1 = "INSERT INTO {$_TABLES['shop.zone_rules']} SET ";
-            $sql3 = '';
-        } else {
-            $sql1 = "UPDATE {$_TABLES['shop.zone_rules']} SET ";
-            $sql3 = " WHERE rule_id='{$this->rule_id}'";
-        }
-        $sql2 = "rule_name = '" . DB_escapeString($this->rule_name) . "',
-            rule_dscp = '" . DB_escapeString($this->rule_dscp) . "',
-            allow = " . (int)$this->allow . ",
-            enabled = " . (int)$this->enabled . ",
-            regions = '" . DB_escapeString(json_encode($this->regions)) . "',
-            countries = '" . DB_escapeString(json_encode($this->countries)) . "',
-            states = '" . DB_escapeString(json_encode($this->states)) . "'";
-        $sql = $sql1 . $sql2 . $sql3;
-        //echo $sql;die;
-        //Log::write('shop_system', Log::DEBUG, $sql);
-        DB_query($sql);
-        if (!DB_error()) {
+        $db = Database::getInstance();
+        $values = array(
+            'rule_name' => $this->rule_name,
+            'rule_dscp' => $this->rule_dscp,
+            'allow' => $this->allow,
+            'enabled' => $this->enabled,
+            'regions' => json_encode($this->regions),
+            'countries' => json_encode($this->countries),
+            'states' => json_encode($this->states),
+        );
+        $types = array(
+            Database::STRING,
+            Database::STRING,
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+        );
+
+        try {
             if ($this->rule_id == 0) {
-                $this->rule_id = DB_insertID();
+                $db->conn->insert($_TABLES['shop.zone_rules'], $values, $types);
+                $this->rule_id = $db->conn->lastInsertId();
+            } else {
+                $types[] = Database::INTEGER;   // for rule_id
+                $db->conn->insert(
+                    $_TABLES['shop.zone_rules'],
+                    $values,
+                    array('rule_id' => $this->rule_id),
+                    $types
+                );
             }
-            return true;
-        } else {
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
+        return true;
     }
 
 

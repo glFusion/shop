@@ -78,28 +78,6 @@ class Workflow
 
 
     /**
-     * Load the workflows into the global workflow array.
-     * @deprecated
-     */
-    public static function XLoad()
-    {
-        global $_TABLES, $_SHOP_CONF;
-
-        if (!isset($_SHOP_CONF['workflows'])) {
-            $_SHOP_CONF['workflows'] = array();
-            $sql = "SELECT wf_name
-                    FROM {$_TABLES[self::$TABLE]}
-                    WHERE enabled > 0
-                    ORDER BY id ASC";
-            $res = DB_query($sql);
-            while ($A = DB_fetchArray($res, false)) {
-                $_SHOP_CONF['workflows'][] = $A['wf_name'];
-            }
-        }
-    }
-
-
-    /**
      * Get all workflow items, in order of processing.
      * If a cart is supplied, get the appropriate enabled workflows based
      * on the cart contents.

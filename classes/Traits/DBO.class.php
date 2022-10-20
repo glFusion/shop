@@ -3,16 +3,17 @@
  * DataBase Object trait to provide common functions for other classes.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.4.2
  * @since       v1.2.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop\Traits;
-use Shop\Log;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 use Shop\Cache;
 
 
@@ -38,7 +39,7 @@ trait DBO
      * @param   string  $id     ID field value
      * @param   string  $where  Direction to move (up or down)
      */
-    public static function moveRow($id, $where)
+    public static function moveRow(string $id, string $where) : void
     {
         global $_TABLES;
 
@@ -62,11 +63,18 @@ trait DBO
         $f_orderby = isset(static::$F_ORDERBY) ? static::$F_ORDERBY : static::$_F_ORDERBY;
         $f_id = isset(static::$F_ID) ? static::$F_ID : static::$_F_ID;
         if (!empty($oper)) {
-            $sql = "UPDATE {$_TABLES[static::$TABLE]}
+            try {
+                Database::getInstance()->conn->executeStatement(
+                    "UPDATE {$_TABLES[static::$TABLE]}
                     SET $f_orderby = $f_orderby $oper 11
-                    WHERE $f_id = '" . DB_escapeString($id) . "'";
-            DB_query($sql);
-            self::ReOrder();
+                    WHERE $f_id = ?",
+                    array($id),
+                    array(Database::STRING)
+                );
+                self::ReOrder();
+            } catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            }
         }
     }
 
@@ -74,7 +82,7 @@ trait DBO
     /**
      * Reorder all records.
      */
-    public static function ReOrder()
+    public static function ReOrder() : void
     {
         global $_TABLES;
 
@@ -86,19 +94,32 @@ trait DBO
         $f_orderby = isset(static::$F_ORDERBY) ? static::$F_ORDERBY : static::$_F_ORDERBY;
         $f_id = isset(static::$F_ID) ? static::$F_ID : static::$_F_ID;
         $table = $_TABLES[static::$TABLE];
-        $sql = "SELECT $f_id, $f_orderby
-                FROM $table
-                ORDER BY $f_orderby ASC;";
-        $result = DB_query($sql);
+        $db = Database::getInstance();
+        try {
+            $stmt = $db->conn->executeQuery(
+                "SELECT $f_id, $f_orderby FROM $table ORDER BY $f_orderby ASC;"
+            );
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $stmt = false;
+        }
 
-        $order = 10;
-        $stepNumber = 10;
-        while ($A = DB_fetchArray($result, false)) {
-            if ($A[$f_orderby] != $order) {  // only update incorrect ones
-                $sql = "UPDATE $table
-                    SET $f_orderby = '$order'
-                    WHERE $f_id = '" . DB_escapeString($A[$f_id]) . "'";
-                DB_query($sql);
+        if ($stmt) {
+            $order = 10;
+            $stepNumber = 10;
+            while ($A = $stmt->fetchAssociative()) {
+                if ($A[$f_orderby] != $order) {  // only update incorrect ones
+                    try {
+                        $db->conn->update(
+                            $table,
+                            array($f_orderby => $order),
+                            array($f_id => $A['f_id']),
+                            array(Database::INTEGER, Database::STRING)
+                        );
+                    } catch (\Exception $e) {
+                        Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                    }
+                }
             }
             $order += $stepNumber;
         }
@@ -110,10 +131,10 @@ trait DBO
      *
      * @param   integer $oldvalue   Old (current) value
      * @param   string  $varname    Name of DB field to set
-     * @param   integer $id         ID of record to modify
+     * @param   string  $id         ID of record to modify
      * @return  integer     New value, or old value upon failure
      */
-    private static function _toggle($oldvalue, $varname, $id)
+    private static function _toggle(int $oldvalue, string $varname, string $id) : int
     {
         global $_TABLES;
 
@@ -123,23 +144,23 @@ trait DBO
         }
 
         $f_id = isset(static::$F_ID) ? static::$F_ID : static::$_F_ID;
-        $id = DB_escapeString($id);
 
         // Determing the new value (opposite the old)
         $oldvalue = $oldvalue == 1 ? 1 : 0;
         $newvalue = $oldvalue == 1 ? 0 : 1;
 
-        $sql = "UPDATE {$_TABLES[static::$TABLE]}
-                SET $varname = $newvalue
-                WHERE $f_id = '$id'";
-        // Ignore SQL errors since varname is indeterminate
-        DB_query($sql, 1);
-        if (DB_error()) {
-            Log::write('shop_system', Log::ERROR, "SQL error: $sql");
-            return $oldvalue;
-        } else {
+        try {
+            Database::getInstance()->conn->update(
+                $_TABLES[static::$TABLE],
+                array($varname => $newvalue),
+                array($f_id => $id),
+                array(Database::INTEGER, Database::STRING)
+            );
             Cache::clear(self::$TABLE);
             return $newvalue;
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return $oldvalue;
         }
     }
 
@@ -185,4 +206,3 @@ trait DBO
 
 }
 
-?>

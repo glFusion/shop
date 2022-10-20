@@ -3,15 +3,17 @@
  * Class to manage product features.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2020-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     vTBD
- * @since       vTBD
+ * @version     v1.4.2
+ * @since       v1.2.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 
 
 /**
@@ -101,10 +103,18 @@ class Feature
         //$retval = Cache::get($cache_key);
         //if ($retval === NULL) {
             $retval = array();
-            $sql = "SELECT * FROM {$_TABLES['shop.features']}";
-            $res = DB_query($sql);
-            while ($A = DB_fetchArray($res, false)) {
-                $retval[$A['ft_id']] = new self($A);
+            try {
+                $stmt = Database::getInstance()->conn->executeQuery(
+                    "SELECT * FROM {$_TABLES['shop.features']}"
+                );
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $stmt = false;
+            }
+            if ($stmt) {
+                while ($A = $stmt->fetchAssociative()) {
+                    $retval[$A['ft_id']] = new self($A);
+                }
             }
         //    Cache::set($cache_key, $retval, self::$TAGS);
         //}
@@ -156,7 +166,7 @@ class Feature
      * @param   integer $id Optional ID.  Current ID is used if zero.
      * @return  boolean     True if a record was read, False on failure
      */
-    public function Read($id = 0)
+    public function Read(int $id = 0) : bool
     {
         global $_TABLES;
 
@@ -164,20 +174,24 @@ class Feature
         if ($id == 0) $id = $this->ft_id;
         if ($id == 0) {
             $this->error = 'Invalid ID in Read()';
-            return;
+            return false;
         }
 
-        $result = DB_query(
-            "SELECT * FROM {$_TABLES['shop.features']}
-            WHERE ft_id='$id'
-            LIMIT 1"
-        );
-        if (!$result || DB_numRows($result) != 1) {
-            return false;
-        } else {
-            $A = DB_fetchArray($result, false);
-            $this->setVars($A);
+        try {
+            $row = Database::getInstance()->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.features']} WHERE ft_id = ? LIMIT 1",
+                array($id),
+                array(Database::INTEGER)
+            )->fetchAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $row = false;
+        }
+        if (is_array($row)) {
+            $this->setVars($row);
             return true;
+        } else {
+            return false;
         }
     }
 
@@ -188,7 +202,7 @@ class Feature
      * @param   array   $A      Array of values from $_POST
      * @return  boolean         True if no errors, False otherwise
      */
-    public function Save($A = array())
+    public function Save(?array $A = NULL) : bool
     {
         global $_TABLES, $_SHOP_CONF;
 
@@ -214,29 +228,45 @@ class Feature
         }
 
         $ft_id = $this->getId();
-        $ft_name = DB_escapeString($this->getName());
-        $sql = "INSERT INTO {$_TABLES['shop.features']} SET
-            ft_id = {$ft_id},
-            ft_name = '$ft_name',
-            orderby = {$this->getOrderby()}
-            ON DUPLICATE KEY UPDATE
-            ft_name = '$ft_name',
-            orderby = {$this->getOrderby()}";
-        Log::write('shop_system', Log::DEBUG, $sql);
-        DB_query($sql);
-        $err = DB_error();
-        if ($err == '') {
-            if ($this->ft_id == 0) {
-                $this->ft_id = DB_insertID();
+        $db = Database::getInstance();
+        try {
+            if ($ft_id > 0) {       // updating existing feature
+                $db->conn->update(
+                    $_TABLES['shop.features'],
+                    array(
+                        'ft_name' => $this->getName(),
+                        'orderby' => $this->getOrderby(),
+                    ),
+                    array('ft_id' => $ft_id),
+                    array(
+                        Database::STRING,
+                        Database::INTEGER,
+                        Database::INTEGER,
+                    )
+                );
+            } else {
+                $db->conn->insert(
+                    $_TABLES['shop.features'],
+                    array(
+                        'ft_name' => $this->getName(),
+                        'orderby' => $this->getOrderby(),
+                    ),
+                    array(
+                        Database::STRING,
+                        Database::INTEGER,
+                    )
+                );
+                $this->ft_id = $db->conn->lastInsertId();
             }
-            if ($reorder) {
-                self::reOrder();
-            }
-            return true;
-        } else {
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $this->AddError($err);
             return false;
         }
+        if ($reorder) {
+            self::reOrder();
+        }
+        return true;
     }
 
 
@@ -248,7 +278,7 @@ class Feature
      * @param   integer $ft_id      Record ID of the feature
      * @return  boolean     True on success, False on invalid ID
      */
-    public static function Delete($ft_id)
+    public static function Delete(int $ft_id) : bool
     {
         global $_TABLES;
 
@@ -256,9 +286,17 @@ class Feature
         if ($ft_id <= 0) {
             return false;
         }
-        DB_delete($_TABLES['shop.features_values'], 'ft_id', $ft_id);
-        DB_delete($_TABLES['shop.prodXfeat'], 'ft_id', $ft_id);
-        DB_delete($_TABLES['shop.features'], 'ft_id', $ft_id);
+        $db = Database::getInstance();
+        $values = array('ft_id' => $ft_id);
+        $types = array(Databae::INTEGER);
+        try {
+            $db->conn->delete($_TABLES['shop.features_values'], $values, $types);
+            $db->conn->delete($_TABLES['shop.prodXfeat'], $values, $types);
+            $db->conn->delete($_TABLES['shop.features'], $values, $types);
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return false;
+        }
         return true;
     }
 
@@ -468,32 +506,39 @@ class Feature
      * @param   integer $prod_id    Product ID
      * @return  array       Array of OptionGroup objects
      */
-    public static function getByProduct($prod_id)
+    public static function getByProduct(int $prod_id) : array
     {
         global $_TABLES;
 
-        $prod_id = (int)$prod_id;
         //$cache_key = 'ft_prod_' . $prod_id;
         //$grps = Cache::get($cache_key);
         //if ($grps === NULL) {
         $grps = array();
-        $sql = "SELECT  pf.prod_id, pf.ft_id, pf.fv_id,
-                f.ft_name, f.orderby,
-                IFNULL(pf.fv_text, fv.fv_value) AS fv_text
-            FROM {$_TABLES['shop.products']} p
-            LEFT JOIN {$_TABLES['shop.prodXfeat']} pf
-                ON pf.prod_id = p.id
-            LEFT JOIN {$_TABLES['shop.features']} f
-                ON f.ft_id = pf.ft_id
-            LEFT JOIN {$_TABLES['shop.features_values']} fv
-                ON fv.fv_id = pf.fv_id
-            WHERE p.id = $prod_id AND pf.prod_id IS NOT NULL
-            ORDER BY f.orderby ASC";
-        //echo $sql;die;
-        $res = DB_query($sql);
-        while ($A = DB_fetchArray($res, false)) {
-            $grps[$A['ft_id']] = new self($A);
+        $qb = Database::getInstance()->conn->createQueryBuilder();
+        $qb->select(
+            'pf.prod_id', 'pf.ft_id', 'pf.fv_id',
+            'f.ft_name', 'f.orderby',
+            'IFNULL(pf.fv_text, fv.fv_value) AS fv_text'
+        )
+           ->from($_TABLES['shop.products'], 'p')
+           ->leftJoin('p', $_TABLES['shop.prodXfeat'], 'pf', 'pf.prod_id = p.id')
+           ->leftJoin('pf', $_TABLES['shop.features'], 'f', 'f.ft_id = pf.ft_id')
+           ->leftJoin('pf', $_TABLES['shop.features_values'], 'fv', 'fv.fv_id = pf.fv_id')
+           ->where('p.id = :prod_id')
+           ->andWhere('pf.prod_id IS NOT NULL')
+           ->orderBy('f.orderby', 'ASC')
+           ->setParameter('prod_id', $prod_id, Database::INTEGER);
 
+        try {
+            $stmt = $qb->execute();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $stmt = false;
+        }
+        if ($stmt) {
+            while ($A = $stmt->fetchAssociative()) {
+                $grps[$A['ft_id']] = new self($A);
+            }
         }
             //Cache::set($cache_key, $grps, self::$TAGS);
         //}
@@ -632,29 +677,41 @@ class Feature
      * @param   string  $custom_text    Optional override text
      * @return  boolean     True on success, False on error
      */
-    public function addProduct($prod_id, $fv_id, $custom_text='')
+    public function addProduct(int $prod_id, int $fv_id, ?string $custom_text=NULL) : bool
     {
         global $_TABLES;
 
-        $prod_id = (int)$prod_id;
-        $fv_id = (int)$fv_id;
         if (!empty($custom_text)) {
             // Override the text and set the FV ID to zero.
-            $text = "'" . DB_escapeString($custom_text) . "'";
+            $text = $custom_text;
             $fv_id = 0;
         } else {
             // No custom text and use the FV ID provided.
-            $text = 'NULL';
+            $text = NULL;
         }
-        $sql = "INSERT INTO {$_TABLES['shop.prodXfeat']} SET
-            prod_id = $prod_id,
-            ft_id = {$this->getID()},
-            fv_id = {$fv_id},
-            fv_text = $text";
-        $res = DB_query($sql,1);
-        $err = DB_error($res);
-        return $err === NULL ? true : false;
+        try {
+            Database::getInstance()->conn->insert(
+                $_TABLES['shop.prodXfeat'],
+                array(
+                    'prod_id' => $prod_id,
+                    'ft_id' => $this->getID(),
+                    'fv_id' => $fv_id,
+                    'fv_text' => $text,
+                ),
+                array(
+                    Database::INTEGER,
+                    Database::INTEGER,
+                    Database::INTEGER,
+                    Database::STRING,
+                )
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return false;
+        }
+        return true;
     }
+
 
     /**
      * Update an existing product->feature mapping.
@@ -665,27 +722,41 @@ class Feature
      * @param   string  $custom_text    Optional override text
      * @return  boolean     True on success, False on error
      */
-    public function updateProduct($prod_id, $fv_id, $custom_text='')
+    public function updateProduct(int $prod_id, int $fv_id, ?string $custom_text=NULL) : bool
     {
         global $_TABLES;
 
-        $prod_id = (int)$prod_id;
-        $fv_id = (int)$fv_id;
         if (!empty($custom_text)) {
             // Override the text and set the FV ID to zero.
-            $text = "'" . DB_escapeString($custom_text) . "'";
+            $text = $custom_text;
             $fv_id = 0;
         } else {
             // No custom text and use the FV ID provided.
-            $text = 'NULL';
+            $text = NULL;
         }
-        $sql = "UPDATE {$_TABLES['shop.prodXfeat']} SET
-            fv_id = {$fv_id},
-            fv_text = $text
-            WHERE prod_id = $prod_id AND ft_id = {$this->getID()}";
-        $res = DB_query($sql,1);
-        $err = DB_error($res);
-        return $err === NULL ? true : false;
+        try {
+            Database::getInstance()->conn->update(
+                $_TABLES['shop.prodXfeat'],
+                array(
+                    'fv_id' => $fv_id,
+                    'fv_text' => $text,
+                ),
+                array(
+                    'prod_id' => $prod_id,
+                    'ft_id' => $this->getID(),
+                ),
+                array(
+                    Database::INTEGER,
+                    Database::STRING,
+                    Database::INTEGER,
+                    Database::INTEGER,
+                )
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return false;
+        }
+        return true;
     }
 
 
@@ -697,18 +768,23 @@ class Feature
      * @param   integer $ft_id      Feature record ID, -1 for all
      * @return  boolean     True on success, False on error
      */
-    public static function deleteProduct($prod_id, $ft_id = -1)
+    public static function deleteProduct(int $prod_id, ?int $ft_id = NULL) : bool
     {
         global $_TABLES;
 
-        $args = array('prod_id');
-        $vals = array((int)$prod_id);
-        if ($ft_id > -1) {
-            $args[] = 'ft_id';
-            $vals[] = (int)$ft_id;
+        $values = array('prod_id' => $prod_id);
+        $types = array(Database::INTEGER);
+        if ($ft_id !== NULL) {
+            $values['ft_id'] = $ft_id;
+            $types[] = Database::INTEGER;
         }
-        DB_delete($_TABLES['shop.prodXfeat'], $args, $vals);
-        return DB_error() ? false : true;
+        try {
+            Database::getInstance()->conn->delete($_TABLES['shop.prodXfeat'], $values, $types);
+            return true;
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return false;
+        }
     }
 
 
@@ -747,22 +823,37 @@ class Feature
      * @param   integer $dst    Destination product record ID
      * @return  boolean     True on success, False on error
      */
-    public static function cloneProduct($src, $dst)
+    public static function cloneProduct(int $src, int $dst) : bool
     {
         global $_TABLES;
 
-        $src = (int)$src;
-        $dst = (int)$dst;
+        $db = Database::getInstance();
+
         // Clear target categories, the Home category is probably there.
-        DB_delete($_TABLES['shop.prodXfeat'], 'prod_id', $dst);
-        $sql = "INSERT INTO {$_TABLES['shop.prodXfeat']}
-            (prod_id, ft_id, fv_id, fv_text)
-            SELECT $dst, ft_id, fv_id, fv_text FROM {$_TABLES['shop.prodXfeat']}
-            WHERE prod_id = $src";
-        DB_query($sql, 1);
-        return DB_error() ? false : true;
+        try {
+            $db->conn->delete(
+                $_TABLES['shop.prodXfeat'],
+                array('prod_id' => $dst),
+                array(Database::INTEGER)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
+        try {
+            $db->conn->executeStatement(
+                "INSERT INTO {$_TABLES['shop.prodXfeat']}
+                (prod_id, ft_id, fv_id, fv_text)
+                SELECT ?, ft_id, fv_id, fv_text FROM {$_TABLES['shop.prodXfeat']}
+                WHERE prod_id = ?",
+                array($dst, $src),
+                array(Database::INTEGER, Database::INTEGER)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return false;
+        }
+        return true;
     }
 
 }
 
-?>

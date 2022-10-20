@@ -5,13 +5,15 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2018-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.4.1
+ * @version     v1.4.2
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 use Shop\Models\Dates;
 
 
@@ -86,17 +88,22 @@ class Sales
      * @param   integer $id     DB record ID
      * @return  boolean     True on success, False on failure
      */
-    public function Read($id)
+    public function Read(int $id) : bool
     {
         global $_TABLES;
 
-        $sql = "SELECT *
-                FROM {$_TABLES['shop.sales']}
-                WHERE id = $id";
-        $res = DB_query($sql);
-        if ($res) {
-            $A = DB_fetchArray($res, false);
-            $this->setVars($A);
+        try {
+            $row = Database::getInstance()->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.sales']} WHERE id = ?",
+                array($id),
+                array(Database::INTEGER)
+            )->fetchAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $row = false;
+        }
+        if (is_array($row)) {
+            $this->setVars($row);
             return true;
         }
         return false;
@@ -182,13 +189,23 @@ class Sales
             if ($sales[$type][$item_id] === NULL) {
                 // If not found in cache
                 $sales[$type][$item_id] = array();
-                $sql = "SELECT * FROM {$_TABLES['shop.sales']}
-                        WHERE item_type = '$type' AND item_id = {$item_id}
-                        ORDER BY start ASC";
-                //echo $sql;die;
-                $res = DB_query($sql);
-                while ($A = DB_fetchArray($res, false)) {
-                    $sales[$type][$item_id][] = new self($A);
+
+                try {
+                    $stmt = Database::getInstance()->conn->executeQuery(
+                        "SELECT * FROM {$_TABLES['shop.sales']}
+                        WHERE item_type = ? AND item_id = ?
+                        ORDER BY start ASC",
+                        array($type, $item_id),
+                        array(Database::STRING, Database::INTEGER)
+                    );
+                } catch (\Throwable $e) {
+                    Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                    $stmt = false;
+                }
+                if ($stmt) {
+                    while ($A = $stmt->fetchAssociative()) {
+                        $sales[$type][$item_id][] = new self($A);
+                    }
                 }
                 Cache::set($cache_key, $sales[$type][$item_id], self::$base_tag);
             }
@@ -367,34 +384,46 @@ class Sales
             $this->setVars($A, false);
         }
 
-        // Insert or update the record, as appropriate.
-        if ($this->isNew()) {
-            $sql1 = "INSERT INTO {$_TABLES['shop.sales']}";
-            $sql3 = '';
-        } else {
-            $sql1 = "UPDATE {$_TABLES['shop.sales']}";
-            $sql3 = " WHERE id={$this->sale_id}";
-        }
-        $sql2 = " SET item_type = '" . DB_escapeString($this->item_type) . "',
-                item_id = '{$this->item_id}',
-                name = '" . DB_escapeString($this->name) . "',
-                start = '{$this->StartDate->toMySQL(true)}',
-                end = '{$this->EndDate->toMySQL(true)}',
-                discount_type = '" . DB_escapeString($this->discount_type) . "',
-                amount = '{$this->amount}'";
-        $sql = $sql1 . $sql2 . $sql3;
-        //echo $sql;die;
-        DB_query($sql);
-        $err = DB_error();
-        if ($err == '') {
-            Cache::clear(self::$base_tag);
+        $values = array(
+            'item_type' => $this->item_type,
+            'item_id' => $this->item_id,
+            'name' => $this->name,
+            'start' => $this->StartDate->toMySQL(true),
+            'end' => $this->EndDate->toMySQL(true),
+            'discount_type' => $this->discount_type,
+            'amount' => $this->amount,
+        );
+        $types = array(
+            Database::STRING,
+            Database::INTEGER,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::INTEGER,
+            Database::STRING,
+        );
+        $db = Database::getInstance();
+        try {
+            // Insert or update the record, as appropriate.
             if ($this->isNew()) {
-                $this->sale_id = DB_insertID();
+                $db->conn->insert($_TABLES['shop.sales'], $values, $types);
+                $this->sale_id = $db->conn->lastInsertId();
+            } else {
+                $types[] = Database::INTEGER;   // for sale_id
+                $db->conn->update(
+                    $_TABLES['shop.sales'],
+                    $values,
+                    array('id' => $this->sale_id),
+                    $types
+                );
             }
-            return true;
-        } else {
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
+
+        Cache::clear(self::$base_tag);
+        return true;
     }
 
 
@@ -404,7 +433,7 @@ class Sales
      * @param   integer $id     Record ID
      * @return  boolean     True on success, False on invalid ID
      */
-    public static function Delete($id)
+    public static function Delete(int $id) : bool
     {
         global $_TABLES;
 
@@ -412,7 +441,16 @@ class Sales
             return false;
         }
 
-        DB_delete($_TABLES['shop.sales'], 'id', $id);
+        try {
+            Database::getInstance()->conn->delete(
+                $_TABLES['shop.sales'],
+                array('id' => $id),
+                array(Database::INTEGER)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return false;
+        }
         Cache::clear(self::$base_tag);
         return true;
     }
@@ -426,12 +464,25 @@ class Sales
     {
         global $_TABLES, $_CONF;
 
-        if (Config::get('purge_sale_prices') > -1) {
-            $days = (int)Config::get('purge_sale_prices');
-            $now = $_CONF['_now']->toMySQL(true);
-            $sql = "DELETE FROM {$_TABLES['shop.sales']}
-                    WHERE end < DATE_SUB('$now', INTERVAL $days DAY)";
-            DB_query($sql);
+        
+        $days = (int)Config::get('purge_sale_prices');
+        if ($days > -1) {
+            try {
+                Database::getInstance()->conn->executeStatement(
+                    "DELETE FROM {$_TABLES['shop.sales']}
+                    WHERE end < DATE_SUB(?, INTERVAL ? DAY)",
+                    array(
+                        $_CONF['_now']->toMySQL(true),
+                        $days
+                    ),
+                    array(
+                        Database::STRING,
+                        Database::INTEGER,
+                    )
+                );
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            }
         }
     }
 
@@ -448,7 +499,7 @@ class Sales
 
         // If there are no products defined, return a formatted error message
         // instead of the form.
-        if (DB_count($_TABLES['shop.products']) == 0) {
+        if (Database::getInstance()->getCount($_TABLES['shop.products']) == 0) {
             return SHOP_errorMessage($LANG_SHOP['todo_noproducts']);
         }
 

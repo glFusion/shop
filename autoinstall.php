@@ -3,9 +3,9 @@
  * Automatic installation functions for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.4.2
  * @since       v0.4.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -18,6 +18,7 @@ require_once __DIR__  . '/functions.inc';
 require_once __DIR__ . '/sql/mysql_install.php';
 /** Include default values */
 require_once __DIR__ . '/install_defaults.php';
+use glFusion\Database\Database;
 use glFusion\Log\Log;
 
 global $_CONF;
@@ -282,15 +283,16 @@ function plugin_postinstall_shop($upgrade=false)
 
         // Load the sample data. This can be replaced by Paypal data later.
         if (is_array($_SHOP_SAMPLEDATA)) {
+            $db = Database::getInstance();
             Log::write('shop_system', Log::INFO, "Loading sample data");
             foreach ($_SHOP_SAMPLEDATA as $sql) {
-                DB_query($sql, 1);
-                if (DB_error()) {
-                    Log::write('shop_system', Log::ERROR, "Sample Data SQL Error: $sql");
+                try {
+                    $db->conn->executeStatement($sql);
+                } catch (\Throwable $e) {
+                    Log::write('system', Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
                 }
             }
         }
     }
 }
 
-?>

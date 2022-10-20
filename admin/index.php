@@ -956,7 +956,7 @@ case 'configreport':
     break;
 
 case 'editshipper':
-    $S = new \Shop\Shipper($actionval);
+    $S = new \Shop\Shipper((int)$actionval);
     $content .= Shop\Menu::adminShipping('shipping');
     $content .= $S->Edit();
     break;
