@@ -1,24 +1,20 @@
-{# begin {templatelocation} #}
-    <table style="width:100%;border-collapse: collapse;">
-      <tbody>
-      <tr>
-        <td colspan="2">
-          {$LANG_SHOP['tracking_info']}:
-        </td>
-      </tr>
+<table style="width:100%;border-collapse: collapse;">
+	<tbody>
+		<tr>
+			<td colspan="2">{$LANG_SHOP['tracking_info']}:</td>
+		</tr>
 <!-- BEGIN trackingPackages -->
-      <tr>
-        <td style="min-width:30px;white-space:nowrap;">{shipment_date}&nbsp;&nbsp;</td>
-        <td style="width:99%;">{shipper_name}
+		<tr>
+			<td style="min-width:30px;white-space:nowrap;">{shipment_date}&nbsp;&nbsp;</td>
+			<td style="width:99%;">{shipper_name}
 {!if tracking_num}
-        ,&nbsp;{$LANG_SHOP['tracking']}:&nbsp;
+				,&nbsp;{$LANG_SHOP['tracking']}:&nbsp;
 {!if tracking_url}
-        {tracking_url}
+				{tracking_url}
 {!endif}
 {!endif}
-        </td>
-      </tr>
+			</td>
+		</tr>
 <!-- END trackingPackages -->
-      </tbody>
-    </table>
-{# end {templatelocation} #}
+	</tbody>
+</table>
