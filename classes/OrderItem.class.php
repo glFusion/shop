@@ -3,15 +3,16 @@
  * Class to manage order line items.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018-2021 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.4.1
+ * @version     v1.6.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
+use glFusion\Database\Database;
 use Shop\Models\Stock;
 use Shop\Models\ProductCheckbox;
 
@@ -291,11 +292,18 @@ class OrderItem
         global $_TABLES;
 
         $items = array();
-        $sql = "SELECT * FROM {$_TABLES['shop.orderitems']}
-                WHERE order_id = '" . DB_escapeString($order_id) . "'";
-        $res = DB_query($sql);
-        if ($res && DB_numRows($res) > 0) {
-            while ($A = DB_fetchArray($res, false)) {
+        try {
+            $stmt = Database::getInstance()->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.orderitems']} WHERE order_id = ?",
+                array($order_id),
+                array(Database::STRING)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $stmt = false;
+        }
+        if ($stmt) {
+            while ($A = $stmt->fetchAssociative()) {
                 $items[$A['id']] = self::fromArray($A);
                 $items[$A['id']]->unTaint();
             }
@@ -310,17 +318,23 @@ class OrderItem
      * @param   integer $rec_id     DB record ID of item
      * @return  boolean     True on success, False on failure
      */
-    public function Read($rec_id)
+    public function Read(int $rec_id) : bool
     {
         global $_SHOP_CONF, $_TABLES;
 
         $rec_id = (int)$rec_id;
-        $sql = "SELECT * FROM {$_TABLES['shop.orderitems']}
-                WHERE id = $rec_id";
-        //echo $sql;die;
-        $res = DB_query($sql);
-        if ($res) {
-            $this->setVars(DB_fetchArray($res, false));
+        try {
+            $row = Database::getInstance()->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.orderitems']} WHERE id = ?",
+                array($rec_id),
+                array(Database::INTEGER)
+            )->fetchAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $row = false;
+        }
+        if (is_array($row)) {
+            $this->setVars($row);
             $this->options = OrderItemOption::getOptionsForItem($this);
             return true;
         } else {
@@ -591,7 +605,7 @@ class OrderItem
      * @param   array   $A  Optional array of data to save
      * @return  boolean     True on success, False on DB error
      */
-    public function Save($A= NULL)
+    public function Save(?array $A= NULL) : bool
     {
         global $_TABLES;
 
@@ -603,56 +617,84 @@ class OrderItem
         //$shipping = $this->Product->getShipping($this->quantity);
         $shipping = 0;
         $handling = $this->getProduct()->getHandling($this->quantity);
-
-        if ($this->id > 0) {
-            $sql1 = "UPDATE {$_TABLES['shop.orderitems']} ";
-            $sql3 = " WHERE id = '{$this->id}'";
-        } else {
-            $sql1 = "INSERT INTO {$_TABLES['shop.orderitems']} ";
-            $sql3 = '';
+        $values = array(
+            'order_id' => $this->order_id,
+            'product_id' => $this->product_id,
+            'variant_id' => $this->variant_id,
+            'sku' => $this->sku,
+            'description' => $this->dscp,
+            'quantity' => $this->quantity,
+            'qty_discount' => $this->qty_discount,
+            'base_price' => $this->base_price,
+            'price' => $this->price,
+            'net_price' => $this->net_price,
+            'taxable' => $this->taxable,
+            'token' => $this->token,
+            'options_text' => @json_encode($this->options_text),
+            'extras' => @json_encode($this->extras),
+            'shipping' => $this->shipping,
+            'shipping_units' => $this->shipping_units,
+            'shipping_weight' => $this->shipping_weight,
+            'tax' => $this->getTax(),
+            'tax_rate' => $this->getTaxRate(),
+            //'options' => $this->options,
+            //'handling' => $handling,
+        );
+        $types = array(
+            Database::STRING,
+            Database::STRING,
+            Database::INTEGER,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::INTEGER,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+        );
+        // add an expiration date if appropriate
+        if ($this->getProduct()->getExpiration() > 0) {
+            $values['expiration'] = (string)($purchase_ts + ($this->Product->getExpiration() * 86400));
+            $types[] = Database::STRING;
         }
+
         $dc_pct = $this->getOrder()->getDiscountPct() / 100;
         if ($dc_pct > 0 && $this->getProduct()->canApplyDiscountCode()) {
             $this->applyDiscountPct($dc_pct);
         }
-        $sql2 = "SET order_id = '" . DB_escapeString($this->order_id) . "',
-                product_id = '" . DB_escapeString($this->product_id) . "',
-                variant_id = '" . (int)$this->variant_id . "',
-                sku = '" . DB_escapeString($this->sku) . "',
-                description = '" . DB_escapeString($this->dscp) . "',
-                quantity = '" . (float)$this->quantity. "',
-                qty_discount = '" . (float)$this->qty_discount. "',
-                base_price = '" . (float)$this->base_price. "',
-                price = '" . (float)$this->price . "',
-                net_price = '" . (float)$this->net_price . "',
-                taxable = '" . (int)$this->taxable. "',
-                token = '" . DB_escapeString($this->token) . "',
-                options_text = '" . DB_escapeString(@json_encode($this->options_text)) . "',
-                extras = '" . DB_escapeString(json_encode($this->extras)) . "',
-                shipping = {$this->shipping},
-                shipping_units = {$this->shipping_units},
-                shipping_weight = {$this->shipping_weight},
-                tax = {$this->getTax()},
-                tax_rate = {$this->getTaxRate()}";
-                //options = '" . DB_escapeString($this->options) . "',
-                //handling = {$handling},
-            // add an expiration date if appropriate
-        if ($this->getProduct()->getExpiration() > 0) {
-            $sql2 .= ", expiration = " . (string)($purchase_ts + ($this->Product->getExpiration() * 86400));
-        }
-        $sql = $sql1 . $sql2 . $sql3;
-        Log::write('shop_system', Log::DEBUG, $sql);
-        DB_query($sql, 1);
-        if (!DB_error()) {
-            //Cache::deleteOrder($this->order_id);
-            if ($this->id == 0) {
-                $this->id = DB_insertID();
+
+        $db = Database::getInstance();
+        try {
+            if ($this->id > 0) {
+                $types[] = Database::INTEGER;
+                $db->conn->update(
+                    $_TABLES['shop.orderitems'],
+                    $values,
+                    array('id' => $this->id),
+                    $types
+                );
+            } else {
+                $db->conn->insert(
+                    $_TABLES['shop.orderitems'],
+                    $values,
+                    $types
+                );
+                $this->id = $db->conn->lastInsertId();
                 return $this->saveOptions();
             }
             $this->_tainted = false;
             return true;
-        } else {
-            Log::write('shop_system', Log::ERROR, 'SQL Error: ' . $sql);
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
     }
@@ -1272,7 +1314,15 @@ class OrderItem
         $P = $this->getProduct();
         $P->setVariant($this->Variant)
           ->reserveStock($this->getQuantity() * -1);
-        DB_delete($_TABLES['shop.orderitems'], 'id', $this->getID());
+        try {
+            Database::getInstance()->conn->delete(
+                $_TABLES['shop.orderitems'],
+                array('id' => $this->getID()),
+                array(Database::INTEGER)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
         OrderItemOption::deleteItem($this->getID());
     }
 

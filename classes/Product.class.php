@@ -12,6 +12,9 @@
  * @filesource
  */
 namespace Shop;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
+use Shop\Config;
 use Shop\Models\ProductType;
 use Shop\Models\Dates;
 use Shop\Models\Views;
@@ -19,7 +22,6 @@ use Shop\Models\Stock;
 use Shop\Models\IPN;
 use Shop\Models\ProductCheckbox;
 use Shop\Models\ProductVariantInfo;
-use Shop\Log;
 
 
 /**
@@ -441,10 +443,10 @@ class Product
         } else {
             if (!array_key_exists($id, $P)) {
                 // Product internal to this plugin
-                if ($_SHOP_CONF['use_sku']) {
+                if (Config::get('use_sku')) {
                     $P[$id] = self::getBySKU($item[0]);
                 } else {
-                    $P[$id] = self::getByID($item[0]);
+                    $P[$id] = self::getByID((int)$item[0]);
                 }
                 if (isset($item[1])) {
                     $P[$id]->setSelectedOptions($item[1]);
@@ -462,7 +464,7 @@ class Product
      * @param   array   $A  DB record
      * @return  object      Product object
      */
-    private static function _getInstance($A)
+    private static function _getInstance(array $A) : self
     {
         if (isset($A['prod_type']) && $A['prod_type'] == ProductType::COUPON) {
             $P = new \Shop\Products\Coupon($A);
@@ -482,22 +484,29 @@ class Product
      * @param   string  $id SKU to locate
      * @return  object      Product object
      */
-    public static function getBySKU($id)
+    public static function getBySKU(string $id) : self
     {
         global $_TABLES;
 
         $parts = explode('-', $id);
-        $item_id = DB_escapeString($parts[0]);
-        $cache_key = self::_makeCacheKey($item_id);
+        $main_sku = $parts[0];
+        $cache_key = self::_makeCacheKey($main_sku);
         $A = Cache::get($cache_key);
         if (!is_array($A)) {
-            $sql = "SELECT * FROM {$_TABLES['shop.products']}
-                WHERE name = '$item_id'
-                LIMIT 1";
-            $res = DB_query($sql);
-            $A = DB_fetchArray($res, false);
-            if (isset($A['id'])) {
+            try {
+                $A = Database::getInstance()->conn->executeQuery(
+                    "SELECT * FROM {$_TABLES['shop.products']} WHERE name = ? LIMIT 1",
+                    array($main_sku),
+                    array(Database::STRING)
+                )->fetchAssociative();
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $A = false;
+            }
+            if (is_array($A) && isset($A['id'])) {
                 Cache::set($cache_key, $A, array(self::$TABLE));
+            } else {
+                $A = array();
             }
         }
         return self::_getInstance($A);
@@ -507,10 +516,10 @@ class Product
     /**
      * Get a product by the database ID
      *
-     * @param   integer $id     Item ID
+     * @param   string  $id     Item ID, may include options
      * @return  object      Product object
      */
-    public static function getByID($id)
+    public static function getByID(string $id) : self
     {
         global $_TABLES;
 
@@ -524,17 +533,36 @@ class Product
             $cache_key = self::_makeCacheKey($id);
             $A = Cache::get($cache_key);
             if (!is_array($A)) {
-                $sql = "SELECT * FROM {$_TABLES['shop.products']}
-                    WHERE id  = $id
-                    LIMIT 1";
-                $res = DB_query($sql);
-                $A = DB_fetchArray($res, false);
-                if (isset($A['id'])) {
+                try {
+                    $A = Database::getInstance()->conn->executeQuery(
+                        "SELECT * FROM {$_TABLES['shop.products']} WHERE id = ? LIMIT 1",
+                        array($id),
+                        array(Database::INTEGER)
+                    )->fetchAssociative();
+                } catch (\Throwable $e) {
+                    Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                    $A = false;
+                }
+                if (is_array($A) && isset($A['id'])) {
                     Cache::set($cache_key, $A, array(self::$TABLE));
+                } else {
+                    $A = array();
                 }
             }
             return self::_getInstance($A);
         }
+    }
+
+
+    /**
+     * Get a Product object given a database record array.
+     *
+     * @param   array   $A      Database record
+     * @return  object  Product object
+     */
+    public static function fromArray(array $A) : self
+    {
+        return self::_getInstance($A);
     }
 
 
@@ -544,7 +572,7 @@ class Product
      * @param   integer $cat_id Category ID
      * @return  array       Array of Product objects, keyed by ID
      */
-    public static function getIDsByCategory($cat_id)
+    public static function getIDsByCategory(int $cat_id) : array
     {
         global $_TABLES;
 
@@ -554,10 +582,18 @@ class Product
         //$retval = NULL;
         if (!is_array($retval)) {
             $retval = array();
-            $sql = "SELECT id FROM {$_TABLES['shop.products']} WHERE cat_id = $cat_id";
-            $res = DB_query($sql);
-            if ($res) {
-                while ($A = DB_fetchArray($res, false)) {
+            try {
+                $stmt = Database::getInstance()->conn->executeQuery(
+                    "SELECT id FROM {$_TABLES['shop.products']} WHERE cat_id = ?",
+                    array($cat_id),
+                    array(Database::INTEGER)
+                );
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $stmt = false;
+            }
+            if ($stmt) {
+                while ($A = $stmt->fetchAssociative()) {
                     $retval[] = $A['id'];
                 }
             }
@@ -574,7 +610,7 @@ class Product
      * @param   string|integer  $value  Product ID
      * @return  object  $this
      */
-    public function setID($value)
+    public function setID(string $value) : self
     {
         if (!self::isPluginItem($value)) {
             $value = (int)$value;
@@ -663,9 +699,9 @@ class Product
      * @param   boolean $fromDB     True if read from DB, false if from $_POST
      * @return  object  $this
      */
-    public function setVars($row, $fromDB=false)
+    public function setVars(array $row, ?bool $fromDB=NULL) : self
     {
-        if (!is_array($row)) return;
+        if (!is_array($row) || empty($row)) return $this;
 
         $this->id = $row['id'];
         $this->item_id = $row['id'];
@@ -749,7 +785,7 @@ class Product
      * @param   integer $id Optional ID.  Current ID is used if zero.
      * @return  boolean     True if a record was read, False on failure
      */
-    public function Read($id = 0)
+    public function Read(int $id = 0) : bool
     {
         global $_TABLES;
 
@@ -763,16 +799,17 @@ class Product
         $cache_key = self::_makeCacheKey($id);
         //$row = Cache::get($cache_key);
         //if ($row === NULL) {
-            $result = DB_query("SELECT *
-                        FROM {$_TABLES['shop.products']}
-                        WHERE id='$id'");
-            if (!$result || DB_numRows($result) != 1) {
-                return false;
-            } else {
-                $row = DB_fetchArray($result, false);
-            }
-        //}
-        if (!empty($row)) {
+        try {
+            $row = Database::getInstance()->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.products']} WHERE id = ?",
+                array($id),
+                array(Database::INTEGER)
+            )->fetchAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $row = false;
+        }
+        if (is_array($row)) {
             $this->isNew = false;
             $this->setVars($row, true)
                 ->loadOptions()
@@ -984,10 +1021,11 @@ class Product
      * @param   array   $A      Optional array of values from $_POST
      * @return  boolean         True if no errors, False otherwise
      */
-    public function Save($A = '')
+    public function Save(?array $A = NULL) : bool
     {
         global $_TABLES, $_SHOP_CONF, $LANG_SHOP;
 
+        $db = Database::getInstance();
         $old_rating_ena = $this->rating_enabled;    // save original setting
 
         // See if the name changed. If so, then the Variant skus need to be
@@ -1064,7 +1102,6 @@ class Product
         $status = $this->saveToDB();
         if ($status && $this->id > 0) {
             if ($this->isNew) {
-                //$this->id = DB_insertID();
                 if (!empty($nonce)) {
                     Images\Product::setProductID($nonce, $this->id);
                 }
@@ -1080,9 +1117,16 @@ class Product
                     $img_id = (int)$img_id;
                     if ($this->Images[$img_id]['orderby'] != $orderby) {
                         $this->Images[$img_id]['orderby'] = $orderby;
-                        DB_query("UPDATE {$_TABLES['shop.images']}
-                            SET orderby = $orderby
-                            WHERE img_id = $img_id");
+                        try {
+                            $db->conn->update(
+                                $_TABLES['shop.images'],
+                                array('orderby' => $orderby),
+                                array('img_id' => $img_id),
+                                array(Database::INTEGER, Database::INTEGER)
+                            );
+                        } catch (\Throwable $e) {
+                            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                        }
                     }
                     $orderby += 10;
                 }
@@ -1177,77 +1221,124 @@ class Product
      *
      * @return  boolean     True on success, False on error
      */
-    public function saveToDB()
+    public function saveToDB() : bool
     {
-        global $_TABLES;
+        global $_TABLES, $_CONF;
 
-        // Insert or update the record, as appropriate
-        if ($this->id > 0) {
-            Log::write('shop_system', Log::DEBUG, __METHOD__ . ": Preparing to update product id {$this->id}");
-            $sql1 = "UPDATE {$_TABLES['shop.products']} SET ";
-            $sql3 = " WHERE id='{$this->id}'";
-            // While we're here, change the existing Variant SKUs if the
-            // product SKU has changed.
-            if (empty($this->Errors) && !empty($this->old_sku) && $this->old_sku != $this->name) {
-                foreach ($this->getVariants() as $Variant) {
-                    $Variant->updateSKU($this->old_sku, $this->name);
+        $db = Database::getInstance();
+        //$options = @serialize($this->options);
+        $values = array(
+            'name' => $this->name,
+            'short_description'=>$this->short_description,
+            'description' => $this->description,
+            'keywords' => $this->keywords,
+            'price' => number_format($this->price, 2, '.', ''),
+            'prod_type' => $this->prod_type,
+            'weight' => number_format($this->weight, 2, '.', ''),
+            'file' => $this->filename,
+            'expiration' => $this->expiration,
+            'enabled' => $this->enabled,
+            'featured' => $this->featured,
+            'views' => $this->views,
+            'taxable' => $this->taxable,
+            'shipping_type' => $this->getShippingType(),
+            'shipping_amt' => $this->shipping_amt,
+            'shipping_units' => $this->shipping_units,
+            'comments_enabled' => $this->comments_enabled,
+            'rating_enabled' => $this->rating_enabled,
+            'show_random' => $this->show_random,
+            'show_popular' => $this->show_popular,
+            'track_onhand' => $this->track_onhand,
+            'oversell' => $this->oversell,
+            'qty_discounts' => @serialize($this->qty_discounts),
+            'custom' => $this->custom,
+            'avail_beg' => $this->avail_beg,
+            'avail_end' => $this->avail_end,
+            'brand_id' => $this->getBrandID(),
+            'supplier_id' => $this->getSupplierID(),
+            'supplier_ref' => $this->getSupplierRef(),
+            'lead_time' => $this->getLeadTime(),
+            'def_pv_id' => $this->getDefVariantID(),
+            'zone_rule' => $this->getZoneRuleID(),
+            'buttons'=> $this->btn_type,
+            'min_ord_qty' => $this->min_ord_qty,
+            'max_ord_qty' => $this->max_ord_qty,
+            'prod_rule' => $this->prod_rule,
+        );
+        $types = array(
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::INTEGER,
+            Database::STRING,
+            Database::STRING,
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::STRING,
+            Database::STRING,
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::STRING,
+            Database::STRING,
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::STRING,
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::INTEGER,
+        );
+
+        // Insert or update the record, as appropriatea
+        try {
+            if ($this->id > 0) {
+                // Updating an existing record.
+                Log::write('shop_system', Log::DEBUG, __METHOD__ . ": Preparing to update product id {$this->id}");
+                $types[] = Database::INTEGER;   // for product id
+                $db->conn->update(
+                    $_TABLES['shop.products'],
+                    $values,
+                    array('id' => $this->id),
+                    $types
+                );
+                // While we're here, change the existing Variant SKUs if the
+                // product SKU has changed.
+                if (empty($this->Errors) && !empty($this->old_sku) && $this->old_sku != $this->name) {
+                    foreach ($this->getVariants() as $Variant) {
+                        $Variant->updateSKU($this->old_sku, $this->name);
+                    }
                 }
-            }
-        } else {
-            Log::write('shop_system', Log::DEBUG, __METHOD__ . ': Preparing to save a new product.');
-            $sql1 = "INSERT INTO {$_TABLES['shop.products']} SET
-                dt_add = UTC_TIMESTAMP(), ";
-            $sql3 = '';
-        }
-
-        //$options = DB_escapeString(@serialize($this->options));
-        $sql2 = "name='" . DB_escapeString($this->name) . "',
-                short_description='" . DB_escapeString($this->short_description) . "',
-                description='" . DB_escapeString($this->description) . "',
-                keywords='" . DB_escapeString($this->keywords) . "',
-                price='" . number_format($this->price, 2, '.', '') . "',
-                prod_type='" . (int)$this->prod_type. "',
-                weight='" . number_format($this->weight, 2, '.', '') . "',
-                file='" . DB_escapeString($this->filename) . "',
-                expiration='" . (int)$this->expiration. "',
-                enabled='" . (int)$this->enabled. "',
-                featured='" . (int)$this->featured. "',
-                views='" . (int)$this->views. "',
-                taxable='" . (int)$this->taxable . "',
-                shipping_type='" . (int)$this->shipping_type . "',
-                shipping_amt = '{$this->shipping_amt}',
-                shipping_units = '{$this->shipping_units}',
-                comments_enabled='" . (int)$this->comments_enabled . "',
-                rating_enabled='" . (int)$this->rating_enabled . "',
-                show_random='" . (int)$this->show_random . "',
-                show_popular='" . (int)$this->show_popular . "',
-                track_onhand='{$this->track_onhand}',
-                oversell = '{$this->oversell}',
-                qty_discounts = '" . DB_escapeString(@serialize($this->qty_discounts)) . "',
-                custom='" . DB_escapeString($this->custom) . "',
-                avail_beg='" . DB_escapeString($this->avail_beg) . "',
-                avail_end='" . DB_escapeString($this->avail_end) . "',
-                brand_id ='" . $this->getBrandID() . "',
-                supplier_id ='" . $this->getSupplierID() . "',
-                supplier_ref = '{$this->getSupplierRef()}',
-                lead_time = '" . DB_escapeString($this->getLeadTime()) . "',
-                def_pv_id = {$this->getDefVariantID()},
-                zone_rule = {$this->getZoneRuleID()},
-                buttons= '" . DB_escapeString($this->btn_type) . "',
-                min_ord_qty = '" . (int)$this->min_ord_qty . "',
-                max_ord_qty = '" . (int)$this->max_ord_qty . "',
-                prod_rule = {$this->prod_rule}";
-        $sql = $sql1 . $sql2 . $sql3;
-        //echo $sql;die;
-        DB_query($sql, 1);
-        if (DB_error()) {
-            Log::write('shop_system', Log::ERROR, __METHOD__ . ": Error saving product. SQL=$sql");
-            return false;
-        } else {
-            if ($this->isNew) {
-                $this->id = DB_insertId();
+            } else {
+                // Inserting a new record.
+                Log::write('shop_system', Log::DEBUG, __METHOD__ . ': Preparing to save a new product.');
+                $values['dt_add'] = $_CONF['_now']->toMySQL(false);
+                $types[] = Database::STRING;
+                $db->conn->insert(
+                    $_TABLES['shop.products'],
+                    $values,
+                    $types
+                );
+                $this->id = $db->conn->lastInsertId();
             }
             return true;
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return false;
         }
     }
 
@@ -1262,7 +1353,7 @@ class Product
      * @uses    self::deleteButtons()
      * @return  boolean     True when deleted, False if invalid ID
      */
-    public function Delete()
+    public function Delete() : bool
     {
         global $_TABLES, $_SHOP_CONF;
 
@@ -1272,19 +1363,36 @@ class Product
             return false;
         }
 
+        $db = Database::getInstance();
         foreach ($this->Images as $prow) {
             $this->deleteImage($prow['img_id']);
         }
         // Make sure all related image records are deleted, in case some
         // image files are missing and not reflected in the Images array.
-        DB_delete($_TABLES['shop.images'], 'product_id', $this->id);
+        try {
+            $db->conn->delete(
+                $_TABLES['shop.images'],
+                array('product_id' => $this->id),
+                array(Database::INTEGER)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
 
         ProductVariant::deleteByProduct($this->id);
         Stock::deleteByProduct($this->id);
         Category::deleteProduct($this->id);
         Feature::deleteProduct($this->id);
         self::deleteButtons($this->id);
-        DB_delete($_TABLES['shop.products'], 'id', $this->id);
+        try {
+            $db->conn->delete(
+                $_TABLES['shop.products'],
+                array('id' => $this->id),
+                array(Database::INTEGER)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
         Cache::clear(self::$TABLE);
         Cache::clear('sitemap');
         PLG_itemDeleted($this->id, $_SHOP_CONF['pi_name']);
@@ -1301,11 +1409,15 @@ class Product
      *
      * @param   integer $item_id    Product ID to delete
      */
-    private static function deleteButtons($item_id)
+    private static function deleteButtons(int $item_id) : void
     {
         global $_TABLES;
 
-        DB_delete($_TABLES['shop.buttons'], 'item_id', $item_id);
+        Database::getInstance()->conn->delete(
+            $_TABLES['shop.buttons'],
+            array('item_id' => $item_id),
+            array(Database::INTEGER)
+        );
     }
 
 
@@ -1634,12 +1746,16 @@ class Product
      * @param   integer $item_id    ID of item to check
      * @return  boolean     True if used, False if not
      */
-    public static function isUsed($item_id)
+    public static function isUsed(int $item_id) : bool
     {
         global $_TABLES;
 
-        $item_id = (int)$item_id;
-        if (DB_count($_TABLES['shop.orderitems'], 'product_id', $item_id) > 0) {
+        if (Database::getInstance()->getCount(
+            $_TABLES['shop.orderitems'],
+            array('product_id'),
+            array($item_id),
+            array(Database::INTEGER)
+        ) > 0) {
             return true;
         } else {
             return false;
@@ -2057,11 +2173,19 @@ class Product
             } else {
                 $mode = $this->comments_enabled;
             }
+            /*$UC = \glFusion\Comments\UserComments::getEngine();
+            $Cmt = $UC->withSid($prod_id)
+                      ->withTitle($this->short_description)
+                      ->withType(Config::PI_NAME)
+                      ->withDeleteOption(plugin_ismoderator_shop())
+                      ->withCommentCode($mode);
+            $T->set_var('usercomments', $Cmt->render());
+             */
             $T->set_var(
                 'usercomments',
                 CMT_userComments(
-                    $prod_id, $this->short_description, $_SHOP_CONF['pi_name'],
-                    '', '', 0, 1, false, false, $mode
+                    $prod_id, $this->short_description, Config::PI_NAME,
+                    '', '', 0, 1, false, plugin_ismoderator_shop(), $mode
                 )
             );
         }
@@ -2089,10 +2213,15 @@ class Product
         $T->set_var('javascript', $JT->finish($JT->get_var('output')));
 
         // Update the hit counter
-        DB_query("UPDATE {$_TABLES['shop.products']}
-                SET views = views + 1
-                WHERE id = '$prod_id'");
-
+        try {
+            Database::getInstance()->conn->executeStatement(
+                "UPDATE {$_TABLES['shop.products']} SET views = views + 1 WHERE id = ?",
+                array($prod_id),
+                array(Database::STRING)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
         $retval .= $T->parse('output', 'product');
         $retval = PLG_outputFilter($retval, 'shop');
         return $retval;
@@ -2350,7 +2479,7 @@ class Product
      * @param   array   $opts       Array of option name=>value
      * @return  object  $this
      */
-    public function addSpecialField($fld_name, $fld_lang = '', $opts=array())
+    public function addSpecialField(string $fld_name, ?string $fld_lang=NULL, ?array $opts=NULL) : self
     {
         global $LANG_SHOP, $LANG_SHOP_HELP;
 
@@ -2373,8 +2502,10 @@ class Product
             'text' => $fld_lang,
             'help' => $fld_help,
         );
-        foreach ($opts as $opt_name=>$opt_data) {
-            $this->special_fields[$fld_name][$opt_name] = $opt_data;
+        if (is_array($opts)) {
+            foreach ($opts as $opt_name=>$opt_data) {
+                $this->special_fields[$fld_name][$opt_name] = $opt_data;
+            }
         }
 
         // If not provided in $opts, set the field type
@@ -2752,7 +2883,7 @@ class Product
      *
      * @return boolean     True on success, False on failure
      */
-    public function Duplicate()
+    public function Duplicate() : bool
     {
         global $_TABLES, $_SHOP_CONF;
 
@@ -3031,10 +3162,10 @@ class Product
      * Looks for a colon in the item number, which will indicate a plugin
      * item number formated as "pi_name:item_number:other_opts"
      *
-     * @param   mixed   $item_number    Item Number to check
+     * @param   string  $item_number    Item Number to check
      * @return  boolean     True if it's a plugin item, false if it's ours
      */
-    public static function isPluginItem($item_number)
+    public static function isPluginItem(string $item_number) : bool
     {
         if (strpos($item_number, ':') > 0) {
             return true;
@@ -3050,7 +3181,7 @@ class Product
      *
      * @return  string      Plugin name
      */
-    public function getPluginName()
+    public function getPluginName() : string
     {
         return $this->pi_name;
     }
@@ -3395,17 +3526,26 @@ class Product
         //$this->Images = Cache::get($cache_key);
         if ($this->Images === NULL) {
             $this->Images = array();
-            $sql = "SELECT img_id, filename, orderby
-                FROM {$_TABLES['shop.images']}
-                WHERE product_id='". $this->id . "'
-                ORDER BY orderby ASC";
-            $res = DB_query($sql);
-            while ($prow = DB_fetchArray($res, false)) {
-                if (self::imageExists($prow['filename'])) {
-                    $this->Images[$prow['img_id']] = $prow;
-                } else {
-                    // Might as well remove DB records for images that don't exist.
-                    $this->deleteImage($prow['img_id']);
+            try {
+                $rows = Database::getInstance()->conn->executeQuery(
+                    "SELECT img_id, filename, orderby FROM {$_TABLES['shop.images']}
+                    WHERE product_id = ?
+                    ORDER BY orderby ASC",
+                    array($this->id),
+                    array(Database::STRING)
+                )->fetchAllAssociative();
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $rows = false;
+            }
+            if (!empty($rows)) {
+                foreach ($rows as $row) {
+                    if (self::imageExists($row['filename'])) {
+                        $this->Images[$row['img_id']] = $row;
+                    } else {
+                        // Might as well remove DB records for images that don't exist.
+                        $this->deleteImage($row['img_id']);
+                    }
                 }
             }
             Cache::set($cache_key, $this->Images, self::$TABLE);
@@ -3442,20 +3582,26 @@ class Product
      * @param   integer $votes  New total number of votes
      * @return  boolean     True on success, False on DB error
      */
-    public static function updateRating($id, $rating, $votes)
+    public static function updateRating(string $id, float $rating, int $votes) : bool
     {
         global $_TABLES;
 
         $id = (int)$id;
         $rating = number_format($rating, 2, '.', '');
         $votes = (int)$votes;
-        $sql = "UPDATE {$_TABLES['shop.products']} SET
-            rating = $rating,
-            votes = $votes
-            WHERE id = $id";
-        DB_query($sql);
-        Cache::clear(self::$TABLE);
-        return DB_error() ? false : true;
+        try {
+            Database::getInstance()->conn->update(
+                $_TABLES['shop.products'],
+                array('rating' => $rating, 'votes' => $votes),
+                array('id' => $id),
+                array(Database::STRING, Database::INTEGER, Database::STRING)
+            );
+            Cache::clear(self::$TABLE);
+            return true;
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return false;
+        }
     }
 
 
@@ -3465,12 +3611,12 @@ class Product
      *
      * @return  boolean     True if orders table is empty
      */
-    public static function haveProducts()
+    public static function haveProducts() : bool
     {
         global $_TABLES;
 
         return (
-            DB_count($_TABLES['shop.products']) > 0
+            Database::getInstance()->getCount($_TABLES['shop.products']) > 0
         );
     }
 
@@ -3481,18 +3627,25 @@ class Product
      *
      * @return  array   Array of product objects
      */
-    public static function getAll()
+    public static function getAll() : array
     {
         global $_TABLES;
 
         $cache_key = 'getall_products';
         $retval = Cache::get($cache_key);
         if ($retval === NULL) {
-            $sql = "SELECT * FROM {$_TABLES['shop.products']}
-                ORDER BY name ASC";
-            $res = DB_query($sql);
-            while ($A = DB_fetchArray($res, false)) {
-                $retval[$A['id']] = self::getInstance($A);
+            try {
+                $stmt = Database::getInstance()->conn->executeQuery(
+                    "SELECT * FROM {$_TABLES['shop.products']} ORDER BY name ASC"
+                );
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $stmt = false;
+            }
+            if (!empty($stmt)) {
+                while ($A = $stmt->fetchAssociative()) {
+                    $retval[$A['id']] = self::getInstance($A);
+                }
             }
             Cache::set($cache_key, $retval, self::$TABLE);
         }
@@ -3696,32 +3849,49 @@ class Product
     {
         global $_TABLES;
 
-        $sql_vals  = array();
-        $ids = DB_escapeString($A['prod_ids']);
+        $db = Database::getInstance();
+        $qb = $db->conn->createQueryBuilder();
+        $ids = explode(',', $A['prod_ids']);
+        $count = 0;
 
         if (isset($A['supplier_id']) && $A['supplier_id'] > -1) {
-            $sql_vals[] = "supplier_id = " . (int)$A['supplier_id'];
+            $qb->set('supplier_id', ':sup_id')
+               ->setParameter('sup_id', $A['supplier_id'], Database::INTEGER);
+            $count++;
         }
         if (isset($A['brand_id']) && $A['brand_id'] > -1) {
-            $sql_vals[] = "brand_id = " . (int)$A['brand_id'];
+            $qb->set('brand_id', ':brand_id')
+               ->setParameter('brand_id', $A['brand_id'], Database::INTEGER);
+            $count++;
         }
         if (isset($A['price']) && $A['price'] !== '') {
-            $sql_vals[] = "price = " . (float)$A['price'];
+            $qb->set('price', ':price')
+               ->setParameter('price', $A['price'], Database::STRING);
+            $count++;
         }
         if (isset($A['taxable']) && $A['taxable'] > -1) {
-            $sql_vals[] = 'taxable = ' . ($A['taxable'] == 1 ? 1 : 0);
+            $qb->set('taxable', ':taxable')
+               ->setParameter('taxable', $A['taxable'], Database::INTEGER);
+            $count++;
         }
         if (isset($A['prod_type']) && $A['prod_type'] > -1) {
-            $sql_vals[] = "prod_type = " . (int)$A['prod_type'];
+            $qb->set('prod_type', ':prod_type')
+               ->setParameter('prod_type', $A['prod_type'], Database::INTEGER);
+            $count++;
         }
         if (isset($A['rule_id']) && $A['rule_id'] > -1) {
-            $sql_vals[] = "zone_rule = " . (int)$A['rule_id'];
+            $qb->set('rule_id', ':rule_id')
+               ->setParameter('rule_id', $A['rule_id'], Database::INTEGER);
+            $count++;
         }
-        if (!empty($sql_vals)) {
-            $sql_vals = implode(', ', $sql_vals);
-            DB_query("UPDATE {$_TABLES['shop.products']} SET " . $sql_vals .
-                " WHERE id IN ($ids)");
-            if (DB_error()) {
+        if ($count > 0) {
+            try {
+                $qb->update($_TABLES['shop.products'])
+                   ->where('id IN (:ids)')
+                   ->setParameter('ids', $ids, Database::PARAM_INT_ARRAY)
+                   ->execute();
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 return false;
             }
         }
@@ -3729,10 +3899,24 @@ class Product
         // If any categories were supplied, use them to replace any existing
         // ones for all submitted products.
         if (isset($A['selected_cats']) && !empty($A['selected_cats'])) {
-            $sql = "DELETE FROM {$_TABLES['shop.prodXcat']} WHERE product_id in ($ids)";
-            $res = DB_query($sql, 1);
-            if (!DB_error()) {
-                $prod_ids = explode(',', $A['prod_ids']);
+            try {
+                $db->conn->executeStatement(
+                    "DELETE FROM {$_TABLES['shop.prodXcat']} WHERE product_id IN (?)",
+                    array($ids),
+                    array(Database::PARAM_INT_ARRAY)
+                );
+                $status = true;
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $status = false;
+            }
+            try {
+                $stmt = $qb->execute();
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $stmt = false;
+            }
+            if ($status) {
                 $cat_ids = explode('|', $A['selected_cats']);
                 $vals = array();
                 foreach ($prod_ids as $prod_id) {
@@ -3744,11 +3928,16 @@ class Product
                 }
                 $sql = "INSERT IGNORE INTO {$_TABLES['shop.prodXcat']}
                     (product_id, cat_id) VALUES " . implode(',', $vals);
-                DB_query($sql, 1);
+                try {
+                    $db->conn->executeStatement($sql);
+                } catch (\Throwable $e) {
+                    Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                    return false;
+                }
             }
         }
 
-        Cache::clear(self::TABLE);
+        Cache::clear(self::$TABLE);
         return true;
     }
 
@@ -4215,15 +4404,21 @@ class Product
     private function _Validate()
     {
         global $_TABLES, $LANG_SHOP;
-        $errors = array();
-        $sku = DB_escapeString($this->name);
-        $sku_err = (int)DB_getItem(
-            $_TABLES['shop.products'],
-            'count(*)',
-            "name = '$sku' AND id <> {$this->id}"
-        );
 
-        if ($sku_err > 0) {
+        $errors = array();
+        $db = Database::getInstance();
+        try {
+            $row = $db->conn->executeQuery(
+                "SELECT count(*) AS cnt FROM {$_TABLES['shop.products']}
+                WHERE name = ? AND id <> ?",
+                array($this->name, $this->id),
+                array(Database::STRING, Database::INTEGER)
+            )->fetchAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $row = false;
+        }
+        if (is_array($row) && $row['cnt'] > 0) {
             $errors[] = $LANG_SHOP['err_dup_sku'];
         }
         return $errors;
@@ -4237,11 +4432,23 @@ class Product
      *
      * @return  integer     Product ID
      */
-    public static function getFirst()
+    public static function getFirst() : ?int
     {
         global $_TABLES;
 
-        return (int)DB_getItem($_TABLES['shop.products'], 'id');
+        try {
+            $row = Database::getInstance()->conn->executeQuery(
+                "SELECT id FROM {$_TABLES['shop.products']} ORDER BY id ASC LIMIT 1"
+            )->fetchAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $row = false;
+        }
+        if (is_array($row)) {
+            return $row['id'];
+        } else {
+            return NULL;
+        }
     }
 
 
@@ -4384,7 +4591,7 @@ class Product
      * @param   string|array    $cat_ids    Category IDs
      * @return  object  $this
      */
-    private function updateCategories($cat_ids)
+    private function updateCategories($cat_ids) : self
     {
         global $_TABLES;
 
@@ -4394,9 +4601,16 @@ class Product
             return $this;
         }
 
-        $sql = "DELETE FROM {$_TABLES['shop.prodXcat']} WHERE
-                product_id = '{$this->id}'";
-        DB_query($sql);
+        $db = Database::getInstance();
+        try {
+            $db->conn->delete(
+                $_TABLES['shop.prodXcat'],
+                array('product_id' => $this->id),
+                array(Database::INTEGER)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
 
         foreach ($cat_ids as $cat_id) {
             $cat_id = (int)$cat_id;
@@ -4406,8 +4620,11 @@ class Product
         }
         $sql = "INSERT IGNORE INTO {$_TABLES['shop.prodXcat']}
             (product_id, cat_id) VALUES " . implode(',', $vals);
-        DB_query($sql, 1);
-
+        try {
+            $db->conn->executeStatement($sql);
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
         return $this;
     }
 
