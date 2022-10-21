@@ -425,10 +425,9 @@ class Product
         if (is_array($A) && isset($A['id'])) {
             // A complete product record
             return self::_getInstance($A);
-        } else {
+        } elseif (is_string($A)) {
             // A single product ID
             $id = $A;
-            $idx = COM_sanitizeId($A);
         }
         if (!$id) {
             // Missing product ID
