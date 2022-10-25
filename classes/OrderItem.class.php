@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2018-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.6.0
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -357,7 +357,7 @@ class OrderItem
         $this->id = SHOP_getVar($A, 'id', 'integer', 0);
         $this->order_id = SHOP_getVar($A, 'order_id');
         $this->product_id = SHOP_getVar($A, 'product_id');
-        $this->setSKU(SHOP_getVar($A, 'sku'));
+        $this->setSKU(SHOP_getVar($A, 'sku', 'string'));
         $this->dscp = SHOP_getVar($A, 'description');
         $this->quantity = SHOP_getVar($A, 'quantity', 'integer', 0);
         $this->expiration = SHOP_getVar($A, 'expiration', 'integer', 0);
@@ -784,7 +784,7 @@ class OrderItem
      * @param   float   $disc   Discount to set
      * @return  object  $this
      */
-    public function setDiscount($disc)
+    public function setDiscount(float $disc) : self
     {
         if ($this->qty_discount != $disc) {
             $this->Taint();
@@ -918,7 +918,7 @@ class OrderItem
      * @param   float   $amt    Total shipping amount
      * @return  object  $this
      */
-    public function setShipping($amt)
+    public function setShipping(float $amt) : self
     {
         $this->shipping = (float)$amt;
         return $this;
@@ -930,7 +930,7 @@ class OrderItem
      *
      * @return  float       Total fixed shipping cost (per-product * quantity)
      */
-    public function getShipping()
+    public function getShipping() : float
     {
         return $this->shipping;
     }
@@ -969,7 +969,7 @@ class OrderItem
      *
      * @return  float       Total handling charge for this line item
      */
-    public function getHandling()
+    public function getHandling() : float
     {
         return (float)$this->handling;
     }
@@ -981,7 +981,7 @@ class OrderItem
      * @param   integer $qty    Item quantity
      * @return  object  $this
      */
-    public function setQtyShipped($qty)
+    public function setQtyShipped(int $qty) : self
     {
         $this->qty_shipped = (int)$qty;
         return $this;
@@ -993,7 +993,7 @@ class OrderItem
      *
      * @return  integer     Item quantity
      */
-    public function getQtyShipped()
+    public function getQtyShipped() : int
     {
         return (int)$this->qty_shipped;
     }
@@ -1005,7 +1005,7 @@ class OrderItem
      * @param   boolean $flag   True to prevent ordering this item
      * @return  object  $this
      */
-    public function setInvalid($flag)
+    public function setInvalid(bool $flag=true) : self
     {
         $this->invalid = $flag ? 1: 0;
         return $this;
@@ -1017,7 +1017,7 @@ class OrderItem
      *
      * @return  boolean     True if embargoed, False if not
      */
-    public function getInvalid()
+    public function getInvalid() : bool
     {
         return $this->invalid ? 1 : 0;
     }
@@ -1031,7 +1031,7 @@ class OrderItem
      * @param   string  $new    New currency
      * @return  object  $this
      */
-    public function convertCurrency($old, $new)
+    public function convertCurrency(string $old, string $new) : self
     {
         if ($new != $old) {
             foreach (array('price') as $fld) {
@@ -1050,7 +1050,7 @@ class OrderItem
      * @param   object  $Item2  Item object to check
      * @return  boolean     True if $Item2 matches this item, False if not
      */
-    public function Matches($Item2)
+    public function Matches(OrdeItem $Item2) : bool
     {
         if ($this->product_id != $Item2->product_id) {
             return false;
@@ -1065,11 +1065,12 @@ class OrderItem
      * @param   array   $updates    Array of fld_name=>new_value
      * @return  object  $this
      */
-    public function updateItem($updates)
+    public function updateItem(array $updates) : self
     {
         foreach ($updates as $fld=>$val) {
             $this->$fld = $val;
         }
+        return $this;
     }
 
 
@@ -1079,7 +1080,7 @@ class OrderItem
      * @param   array   $opts   Array of ProductOptionValues
      * @return  object  $this
      */
-    public function setOptionsFromPOV(array $opts) : object
+    public function setOptionsFromPOV(array $opts) : self
     {
         if (empty($opts)) {
             return $this;
@@ -1112,7 +1113,7 @@ class OrderItem
      * @param   array   $opts   Array of ProductOptionValues
      * @return  object  $this
      */
-    public function setOptions(array $opts) : object
+    public function setOptions(array $opts) : self
     {
         if (empty($opts)) {
             return $this;
@@ -1139,9 +1140,9 @@ class OrderItem
     /**
      * Save all the options to the database.
      *
-     * @retun   boolean     True on success, False on failure
+     * @return   boolean     True on success, False on failure
      */
-    public function saveOptions()
+    public function saveOptions() : bool
     {
         foreach ($this->options as $Opt) {
             $Opt->setOrderItemID($this->id);
@@ -1156,10 +1157,9 @@ class OrderItem
      *
      * @return  aray    Array of option objects
      */
-    public function getOptions()
+    public function getOptions() : array
     {
         return $this->options;
-        //return OrderItemOption::getOptionsForItem($this);
     }
 
 
@@ -1168,7 +1168,7 @@ class OrderItem
      *
      * @return  string      Comma-separated list of option IDs
      */
-    public function getOptionIdString()
+    public function getOptionIdString() : string
     {
         $ids = array();
         foreach ($this->getOptions() as $Opt) {
@@ -1184,10 +1184,9 @@ class OrderItem
      *      -- option1: option1_value
      *      -- option2: optoin2_value
      *
-     * @param  object  $item   Specific OrderItem object from the cart
      * @return string      Option display
      */
-    public function getOptionDisplay()
+    public function getOptionDisplay() : string
     {
         $retval = '';
         $opts = array();    // local var to collect option names and values
@@ -1219,7 +1218,15 @@ class OrderItem
     }
 
 
-    public function getExtraDisplay()
+    /**
+     * Get the display for extra items like text input fields.
+     * Returns a string like so:
+     *      -- option1: option1_value
+     *      -- option2: optoin2_value
+     *
+     * @return string      Option display
+     */
+    public function getExtraDisplay() : string
     {
         global $LANG_SHOP;
 
@@ -1247,7 +1254,7 @@ class OrderItem
      * @param   string|array    $value  Extra values array or json string
      * @return  object  $this
      */
-    public function setExtras($value)
+    public function setExtras($value) : self
     {
         if (is_string($value)) {    // convert to array
             $value = @json_decode($value, true);
@@ -1264,7 +1271,7 @@ class OrderItem
      * @param   string  $key    Item name
      * @return  mixed       Value of extras[$key], NULL if not set
      */
-    public function getExtra($key)
+    public function getExtra(string $key) : ?string
     {
         if (isset($thie->extras[$key])) {
             return $this->extras[$key];
@@ -1279,7 +1286,7 @@ class OrderItem
      *
      * @return  array       Array of all extra info
      */
-    public function getExtras()
+    public function getExtras() : array
     {
         return $this->extras;
     }
@@ -1291,7 +1298,7 @@ class OrderItem
      * @param   string|array    $value  Text values array or json string
      * @return  object  $this
      */
-    public function setOptionsText($value=array())
+    public function setOptionsText($value=array()) : self
     {
         if (is_string($value)) {    // convert to array
             $value = @json_decode($value, true);
@@ -1307,7 +1314,7 @@ class OrderItem
      *
      * @see     Cart::Remove()
      */
-    public function Delete()
+    public function Delete() : void
     {
         global $_TABLES;
 
@@ -1333,7 +1340,7 @@ class OrderItem
      *
      * @return  boolean     True if view access is granted, False if not
      */
-    public function canView()
+    public function canView() : bool
     {
         if ($this->id < 1) {
             return false;
@@ -1348,7 +1355,7 @@ class OrderItem
      *
      * @return  float       Total options price
      */
-    public function getOptionsPrice()
+    public function getOptionsPrice() : float
     {
         $PV = $this->getVariant();
         if ($PV->getID() > 0) {
@@ -1367,7 +1374,7 @@ class OrderItem
      *
      * @return  float       Current item price, including discounts and options
      */
-    public function getItemPrice()
+    public function getItemPrice() : float
     {
         if (!Product::isPluginItem($this->product_id)) {
             //$retval = $this->Product->getDiscountedPrice($this->quantity, $this->getOptionsPrice());
@@ -1385,7 +1392,7 @@ class OrderItem
      *
      * @return  float       Item base price
      */
-    public function getBasePrice()
+    public function getBasePrice() : float
     {
         return (float)$this->base_price;
     }
@@ -1397,7 +1404,7 @@ class OrderItem
      *
      * @return  float       Item price, including all options and qty discounts.
      */
-    public function getPrice()
+    public function getPrice() : float
     {
         return (float)$this->price;
     }
@@ -1408,7 +1415,7 @@ class OrderItem
      *
      * @return  float       Item net price.
      */
-    public function getNetPrice()
+    public function getNetPrice() : float
     {
         return (float)$this->net_price;
     }
@@ -1419,7 +1426,7 @@ class OrderItem
      *
      * @return  integer     Item quantity
      */
-    public function getQuantity()
+    public function getQuantity() : int
     {
         return (float)$this->quantity;
     }
@@ -1431,7 +1438,7 @@ class OrderItem
      *
      * @return  float   Item price * quantity
      */
-    public function getGrossExtension()
+    public function getGrossExtension() : float
     {
         return (float)$this->price * (float)$this->quantity;
     }
@@ -1442,7 +1449,7 @@ class OrderItem
      *
      * @return  float   Item price * quantity
      */
-    public function getNetExtension()
+    public function getNetExtension() : float
     {
         return (float)$this->net_price * (float)$this->quantity;
     }
@@ -1453,7 +1460,7 @@ class OrderItem
      *
      * @return  string      Product ID
      */
-    public function getProductId()
+    public function getProductId() : string
     {
         return $this->product_id;
     }
@@ -1464,7 +1471,7 @@ class OrderItem
      *
      * @return  integer     DB record ID
      */
-    public function getID()
+    public function getID() : int
     {
         return (int)$this->id;
     }
@@ -1476,7 +1483,7 @@ class OrderItem
      * @param   float   $price  New net price
      * @return  object  $this
      */
-    public function setNetPrice($price)
+    public function setNetPrice(float $price) : self
     {
         $this->net_price = (float)$price;
         return $this;
@@ -1488,7 +1495,7 @@ class OrderItem
      *
      * @return  string      Token string
      */
-    public function getToken()
+    public function getToken() : string
     {
         return $this->token;
     }
@@ -1499,7 +1506,7 @@ class OrderItem
      *
      * @return  integer     1 if item is taxable, 0 if not
      */
-    public function isTaxable()
+    public function isTaxable() : bool
     {
         return $this->taxable;
     }
@@ -1511,7 +1518,7 @@ class OrderItem
      * @param   float   $pct    Discount percent, as a whole number
      * @return  object  $this
      */
-    public function applyDiscountPct($pct)
+    public function applyDiscountPct(float $pct) : self
     {
         // Normally this should be a percentage, but in case a whole number
         // is provided, convert it
@@ -1533,7 +1540,7 @@ class OrderItem
      * @param   float   $tax    Tax amount
      * @return  object  $this
      */
-    public function setTax($tax)
+    public function setTax(float $tax) : self
     {
         $newtax = (float)$this->getOrder()->getCurrency()->RoundVal($tax);
         if ($this->tax != $newtax) {
@@ -1549,7 +1556,7 @@ class OrderItem
      *
      * @return  float       Total sales tax for the item
      */
-    public function getTax()
+    public function getTax() : float
     {
         return (float)$this->tax;
     }
@@ -1561,7 +1568,7 @@ class OrderItem
      * @param   float   $rate   Sales tax rate
      * @return  object  $this
      */
-    public function setTaxRate($rate)
+    public function setTaxRate(float $rate) : self
     {
         if ($this->tax_rate != $rate) {
             $this->Taint();
@@ -1581,7 +1588,7 @@ class OrderItem
      *
      * @return  float       Sales tax rate
      */
-    public function getTaxRate()
+    public function getTaxRate() : float
     {
         return (float)$this->tax_rate;
     }
@@ -1592,7 +1599,7 @@ class OrderItem
      *
      * @return  integer     1 if taxable, 0 if not
      */
-    public function getTaxable()
+    public function getTaxable() : bool
     {
         return $this->taxable ? 1 : 0;
     }
@@ -1603,7 +1610,7 @@ class OrderItem
      *
      * @return  string      Item SKU
      */
-    public function getSKU()
+    public function getSKU() : string
     {
         return $this->sku;
     }
@@ -1614,7 +1621,7 @@ class OrderItem
      *
      * @return  boolean     True if it is a plugin item, False if catalog
      */
-    public function isPluginItem()
+    public function isPluginItem() : bool
     {
         return Product::isPluginItem($this->product_id);
     }
@@ -1626,7 +1633,7 @@ class OrderItem
      * @param   string  $sku    SKU, empty if not known
      * @return  object  $this
      */
-    public function setSKU($sku='')
+    public function setSKU(?string $sku=NULL) : self
     {
         if (empty($sku) && !$this->isPluginItem()) {
             if ($this->variant_id > 0) {
@@ -1640,7 +1647,7 @@ class OrderItem
         if ($this->sku != $sku) {
             $this->Taint();
         }
-        $this->sku = $sku;
+        $this->sku = (string)$sku;
         return $this;
     }
 
