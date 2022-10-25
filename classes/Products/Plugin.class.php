@@ -255,7 +255,7 @@ class Plugin extends \Shop\Product
      * @param   array   $A      Optional record array to save
      * @return  boolean         True, always
      */
-    public function Save($A = '')
+    public function Save(?array $A = NULL) : bool
     {
         return true;
     }
@@ -266,7 +266,7 @@ class Plugin extends \Shop\Product
      *
      * @return  boolean     True, always
      */
-    public function Delete()
+    public function Delete() : bool
     {
         return true;
     }
@@ -421,7 +421,7 @@ class Plugin extends \Shop\Product
      * @param   mixed   $item_number    Item Number to check
      * @return  boolean     Always true for this class
      */
-    public static function isPluginItem($item_number)
+    public static function isPluginItem(string $item_number) : bool
     {
         return true;
     }

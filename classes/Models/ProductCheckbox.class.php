@@ -118,7 +118,6 @@ class ProductCheckbox
      */
     public function setVars(array $row) : self
     {
-        COM_errorLog("row: " . var_export($row,true));
         if (is_array($row)) {
             if (isset($row['x_id'])) {
                 $this->x_id = (int)$row['x_id'];
