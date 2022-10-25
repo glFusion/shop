@@ -331,7 +331,7 @@ function plugin_deletecomment_shop($cid, $id)
  * @param   integer $cid    Comment ID
  * @param   mixed   $id     Item ID
  */
-function plugin_editcomment_shop($cid, $id)
+function Xplugin_editcomment_shop($cid, $id)
 {
     echo COM_refresh(Config::get('url') . '/detail.php?id=' . $id);
     exit;
@@ -952,7 +952,7 @@ function plugin_itemdeleted_shop($id, $type)
  */
 function plugin_getcommenturlid_shop()
 {
-    return array(COM_buildUrl(Config::get('url') . '/detail.php'), 'product');
+    return array(COM_buildUrl(Config::get('url') . '/detail.php'), 'item_id');
 }
 
 
@@ -2131,8 +2131,6 @@ function plugin_getiteminfo_shop($id, $what, $uid=0, $options=array())
     foreach ($properties as $p) {
         switch ($p) {
         case 'title':
-            $fields[] = 'p.name';
-            break;
         case 'excerpt':
         case 'introtext':
             $fields[] = 'p.short_description';
@@ -2229,6 +2227,7 @@ function plugin_getiteminfo_shop($id, $what, $uid=0, $options=array())
         while ($A = $stmt->fetchAssociative()) {
             foreach ($properties as $p) {
                 switch ($p) {
+                case 'title':
                 case 'introtext':
                     $props[$p] = $A['short_description'];
                     break;
@@ -2237,9 +2236,6 @@ function plugin_getiteminfo_shop($id, $what, $uid=0, $options=array())
                     break;
                 case 'description':
                     $props[$p] = $A['short_description'] . ' ' . $A['description'];
-                    break;
-                case 'title':
-                    $props[$p] = $A['short_description'];
                     break;
                 case 'searchidx':
                     $props[$p] = $A['name'] . ' ' .
