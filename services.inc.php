@@ -209,7 +209,7 @@ function service_getUrl_shop($args, &$output, &$svc_msg)
  * @param   mixed   &$svc_msg   Service message
  * @return  integer     Status code
  */
-function service_addCartItem_shop($args, &$output, &$svc_msg)
+function service_addCartItem_shop(array $args, &$output, &$svc_msg)
 {
     if (!is_array($args) || !isset($args['item_number']) || empty($args['item_number'])) {
         return PLG_RET_ERROR;
@@ -542,7 +542,7 @@ if (
      */
     function service_addCartItem_paypal($args, &$output, &$svc_msg)
     {
-        return service_AddCartItem_shop($args, $output, $svc_msg);
+        return service_addCartItem_shop($args, $output, $svc_msg);
     }
 
     /**

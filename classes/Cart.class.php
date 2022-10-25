@@ -167,17 +167,17 @@ class Cart extends Order
 
 
     /**
-     *  Add a single item to the cart.
-     *  Formats the argument array to match the format used by the Order class
-     *  and calls that class's addItem() function to actually add the item.
+     * Add a single item to the cart.
+     * Formats the argument array to match the format used by the Order class
+     * and calls that class's addItem() function to actually add the item.
      *
-     *  Some values are straight from the item table, but may be overridden
-     *  to handle special cases or customization.
+     * Some values are straight from the item table, but may be overridden
+     * to handle special cases or customization.
      *
-     *  @param  array   $args   Array of arguments. item_number is required.
-     *  @return integer             Current item quantity
+     * @param  array   $args   Array of arguments. item_number is required.
+     * @return  integer     New item quantity, NULL on error
      */
-    public function addItem($args)
+    public function addItem(array $args) : ?int
     {
         global $_SHOP_CONF, $_USER;
 
@@ -186,7 +186,7 @@ class Cart extends Order
             ||
             $this->uid != $_USER['uid']
         ) {
-            return false;
+            return NULL;
         }
 
         $need_save = false;     // assume the cart doesn't need to be re-saved
@@ -271,7 +271,7 @@ class Cart extends Order
             $this->Items[$have_id]->setQuantity($new_quantity, $override);
             $this->Items[$have_id]->Save();     // to save updated order value
         } elseif ($quantity == 0) {
-            return false;
+            return NULL;
         } else {
             $tmp = array(
                 'item_id'   => $item_id,
@@ -932,7 +932,7 @@ class Cart extends Order
      *
      * @return  array   Array of invalid order item objects.
      */
-    public function updateItems()
+    public function updateItems() : array
     {
         global $LANG_SHOP;
 

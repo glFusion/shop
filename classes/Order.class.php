@@ -418,10 +418,11 @@ class Order
      * item record is added to the $Items array as 'data'
      *
      * @param   array   $args   Array of item data
+     * @return  integer     New item quantity, NULL on error
      */
-    public function addItem($args)
+    public function addItem(array $args) : ?int
     {
-        if (!is_array($args)) return;
+        if (!is_array($args)) return NULL;
 
         if (Config::get('aff_enabled') && $this->getReferralToken() == '') {
             $token = ReferralTag::get();
@@ -462,6 +463,7 @@ class Order
            ->Save();
         $this->Items[] = $OI;
         $this->calcTotalCharges();
+        return $OI->getQuantity();
     }
 
 
