@@ -11,9 +11,18 @@
  *              GNU Public License v2 or later
  * @filesource
  */
-namespace Shop;
+namespace Shop\Views;
 use Shop\Models\ProductType;
 use Shop\Models\Views;
+use Shop\Collections\ProductCollection;
+use Shop\Product;
+use Shop\Category;
+use Shop\Cart;
+use Shop\Currency;
+use Shop\Config;
+use Shop\Template;
+use Shop\Rules\Zone as ZoneRule;
+use Shop\Rules\Product as ProductRule;
 
 
 /**
@@ -76,7 +85,7 @@ class Catalog
      * @param   integer|string  $cat_id     Category ID/Plugin Name
      * @return  object      $this
      */
-    public function setCatID($cat_id)
+    public function setCatID(?int $cat_id) : self
     {
         if (is_numeric($cat_id) || empty($cat_id)) {
             $this->cat_id = (int)$cat_id;
@@ -93,7 +102,7 @@ class Catalog
      * @param   string  $query  Search string
      * @return  object  $this
      */
-    public function withQuery($query)
+    public function withQuery(string $query) : self
     {
         $this->query_str = $query;
         return $this;
@@ -167,10 +176,16 @@ class Catalog
             return $display;
         }
 
+        $PrColl = new ProductCollection;
+
         $cat_name = '';
+        $cat_dscp = '';
         $cat_img_url = '';
+        $brand_logo_url = '';
+        $prod_by_brand = '';
+        $brand_name = '';
+        $brand_dscp = '';
         $display = '';
-        $cat_sql = '';
         $Cat = Category::getInstance($this->cat_id);
         $Cart = Cart::getInstance();
 
@@ -185,29 +200,13 @@ class Catalog
         $RootCat = Category::getRoot();
         if ($this->brand_id == 0) {       // no brand limit, check for a category ID
             $cat_name = $Cat->getName();
-            $cat_desc = $Cat->getDscp();
+            $cat_dscp = $Cat->getDscp();
             $cat_img_url = $Cat->getImage()['url'];
-            if ($Cat->getParentID() > 0) {
-                // Get the sql to limit by category
-                $tmp = Category::getTree($Cat->getID());
-                $cats = array();
-                foreach ($tmp as $xcat_id=>$info) {
-                    $cats[] = $xcat_id;
-                }
-                if (!empty($cats)) {
-                    $cat_sql = implode(',', $cats);
-                    $cat_sql = " AND c.cat_id IN ($cat_sql)";
-                }
-            }
-            $brand_logo_url = '';
-            $prod_by_brand = '';
-            $brand_name = '';
-            $brand_dscp = '';
+            $PrColl->withCategoryId($Cat->getID());
         } else {
             $Sup = Supplier::getInstance($this->brand_id);
-            if ($Sup->getID() > 0) {
-                // Just borrow $cat_sql for this limit
-                $cat_sql = " AND p.brand_id = {$Sup->getID()}";
+            if ($Sup->getID() > 0) {    // to check validity
+                $PrColl->withBrandId($this->brand_id);
             }
             $brand_logo_url = $Sup->getImage()['url'];
             $prod_by_brand = sprintf($LANG_SHOP['prod_by_brand'], $Sup->getName());
@@ -231,15 +230,6 @@ class Catalog
             }
         }
 
-        // Now get categories from plugins
-        /*foreach ($_PLUGINS as $pi_name) {
-            $pi_cats = PLG_callFunctionForOnePlugin('plugin_shop_getcategories_' . $pi_name);
-            if (is_array($pi_cats) && !empty($pi_cats)) {
-                foreach ($pi_cats as $data) {
-                    $A[] = $data;
-                }
-            }
-        }*/
         if (count($A) > 1) {
             // Only include the categories if there is more than the root cat.
             $CT = new Template;
@@ -265,9 +255,7 @@ class Catalog
             $display .= $CT->parse('', 'catlinks');
         }
 
-        /*
-         * Create the product sort selector
-         */
+        // Set the product sorting and create the sort selector.
         if (isset($_REQUEST['sortby'])) {
             $sortby = $_REQUEST['sortby'];
         } else {
@@ -275,21 +263,22 @@ class Catalog
         }
         switch ($sortby){
         case 'price_l2h':   // price, low to high
-            $sql_sortby = 'price ASC';
+            $PrColl->orderBy('price', 'ASC');
             break;
         case 'price_h2l':   // price, high to low
-            $sql_sortby = 'price DESC';
+            $PrColl->orderBy('price', 'DESC');
             break;
         case 'top_rated':
-            $sql_sortby = 'rating DESC, votes DESC';
+            $PrColl->orderBy('rating', 'DESC')
+                   ->orderBy('votes', 'DESC');
             break;
         case 'newest':
-            $sql_sortby = 'dt_add DESC';
+            $PrColl->orderBy('dt_add', 'DESC');
             break;
         case 'name':
         default:
             $sortby = 'name';
-            $sql_sortby = 'short_description ASC';
+            $PrColl->orderBy('short_description', 'ASC');
             break;
         }
         $sortby_options = '';
@@ -298,42 +287,10 @@ class Catalog
             $sortby_options .= "<option value=\"$value\" $sel>$text</option>\n";
         }
 
-        // Get products from database. "c.enabled is null" is to allow products
-        // with no category defined
-        $today = $_CONF['_now']->format('Y-m-d', true);
-        $sql = "SELECT p.id, p.track_onhand, p.oversell, (
-                SELECT sum(stk.qty_onhand) FROM {$_TABLES['shop.stock']} stk
-                WHERE stk.stk_item_id = p.id
-            ) as qty_onhand
-            FROM {$_TABLES['shop.products']} p
-            LEFT JOIN {$_TABLES['shop.prodXcat']} pxc
-                ON p.id = pxc.product_id
-            LEFT JOIN {$_TABLES['shop.categories']} c
-                ON pxc.cat_id=c.cat_id
-            WHERE
-                p.enabled=1 AND
-                (
-                    (c.enabled=1 " . SEC_buildAccessSql('AND', 'c.grp_access') . ")
-                    OR c.enabled IS NULL
-                ) AND
-                p.avail_beg <= '$today' AND
-                p.avail_end >= '$today' $cat_sql";
-        //echo $sql;die;
-        //
         // Add search query, if any
         $search = '';
         if (!empty($this->query_str)) {
-            $search = DB_escapeString($this->query_str);
-            $fields = array(
-                'p.name', 'c.cat_name', 'p.short_description', 'p.description',
-                'p.keywords',
-            );
-            $srches = array();
-            foreach ($fields as $fname) {
-                $srches[] = "$fname like '%$search%'";
-            }
-            $srch = ' AND (' . implode(' OR ', $srches) . ')';
-            $sql .= $srch;
+            $PrColl->withSearchString($this->query_str);
         }
 
         $pagenav_args = array();
@@ -341,19 +298,8 @@ class Catalog
             $pagenav_args[] = 'category=' . $this->cat_id;
         }
 
-        $sql .= " GROUP BY p.id
-            HAVING p.track_onhand = 0 OR p.oversell < 2 OR qty_onhand > 0
-            ORDER BY $sql_sortby ";
-
-        // Count products from database
-        $sql_key = md5($sql);
-        $cache_key = Cache::makeKey('prod_cnt_' . $sql_key);
-        $count = Cache::get($cache_key);
-        if ($count === NULL) {
-            $res = DB_query($sql);
-            $count = DB_numRows($res);
-            Cache::set($cache_key, $count, array('products', 'categories'));
-        }
+        // Count total products from database.
+        $count = $PrColl->getCount();
 
         // If applicable, handle pagination of query
         $prod_per_page = Config::get('prod_per_page', 20);
@@ -369,22 +315,12 @@ class Catalog
             }
             // Add limit for pagination (if applicable)
             if ($count > $prod_per_page) {
-                $sql .= " LIMIT $start_limit, $prod_per_page";
+                $PrColl->withLimit($start_limit, $prod_per_page);
             }
         }
 
         // Re-execute query with the limit clause in place
-        $sql_key = md5($sql);
-        $cache_key = Cache::makeKey('prod_list_' . $sql_key);
-        $Products = Cache::get($cache_key);
-        if ($Products === NULL) {
-            $res = DB_query($sql);
-            $Products = array();
-            while ($A = DB_fetchArray($res, false)) {
-                $Products[] = Product::getById($A['id']);
-            }
-            Cache::set($cache_key, $Products, array('products', 'categories'));
-        }
+        $Products = $PrColl->getObjects();
 
         // Create product template
         $T->set_var(array(
@@ -408,7 +344,7 @@ class Catalog
         if (!empty($cat_name)) {
             $T->set_var(array(
                 'title'     => $cat_name,
-                'cat_desc'  => $cat_desc,
+                'cat_dscp'  => $cat_dscp,
                 'cat_img_url' => $cat_img_url,
             ) );
         } else {
@@ -533,12 +469,12 @@ class Catalog
         $notes = array();
         if ($Cat->getRuleId() > 0) {
             $have_rules = true;
-            $Rule = Rules\Zone::getInstance($Cat->getRuleId());
+            $Rule = ZoneRule::getInstance($Cat->getRuleId());
             $notes[] = $Rule->getDscp();
 
         }
         if (is_int($this->cat_id) && $this->cat_id > 0) {
-            $Rules = Rules\Product::getByCategory($Cat);
+            $Rules = ProductRule::getByCategory($Cat);
             if (!empty($Rules)) {
                 foreach ($Rules as $Rule) {
                     $notes[] = $Rule->getDscp();

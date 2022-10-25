@@ -347,7 +347,7 @@ default:
     if (Shop\Config::get('catalog_enabled')) {
         $cat_id = SHOP_getVar($_REQUEST, 'category', 'mixed');
         $brand_id = SHOP_getVar($_REQUEST, 'brand', 'integer');
-        $Cat = new Shop\Catalog;
+        $Cat = new Shop\Views\Catalog;
         if (isset($_REQUEST['query']) && !isset($_REQUEST['clearsearch'])) {
             $Cat->withQuery($_REQUEST['query']);
         }
@@ -363,7 +363,6 @@ case 'none':
     // Add nothing, useful if the view is handled by the action above
     break;
 }
-
 $display = \Shop\Menu::siteHeader();
 $display .= \Shop\Menu::pageTitle($page_title);
 $display .= $content;
