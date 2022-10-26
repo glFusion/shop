@@ -2487,6 +2487,32 @@ function plugin_getfeedprovider_shop($format, $A=array())
  */
 function SHOP_getVar($A, $varname, $type = 'string', $default = NULL, $emptyok = true)
 {
+    // Cast the default value to the expected return type
+    switch ($type) {
+    case 'int':
+    case 'integer':
+        $default = (int)$default;
+        break;
+    case 'bool':
+        $default = (bool)$default;
+        break;
+    case 'float':
+        $default = (float)$default;
+        break;
+    case 'array':
+        if (!is_array($default)) {
+            if (empty($default)) {
+                $default = array();
+            } else {
+                $default = array($default);
+            }
+        }
+        break;
+    case 'string':
+        $default = (string)$default;
+        break;
+    }
+
     if (!is_array($A)) {
         Log::write('system', Log::ERROR, __FUNCTION__ . ': Invalid array provided ' . var_export($A,true));
         return $default;
@@ -2499,6 +2525,7 @@ function SHOP_getVar($A, $varname, $type = 'string', $default = NULL, $emptyok =
             return $default;
         }
     }
+
     switch ($type) {
     case 'int':
     case 'integer':
