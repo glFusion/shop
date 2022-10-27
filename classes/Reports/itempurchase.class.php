@@ -15,6 +15,7 @@
 namespace Shop\Reports;
 use Shop\Product;
 use Shop\ProductVariant;
+use Shop\Models\PostGet;
 
 
 /**
@@ -60,7 +61,8 @@ class itempurchase extends \Shop\Report
     {
         global $_TABLES, $_CONF, $LANG_SHOP;
 
-        $this->item_id = SHOP_getVar($_GET, 'item_id');
+        $PostGet = PostGet::getInstance();
+        $this->item_id = $PostGet->getString('item_id');
         $from_date = $this->startDate->toUnix();
         $to_date = $this->endDate->toUnix();
         $Product = Product::getByID($this->item_id);

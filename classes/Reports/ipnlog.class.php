@@ -3,15 +3,17 @@
  * Order History Report.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.6.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop\Reports;
+use Shop\Models\PostGet;
+
 
 /**
  * Class for Order History Report.
@@ -73,7 +75,7 @@ class ipnlog extends \Shop\Report
     {
         global $_TABLES, $_CONF, $LANG_SHOP, $_SHOP_CONF;
 
-        $this->setParam('gateway', SHOP_getVar($_GET, 'gateway'));
+        $this->setParam('gateway', PostGet::getInstance()->getString('gateway'));
 
         $sql = "SELECT * FROM {$_TABLES['shop.ipnlog']} ";
 
