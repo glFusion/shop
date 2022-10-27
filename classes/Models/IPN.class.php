@@ -5,9 +5,9 @@
  * may be sent to plugins.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2020-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.5.0
  * @since       v1.3.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -20,11 +20,11 @@ namespace Shop\Models;
  * Class for IPN messages for consistent data.
  * @package shop
  */
-class IPN implements \ArrayAccess
+class IPN extends DataArray
 {
     /** Information properties.
      * @var array */
-    private $properties = array(
+    protected $properties = array(
         'sql_date' => '',       // SQL-formatted date string
         'uid' => 0,             // user ID to receive credit
         'pmt_gross' => 0,       // gross amount paid
@@ -48,133 +48,53 @@ class IPN implements \ArrayAccess
      *
      * @param   string|array    $val    Optonal initial properties
      */
-    public function __construct($val='')
+    public function __construct(array $vals=array)
     {
         global $_CONF;
 
-        if (is_string($val) && !empty($val)) {
-            $x = json_decode($val, true);
-            if ($x) {
-                $this->properties = $x;
-            }
-        } elseif (is_array($val)) {
-            $this->properties = $val;
-        } else {
+        if (empty($vals)) {
             // Make sure required fields are available.
-            $this->sql_date = $_CONF['_now']->toMySQL(true);
+            $vals['sql_date'] = $_CONF['_now']->toMySQL(true);
         }
+        parent::__construct($vals);
     }
 
 
     /**
-     * Set a property when accessing as an array.
+     * Set an element into the "custom" property array.
      *
-     * @param   string  $key    Property name
-     * @param   mixed   $value  Property value
-     */
-    public function offsetSet($key, $value)
-    {
-        $this->properties[$key] = $value;
-    }
-
-
-    /**
-     * Check if a property is set when calling `isset($this)`.
-     *
-     * @param   string  $key    Property name
-     * @return  boolean     True if property exists, False if not
-     */
-    public function offsetExists($key)
-    {
-        return isset($this->properties[$key]);
-    }
-
-
-    /**
-     * Remove a property when using unset().
-     *
-     * @param   string  $key    Property name
-     */
-    public function offsetUnset($key)
-    {
-        unset($this->properties[$key]);
-    }
-
-
-    /**
-     * Get a property when referencing the class as an array.
-     *
-     * @param   string  $key    Property name
-     * @return  mixed       Property value, NULL if not set
-     */
-    public function offsetGet($key)
-    {
-        return isset($this->properties[$key]) ? $this->properties[$key] : NULL;
-    }
-
-
-    /**
-     * Check if the properties array is empty.
-     *
-     * @return  boolean     True if empty, False if not
-     */
-    public function isEmpty()
-    {
-        return empty($this->properties);
-    }
-
-
-    /**
-     * Merge the supplied array into the internal properties.
-     *
-     * @param   array   $arr    Array of data to add
+     * @param   string  $key    Array key
+     * @param   mixed   $value  Value to set
      * @return  object  $this
      */
-    public function merge(array $arr)
-    {
-        $this->properties = array_merge($this->properties, $arr);
-        return $this;
-    }
-
-
-    /**
-     * Get the internal properties as a native array.
-     *
-     * @return  array   $this->properties
-     */
-    public function toArray()
-    {
-        return $this->properties;
-    }
-
-
-    /**
-     * Return the string representation of the class.
-     *
-     * @return  string      JSON string
-     */
-    public function __toString()
-    {
-        return json_encode($this->properties);
-    }
-
-
-    public function setCustom($key, $value)
+    public function setCustom(string $key, $value) : self
     {
         $this->properties['custom'][$key] = $value;
         return $this;
     }
 
 
-    public function setUid($uid)
+    /**
+     * Set the buyer's user ID.
+     *
+     * @param   integer $uid    User ID
+     * @return  object  $this
+     */
+    public function setUid(int $uid) : self
     {
-        $this->properties['uid'] = (int)$uid;
-        $this->properties['custom']['uid'] = (int)$uid;
+        $this->properties['uid'] = $uid;
+        $this->properties['custom']['uid'] = $uid;
         return $this;
     }
 
 
-    public function getData($key=NULL)
+    /**
+     * Get an element from the IPN data, or the whole data array.
+     *
+     * @param   string  $key    Key to retrieve, empty string for all
+     * @return  mixed       Data item, array of all data, or null
+     */
+    public function getData(?string $key=NULL)
     {
         if ($key === NULL) {
             return $this->properties['data'];
