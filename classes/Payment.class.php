@@ -771,8 +771,7 @@ class Payment
             $new_btn = '';
         }
         $R->setAdmin(true)
-            // Params usually from GET but could be POSTed
-            ->setParams($_REQUEST)
+            ->setParams()
             ->setShowHeader(false);
         return $new_btn . $R->Render();
     }
