@@ -86,11 +86,12 @@ class tax extends \Shop\Report
         $T = $this->getTemplate();
         $from_date = $this->startDate->toUnix();
         $to_date = $this->endDate->toUnix();
-        $this->setParam('country', SHOP_getVar($_GET, 'country'));
+        /*$this->setParam('country', SHOP_getVar($_GET, 'country'));
         $this->setParam('state', SHOP_getVar($_GET, 'state'));
         $this->setParam('zip', SHOP_getVar($_GET, 'zip'));
         $this->setParam('incl_nontax', SHOP_getVar($_GET, 'incl_nontax', 'integer', 0));
         $this->setParam('orderstatus', SHOP_getVar($_GET, 'orderstatus', 'array', array()));
+         */
 
         $header_arr = array(
             array(
