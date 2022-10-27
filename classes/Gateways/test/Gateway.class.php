@@ -106,8 +106,6 @@ class Gateway extends \Shop\Gateway
      * Checks the button table to see if a button exists, and if not
      * a new button will be created.
      *
-     * @uses    Gateway::_ReadButton()
-     * @uses    Gateway::_SaveButton()
      * @param   object  $P      Product Item object
      * @param   float   $price  Optional override price
      * @return  string          HTML code for the button.

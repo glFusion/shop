@@ -55,7 +55,7 @@ class Webhook
 
     /** Raw webhook data.
      * @var array */
-    protected $whData = array();
+    protected $whData = NULL;
 
     /** Webhook ID.
      * @var string */
@@ -259,10 +259,10 @@ class Webhook
     /**
      * Set the webhook data.
      *
-     * @param   array   $data   Raw webhook data array
+     * @param   mixed   $data   Raw webhook data array
      * @return  object  $this
      */
-    public function setData($data)
+    public function setData($data) : self
     {
         $this->whData = $data;
         return $this;
@@ -274,7 +274,7 @@ class Webhook
      *
      * @return  array   Webhook data
      */
-    public function getData()
+    public function getData() : object
     {
         return $this->whData;
     }
