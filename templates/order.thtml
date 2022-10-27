@@ -51,22 +51,22 @@
 
 {!if checkout}
 {!else}
-        <div id="shopOrderNumber">
+        <div uk-grid class="uk-grid uk-width-1-1@s uk-width-1-2@m uk-width-small-1-1 uk-width-medium-1-2 uk-child-width-1-1@s uk-child-width-1-2@m uk-grid-width-1-2 uk-grid-small" id="shopOrderNumber">
   {!if invoice_number}
-            {$LANG_SHOP['invoice_number']}:&nbsp;&nbsp;{invoice_number}<br />
+            <div>{$LANG_SHOP['invoice_number']}:</div><div>{invoice_number}</div>
   {!endif}
-            {$LANG_SHOP['order_number']}:&nbsp;&nbsp;{order_number}<br />
-            {$LANG_SHOP['order_date']}:&nbsp;&nbsp;<span class="tooltip" title="{order_date_tip}">{order_date}</span>
+            <div>{$LANG_SHOP['order_number']}</div><div>{order_number}</div>
+            <div>{$LANG_SHOP['order_date']}:</div><div class="tooltip" title="{order_date_tip}">{order_date}</div>
         </div>
 {!endif}
 
         <div class="cart">
             <div class="cart-items">
-                <div class="uk-grid uk-margin uk-hidden-small">
-                    <div class="uk-width-medium-3-6 aligncenter">{$LANG_SHOP['description']}</div>
-                    <div class="uk-width-medium-1-6 cart-item-price">{$LANG_SHOP['price']}</div>
-                    <div class="uk-width-medium-1-6 cart-item-quantity">{$LANG_SHOP['quantity']}</div>
-                    <div class="uk-width-medium-1-6 cart-item-total">{$LANG_SHOP['total']}</div>
+                <div uk-grid class="uk-grid uk-margin uk-hidden-small">
+                    <div class="uk-width-1-2@m uk-width-medium-3-6 aligncenter">{$LANG_SHOP['description']}</div>
+                    <div class="uk-width-1-6@m uk-width-medium-1-6 cart-item-price">{$LANG_SHOP['price']}</div>
+                    <div class="uk-width-1-6@m uk-width-medium-1-6 cart-item-quantity">{$LANG_SHOP['quantity']}</div>
+                    <div class="uk-width-1-6@m uk-width-medium-1-6 cart-item-total">{$LANG_SHOP['total']}</div>
                 </div>
 
 <!-- BEGIN ItemRow -->
@@ -76,7 +76,7 @@
                 <div class="cart-item">
 {!endif}
                     <div class="uk-grid">
-                        <div class="uk-width-1-1 uk-width-medium-1-2 cart-item-product">
+                        <div class="uk-width-1-1 uk-width-medium-1-2 uk-width-1-2@m cart-item-product">
                             <div class="cart-item-image">
 {!if embargoed}
                                 <a href="{del_item_url}">
@@ -106,12 +106,12 @@
                                 {item_extras}
                             </div>
                         </div>
-                        <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-price">
+                        <div class="uk-width-1-2 uk-width-medium-1-6 uk-width-1-6@m cart-item-price">
                             {item_price}
                         </div>
-                        <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-quantity">{item_quantity}</div>
+                        <div class="uk-width-1-2 uk-width-medium-1-6 uk-width-1-6@m cart-item-quantity">{item_quantity}</div>
 
-                        <div class="uk-width-1-1 uk-width-medium-1-6 cart-item-total money">
+                        <div class="uk-width-1-1 uk-width-medium-1-6 uk-width-1-6@m cart-item-total money">
                             <div class="mobile-label">{$LANG_SHOP['total']}</div>{item_total}
                         </div>
                     </div>

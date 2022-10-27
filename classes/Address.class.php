@@ -846,7 +846,7 @@ class Address
             'def_shipto_chk' => $this->isDefaultShipto() ? 'checked="checked"' : '',
             'def_billto_chk' => $this->isDefaultBillto() ? 'checked="checked"' : '',
             'cancel_url' => SHOP_getUrl(SHOP_URL . '/account.php?addresses'),
-            'return' => PostGet::getInstance()->getString($_GET, 'return'),
+            'return' => PostGet::getInstance()->getString('return'),
             'action_url' => SHOP_URL . '/account.php',
         ) );
         $T->parse('output', 'form');
@@ -871,15 +871,15 @@ class Address
 
         $values = array(
             'uid' => $this->uid,
-            'name' => $this->name,
-            'company' => $this->company,
-            'address1' => $this->address1,
-            'address2' => $this->address2,
-            'city' => $this->city,
-            'state' => $this->state,
-            'country' => $this->country,
-            'phone' => $this->getPhone(),
-            'zip' => $this->zip,
+            'name' => substr($this->name, 0, 255),
+            'company' => substr($this->company, 0, 255),
+            'address1' => substr($this->address1, 0, 255),
+            'address2' => substr($this->address2, 0, 255),
+            'city' => substr($this->city, 0, 255),
+            'state' => substr($this->state, 0, 255),
+            'country' => substr($this->country, 0, 255),
+            'phone' => substr($this->getPhone(), 0, 255),
+            'zip' => substr($this->zip, 0, 40),
             'billto_def' => $this->isDefaultBillto(),
             'shipto_def' => $this->isDefaultShipto(),
         );
@@ -926,18 +926,16 @@ class Address
                     try {
                         $colname = $db->conn->quoteIdentifier($type . '_def');
                         $db->conn->executeStatement(
-                            "UPDATE {$_TABLES['shop.address']}
-                            SET $colname = 0 WHERE
-                            uid = {$this->uid}
-                            AND addr_id <> {$this->addr_id}
-                            AND $colname = 1"
+                            "UPDATE {$_TABLES['shop.address']} SET $colname = 0
+                            WHERE uid = ? AND addr_id <> ? AND $colname = 1",
+                            array($this->uid, $this->addr_id),
+                            array(Database::INTEGER, Database::INTEGER)
                         );
                     } catch (\Throwable $e) {
                         Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                     }
                 }
             }
-            Cache::clear('shop.user_' . $this->uid);
         }
         return $this->addr_id;
     }
@@ -945,7 +943,6 @@ class Address
 
     /**
      * Return the properties array.
-     * Keys can be prefixed with billto_ or shipto_ to match Orders schema.
      *
      * @return array   Address properties
      */
@@ -1068,8 +1065,6 @@ class Address
             Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
-        Cache::clear('shop.user_' . $this->uid);
-        Cache::clear('shop.address_' . $this->uid);
         return true;
     }
 
