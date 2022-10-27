@@ -16,6 +16,7 @@
 require_once '../lib-common.php';
 
 use Shop\Models\OrderStatus;
+use Shop\Models\PostGet;
 use Shop\Template;
 
 // If plugin is installed but not enabled, display an error and exit gracefully
@@ -26,6 +27,7 @@ if (
     COM_404();
     exit;
 }
+$PostGet = PostGet::getInstance();
 
 // For anonymous, this may be a valid selection coming from an email link.
 // Put up a message indicating that they need to log in.
@@ -46,25 +48,19 @@ $expected = array(
 );
 
 foreach($expected as $provided) {
-    if (isset($_POST[$provided])) {
+    if (isset($PostGet[$provided])) {
         $mode = $provided;
-        $actionval = $_POST[$provided];
-        break;
-    } elseif (isset($_GET[$provided])) {
-        $mode = $provided;
-        $actionval = $_GET[$provided];
+        $actionval = $PostGet[$provided];
         break;
     }
 }
 
 if ($mode == '') {
-    // Retrieve and sanitize input variables.  Typically _GET, but may be _POSTed.
+    // Retrieve and sanitize input variables.
     COM_setArgNames(array('mode', 'id'));
     foreach (array('mode', 'id') as $varname) {
-        if (isset($_POST[$varname])) {
-            $$varname = COM_applyFilter($_POST[$varname]);
-        } elseif (isset($_GET[$varname])) {
-            $$varname = COM_applyFilter($_GET[$varname]);
+        if (isset($PostGet[$varname])) {
+            $$varname = COM_applyFilter($PostGet[$varname]);
         } else {
             $$varname = COM_getArgument($varname);
         }
@@ -112,7 +108,7 @@ case 'redeem':
     }
     // Using REQUEST here since this could be from a link in an email or from
     // the apply_gc form
-    $code = SHOP_getVar($_POST, 'code');
+    $code = $PostGet->getString('code');
     $uid = $_USER['uid'];
     list($status, $msg) = \Shop\Products\Coupon::Redeem($code, $uid);
     if ($status > 0) {
@@ -131,8 +127,8 @@ case 'redeem':
 
 case 'delbutton_x':
     // Deleting multiple addresses at once
-    if (isset($_POST['delitem']) && is_array($_POST['delitem'])) {
-        Shop\Address::deleteMulti($_POST['delitem']);
+    if (isset($PostGet['delitem']) && is_array($PostGet['delitem'])) {
+        Shop\Address::deleteMulti($PostGet['delitem']);
     }
     echo COM_refresh(SHOP_URL . '/account.php?addresses');
     break;
@@ -146,9 +142,9 @@ case 'deladdr':
 case 'savevalidated':
 case 'saveaddr':
     if ($actionval == 1 || $actionval == 2) {
-        $addr_vars = json_decode($_POST['addr'][$actionval], true);
+        $addr_vars = json_decode($PostGet['addr'][$actionval], true);
     } else {
-        $addr_vars = $_POST;
+        $addr_vars = $PostGet->toArray();   // todo
     }
     if (isset($addr_vars['addr_id'])) {
         $id = $addr_vars['addr_id'];
@@ -175,7 +171,7 @@ case 'saveaddr':
     } else {
         SHOP_setMsg("Saving address failed");
     }
-    echo COM_refresh(Shop\URL::get(SHOP_getVar($_POST, 'return')));
+    echo COM_refresh(Shop\URL::get($PostGet->getString('return')));
     break;
 
 case 'editaddr':
@@ -231,7 +227,7 @@ default:
     $content .= \Shop\Menu::User($mode);
     $R = \Shop\Report::getInstance('orderlist');
     $R->setAdmin(false);
-    $R->setParams($_POST);
+    $R->setParams();
     $R->setAllowedStatuses(array_keys(OrderStatus::getCustomerViewable()));
     $content .= $R->Render();
     $menu_opt = $LANG_SHOP['purchase_history'];

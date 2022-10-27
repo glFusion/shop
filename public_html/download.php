@@ -21,6 +21,7 @@ require_once('../lib-common.php');
 use glFusion\Database\Database;
 use glFusion\Log\Log;
 use Shop\Config;
+use Shop\Models\PostGet;
 
 // Make sure the plugin is available
 if (!function_exists('SHOP_access_check') || !Config::get('shop_enabled')) {
@@ -29,8 +30,9 @@ if (!function_exists('SHOP_access_check') || !Config::get('shop_enabled')) {
 }
 
 // Sanitize the product ID and token
-$id = SHOP_getVar($_GET, 'id', 'int');
-$token = SHOP_getVar($_GET, 'token');
+$PostGet = PostGet::getInstance();
+$id = $PostGet->getInt('id');
+$token = $PostGet->getString('token');
 
 // Need to have one or the other, prefer token
 if (
@@ -43,7 +45,6 @@ if (
 
 // Get product by token
 // Also check for a product ID
-$id = SHOP_getVar($_REQUEST, 'id', 'int');
 $db = Database::getInstance();
 $qb = $db->conn->createQueryBuilder();
 $qb->select('prod.id', 'prod.file', 'prod.prod_type')

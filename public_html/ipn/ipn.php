@@ -19,8 +19,9 @@
 /** Import core glFusion functions */
 require_once '../../lib-common.php';
 use Shop\Log;
+use Shop\Models\PostGet;
 
-$gateway = SHOP_getVar($_GET, '_gw');
+$gateway = PostGet::getInstance()->getString('_gw');
 
 if (empty($gateway)) {
     $log_level = Log::ALERT;

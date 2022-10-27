@@ -691,8 +691,7 @@ case 'orders':
     $R = \Shop\Report::getInstance('orderlist');
     if ($R !== NULL) {
         $R->setAdmin(true);
-        // Params usually from GET but could be POSTed time period
-        $R->setParams($_REQUEST);
+        $R->setParams();
         $content .= $R->Render();
     }
     break;
@@ -1125,8 +1124,7 @@ default:
         $R = \Shop\Report::getInstance('orderlist');
         if ($R !== NULL) {
             $R->setAdmin(true);
-            // Params usually from GET but could be POSTed time period
-            $R->setParams($_REQUEST);
+            $R->setParams();
             $content .= $R->Render();
         }
         break;

@@ -13,7 +13,7 @@
  */
 namespace Shop;
 use glFusion\Database\Database;
-use Shop\Models\UrlParams;
+use Shop\Models\PostGet;
 
 
 /**
@@ -846,7 +846,7 @@ class Address
             'def_shipto_chk' => $this->isDefaultShipto() ? 'checked="checked"' : '',
             'def_billto_chk' => $this->isDefaultBillto() ? 'checked="checked"' : '',
             'cancel_url' => SHOP_getUrl(SHOP_URL . '/account.php?addresses'),
-            'return' => UrlParams::getInstance()->getString($_GET, 'return'),
+            'return' => PostGet::getInstance()->getString($_GET, 'return'),
             'action_url' => SHOP_URL . '/account.php',
         ) );
         $T->parse('output', 'form');

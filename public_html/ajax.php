@@ -16,7 +16,7 @@
 require_once '../lib-common.php';
 use Shop\Log;
 use Shop\Models\DataArray;
-use Shop\Models\UrlParams;
+use Shop\Models\PostGet;
 
 // Make sure this is called via Ajax
 if (!COM_isAjax()) {
@@ -24,15 +24,15 @@ if (!COM_isAjax()) {
 }
 
 $uid = (int)$_USER['uid'];
-$UrlArgs = UrlParams::getInstance();
+$PostGet = PostGet::getInstance();
 
-$action = $UrlArgs->getString('action');
+$action = $PostGet->getString('action');
 $output = NULL;
 
 switch ($action) {
 case 'delAddress':          // Remove a shipping address
     if ($uid < 2) break;    // Not available to anonymous
-    $status = Shop\Customer::getInstance($uid)->deleteAddress($UrlArgs->getInt('addr_id'));
+    $status = Shop\Customer::getInstance($uid)->deleteAddress($PostGet->getInt('addr_id'));
     $output = array(
         'status'    => $status,
     );
@@ -41,8 +41,8 @@ case 'delAddress':          // Remove a shipping address
 case 'getAddressHTML':
     if ($uid < 2) break;
     $Cart = Shop\Cart::getInstance();
-    $type = $UrlArgs->getString('type');
-    $id = $UrlArgs->getString('id');
+    $type = $PostGet->getString('type');
+    $id = $PostGet->getString('id');
     $Address = Shop\Customer::getInstance($uid)->getAddress($id);
     $output = array(
         'addr_text' => $Address->toHTML(),
@@ -53,7 +53,7 @@ case 'getAddressHTML':
     break;
 
 case 'setShipper':
-    $method_id = $UrlArgs->getInt('method_id');
+    $method_id = $PostGet->getInt('method_id');
     $Cart = Shop\Cart::getInstance();
     $Cart->setShippingOption($method_id);
     $output = array(
@@ -62,10 +62,10 @@ case 'setShipper':
     break;
 
 case 'setGCamt':
-    $is_checked = $UrlArgs->getString('checked');
+    $is_checked = $PostGet->getString('checked');
     $Cart = Shop\Cart::getInstance();
     if ($is_checked == 'true') {
-        $amount = $UrlArgs->getFloat('amount');
+        $amount = $PostGet->getFloat('amount');
         $Cart->setByGC($amount);
     } else {
         $Cart->setByGC(0);
@@ -77,8 +77,8 @@ case 'setGCamt':
     break;
 
 case 'setGW':
-    $gw_id = $UrlArgs->getString('gw_id');
-    $unset_gc = $UrlArgs->getInt('unset_gc');
+    $gw_id = $PostGet->getString('gw_id');
+    $unset_gc = $PostGet->getInt('unset_gc');
     $Cart = Shop\Cart::getInstance();
     $Cart->setGateway($gw_id);
     $Cart->Save(false);
@@ -89,17 +89,17 @@ case 'setGW':
 
 case 'getAddress':
     if ($uid < 2) break;
-    $Address = Shop\Customer::getInstance($uid)->getAddress($UrlArgs->getInt('id'));
+    $Address = Shop\Customer::getInstance($uid)->getAddress($PostGet->getInt('id'));
     $output = $Address->toJSON();
     break;
 
 case 'cartaddone':
-    $oi_id = $UrlArgs->getInt('oi_id');
+    $oi_id = $PostGet->getInt('oi_id');
     $OI = Shop\OrderItem::getInstance($oi_id);
     if ($OI->getID() == $oi_id) {
         // Order item exists
         $qty = $OI->getQuantity();
-        $OI->setQuantity($qty + $UrlArgs->getInt('qty'));
+        $OI->setQuantity($qty + $PostGet->getInt('qty'));
         $OI->Save();
         $Order = $OI->getOrder();
         $Order->refresh()->Save();
@@ -117,37 +117,37 @@ case 'cartaddone':
     break;
 
 case 'addcartitem':
-    if (!isset($UrlArgs['item_number'])) {
+    if (!isset($PostGet['item_number'])) {
         Log::write('shop_system', Log::ERROR, "Ajax addcartitem:: Missing Item Number");
         echo json_encode(array('content' => '', 'statusMessage' => ''));
         exit;
     }
-    $item_number = $UrlArgs['item_number'];     // isset ensured above
+    $item_number = $PostGet['item_number'];     // isset ensured above
     $P = Shop\Product::getByID($item_number);
     if ($P->isNew()) {
         // Invalid product ID passed
         echo json_encode(array('content' => '', 'statusMessage' => ''));
         exit;
     }
-    $item_name = $UrlArgs->getString('item_name', $P->getName());
+    $item_name = $PostGet->getString('item_name', $P->getName());
     $Cart = Shop\Cart::getInstance();
     $nonce = $Cart->makeNonce($item_number . $item_name);
-    $supplied_nonce = $UrlArgs->getString('nonce');
+    $supplied_nonce = $PostGet->getString('nonce');
     if ($supplied_nonce != $nonce) {
         Log::write('shop_system', Log::ERROR, "Bad nonce: {$supplied_nonce} for cart {$Cart->getOrderID()}, should be $nonce");
         echo json_encode(array('content' => '', 'statusMessage' => ''));
         exit;
     }
 
-    $req_qty = $UrlArgs->getInt('quantity', $P->getMinOrderQty());
+    $req_qty = $PostGet->getInt('quantity', $P->getMinOrderQty());
     //$exp_qty = $Cart->getItem($item_number)->getQuantity() + $req_qty;
-    $unique = $UrlArgs->getInt('_unique', $P->isUnique());
-    if ($unique && $Cart->Contains($UrlArgs->getString('item_number')) !== false) {
+    $unique = $PostGet->getInt('_unique', $P->isUnique());
+    if ($unique && $Cart->Contains($PostGet->getString('item_number')) !== false) {
         // Do nothing if only one item instance may be added
         $output = array(
             'content' => phpblock_shop_cart_contents(),
             'statusMessage' => 'Only one instance of this item may be added.',
-            'ret_url' => $UrlArgs->getString('_ret_url'),
+            'ret_url' => $PostGet->getString('_ret_url'),
             'unique' => true,
         );
         break;
@@ -155,13 +155,13 @@ case 'addcartitem':
     $args = new DataArray(array(
         'item_number'   => $item_number,     // isset ensured above
         'item_name'     => $item_name,
-        'short_dscp'    => $UrlArgs->getString('short_dscp', $P->getDscp()),
+        'short_dscp'    => $PostGet->getString('short_dscp', $P->getDscp()),
         'quantity'      => $req_qty,
         'price'         => $P->getPrice(),
-        'options'       => $UrlArgs->getArray('options'),
-        //'cboptions'     => $UrlArgs->getArray('cboptions'),
-        'extras'        => $UrlArgs->getArray('extras'),
-        'tax'           => $UrlArgs->getFloat('tax'),
+        'options'       => $PostGet->getArray('options'),
+        //'cboptions'     => $PostGet->getArray('cboptions'),
+        'extras'        => $PostGet->getArray('extras'),
+        'tax'           => $PostGet->getFloat('tax'),
     ));
 
     $new_qty = $Cart->addItem($args);
@@ -176,13 +176,13 @@ case 'addcartitem':
     $output = array(
         'content' => phpblock_shop_cart_contents(),
         'statusMessage' => $msg,
-        'ret_url' => $UrlArgs->getString('_ret_url'),
+        'ret_url' => $PostGet->getString('_ret_url'),
         'unique' => $unique ? true : false,
     );
     break;
 
 case 'delcartitem':
-    $oi_id = $UrlArgs->getInt('oi_id');
+    $oi_id = $PostGet->getInt('oi_id');
     if ($oi_id > 0) {
         \Shop\Cart::getInstance()->Remove($oi_id);
     }
@@ -192,8 +192,8 @@ case 'delcartitem':
     break;
 
 case 'setShipper':
-    $cart_id = $UrlArgs->getString('cart_id');
-    $method_id = $UrlArgs->getInt('shipper_id');
+    $cart_id = $PostGet->getString('cart_id');
+    $method_id = $PostGet->getInt('shipper_id');
     $ship_methods = SESS_getVar('shop.shiprate.' . $cart_id);
     if (!isset($ship_methods[$method_id])) {
         $status = false;
@@ -212,7 +212,7 @@ case 'setShipper':
     break;
 
 case 'finalizecart':
-    $cart_id = $UrlArgs->getString('cart_id');
+    $cart_id = $PostGet->getString('cart_id');
     $Order = Shop\Order::getInstance($cart_id, 0);
     $status_msg = '';
     $status = false;
@@ -237,7 +237,7 @@ case 'redeem_gc':
             'status' => false,
         );
     } else {
-        $code = $UrlArgs->getString('gc_code');
+        $code = $PostGet->getString('gc_code');
         $uid = $_USER['uid'];
         list($status, $status_msg) = Shop\Products\Coupon::Redeem($code, $uid);
         $gw = Shop\Gateway::getInstance('_coupon');
@@ -251,15 +251,15 @@ case 'redeem_gc':
     break;
 
 case 'validateOpts':
-    $item_number = $UrlArgs->getString('item_number');
-    $qty = $UrlArgs->getInt('quantity', 1);
+    $item_number = $PostGet->getString('item_number');
+    $qty = $PostGet->getInt('quantity', 1);
     $attribs = array('checkbox' => array());
     $PVI = new Shop\Models\ProductVariantInfo;
-    $Extras = $UrlArgs->getArray('extras');
+    $Extras = $PostGet->getArray('extras');
     if (isset($Extras['options'])) {
         $attribs['checkbox'] = $Extras['options'];
     }
-    $Options = $UrlArgs->getArray('options');
+    $Options = $PostGet->getArray('options');
     if (!empty($Options)) {
         // Checking a product that has options, see if the variant is in stock
         $PV = Shop\ProductVariant::getByAttributes($item_number, $Options);
@@ -282,11 +282,11 @@ case 'validateAddress':
         'status'    => true,
         'form'      => '',
     );
-    $A1 = new Shop\Address($UrlArgs->toArray());
+    $A1 = new Shop\Address($PostGet->toArray());
     if (empty($A1->isValid())) {
         $A2 = $A1->Validate();
         if (!$A1->Matches($A2)) {
-            $save_url = $UrlArgs->getString('save_url', SHOP_URL . '/cart.php');
+            $save_url = $PostGet->getString('save_url', SHOP_URL . '/cart.php');
             $return_url = $UrlARgs->getString('return', SHOP_URL . '/cart.php');
             $T = new Shop\Template;
             $T->set_file('popup', 'address_select.thtml');
@@ -295,11 +295,11 @@ case 'validateAddress':
                 'address1_json' => htmlentities($A1->toJSON()),
                 'address2_html' => $A2->toHTML(),
                 'address2_json' => htmlentities($A2->toJSON()),
-                'ad_type'       => $UrlArgs->getString('ad_type'),
-//                'next_step'     => $UrlArgs->getString('next_step'),
+                'ad_type'       => $PostGet->getString('ad_type'),
+//                'next_step'     => $PostGet->getString('next_step'),
                 'save_url'      => $save_url,
                 'return'        => $return_url,
-                'save_btn_name' => $UrlArgs->getString('save_btn_name', 'save'),
+                'save_btn_name' => $PostGet->getString('save_btn_name', 'save'),
             ) );
             $output['status']  = false;
             $output['form'] = $T->parse('output', 'popup');
@@ -315,8 +315,8 @@ case 'getStateOpts':
     break;
 
 case 'setDefAddr':
-    $addr_id = $UrlArgs->getInt('addr_id');
-    $uid = $UrlArgs->getInt('uid');
+    $addr_id = $PostGet->getInt('addr_id');
+    $uid = $PostGet->getInt('uid');
     if ($addr_id < 1 || $uid < 2) {
         $ouptut = array(
             'status' => 0,
@@ -324,7 +324,7 @@ case 'setDefAddr':
         );
         break;
     }
-    $type = $UrlArgs->getString('addr_type');
+    $type = $PostGet->getString('addr_type');
     $status = Shop\Address::getInstance($addr_id)
         ->setDefault($type)
         ->Save();
