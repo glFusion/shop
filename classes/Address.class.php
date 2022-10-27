@@ -13,6 +13,7 @@
  */
 namespace Shop;
 use glFusion\Database\Database;
+use Shop\Models\UrlParams;
 
 
 /**
@@ -845,7 +846,7 @@ class Address
             'def_shipto_chk' => $this->isDefaultShipto() ? 'checked="checked"' : '',
             'def_billto_chk' => $this->isDefaultBillto() ? 'checked="checked"' : '',
             'cancel_url' => SHOP_getUrl(SHOP_URL . '/account.php?addresses'),
-            'return' => SHOP_getVar($_GET, 'return'),
+            'return' => UrlParams::getInstance()->getString($_GET, 'return'),
             'action_url' => SHOP_URL . '/account.php',
         ) );
         $T->parse('output', 'form');
@@ -1169,7 +1170,7 @@ class Address
     {
         global $_SHOP_CONF;
 
-        if (SHOP_getVar($_SHOP_CONF, 'address_validator') != '') {
+        if (!empty(Config::get('address_validator'))) {
             $cls = 'Shop\\Validators\\' . $_SHOP_CONF['address_validator'];
             if (class_exists($cls)) {
                 $AV = new $cls($this);

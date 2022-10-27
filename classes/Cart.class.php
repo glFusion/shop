@@ -20,6 +20,7 @@ use Shop\Models\OrderStatus;
 use Shop\Models\Session;
 use Shop\Models\Stock;
 use Shop\Models\ProductCheckbox;
+use Shop\Models\DataArray;
 use Shop\Products\Coupon;
 use Shop\Log;
 
@@ -177,7 +178,7 @@ class Cart extends Order
      * @param  array   $args   Array of arguments. item_number is required.
      * @return  integer     New item quantity, NULL on error
      */
-    public function addItem(array $args) : ?int
+    public function addItem(DataArray $args) : ?int
     {
         global $_SHOP_CONF, $_USER;
 
@@ -192,17 +193,17 @@ class Cart extends Order
         $need_save = false;     // assume the cart doesn't need to be re-saved
         $item_id = $args['item_number'];    // may contain options
         $P = Product::getByID($item_id);
-        $quantity   = SHOP_getVar($args, 'quantity', 'float', $P->getMinOrderQty());
+        $quantity   = $args->getFloat('quantity', $P->getMinOrderQty());
         $override   = isset($args['override']) ? $args['price'] : NULL;
-        $extras     = SHOP_getVar($args, 'extras', 'array');
-        $options    = SHOP_getVar($args, 'options', 'array');
-        $item_name  = SHOP_getVar($args, 'item_name');
-        $uid        = SHOP_getVar($args, 'uid', 'int', 1);
-        $taxable    = SHOP_getVar($args, 'taxable', 'int');
-        $options_text = SHOP_getVar($args, 'options_text', 'array');
-        $shipping   = SHOP_getVar($args, 'shipping', 'float', 0);
-        $shipping_units = SHOP_getVar($args, 'shipping_units', 'float', $P->getShippingUnits());
-        $shipping_weight= SHOP_getVar($args, 'shipping_weight', 'float', $P->getWeight());
+        $extras     = $args->getArray('extras');
+        $options    = $args->getArray('options');
+        $item_name  = $args->getString('item_name');
+        $uid        = $args->getInt('uid', 1);
+        $taxable    = $args->getInt('taxable');
+        $options_text = $args->getArray('options_text');
+        $shipping   = $args->getFloat('shipping');
+        $shipping_units = $args->getFloat('shipping_units', $P->getShippingUnits());
+        $shipping_weight= $args->getFloat('shipping_weight', $P->getWeight());
         $options_price = 0;
 
         if (isset($args['description'])) {
@@ -213,7 +214,7 @@ class Cart extends Order
             $item_dscp = '';
         }
         if (isset($args['variant'])) {
-            $PV = ProductVariant::getInstance($args['variant']);
+            $PV = ProductVariant::getInstance($args->getInt('variant'));
         } else {
             $PV = ProductVariant::getByAttributes($P->getID(), $options);
         }
@@ -273,7 +274,7 @@ class Cart extends Order
         } elseif ($quantity == 0) {
             return NULL;
         } else {
-            $tmp = array(
+            $tmp = new DataArray(array(
                 'item_id'   => $item_id,
                 'quantity'  => $quantity,
                 'name'      => $P->getName($item_name),
@@ -288,7 +289,7 @@ class Cart extends Order
                 'shipping_units' => $shipping_units,
                 'shipping_weight' => $shipping_weight,
                 'taxable'   => $P->isTaxable() ? 1 : 0,
-            );
+            ) );
             if (Product::isPluginItem($item_id)) {
                 if (isset($args['price'])) {
                     $tmp['price'] = (float)$args['price'];
@@ -306,7 +307,6 @@ class Cart extends Order
             $this->Taint();
         }
         $P->reserveStock($quantity);
-
         // If an update was done that requires re-saving the cart, do it now
         $this->saveIfTainted(true);
         return $new_quantity;
@@ -342,14 +342,14 @@ class Cart extends Order
      * Also applies a coupon code, if entered.
      *
      * @see     Cart::UpdateQty()
-     * @param   array   $A  Array if items as itemID=>newQty
-     * @return  array       Updated cart contents
+     * @param   DataArray   $A  Array if items as itemID=>newQty
+     * @return  object      $this
      */
-    public function Update($A)
+    public function Update(DataArray $A) : self
     {
         global $_SHOP_CONF;
 
-        $items = $A['quantity'];
+        $items = $A->getArray('quantity');
         if (!is_array($items)) {
             // No items in the cart?
             return $this;
@@ -409,7 +409,7 @@ class Cart extends Order
         //
         if ($_SHOP_CONF['gc_enabled'] && isset($A['gc_code'])) {
             // Redeem the supplied gift card code, if provided
-            $gc = SHOP_getVar($A, 'gc_code');
+            $gc = $A->getString('gc_code');
             if (!empty($gc)) {
                 if (Coupon::Redeem($gc) == 0) {
                     unset($this->m_info['apply_gc']);
@@ -423,7 +423,7 @@ class Cart extends Order
             $this->setGC($A['by_gc']);
         }
         if (isset($_POST['shipper_id'])) {
-            $this->setShipper($_POST['shipper_id']);
+            $this->setShipper($A->getInt('shipper_id'));
         }
         if (isset($A['buyer_email']) && COM_isEmail($A['buyer_email'])) {
             $this->buyer_email = $A['buyer_email'];

@@ -13,6 +13,7 @@
  */
 namespace Shop;
 use Shop\Models\OrderStatus;
+use Shop\Models\DataArray;
 use Shop\Models\CustomInfo;
 use Shop\Models\Token;
 use Shop\Models\ReferralTag;
@@ -420,10 +421,8 @@ class Order
      * @param   array   $args   Array of item data
      * @return  integer     New item quantity, NULL on error
      */
-    public function addItem(array $args) : ?int
+    public function addItem(DataArray $args) : ?int
     {
-        if (!is_array($args)) return NULL;
-
         if (Config::get('aff_enabled') && $this->getReferralToken() == '') {
             $token = ReferralTag::get();
             if ($token) {
@@ -447,7 +446,7 @@ class Order
         $args['variant_id'] = $PV->getID();
         $args['order_id'] = $this->order_id;    // make sure it's set
         $args['token'] = Token::create();  // create a unique token
-        $OI = OrderItem::fromArray($args);
+        $OI = OrderItem::fromArray($args->toArray());
         if (!isset($args['shipping_units'])) {
             $args['shipping_units'] = $OI->getShippingUnits() + $PV->getShippingUnits();
         }
@@ -626,41 +625,43 @@ class Order
         global $_USER, $_CONF, $_SHOP_CONF;
 
         if (!is_array($A)) return false;
+        $A = DataArray::fromArray($A);
         $tzid = COM_isAnonUser() ? $_CONF['timezone'] : $_USER['tzid'];
 
-        $this->uid      = SHOP_getVar($A, 'uid', 'int');
-        $this->status   = SHOP_getVar($A, 'status');
-        $this->pmt_method = SHOP_getVar($A, 'pmt_method');
-        $this->pmt_dscp = SHOP_getVar($A, 'pmt_dscp');
-        $this->pmt_txn_id = SHOP_getVar($A, 'pmt_txn_id');
-        $this->currency = SHOP_getVar($A, 'currency', 'string', $_SHOP_CONF['currency']);
-        $dt = SHOP_getVar($A, 'order_date', 'integer');
+        $this->uid      = $A->getInt('uid');
+        $this->status   = $A->getString('status');
+        $this->pmt_method = $A->getString('pmt_method');
+        $this->pmt_dscp = $A->getString('pmt_dscp');
+        $this->pmt_txn_id = $A->getString('pmt_txn_id');
+        $this->currency = $A->getString('currency', $_SHOP_CONF['currency']);
+        $dt = $A->getInt('order_date');
         if ($dt > 0) {
             $this->order_date = new \Date($dt, $tzid);
         } else {
             $this->order_date = SHOP_now();
         }
 
-        $this->order_id = SHOP_getVar($A, 'order_id');
-        $this->shipping = SHOP_getVar($A, 'shipping', 'float');
-        $this->handling = SHOP_getVar($A, 'handling', 'float');
-        $this->tax = SHOP_getVar($A, 'tax', 'float');
-        $this->order_total = SHOP_getVar($A, 'order_total', 'float');
-        $this->instructions = SHOP_getVar($A, 'instructions');
-        $this->by_gc = SHOP_getVar($A, 'by_gc', 'float');
-        $this->token = SHOP_getVar($A, 'token', 'string');
-        $this->buyer_email = SHOP_getVar($A, 'buyer_email');
-        $this->billto_id = SHOP_getVar($A, 'billto_id', 'integer');
-        $this->shipto_id = SHOP_getVar($A, 'shipto_id', 'integer');
-        $this->order_seq = SHOP_getVar($A, 'order_seq', 'integer', 0);
-        $this->setDiscountPct(SHOP_getVar($A, 'discount_pct', 'float'));
-        $this->setDiscountCode(SHOP_getVar($A, 'discount_code'));
+        $this->order_id = $A->getString('order_id');
+        $this->shipping = $A->getFloat('shipping');
+        $this->handling = $A->getFloat('handling');
+        $this->tax = $A->getFloat('tax');
+        $this->order_total = $A->getFloat('order_total');
+        $this->instructions = $A->getString('instructions');
+        $this->by_gc = $A->getFloat('by_gc');
+        $this->token = $A->getString('token');
+        $this->buyer_email = $A->getString('buyer_email');
+        $this->billto_id = $A->getInt('billto_id');
+        $this->shipto_id = $A->getInt('shipto_id');
+        $this->order_seq = $A->getInt('order_seq');
+        $this->setDiscountPct($A->getFloat('discount_pct'));
+        $this->setDiscountCode($A->getString('discount_code'));
         //if ($this->status != 'cart') {
-            $this->tax_rate = SHOP_getVar($A, 'tax_rate');
+            $this->tax_rate = $A->getFloat('tax_rate');
         //}
-        $this->setTaxShipping($A['tax_shipping'])
-            ->setTaxHandling($A['tax_handling']);
-        $this->m_info = new CustomInfo(SHOP_getVar($A, 'info'));
+        $this->setTaxShipping($A->getFloat('tax_shipping'))
+             ->setTaxHandling($A->getFloat('tax_handling'));
+        //$this->m_info = new CustomInfo(SHOP_getVar($A, 'info'));
+        $this->m_info = CustomInfo::fromString($A->getString('info'));
         //if ($this->m_info === false) $this->m_info = array();
         /*foreach (array('billto', 'shipto') as $type) {
             foreach ($this->_addr_fields as $name) {
@@ -674,7 +675,6 @@ class Order
         $this->Shipto = (new Address())->fromArray(
             $this->getAddressArray('shipto', $A), 'shipto'
         );
-        if (isset($A['uid'])) $this->uid = $A['uid'];
 
         if (isset($A['order_id']) && !empty($A['order_id'])) {
             $this->order_id = $A['order_id'];
@@ -685,20 +685,20 @@ class Order
             $this->isNew = true;
             Cart::clearSession('order_id');
         }
-        $this->shipper_id = SHOP_getVar($A, 'shipper_id', 'string');
-        $this->gross_items = SHOP_getVar($A, 'gross_items', 'float', 0);
-        $this->net_taxable = SHOP_getVar($A, 'net_taxable', 'float', 0);
-        $this->net_nontax = SHOP_getVar($A, 'net_nontax', 'float', 0);
+            $this->shipper_id = $A->getString('shipper_id');
+            $this->gross_items = $A->getFloat('gross_items');
+        $this->net_taxable = $A->getFloat('net_taxable');
+        $this->net_nontax = $A->getfloat('net_nontax');
         if (isset($A['amt_paid'])) {    // only present in DB record
             $this->_amt_paid = (float)$A['amt_paid'];
         }
-        $this->shipping_method = SHOP_getVar($A, 'shipping_method', 'string');
-        $this->shipping_dscp = SHOP_getVar($A, 'shipping_dscp', 'string');
-        $this->last_mod = SHOP_getVar($A, 'last_mod', 'string');
-        $this->gw_order_ref = SHOP_getVar($A, 'gw_order_ref', 'string', NULL);
-        $this->referrer_uid = SHOP_getVar($A, 'referrer_uid', 'integer');
-        $this->referral_token = SHOP_getVar($A, 'referral_token');
-        $this->referral_exp = SHOP_getVar($A, 'referral_exp', 'integer');
+        $this->shipping_method = $A->getString('shipping_method');
+        $this->shipping_dscp = $A->getString('shipping_dscp');
+        $this->last_mod = $A->getString('last_mod');
+        $this->gw_order_ref = $A->getString('gw_order_ref', 'string');
+        $this->referrer_uid = $A->getInt('referrer_uid');
+        $this->referral_token = $A->getString('referral_token');
+        $this->referral_exp = $A->getInt('referral_exp');
         return $this;
     }
 

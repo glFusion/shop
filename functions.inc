@@ -48,10 +48,12 @@ spl_autoload_register(function ($class)
     }
 });
 use Shop\Models\Views;
+use Shop\Models\UrlParams;
 use Shop\Upgrades;
 use Shop\Config;
 use Shop\Log;
 use glFusion\Database\Database;
+use Shop\Util\DataArray;
 
 Config::getInstance();
 
@@ -133,7 +135,7 @@ function plugin_centerblock_shop($where = 1, $page = 1, $topic = '')
     if (Config::get('centerblock') == 1 && $topic == '') {
         $display = Shop\Menu::siteHeader();
         $display .= Shop\Menu::pageTitle();
-        $cat_id = SHOP_getVar($_REQUEST, 'category', 'integer');
+        $cat_id = UrlParams::getInstance()->getInt('category');
         $Catalog = new Shop\Catalog;
         $display .= $Catalog->setCatID($cat_id)->defaultCatalog();
         $display .= Shop\Menu::siteFooter();
@@ -995,9 +997,9 @@ function phpblock_shop_cart_contents()
     global $LANG_SHOP;
 
     // Cache since it may be called multiple times
-    static $contents = NULL;
+    //static $contents = NULL;
 
-    if ($contents === NULL) {
+    //if ($contents === NULL) {
         $contents = '';
         if (
             !SHOP_access_check() ||
@@ -1054,7 +1056,7 @@ function phpblock_shop_cart_contents()
         ) );
         $T->parse('output', 'shopping_cart_contents');
         $contents = $T->finish ($T->get_var('output'));
-    }
+    //}
     return $contents;
 }
 
@@ -2012,7 +2014,7 @@ function plugin_profilesave_shop($uid=0)
         return;
     }
 
-    $apply_gc = SHOP_getVar($_POST, 'pp_apply_gc', 'string');
+    $apply_gc = UrlParams::getInstance()->getString('pp_apply_gc');
     if (!empty($apply_gc)) {
         Shop\Products\Coupon::Redeem($apply_gc, $uid);
     }

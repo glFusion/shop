@@ -13,6 +13,7 @@
  */
 namespace Shop;
 use Shop\Models\ReferralTag;
+use Shop\Models\DataArray;
 use glFusion\Database\Database;
 
 
@@ -112,23 +113,30 @@ class Customer
         if ($uid < 2) {     // Anon information is not saved
             return;
         }
-        $sql = "SELECT u.username, u.fullname, u.email, u.language,
-            ui.*, UNIX_TIMESTAMP(ui.created) AS created_ts
-            FROM {$_TABLES['users']} u
-            LEFT JOIN {$_TABLES['shop.userinfo']} ui
-                ON u.uid = ui.uid
-            WHERE u.uid = $uid";
-        $res = DB_query($sql);
-        if (DB_numRows($res) == 1) {
-            $A = DB_fetchArray($res, false);
+        try {
+            $A = Database::getInstance()->conn->executeQuery(
+                "SELECT u.username, u.fullname, u.email, u.language,
+                ui.*, UNIX_TIMESTAMP(ui.created) AS created_ts
+                FROM {$_TABLES['users']} u
+                LEFT JOIN {$_TABLES['shop.userinfo']} ui ON u.uid = ui.uid
+                WHERE u.uid = $uid",
+                array($uid),
+                array(Database::INTEGER)
+            )->fetchAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $A = false;
+        }
+        if (is_array($A)) {
+            $A = new DataArray($A);
             $this->username = $A['username'];
             $this->fullname = $A['fullname'];
             $this->email = $A['email'];
             $this->language = str_replace('_' . COM_getCharset(), '', $A['language']);
             $this->setCart($A['cart']);
-            $this->setPrefGW(SHOP_getVar($A, 'pref_gw'));
+            $this->setPrefGW($A->getString('pref_gw'));
             $this->addresses = Address::getByUser($uid);
-            $this->gw_ids = $this->getCustomerIds($uid);
+            $this->gw_ids = new DataArray($this->getCustomerIds($uid));
             $this->setCreationDate($A['created_ts']);
             if ($A['uid'] > 0) {
                 // The returned uid value will be null if the user record was
@@ -203,9 +211,9 @@ class Customer
      * @param   string  $gw_id      ID of gateway
      * @return  string      Customer ID, NULL if not set
      */
-    public function getGatewayId($gw_id)
+    public function getGatewayId(string $gw_id) : string
     {
-        return SHOP_getVar($this->gw_ids, $gw_id, 'string', NULL);
+        return $this->gw_ids->getString($gw_id);
     }
 
 
@@ -655,6 +663,7 @@ class Customer
             }
             $have_address = true;
         }
+        $A = new DataArray($A);
         $addr_id = $Def->getID();
         if ($addr_id > 0) {
             $have_address = true;
@@ -737,8 +746,8 @@ class Customer
         // Get the state options into a variable so the length of the options
         // can be set in a template var, to set the visibility.
         $state_options = State::optionList(
-            SHOP_getVar($A, 'country', 'string', $country, false),
-            SHOP_getVar($A, 'state', 'string', $selAddress->getState(), false)
+            $A->getString('country', $country),
+            $A->getString('state', $selAddress->getState())
         );
         $T->set_var(array(
             'pi_url'        => SHOP_URL,
@@ -762,7 +771,7 @@ class Customer
             'action'        => $this->formaction,
             'next_step'     => (int)$step + 1,
             'country_options' => Country::optionList(
-                SHOP_getVar($A, 'country', 'string', $country, false)
+                $A->getString('country', $country)
             ),
             'state_options' => $state_options,
             'state_sel_vis' => strlen($state_options) > 0 ? '' : 'none',

@@ -15,6 +15,7 @@ namespace Shop;
 use glFusion\Database\Database;
 use Shop\Models\Stock;
 use Shop\Models\ProductCheckbox;
+use Shop\Models\DataArray;
 
 
 /**
@@ -199,7 +200,7 @@ class OrderItem
         if (isset($A['price'])) {
             $overrides['price'] = $A['price'];
         }
-
+        $A = DataArray::fromArray($A);  // convert to object
         $OI->setVars($A);
         if (!isset($A['base_price'])) {
             $item_price = $OI->getProduct()
@@ -349,35 +350,33 @@ class OrderItem
      * @param   array   $A      Array of values
      * @return  object  $this
      */
-    public function setVars($A)
+    public function setVars(DataArray $A) : self
     {
-        if (!is_array($A)) {
+        /*if (!is_array($A)) {
             return $this;
-        }
-        $this->id = SHOP_getVar($A, 'id', 'integer', 0);
-        $this->order_id = SHOP_getVar($A, 'order_id');
-        $this->product_id = SHOP_getVar($A, 'product_id');
-        $this->setSKU(SHOP_getVar($A, 'sku', 'string'));
-        $this->dscp = SHOP_getVar($A, 'description');
-        $this->quantity = SHOP_getVar($A, 'quantity', 'integer', 0);
-        $this->expiration = SHOP_getVar($A, 'expiration', 'integer', 0);
-        $this->base_price = SHOP_getVar($A, 'base_price', 'float', 0);
-        $this->price = SHOP_getVar($A, 'price', 'float', 0);
-        $this->setDiscount(SHOP_getVar($A, 'qty_discount', 'float'), 0);
-        $this->token = SHOP_getVar($A, 'token');
-        $this->net_price = SHOP_getVar($A, 'net_price', 'float', 0);
-        if (array_key_exists('extras', $A)) {
-            $this->setExtras($A['extras']);
-        }
-        $this->taxable = SHOP_getVar($A, 'taxable', 'integer') ? 1 : 0;
-        $this->shipping = SHOP_getVar($A, 'shipping', 'float', 0);
-        $this->shipping_units = SHOP_getVar($A, 'shipping_units', 'float', 0);
-        $this->shipping_weight = SHOP_getVar($A, 'shipping_weight', 'float', 0);
-        $this->handling = SHOP_getVar($A, 'handling', 'float', 0);
-        $this->tax = SHOP_getVar($A, 'tax', 'float', 0);
-        $this->tax_rate = SHOP_getVar($A, 'tax_rate', 'float', 0);
-        $this->variant_id = SHOP_getVar($A, 'variant_id', 'integer', 0);
-        $this->setQtyShipped(SHOP_getVar($A, 'qty_shipped', 'integer', 0));
+    }*/
+        $this->id = $A->getInt('id');
+        $this->order_id = $A->getString('order_id');
+        $this->product_id = $A->getString('product_id');
+        $this->setSKU($A->getString('sku'));
+        $this->dscp = $A->getString('description');
+        $this->quantity = $A->getInt('quantity');
+        $this->expiration = $A->getInt('expiration');
+        $this->base_price = $A->getFloat('base_price');
+        $this->price = $A->getFloat('price');
+        $this->setDiscount($A->getFloat('qty_discount'));
+        $this->token = $A->getString('token');
+        $this->net_price = $A->getFloat('net_price');
+        $this->setExtras($A->getArray('extras'));
+        $this->taxable = $A->getInt('taxable');
+        $this->shipping = $A->getFloat('shipping');
+        $this->shipping_units = $A->getFloat('shipping_units');
+        $this->shipping_weight = $A->getFloat('shipping_weight');
+        $this->handling = $A->getFloat('handling');
+        $this->tax = $A->getFloat('tax');
+        $this->tax_rate = $A->getFloat('tax_rate');
+        $this->variant_id = $A->getInt('variant_id');
+        $this->setQtyShipped($A->getInt('qty_shipped'));
         return $this;
     }
 
@@ -1050,7 +1049,7 @@ class OrderItem
      * @param   object  $Item2  Item object to check
      * @return  boolean     True if $Item2 matches this item, False if not
      */
-    public function Matches(OrdeItem $Item2) : bool
+    public function Matches(OrderItem $Item2) : bool
     {
         if ($this->product_id != $Item2->product_id) {
             return false;

@@ -17,6 +17,7 @@ use glFusion\Database\Database;
 use Shop\Payment;   // to record application of coupon amounts
 use Shop\Models\ProductType;
 use Shop\Models\Dates;
+use Shop\Models\DataArray;
 use Shop\Template;
 use Shop\OrderItem;
 use Shop\Order;
@@ -90,14 +91,16 @@ class Coupon extends \Shop\Product
     {
         global $_SHOP_CONF;
 
+        $opts = new DataArray($opts);
+
         // Set all the standard option values
         $options = array(
-            'length'    => SHOP_getVar($_SHOP_CONF, 'gc_length', 'int', 10),
+            'length'    => $opts->getInt('gc_length', 10),
             'prefix'    => $_SHOP_CONF['gc_prefix'],
             'suffix'    => $_SHOP_CONF[ 'gc_suffix'],
-            'letters'   => SHOP_getVar($_SHOP_CONF, 'gc_letters', 'int'),
-            'numbers'   => SHOP_getVar($_SHOP_CONF, 'gc_numbers', 'int'),
-            'symbols'   => SHOP_getVar($_SHOP_CONF, 'gc_symbols', 'int'),
+            'letters'   => $opts->getInt('gc_letters'),
+            'numbers'   => $opts->getInt('gc_numbers'),
+            'symbols'   => $opts->getInt('gc_symbols'),
             'mask'      => $_SHOP_CONF['gc_mask'],
         );
 
@@ -437,14 +440,15 @@ class Coupon extends \Shop\Product
         $Order = $Item->getOrder();
         $status = 0;
         $amount = (float)$Item->getPrice();
-        $special = SHOP_getVar($Item->getExtras(), 'special', 'array');
-        $recip_email = SHOP_getVar($special, 'recipient_email', 'string');
+        $Extras = new DataArray($Item->getExtras());
+        $special = new DataArray($Extras->getArray('special'));
+        $recip_email = $special->getString('recipient_email');
         if (empty($recip_email)) {
             $recip_email = $Order->getBuyerEmail();
             $Item->addSpecial('recipient_email', $recip_email);
         }
         $sender_name = $IPN['payer_name'];
-        $msg = SHOP_getVar($special, 'message', 'string');
+        $msg = $special->getString('message');
         $uid = $Item->getOrder()->getUid();
         $gc_code = self::Purchase($amount, $uid);
         $Item->addSpecial('gc_code', $gc_code);

@@ -18,11 +18,11 @@ namespace Shop\Models;
  * Class for shipping rate quotes.
  * @package shop
  */
-class ShippingQuote implements \ArrayAccess
+class ShippingQuote extends DataArray   //implements \ArrayAccess
 {
     /** Shipping information properties.
      * @var array */
-    private $properties = array(
+    protected $properties = array(
         'id'        => 0,
         'shipper_id' => 0,      // numeric DB record for shipping method
         'carrier_code' => '',   // class name for shipper, e.g. "ups"
@@ -37,22 +37,12 @@ class ShippingQuote implements \ArrayAccess
 
 
     /**
-     * Create a new shipping quote, optionally with information included.
+     * Set the shipping quote ID for reference.
+     *
+     * @param   string  $id     Quote ID
+     * @return  object  $this
      */
-    public function __construct($val='')
-    {
-        if (is_string($val) && !empty($val)) {
-            $x = json_decode($val, true);
-            if ($x) {
-                $this->setVars($x);
-            }
-        } elseif (is_array($val)) {
-            $this->setVars($val);
-        }
-    }
-
-
-    public function setID($id)
+    public function setID($id) : self
     {
         $this->properties['id'] = $id;
         return $this;
@@ -65,7 +55,7 @@ class ShippingQuote implements \ArrayAccess
      * @param   integer $id     DB record ID of shipping method
      * @return  object  $this
      */
-    public function setShipperID($id)
+    public function setShipperID(int $id) : self
     {
         $this->properties['shipper_id'] = (int)$id;
         return $this;
@@ -78,7 +68,7 @@ class ShippingQuote implements \ArrayAccess
      * @param   string  $code   Carrier code
      * @return  object  $this
      */
-    public function setCarrierCode($code)
+    public function setCarrierCode(string $code) : self
     {
         $this->properties['carrier_code'] = $code;
         return $this;
@@ -91,7 +81,7 @@ class ShippingQuote implements \ArrayAccess
      * @param   string  $title  Name of the carrier
      * @return  object  $this
      */
-    public function setCarrierTitle($title)
+    public function setCarrierTitle(string $title) : self
     {
         $this->properties['carrier_title'] = $title;
         return $this;
@@ -104,7 +94,7 @@ class ShippingQuote implements \ArrayAccess
      * @param   string  $code   Service code
      * @return  object  $this
      */
-    public function setServiceCode($code)
+    public function setServiceCode(string $code) : self
     {
         $this->properties['svc_code'] = $code;
         return $this;
@@ -117,7 +107,7 @@ class ShippingQuote implements \ArrayAccess
      * @param   string  $id     Service ID
      * @return  object  $this
      */
-    public function setServiceID($id)
+    public function setServiceID(string $id) : self
     {
         $this->properties['svc_id'] = $id;
         return $this;
@@ -130,7 +120,7 @@ class ShippingQuote implements \ArrayAccess
      * @param   string  $title  Service description
      * @return  object  $this
      */
-    public function setServiceTitle($title)
+    public function setServiceTitle(string $title) : self
     {
         $this->properties['svc_title'] = $title;
         return $this;
@@ -143,7 +133,7 @@ class ShippingQuote implements \ArrayAccess
      * @param   float   $cost   Total cost
      * @return  object  $this
      */
-    public function setCost($cost)
+    public function setCost(float $cost) : self
     {
         $this->properties['cost'] = (float)$cost;
         return $this;
@@ -156,7 +146,7 @@ class ShippingQuote implements \ArrayAccess
      * @param   integer $count  Number of packages
      * @return  object  $this
      */
-    public function setPackageCount($count)
+    public function setPackageCount(int $count) : self
     {
         $this->properties['pkg_count'] = (int)$count;
         return $this;
@@ -170,67 +160,9 @@ class ShippingQuote implements \ArrayAccess
      * @param   ShippingQuote   $b  Second quote
      * @return  float       Difference in cost
      */
-    public static function sortByCost(ShippingQuote $a, ShippingQuote $b)
+    public static function sortByCost(ShippingQuote $a, ShippingQuote $b) : float
     {
         return $a['cost'] - $b['cost'];
-    }
-
-
-    /**
-     * Set a property value.
-     *
-     * @param   string  $key    Key name
-     * @param   mixed   $value  Value to set
-     */
-    public function offsetSet($key, $value)
-    {
-        $this->properties[$key] = $value;
-    }
-
-
-    /**
-     * Check if a key exists.
-     *
-     * @param   mixed   $key    Key name
-     * @return  boolean     True if the key exists.
-     */
-    public function offsetExists($key)
-    {
-        return isset($this->properties[$key]);
-    }
-
-
-    /**
-     * Remove a property.
-     *
-     * @param   mixed   $key    Key name
-     */
-    public function offsetUnset($key)
-    {
-        unset($this->properties[$key]);
-    }
-
-
-    /**
-     * Get a value from the properties.
-     *
-     * @param   mixed   $key    Key name
-     * @return  mixed       Value of property, NULL if not set
-     */
-    public function offsetGet($key)
-    {
-        return isset($this->properties[$key]) ? $this->properties[$key] : NULL;
-    }
-
-
-    /**
-     * Get the shipping quote properties as an array.
-     *
-     * @return  array       Properties array
-     */
-    public function toArray()
-    {
-        return $this->properties;
     }
 
 }

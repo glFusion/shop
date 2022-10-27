@@ -22,6 +22,8 @@ use Shop\Models\Stock;
 use Shop\Models\IPN;
 use Shop\Models\ProductCheckbox;
 use Shop\Models\ProductVariantInfo;
+use Shop\Models\DataArray;
+use Shop\Models\UrlParams;
 
 
 /**
@@ -379,6 +381,7 @@ class Product
 
         if (is_array($id)) {
             // Record has already been read from the DB
+            $id = DataArray::fromArray($id);
             $this->setVars($id, true);
             $this->isNew = false;
         } elseif ($id == 0) {
@@ -699,41 +702,39 @@ class Product
      * @param   boolean $fromDB     True if read from DB, false if from $_POST
      * @return  object  $this
      */
-    public function setVars(array $row, ?bool $fromDB=NULL) : self
+    public function setVars(DataArray $row, ?bool $fromDB=NULL) : self
     {
-        if (!is_array($row) || empty($row)) return $this;
-
-        $this->id = $row['id'];
-        $this->item_id = $row['id'];
-        $this->description = $row['description'];
-        $this->enabled = isset($row['enabled']) ? $row['enabled'] : 0;
-        $this->featured = isset($row['featured']) ? $row['featured'] : 0;
-        $this->name = $row['name'];
-        //$this->old_sku = SHOP_getVar($row, 'old_sku');
-        $this->short_description = $row['short_description'];
-        $this->price = (float)$row['price'];
-        $this->filename = $row['file'];
-        $this->expiration = $row['expiration'];
-        $this->keywords = $row['keywords'];
-        $this->prod_type = isset($row['prod_type']) ? $row['prod_type'] : 0;
-        $this->weight = (float)$row['weight'];
-        $this->taxable = isset($row['taxable']) ? $row['taxable'] : 0;
-        $this->shipping_type = SHOP_getVar($row, 'shipping_type', 'integer');
-        $this->shipping_amt = SHOP_getVar($row, 'shipping_amt', 'float');
-        $this->shipping_units = SHOP_getVar($row, 'shipping_units', 'float');
-        $this->show_random = isset($row['show_random']) ? $row['show_random'] : 0;
-        $this->show_popular = isset($row['show_popular']) ? $row['show_popular'] : 0;
-        $this->track_onhand = isset($row['track_onhand']) ? $row['track_onhand'] : 0;
-        $this->oversell = isset($row['oversell']) ? $row['oversell'] : 0;
-        $this->custom = $row['custom'];
-        $this->setAvailBegin($row['avail_beg']);
-        $this->setAvailEnd($row['avail_end']);
-        $this->prod_rule = (int)$row['prod_rule'];
+        $this->id = $row->getInt('id');
+        $this->item_id = $this->id;
+        $this->description = $row->getString('description');
+        $this->enabled = $row->getInt('enabled');
+        $this->featured = $row->getInt('featured');
+        $this->name = $row->getString('name');
+        //$this->old_sku = $row->getString('old_sku');
+        $this->short_description = $row->getString('short_description');
+        $this->price = $row->getFloat('price');
+        $this->filename = $row->getString('file');
+        $this->expiration = $row->getString('expiration');
+        $this->keywords = $row->getString('keywords');
+        $this->prod_type = $row->getInt('prod_type');
+        $this->weight = $row->getFloat('weight');
+        $this->taxable = $row->getInt('taxable');
+        $this->shipping_type = $row->getInt('shipping_type');
+        $this->shipping_amt = $row->getFloat('shipping_amt');
+        $this->shipping_units = $row->getFloat('shipping_units');
+        $this->show_random = $row->getInt('show_random');
+        $this->show_popular = $row->getInt('show_popular');
+        $this->track_onhand = $row->getInt('track_onhand');
+        $this->oversell = $row->getInt('oversell');
+        $this->custom = $row->getString('custom');
+        $this->setAvailBegin($row->getString('avail_beg'));
+        $this->setAvailEnd($row->getString('avail_end'));
+        $this->prod_rule = $row->getInt('prod_rule');
         if ($this->avail_end < $this->avail_beg) {
             $this->avail_end = Dates::MAX_DATE;
         }
-        $this->min_ord_qty = SHOP_getVar($row, 'min_ord_qty', 'integer', 1);
-        $this->max_ord_qty = SHOP_getVar($row, 'max_ord_qty', 'integer', 0);
+        $this->min_ord_qty = $row->getInt('min_ord_qty', 1);
+        $this->max_ord_qty = $row->getInt('max_ord_qty', 0);
         if (!$this->hasVariants()) {
             // Get the stock count from the base Stock record
             $this->Stock = Stock::getByItem($this->id);
@@ -743,8 +744,8 @@ class Product
         // there will be two array variables for qty and discount percent.
         // From the DB there's a single serialized string
         if ($fromDB) {
-            $this->setQtyDiscounts($row['qty_discounts']);
-            $this->dt_add = $row['dt_add'];
+            $this->setQtyDiscounts($row->getString('qty_discounts'));
+            $this->dt_add = $row->getString('dt_add');
         } else {
             $this->dt_add = SHOP_now()->toMySQL();
             $qty_discounts = array();
@@ -760,20 +761,20 @@ class Product
             $this->setQtyDiscounts($qty_discounts);
         }
 
-        $this->votes = SHOP_getVar($row, 'votes', 'integer');
-        $this->rating = SHOP_getVar($row, 'rating', 'float');
-        $this->comments_enabled = (int)$row['comments_enabled'];
-        $this->rating_enabled = isset($row['rating_enabled']) ? $row['rating_enabled'] : 0;
-        $this->btn_type = $row['buttons'];
-        $this->setSupplierID($row['supplier_id'])
-            ->setBrandID($row['brand_id'])
-            ->setSupplierRef($row['supplier_ref'])
-            ->setLeadTime($row['lead_time'])
-            ->setDefVariantID(SHOP_getVar($row, 'def_pv_id', 'integer'))
-            ->setZoneRuleID($row['zone_rule']);
+        $this->votes = $row->getInt('votes');
+        $this->rating = $row->getFloat('rating');
+        $this->comments_enabled = $row->getInt('comments_enabled');
+        $this->rating_enabled = $row->getInt('rating_enabled');
+        $this->btn_type = $row->getString('buttons');
+        $this->setSupplierID($row->getInt('supplier_id'))
+            ->setBrandID($row->getInt('brand_id'))
+            ->setSupplierRef($row->getString('supplier_ref'))
+            ->setLeadTime($row->getString('lead_time'))
+            ->setDefVariantID($row->getInt('def_pv_id'))
+            ->setZoneRuleID($row->getInt('zone_rule'));
 
         if ($fromDB) {
-            $this->views = $row['views'];
+            $this->views = $row->getInt('views');
         }
         return $this;
     }
@@ -811,6 +812,7 @@ class Product
         }
         if (is_array($row)) {
             $this->isNew = false;
+            $row = DataArray::fromArray($row);
             $this->setVars($row, true)
                 ->loadOptions()
                 ->loadCategories();
@@ -1033,10 +1035,11 @@ class Product
         $this->old_sku = $this->name;
 
         if (is_array($A)) {
+            $A = DataArray::fromArray($A);
             $this->setVars($A);
         }
 
-        $nonce = SHOP_getVar($A, 'nonce');
+        $nonce = $A->getString('nonce');
         $this->Errors = $this->_Validate();
         if (!empty($errs)) {
             SHOP_setMsg($this->Errors, 'error');
@@ -4048,9 +4051,10 @@ class Product
         ) );
 
         // Filter on category, brand and supplier
-        $cat_id = SHOP_getVar($_GET, 'cat_id', 'integer', 0);
-        $brand_id = SHOP_getVar($_GET, 'brand_id', 'integer', 0);
-        $supplier_id = SHOP_getVar($_GET, 'supplier_id', 'integer', 0);
+        $UrlArgs = UrlParams::getInstance();
+        $cat_id = $UrlArgs->getInt('cat_id');
+        $brand_id = $UrlArgs->getInt('brand_id');
+        $supplier_id = $UrlArgs->getInt('supplier_id');
         $def_filter = 'WHERE 1=1';
         if ($cat_id > 0) {
             $def_filter .= " AND pxc.cat_id= $cat_id";

@@ -16,6 +16,7 @@ use glFusion\Database\Database;
 use glFusion\Log\Log;
 use Shop\Models\Dates;
 use Shop\Models\ShippingQuote;
+use Shop\Models\DataArray;
 use Shop\Config;
 
 
@@ -182,6 +183,7 @@ class Shipper
 
         if (is_array($A) && !empty($A)) {
             // DB record passed in, e.g. from _getSales()
+            $A = new DataArray($A);
             $this->setVars($A);
             $this->isNew = false;
         } elseif (is_numeric($A) && $A > 0) {
@@ -233,6 +235,7 @@ class Shipper
             $A = false;
         }
         if (is_array($A)) {
+            $A = new DataArray($A);
             $this->setVars($A);
             return true;
         } else {
@@ -247,23 +250,23 @@ class Shipper
      * @param   array   $A      Array of properties
      * @param   boolean $fromDB True if reading from DB, False if from a form
      */
-    public function setVars($A, $fromDB=true)
+    public function setVars(DataArray $A, bool $fromDB=true) : void
     {
         global $LANG_SHOP;
 
-        $this->setID(SHOP_getVar($A, 'id', 'integer'))
-            ->setModuleCode(SHOP_getVar($A, 'module_code'))
-            ->setName(SHOP_getVar($A, 'name'))
-            ->setMinUnits(SHOP_getVar($A, 'min_units', 'float', 0))
-            ->setMaxUnits(SHOP_getVar($A, 'max_units', 'float', 0))
-            ->setEnabled(SHOP_getVar($A, 'enabled', 'integer'))
-            ->setReqShipto(SHOP_getVar($A, 'req_shipto', 'integer'))
-            ->setTaxLocation(SHOP_getVar($A, 'tax_loc', 'integer'))
-            ->setUseFixed(SHOP_getVar($A, 'use_fixed', 'integer', 0))
-            ->setQuoteMethod(SHOP_getVar($A, 'quote_method', 'integer', 1))
-            ->setGrpAccess(SHOP_getVar($A, 'grp_access', 'integer', 2));
+        $this->setID($A->getInt('id'))
+            ->setModuleCode($A->getString('module_code'))
+            ->setName($A->getString('name'))
+            ->setMinUnits($A->getFloat('min_units'))
+            ->setMaxUnits($A->getFloat('max_units'))
+            ->setEnabled($A->getInt('enabled'))
+            ->setReqShipto($A->getInt('req_shipto'))
+            ->setTaxLocation($A->getInt('tax_loc'))
+            ->setUseFixed($A->getInt('use_fixed'))
+            ->setQuoteMethod($A->getInt('quote_method', 1))
+            ->setGrpAccess($A->getInt('grp_access', 2));
         if (!$fromDB) {
-            $this->setValidFrom(SHOP_getVar($A, 'valid_from', 'string', Dates::MIN_DATE));
+            $this->setValidFrom($A->getString('valid_from', Dates::MIN_DATE));
             $this->free_threshold = isset($A['ena_free']) ? (float)$A['free_threshold'] : 0;
             $rates = array();
             foreach ($A['rateRate'] as $id=>$txt) {
@@ -303,8 +306,8 @@ class Shipper
             $this->rates = $rates;
             $this->free_threshold = (float)$A['free_threshold'];
         }
-        $this->setValidFrom(SHOP_getVar($A, 'valid_from', 'string', Dates::MIN_DATE . ' ' . Dates::MIN_TIME));
-        $this->setValidTo(SHOP_getVar($A, 'valid_to', 'string', Dates::MAX_UNIXDATE . ' ' . Dates::MAX_TIME));
+        $this->setValidFrom($A->getString('valid_from', Dates::MIN_DATE . ' ' . Dates::MIN_TIME));
+        $this->setValidTo($A->getString('valid_to', Dates::MAX_UNIXDATE . ' ' . Dates::MAX_TIME));
     }
 
 
@@ -980,6 +983,7 @@ class Shipper
         global $_TABLES, $_SHOP_CONF;
 
         if (is_array($A)) {
+            $A = new DataArray($A);
             $this->setVars($A, false);
         }
 
