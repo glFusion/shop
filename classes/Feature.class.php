@@ -14,6 +14,7 @@
 namespace Shop;
 use glFusion\Database\Database;
 use glFusion\Log\Log;
+use Shop\Models\DataArray;
 
 
 /**
@@ -71,7 +72,7 @@ class Feature
     public function __construct($id=0)
     {
         if (is_array($id)) {
-            $this->setVars($id);
+            $this->setVars(new DataArray($id));
         } else {
             $id = (int)$id;
             if ($id < 1) {
@@ -147,16 +148,13 @@ class Feature
      *
      * @param   array $A    Array of values, from DB or $_POST
      */
-    public function setVars($A)
+    public function setVars(DataArray $A) : void
     {
-        if (!is_array($A)) {
-            return;
-        }
-        $this->ft_id = (int)$A['ft_id'];
-        $this->fv_id = SHOP_getVar($A, 'fv_id', 'integer', 0);
-        $this->ft_name = $A['ft_name'];
-        $this->fv_text = SHOP_getVar($A, 'fv_text', 'string', '');
-        $this->orderby = SHOP_getVar($A, 'orderby', 'integer', 9999);
+        $this->ft_id = $A->getInt('ft_id');
+        $this->fv_id = $A->getInt('fv_id');
+        $this->ft_name = $A->getString('ft_name');
+        $this->fv_text = $A->getString('fv_text');
+        $this->orderby = $A->getInt('orderby', 9999);
     }
 
 
@@ -188,7 +186,7 @@ class Feature
             $row = false;
         }
         if (is_array($row)) {
-            $this->setVars($row);
+            $this->setVars(new DataArray($row));
             return true;
         } else {
             return false;
@@ -208,6 +206,7 @@ class Feature
 
         $reorder = false;
         if (is_array($A) && !empty($A)) {
+            $A = new DataArray($A);
             if (!isset($A['orderby'])) {
                 // Put this field at the end of the line by default.
                 $A['orderby'] = 9999;

@@ -18,6 +18,7 @@ if (!defined ('GVERSION')) {
 }
 use glFusion\Database\Database;
 use glFusion\Log\Log;
+use Shop\Models\DataArray;
 
 
 /**
@@ -215,6 +216,7 @@ function service_addCartItem_shop(array $args, &$output, &$svc_msg)
         return PLG_RET_ERROR;
     }
 
+    $args = new DataArray($args);
     $Cart = Shop\Cart::getInstance();
     $price = 0;
     foreach (array('amount', 'price') as $s) {
@@ -246,24 +248,24 @@ function service_addCartItem_shop(array $args, &$output, &$svc_msg)
     $override = isset($args['override']) && $args['override'] ? true : false;
     $cart_args = array(
         'item_number'   => $item_number,
-        'quantity'      => SHOP_getVar($args, 'quantity', 'float', 1),
-        'item_name'     => SHOP_getVar($args, 'item_name', 'string'),
+        'quantity'      => $args->getFloat('quantity', 1),
+        'item_name'     => $args->getString('item_name'),
         'price'         => $price,
         'short_description' => $dscp,
-        'options'       => SHOP_getVar($args, 'options', 'array'),
-        'extras'        => SHOP_getVar($args, 'extras', 'array'),
+        'options'       => $args->getArray('options'),
+        'extras'        => $args->getArray('extras'),
         'override'      => $override,
-        'uid'           => SHOP_getVar($args, 'uid', 'int', 1),
+        'uid'           => $args->getInt('uid', 1),
     );
     if (isset($args['tax'])) {      // tax element not set at all if not present
-        $cart_args['tax'] = $args['tax'];
+        $cart_args['tax'] = $args->getFloat('tax');
     }
 
     // If the "unique" flag is present, then only update specific elements
     // included in the "updates" array. If there are no specific updates, then
     // do nothing.
     if (
-        SHOP_getVar($args, 'unique', 'boolean', false) &&
+        $args->getInt('unique') &&
         $Cart->Contains($item_number) !== false
     ) {
         // If the item exists, don't add it, but check if there's an update
@@ -319,8 +321,9 @@ function service_formatAmount_shop($args, &$output, &$svc_msg)
     global $_SHOP_CONF;
 
     if (is_array($args)) {
-        $amount = SHOP_getVar($args, 'amount', 'float');
-        $symbol = SHOP_getVar($args, 'symbol', 'boolean', true);
+        $args = new DataArray($args);
+        $amount = $args->getFloat('amount');
+        $symbol = $args->getBool('symbol', true);
     } else {
         $amount = (float)$args;
         $symbol = true;
@@ -357,12 +360,13 @@ function service_sendcards_shop($args, &$output, &$svc_msg)
         return PLG_RET_PERMISSION_DENIED;
     }
 
-    $amt = SHOP_getVar($args, 'amount', 'float');
-    $uids = SHOP_getVar($args, 'members', 'mixed');
-    $gid = SHOP_getVar($args, 'group_id', 'int');
-    $exp = SHOP_getVar($args, 'expires', 'string');
-    $msg = SHOP_getVar($args, 'message', 'string');
-    $notify = SHOP_getVar($args, 'notify', 'boolean', false);
+    $args = new DataArray($args);
+    $amt = $args->getFloat('amount');
+    $uids = $args->getRaw('members');
+    $gid = $args->getInt('group_id');
+    $exp = $args->getString('expires');
+    $msg = $args->getString('message');
+    $notify = $args->getBool('notify', false);
     if (is_string($uids)) {
         $uids = explode('|', $uids);
     }
