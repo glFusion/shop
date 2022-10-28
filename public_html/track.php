@@ -21,14 +21,14 @@ if (
     COM_404();
     exit;
 }
-use Shop\Models\PostGet;
+use Shop\Models\Request;
 
-$PostGet = PostGet::getInstance();
+$Request = Request::getInstance();
 
 // Get the shipper code and tracking number.
 // Check that both are provided.
-$shipper = $PostGet->getString('shipper');
-$tracking_num = $PostGet->getString('tracking');
+$shipper = $Request->getString('shipper');
+$tracking_num = $Request->getString('tracking');
 if (empty($shipper) || empty($tracking_num)) {
     echo "No tracking information found";
     exit;

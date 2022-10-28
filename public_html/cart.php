@@ -24,7 +24,7 @@ if (
     COM_404();
     exit;
 }
-use Shop\Models\PostGet;
+use Shop\Models\Request;
 
 $content = '';
 $action = '';
@@ -38,11 +38,12 @@ $expected = array(
     'editcart', 'viewcart', 'cancel', 'view', 'billto', 'shipto', 'addresses', 'shipping',
     'payment', 'confirm',
 );
-$PostGet = PostGet::getInstance();
+$Request = Request::getInstance();
+
 foreach($expected as $provided) {
-    if (isset($PostGet[$provided])) {
+    if (isset($Request[$provided])) {
         $action = $provided;
-        $actionval = $PostGet[$provided];
+        $actionval = $Request[$provided];
         break;
     }
 }
@@ -60,7 +61,7 @@ if ($action == '') {
 switch ($action) {
 case 'save_viewcart':
     $Cart = Shop\Cart::getInstance();
-    $Cart->Update($PostGet);
+    $Cart->Update($Request);
     if (empty($Cart->getBuyerEmail())) {
         SHOP_setMsg($LANG_SHOP['err_missing_email'], 'error');
         echo COM_refresh(SHOP_URL . '/cart.php');
@@ -70,7 +71,7 @@ case 'save_viewcart':
     break;
 
 case 'update':
-    Shop\Cart::getInstance()->Update($PostGet);
+    Shop\Cart::getInstance()->Update($Request);
     echo COM_refresh(SHOP_URL . '/cart.php');
     break;
 
@@ -78,7 +79,7 @@ case 'delete':
     // Delete a single item from the cart
     $id = COM_getArgument('id');
     \Shop\Cart::getInstance()->Remove($id);
-    $return_url = $PostGet->getString('return');
+    $return_url = $Request->getString('return');
     if (!empty($return_url)) {
         echo COM_refresh($return_url);
     } else {
@@ -94,7 +95,7 @@ case 'empty':
     break;
 
 case 'save_payment':
-    $gwname = $PostGet->getString('gateway');
+    $gwname = $Request->getString('gateway');
     $Cart = \Shop\Cart::getInstance();
     $Cart->setGateway($gwname);
     $Cart->validateDiscountCode();
@@ -153,7 +154,7 @@ case 'checkout':
         exit;
     }
 /*
-    $gateway = $PostGet->getString('gateway');
+    $gateway = $Request->getString('gateway');
     if ($gateway !== '') {
         \Shop\Gateway::setSelected($gateway);
         $Cart->setGateway($gateway);
@@ -161,9 +162,9 @@ case 'checkout':
             ->setPrefGW($gateway)
             ->saveUser();
     }
-    if (isset($PostGet['by_gc'])) {
+    if (isset($Request['by_gc'])) {
         // Has some amount paid by coupon
-        $Cart->setGC($PostGet->getInt('by_gc');
+        $Cart->setGC($Request->getInt('by_gc');
     } elseif ($gateway == '_coupon') {
         // Entire order is paid by coupon
         $Cart->setGC(-1);
@@ -172,15 +173,15 @@ case 'checkout':
         $Cart->setGC(0);
     }
  */
-    /*if (isset($PostGet['order_instr'])) {
-        $Cart->setInstructions($PostGet->getString('order_instr']);
+    /*if (isset($Request['order_instr'])) {
+        $Cart->setInstructions($Request->getString('order_instr']);
     }
-    $payer_email = $PostGet->getString('payer_email');
+    $payer_email = $Request->getString('payer_email');
     if (!empty($payer_email)) {
         $Cart->setEmail($payer_email);
     }*/
-    /*if (isset($PostGet['shipper_id'])) {
-        $Cart->setShipper($PostGet->getInt('shipper_id'));
+    /*if (isset($Request['shipper_id'])) {
+        $Cart->setShipper($Request->getInt('shipper_id'));
     }*/
 
     // Final check that all items are valid. No return or error message
@@ -199,16 +200,16 @@ case 'checkout':
             echo COM_refresh(SHOP_URL . '/cart.php');
         }
     }
-/*    if (isset($PostGet['quantity'])) {
+/*    if (isset($Request['quantity'])) {
         // Update the cart quantities if coming from the cart view.
         // This also calls Save() on the cart
-        $Cart->Update($PostGet);
+        $Cart->Update($Request);
     } else {
         $Cart->Save();
     }
  */
     // See what workflow elements we already have.
-    $next_step = $PostGet->getInt('next_step');
+    $next_step = $Request->getInt('next_step');
     if ($_SHOP_CONF['anon_buy'] == 1 || !COM_isAnonUser()) {
         $view = 'none';
         $content .= $Cart->getView($next_step);
@@ -220,7 +221,7 @@ case 'checkout':
     break;
 
 case 'save_shipping':
-    $method_id = $PostGet->getInt('method_id');
+    $method_id = $Request->getInt('method_id');
     $Cart = Shop\Cart::getInstance();
     $Cart->setShippingOption($method_id);
     /*$options = $Cart->getShippingOptions();
@@ -240,22 +241,22 @@ case 'save_shipping':
 
 case 'save_addresses':
     $Cart = Shop\Cart::getInstance();
-    if (isset($PostGet['is_anon'])) {
+    if (isset($Request['is_anon'])) {
         $Shipto = new Shop\Address;
-        $Shipto->fromArray($PostGet->toArray(), 'shipto');
+        $Shipto->fromArray($Request->toArray(), 'shipto');
         $Shipto->setID(-1);
         $Cart->setAddress($Shipto, 'shipto');
-        if (isset($PostGet['shipto_is_billto'])) {
+        if (isset($Request['shipto_is_billto'])) {
             $Cart->setAddress($Shipto, 'billto');
         } else {
             $Billto = new Shop\Address;
-            $Billto->fromArray($PostGet->toArray(), 'billto');
+            $Billto->fromArray($Request->toArray(), 'billto');
             $Billto->setID(-1);
             $Cart->setAddress($Billto, 'billto');
         }
     } else {
         foreach (array('billto', 'shipto') as $key) {
-            $addr_id = $PostGet->getInt($key . '_id');
+            $addr_id = $Request->getInt($key . '_id');
             if ($addr_id > 0) {
                 $Addr = Shop\Address::getInstance($addr_id);
                 $Cart->setAddress($Addr, $key);
@@ -263,11 +264,11 @@ case 'save_addresses':
         }
     }
     $save = false;
-    if (isset($PostGet['order_instr'])) {
-        $Cart->setInstructions($PostGet['order_instr']);
+    if (isset($Request['order_instr'])) {
+        $Cart->setInstructions($Request['order_instr']);
         $save = true;
     }
-    $buyer_email = $PostGet->getString('buyer_email');
+    $buyer_email = $Request->getString('buyer_email');
     if (!empty($buyer_email)) {
         $Cart->setBuyerEmail($buyer_email);
         $save = true;
@@ -284,9 +285,9 @@ case 'saveshipto':
     echo "here";die;
     $addr_type = substr($action, 4);   // get 'billto' or 'shipto'
     if ($actionval == 1 || $actionval == 2) {
-        $addr = json_decode($PostGet['addr'][$actionval], true);  // todo
+        $addr = json_decode($Request['addr'][$actionval], true);  // todo
     } else {
-        $addr = $PostGet->toArray();
+        $addr = $Request->toArray();
     }
     $Address = new Shop\Address($addr);
     $status = $Address->isValid($addr);
@@ -309,13 +310,13 @@ case 'saveshipto':
             $view = $addr_type;
             break;
         } else {
-            $PostGet['useaddress'] = $data[0];
+            $Request['useaddress'] = $data[0];
             $addr['addr_id'] = $data[0];
         }
     }
     $Cart = Shop\Cart::getInstance();
     $Cart->setAddress($addr, $addr_type);
-    //$next_step = $PostGet->getInt('next_step');
+    //$next_step = $Request->getInt('next_step');
     //$content = $Cart->getView($next_step);
     //$content = $Cart->getView(0);
     echo COM_refresh(SHOP_URL . '/cart.php');
@@ -323,7 +324,7 @@ case 'saveshipto':
     break;
 
 case 'nextstep':
-    $next_step = $PostGet->getInt('next_step');
+    $next_step = $Request->getInt('next_step');
     $content = Shop\Cart::getInstance()->getView($next_step);
     $view = 'none';
     break;
@@ -352,9 +353,9 @@ case 'addresses':
 case 'savevalidated':
 case 'saveaddr':
     if ($actionval == 1 || $actionval == 2) {
-        $addr_vars = json_decode($PostGet['addr'][$actionval], true); // todo
+        $addr_vars = json_decode($Request['addr'][$actionval], true); // todo
     } else {
-        $addr_vars = $PostGet->toArray();
+        $addr_vars = $Request->toArray();
     }
     if (isset($addr_vars['addr_id'])) {
         $id = $addr_vars['addr_id'];
@@ -384,7 +385,7 @@ case 'saveaddr':
         }
     }
     $Cart = Shop\Cart::getInstance();
-    echo COM_refresh(Shop\URL::get($PostGet->getString('return')));
+    echo COM_refresh(Shop\URL::get($Request->getString('return')));
     break;
 
 case 'editaddr':
@@ -405,8 +406,8 @@ case 'shipto':
     // there after submission
     $step = 8;     // form will return to ($step + 1)
     $U = Shop\Customer::getInstance();
-    if (isset($PostGet['address'])) {
-        $A = $PostGet->toArray();
+    if (isset($Request['address'])) {
+        $A = $Request->toArray();
     } elseif ($view == 'billto') {
         $A = Shop\Cart::getInstance()->getBillto()->toArray();
     } else {

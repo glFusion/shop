@@ -48,7 +48,7 @@ spl_autoload_register(function ($class)
     }
 });
 use Shop\Models\Views;
-use Shop\Models\PostGet;
+use Shop\Models\Request;
 use Shop\Upgrades;
 use Shop\Config;
 use Shop\Log;
@@ -135,7 +135,7 @@ function plugin_centerblock_shop($where = 1, $page = 1, $topic = '')
     if (Config::get('centerblock') == 1 && $topic == '') {
         $display = Shop\Menu::siteHeader();
         $display .= Shop\Menu::pageTitle();
-        $cat_id = PostGet::getInstance()->getInt('category');
+        $cat_id = Request::getInstance()->getInt('category');
         $Catalog = new Shop\Catalog;
         $display .= $Catalog->setCatID($cat_id)->defaultCatalog();
         $display .= Shop\Menu::siteFooter();
@@ -2014,7 +2014,7 @@ function plugin_profilesave_shop($uid=0)
         return;
     }
 
-    $apply_gc = PostGet::getInstance()->getString('pp_apply_gc');
+    $apply_gc = Request::getInstance()->getString('pp_apply_gc');
     if (!empty($apply_gc)) {
         Shop\Products\Coupon::Redeem($apply_gc, $uid);
     }

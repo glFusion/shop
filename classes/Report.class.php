@@ -14,7 +14,7 @@
 namespace Shop;
 use Shop\Models\Session;
 use Shop\Models\OrderStatus;
-use Shop\Models\PostGet;
+use Shop\Models\Request;
 use Shop\Field;
 
 
@@ -143,7 +143,7 @@ class Report
      */
     public function setParams() : self
     {
-        $Args = PostGet::getInstance();
+        $Args = Request::getInstance();
         $this->setType($Args->getString('out_type', $this->type));
         $this->allowed_statuses = $Args->getArray('orderstatus');
         self::_setSessVar('orderstatus', $this->allowed_statuses);

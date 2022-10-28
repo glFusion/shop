@@ -16,9 +16,9 @@
 
 require_once '../../lib-common.php';
 use Shop\Log;
-use Shop\Models\PostGet;
+use Shop\Models\Request;
 
-$gw_name = PostGet::getInstance()->getString('_gw');
+$gw_name = Request::getInstance()->getString('_gw');
 if (!empty($gw_name)) {
     $WH = Shop\Webhook::getInstance($gw_name);
     if ($WH && $WH->Verify()) {

@@ -19,7 +19,7 @@ namespace Shop\Models;
  * User Information class.
  * @package    shop
  */
-class PostGet extends DataArray
+class Request extends DataArray
 {
 
     /**
@@ -41,6 +41,19 @@ class PostGet extends DataArray
             $instance = new self;
         }
         return $instance;
+    }
+
+
+    /**
+     * Determine if the current request is via AJAX.
+     * Mimics COM_isAjax();
+     *
+     * @return  boolean     True if AJAX, False if not.
+     */
+    public function isAjax() : bool
+    {
+        return isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+            strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
     }
 
 }

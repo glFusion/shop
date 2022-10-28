@@ -28,7 +28,7 @@ if (
     exit;
 }
 use Shop\Config;
-use Shop\Models\PostGet;
+use Shop\Models\Request;
 
 $page_title = '';
 $action = '';
@@ -49,15 +49,15 @@ $expected = array(
     'cart', 'pidetail', 'viewcart',
 );
 $action = 'products';    // default view
-$PostGet = PostGet::getInstance();
+$Request = Request::getInstance();
 foreach($expected as $provided) {
-    if (isset($PostGet[$provided])) {
+    if (isset($Request[$provided])) {
         $action = $provided;
-        $actionval = $PostGet[$provided];
+        $actionval = $Request[$provided];
         break;
     }
 }
-$id = $PostGet->getString('id');
+$id = $Request->getString('id');
 $content = '';
 
 switch ($action) {
@@ -109,9 +109,9 @@ case 'action':      // catch all the "?action=" urls
         $T->set_file('msg', 'thanks_for_order.thtml');
         $T->set_var(array(
             'site_name'     => $_CONF['site_name'],
-            'payment_date'  => $PostGet->getString('payment_date'),
-            'currency'      => $PostGet->getString('mc_currency'),
-            'mc_gross'      => $PostGet->getFloat('mc_gross'),
+            'payment_date'  => $Request->getString('payment_date'),
+            'currency'      => $Request->getString('mc_currency'),
+            'mc_gross'      => $Request->getFloat('mc_gross'),
             'shop_url'      => Config::get('url'),
         ) );
         $content .= COM_showMessageText($T->parse('output', 'msg'),
@@ -131,7 +131,7 @@ case 'processorder':
     $gw_name = UrlArgs->getString('gateway', 'check');
     $gw = \Shop\Gateway::getInstance($gw_name);
     if ($gw !== NULL && $gw->allowNoIPN()) {
-        $output = $gw->handlePurchase($PostGet->toArray());  // TODO: change to $PostGet native
+        $output = $gw->handlePurchase($Request->toArray());  // TODO: change to $Request native
         if (!empty($output)) {
             $content .= $output;
             $view = 'none';
@@ -156,8 +156,8 @@ case 'shipto':
     // there after submission
     $step = 8;     // form will return to ($step + 1)
     $U = Shop\Customer::getInstance();
-    if (isset($PostGet['address'])) {
-        $A = $PostGet->getArray('address');
+    if (isset($Request['address'])) {
+        $A = $Request->getArray('address');
     } elseif ($view == 'billto') {
         $A = Shop\Cart::getInstance()->getBillto()->toArray();
     } else {
@@ -194,8 +194,8 @@ case 'products':
 default:
     SHOP_setUrl();
     if (Shop\Config::get('catalog_enabled')) {
-        $cat_id = $PostGet->getRaw('category');
-        $brand_id = $PostGet->getInt('brand');
+        $cat_id = $Request->getRaw('category');
+        $brand_id = $Request->getInt('brand');
         $Cat = new Shop\Views\Catalog;
         if (isset($_REQUEST['query']) && !isset($_REQUEST['clearsearch'])) {
             $Cat->withQuery($_REQUEST['query']);

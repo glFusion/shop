@@ -12,7 +12,7 @@
  * @filesource
  */
 namespace Shop\Reports;
-use Shop\Models\PostGet;
+use Shop\Models\Request;
 
 
 /**
@@ -75,7 +75,7 @@ class ipnlog extends \Shop\Report
     {
         global $_TABLES, $_CONF, $LANG_SHOP, $_SHOP_CONF;
 
-        $this->setParam('gateway', PostGet::getInstance()->getString('gateway'));
+        $this->setParam('gateway', Request::getInstance()->getString('gateway'));
 
         $sql = "SELECT * FROM {$_TABLES['shop.ipnlog']} ";
 

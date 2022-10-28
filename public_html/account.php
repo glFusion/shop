@@ -16,7 +16,7 @@
 require_once '../lib-common.php';
 
 use Shop\Models\OrderStatus;
-use Shop\Models\PostGet;
+use Shop\Models\Request;
 use Shop\Template;
 
 // If plugin is installed but not enabled, display an error and exit gracefully
@@ -27,7 +27,7 @@ if (
     COM_404();
     exit;
 }
-$PostGet = PostGet::getInstance();
+$Request = Request::getInstance();
 
 // For anonymous, this may be a valid selection coming from an email link.
 // Put up a message indicating that they need to log in.
@@ -48,9 +48,9 @@ $expected = array(
 );
 
 foreach($expected as $provided) {
-    if (isset($PostGet[$provided])) {
+    if (isset($Request[$provided])) {
         $mode = $provided;
-        $actionval = $PostGet[$provided];
+        $actionval = $Request[$provided];
         break;
     }
 }
@@ -59,8 +59,8 @@ if ($mode == '') {
     // Retrieve and sanitize input variables.
     COM_setArgNames(array('mode', 'id'));
     foreach (array('mode', 'id') as $varname) {
-        if (isset($PostGet[$varname])) {
-            $$varname = COM_applyFilter($PostGet[$varname]);
+        if (isset($Request[$varname])) {
+            $$varname = COM_applyFilter($Request[$varname]);
         } else {
             $$varname = COM_getArgument($varname);
         }
@@ -108,7 +108,7 @@ case 'redeem':
     }
     // Using REQUEST here since this could be from a link in an email or from
     // the apply_gc form
-    $code = $PostGet->getString('code');
+    $code = $Request->getString('code');
     $uid = $_USER['uid'];
     list($status, $msg) = \Shop\Products\Coupon::Redeem($code, $uid);
     if ($status > 0) {
@@ -127,8 +127,8 @@ case 'redeem':
 
 case 'delbutton_x':
     // Deleting multiple addresses at once
-    if (isset($PostGet['delitem']) && is_array($PostGet['delitem'])) {
-        Shop\Address::deleteMulti($PostGet['delitem']);
+    if (isset($Request['delitem']) && is_array($Request['delitem'])) {
+        Shop\Address::deleteMulti($Request['delitem']);
     }
     echo COM_refresh(SHOP_URL . '/account.php?addresses');
     break;
@@ -142,9 +142,9 @@ case 'deladdr':
 case 'savevalidated':
 case 'saveaddr':
     if ($actionval == 1 || $actionval == 2) {
-        $addr_vars = json_decode($PostGet['addr'][$actionval], true);
+        $addr_vars = json_decode($Request['addr'][$actionval], true);
     } else {
-        $addr_vars = $PostGet->toArray();   // todo
+        $addr_vars = $Request->toArray();   // todo
     }
     if (isset($addr_vars['addr_id'])) {
         $id = $addr_vars['addr_id'];
@@ -171,7 +171,7 @@ case 'saveaddr':
     } else {
         SHOP_setMsg("Saving address failed");
     }
-    echo COM_refresh(Shop\URL::get($PostGet->getString('return')));
+    echo COM_refresh(Shop\URL::get($Request->getString('return')));
     break;
 
 case 'editaddr':

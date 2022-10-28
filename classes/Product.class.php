@@ -23,7 +23,7 @@ use Shop\Models\IPN;
 use Shop\Models\ProductCheckbox;
 use Shop\Models\ProductVariantInfo;
 use Shop\Models\DataArray;
-use Shop\Models\PostGet;
+use Shop\Models\Request;
 
 
 /**
@@ -4051,10 +4051,10 @@ class Product
         ) );
 
         // Filter on category, brand and supplier
-        $PostGet = PostGet::getInstance();
-        $cat_id = $PostGet->getInt('cat_id');
-        $brand_id = $PostGet->getInt('brand_id');
-        $supplier_id = $PostGet->getInt('supplier_id');
+        $Request = Request::getInstance();
+        $cat_id = $Request->getInt('cat_id');
+        $brand_id = $Request->getInt('brand_id');
+        $supplier_id = $Request->getInt('supplier_id');
         $def_filter = 'WHERE 1=1';
         if ($cat_id > 0) {
             $def_filter .= " AND pxc.cat_id= $cat_id";
