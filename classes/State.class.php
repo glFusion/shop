@@ -102,7 +102,7 @@ class State extends RegionBase
         $qb = Database::getInstance()->conn->createQueryBuilder();
         $qb->where('s.state_id = :id')
            ->setParameter('id', $id, Database::INTEGER);
-        return self::getInstance($qb);
+        return self::_getInstance($qb);
     }
 
 
