@@ -3,15 +3,19 @@
  * Class for physical packages.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019-2021 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.4.1
+ * @version     v1.5.0
  * @since       v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
+use Shop\Models\DataArray;
+use Shop\Util\JSON;
 
 
 /**
@@ -80,14 +84,14 @@ class Package
         global $_TABLES;
 
         if (is_array($A) && !empty($A)) {
-            $this->setVars($A);
+            $this->setVars(new DataArray($A));
         } elseif (is_integer($A)) {
             $sql = "SELECT * FROM {$_TABLES['shop.packages']}
                 WHERE pkg_id = " . (int)$A;
             $res = DB_query($sql);
             if ($res) {
                 $A = DB_fetchArray($res, false);
-                $this->setVars($A);
+                $this->setVars(new DataArray($A));
             }
         }
     }
@@ -96,22 +100,22 @@ class Package
     /**
      * Set the variables from an array (POST or DB) into object properties.
      *
-     * @param   array   $A  Array of key->value pairs
-     * @return  object  $this
+     * @param   DataArray   $A  Array of key->value pairs
+     * @return  object      $this
      */
-    public function setVars($A)
+    public function setVars(DataArray $A) : self
     {
-        $this->pkg_id = (int)$A['pkg_id'];
-        $this->units = (float)$A['units'];
-        $this->width = (float)$A['width'];
-        $this->length = (float)$A['length'];
-        $this->height = (float)$A['height'];
-        $this->max_weight = (float)$A['max_weight'];
-        $this->dscp = $A['dscp'];
+        $this->pkg_id = $A->getInt('pkg_id');
+        $this->units = $A->getFloat('units');
+        $this->width = $A->getFloat('width');
+        $this->length = $A->getFloat('length');
+        $this->height = $A->getFloat('height');
+        $this->max_weight = $A->getFloat('max_weight');
+        $this->dscp = $A->getString('dscp');
         if (is_array($A['containers'])) {
-            $this->containers = $A['containers'];
+            $this->containers = $A->getArray('containers');
         } else {
-            $this->containers = json_decode($A['containers'],true);
+            $this->containers = json_decode($A->getString('containers'),true);
         }
         return $this;
     }
@@ -123,18 +127,25 @@ class Package
      * @param   integer $pkg_id Package record ID
      * @return  object      Package object
      */
-    public static function getInstance($pkg_id)
+    public static function getInstance(int $pkg_id) : self
     {
         global $_TABLES;
 
-        $sql = "SELECT * FROM {$_TABLES['shop.packages']}
-            WHERE pkg_id = " . (int)$pkg_id;
-        $res = DB_query($sql);
-        if ($res) {
-            return new self(DB_fetchArray($res, false));
-        } else {
-            return new self;
+        try {
+            $row = Database::getInstance()->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.packages']} WHERE pkg_id = ?",
+                array($pkg_id),
+                array(Database::INTEGER)
+            )->fetchAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $row = false;
         }
+        $retval = new self;
+        if (is_array($row)) {
+            $retval->setVars(new DataArray($row));
+        }
+        return $retval;
     }
 
 
@@ -226,36 +237,51 @@ class Package
      * @param   array   $A  Posted form array
      * @return  boolean     True on success, False on error
      */
-    public function Save($A)
+    public function Save(?DataArray $A=NULL) : bool
     {
         global $_TABLES;
 
-        if (is_array($A)) {
+        if (!empty($A)) {
             $this->setVars($A);
         }
 
-        if ($this->pkg_id == 0) {
-            $sql1 = "INSERT INTO {$_TABLES['shop.packages']} SET";
-            $sql3 = '';
-        } else {
-            $sql1 = "UPDATE {$_TABLES['shop.packages']} SET";
-            $sql3 = ' WHERE pkg_id = ' . (int)$this->pkg_id;
-        }
-        $sql2 = " units = " . (float)$this->units . ",
-            max_weight = " . (float)$this->max_weight . ",
-            width = " . (float)$this->width . ",
-            height = " . (float)$this->height . ",
-            length = " . (float)$this->length . ",
-            dscp = '" . DB_escapeString($this->dscp) . "',
-            containers = '" . DB_escapeString(json_encode($this->containers)) . "'";
-        $sql = $sql1 . $sql2 . $sql3;
-        //echo $sql;die;
-        DB_query($sql);
-        if (DB_error()) {
-            Log::write('shop_system', Log::ERROR, "Shipper::saveConfig() error: $sql");
-            return false;
-        } else {
+        $values = array(
+            'units' => $this->units,
+            'max_weight' => $this->max_weight,
+            'width' => $this->width,
+            'height' => $this->height,
+            'length' => $this->length,
+            'dscp' => $this->dscp,
+            'containers' => JSON::encode($this->containers),
+        );
+        $types = array(
+            Database::INTEGER,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+        );
+
+        $db = Database::getInstance();
+        try {
+            if ($this->pkg_id == 0) {
+                $db->conn->insert($_TABLES['shop.packages'], $values, $types);
+                $this->pkg_id = $db->conn->lastInsertId();
+            } else {
+                $types[] = Database::INTEGER;
+                $db->conn->update(
+                    $_TABLES['shop.packages'],
+                    $values,
+                    array('pkg_id' => $this->pkg_id),
+                    $types,
+                );
+            }
             return true;
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return false;
         }
     }
 
@@ -266,7 +292,7 @@ class Package
      * @param   integer $id     Record ID
      * @return  boolean     True on success, False on invalid ID
      */
-    public static function Delete($id)
+    public static function Delete(int $id) : bool
     {
         global $_TABLES;
 
@@ -274,8 +300,17 @@ class Package
             return false;
         }
 
-        DB_delete($_TABLES['shop.packages'], 'pkg_id', $id);
-        return DB_error() ? false : true;
+        try {
+            Database::getInstance()->conn->delete(
+                $_TABLES['shop.packages'],
+                array('pkg_id' => $id),
+                array(Database::INTEGER)
+            );
+            return true;
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return false;
+        }
     }
 
 
@@ -284,7 +319,7 @@ class Package
      *
      * @return  integer     Package DB record ID
      */
-    public function getID()
+    public function getID() : int
     {
         return (int)$this->pkg_id;
     }
@@ -295,7 +330,7 @@ class Package
      *
      * @return  string      Package description
      */
-    public function getDscp()
+    public function getDscp() : string
     {
         return $this->dscp;
     }
@@ -307,7 +342,7 @@ class Package
      * @param   float   $value  Declared value
      * @return  object  $this
      */
-    public function addValue($value)
+    public function addValue(float $value) : self
     {
         $this->value += (float)ceil($value);
         return $this;
@@ -320,7 +355,7 @@ class Package
      * @param   float   $weight Shipping weight to add
      * @return  object  $this
      */
-    public function addWeight($weight)
+    public function addWeight(float $weight) : self
     {
         $this->weight += (float)$weight;
         return $this;
@@ -332,7 +367,7 @@ class Package
      *
      * @return  float   Shipping weight
      */
-    public function getWeight()
+    public function getWeight() : float
     {
         return (float)$this->weight;
     }
@@ -343,7 +378,7 @@ class Package
      *
      * @return  float       Max allowed weight
      */
-    public function getMaxWeight()
+    public function getMaxWeight() : float
     {
         return (float)$this->max_weight;
     }
@@ -354,7 +389,7 @@ class Package
      *
      * @return  float   Package width
      */
-    public function getWidth()
+    public function getWidth() : float
     {
         return (float)$this->width;
     }
@@ -365,7 +400,7 @@ class Package
      *
      * @return  float   Package height
      */
-    public function getHeight()
+    public function getHeight() : float
     {
         return (float)$this->height;
     }
@@ -376,7 +411,7 @@ class Package
      *
      * @return  float   Package length.
      */
-    public function getLength()
+    public function getLength() : float
     {
         return (float)$this->length;
     }
@@ -387,7 +422,7 @@ class Package
      *
      * @return  float   Package length in inches
      */
-    public function convertLength()
+    public function convertLength() : float
     {
         global $_SHOP_CONF;
 
@@ -404,7 +439,7 @@ class Package
      *
      * @return  float   Package height in inches
      */
-    public function convertHeight()
+    public function convertHeight() : float
     {
         global $_SHOP_CONF;
 
@@ -421,7 +456,7 @@ class Package
      *
      * @return  float   Package weight in inches
      */
-    public function convertWidth()
+    public function convertWidth() : flaot
     {
         global $_SHOP_CONF;
 
@@ -438,7 +473,7 @@ class Package
      *
      * @return  float   Package weight in pounds
      */
-    public function convertWeight()
+    public function convertWeight() : float
     {
         global $_SHOP_CONF;
 
@@ -456,7 +491,7 @@ class Package
      * @param   float   $units  Shipping units to add
      * @return  object  $this
      */
-    public function addUnits($units)
+    public function addUnits(float $units) : self
     {
         $this->packed_units += (float)$units;
         return $this;
@@ -468,7 +503,7 @@ class Package
      *
      * @return  float       Shipping units in package
      */
-    public function getPackedUnits()
+    public function getPackedUnits() : float
     {
         return (float)$this->packed_units;
     }
@@ -479,7 +514,7 @@ class Package
      *
      * @return  float       Max shipping units
      */
-    public function getMaxUnits()
+    public function getMaxUnits() : float
     {
         return (float)$this->units;
     }
@@ -491,7 +526,7 @@ class Package
      * @param   string  $key    Shipper class name
      * @return  array   Container information
      */
-    public function getContainer($key)
+    public function getContainer(string $key) : array
     {
         if (isset($this->containers[$key])) {
             return $this->containers[$key];
@@ -510,12 +545,11 @@ class Package
      *
      * @return  string  HTML string containing the contents of the ipnlog
      */
-    public static function adminList()
+    public static function adminList() : string
     {
         global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $LANG_ADMIN, $LANG_SHOP_HELP;
 
-        $sql = "SELECT *
-            FROM {$_TABLES['shop.packages']}";
+        $sql = "SELECT * FROM {$_TABLES['shop.packages']}";
 
         $header_arr = array(
             array(
@@ -674,7 +708,7 @@ class Package
      *
      * @return  array       Array of Package objects
      */
-    public static function getAll()
+    public static function getAll() : array
     {
         global $_TABLES;
 
@@ -698,7 +732,7 @@ class Package
      * @param   object  $Shipper    Shipper object
      * @return  array       Array of Package objects
      */
-    public static function getByShipper($Shipper)
+    public static function getByShipper(object $Shipper) : array
     {
         $retval = array();
         $Packages = self::getAll();
@@ -716,7 +750,7 @@ class Package
      *
      * @return  string      Container service
      */
-    public function getContainerService($module_code)
+    public function getContainerService(string $module_code) : string
     {
         if (
             isset($this->containers[$module_code]) &&
@@ -736,7 +770,7 @@ class Package
      * @param   object  $Shipper    Shipper object, to get the packages
      * @return  array       Array of Package objects
      */
-    public static function packOrder($Order, $Shipper)
+    public static function packOrder(object $Order, object $Shipper) : array
     {
         if (is_integer($Shipper)) {
             $Shipper = Shipper::getInstance($Shipper);  // @deprecate

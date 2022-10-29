@@ -26,12 +26,12 @@ if (
 
 require_once('../../auth.inc.php');
 USES_lib_admin();
-
+$Request = Shop\Models\Request::getInstance();
 $content = '';
 
 // Get the message to the admin, if any
 $msg = array();
-if (isset($_REQUEST['msg'])) $msg[] = $_REQUEST['msg'];
+if (isset($Request['msg'])) $msg[] = $Request->getString('msg');
 
 $action = 'packages';     // Default if no correct view specified
 $expected = array(
@@ -41,13 +41,9 @@ $expected = array(
     'pkglist', 'pkgedit',
 );
 foreach($expected as $provided) {
-    if (isset($_POST[$provided])) {
+    if (isset($Request[$provided])) {
         $action = $provided;
-        $actionval = $_POST[$provided];
-        break;
-    } elseif (isset($_GET[$provided])) {
-        $action = $provided;
-        $actionval = $_GET[$provided];
+        $actionval = $Request->getString($provided);
         break;
     }
 }
@@ -60,9 +56,9 @@ case 'pkgdelete':
 
 case 'pkgsave':
     // Save a payment gateway configuration
-    $Pkg = \Shop\Package::getInstance($_POST['pkg_id']);
+    $Pkg = \Shop\Package::getInstance($Request->getInt('pkg_id'));
     if ($Pkg !== NULL) {
-        $status = $Pkg->Save($_POST);
+        $status = $Pkg->Save($Request);
     }
     echo COM_refresh(SHOP_ADMIN_URL . '/packages.php');
     break;
