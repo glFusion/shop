@@ -119,7 +119,7 @@ class Customer
                 ui.*, UNIX_TIMESTAMP(ui.created) AS created_ts
                 FROM {$_TABLES['users']} u
                 LEFT JOIN {$_TABLES['shop.userinfo']} ui ON u.uid = ui.uid
-                WHERE u.uid = $uid",
+                WHERE u.uid = ?",
                 array($uid),
                 array(Database::INTEGER)
             )->fetchAssociative();
