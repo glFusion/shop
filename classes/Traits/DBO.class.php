@@ -113,15 +113,15 @@ trait DBO
                         $db->conn->update(
                             $table,
                             array($f_orderby => $order),
-                            array($f_id => $A['f_id']),
+                            array($f_id => $A[$f_id]),
                             array(Database::INTEGER, Database::STRING)
                         );
                     } catch (\Exception $e) {
                         Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                     }
                 }
+                $order += $stepNumber;
             }
-            $order += $stepNumber;
         }
     }
 
