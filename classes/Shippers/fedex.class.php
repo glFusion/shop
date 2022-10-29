@@ -131,6 +131,11 @@ class fedex extends \Shop\Shipper
             $this->meter_num = $this->getConfig('prod_meter_num');
             $this->passwd = $this->getConfig('prod_passwd');
         }
+        $services = $this->getConfig('services');
+        if (is_array($services)) {
+            $this->supported_services = $services;
+        }
+
     }
 
 
