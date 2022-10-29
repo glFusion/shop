@@ -20,6 +20,7 @@ use Shop\Models\CustomInfo;
 use Shop\Models\ButtonKey;
 use Shop\Models\PayoutHeader;
 use Shop\Models\GatewayInfo;
+use Shop\Models\DataArray;
 use Shop\Cache;
 use glFusion\FileSystem;
 use glFusion\Database\Database;
@@ -437,18 +438,18 @@ class Gateway
      * Save the gateway config variables.
      *
      * @uses    ReOrder()
-     * @param   array   $A      Array of config items, e.g. $_POST
+     * @param   DataArray   $A  Array of config items, e.g. $_POST
      * @return  boolean         True if saved successfully, False if not
      */
-    public function saveConfig(?array $A = NULL) : bool
+    public function saveConfig(?DataArray $A = NULL) : bool
     {
         global $_TABLES;
 
-        if (is_array($A)) {
-            $this->enabled = isset($A['enabled']) ? 1 : 0;
-            $this->orderby = (int)$A['orderby'];
-            $this->grp_access = SHOP_getVar($A, 'grp_access', 'integer', 2);
-            $services = SHOP_getVar($A, 'service', 'array');
+        if (!empty($A)) {
+            $this->enabled = $A->getInt('enabled');
+            $this->orderby = $A->getInt('orderby');
+            $this->grp_access = $A->getInt('grp_access', 2);
+            $services = $A->getArray('service');
             foreach ($this->services as $name=>$enabled) {
                 if (array_key_exists($name, $services)) {
                     $this->services[$name] = (int)$services[$name];

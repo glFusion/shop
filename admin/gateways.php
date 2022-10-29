@@ -26,12 +26,14 @@ if (
 
 require_once('../../auth.inc.php');
 USES_lib_admin();
-
+use Shop\Gateway;
+use Shop\GatewayManager;
+$Request = Shop\Models\Request::getInstance();
 $content = '';
 
 // Get the message to the admin, if any
 $msg = array();
-if (isset($_REQUEST['msg'])) $msg[] = $_REQUEST['msg'];
+if (isset($Request['msg'])) $msg[] = $Request->getString('msg');
 
 $action = 'gwadmin';     // Default if no correct view specified
 $expected = array(
@@ -41,21 +43,16 @@ $expected = array(
     'gwadmin', 'gwedit',
 );
 foreach($expected as $provided) {
-    if (isset($_POST[$provided])) {
+    if (isset($Request[$provided])) {
         $action = $provided;
-        $actionval = $_POST[$provided];
-        break;
-    } elseif (isset($_GET[$provided])) {
-        $action = $provided;
-        $actionval = $_GET[$provided];
+        $actionval = $Request->getRaw($provided);
         break;
     }
 }
 
-
 switch ($action) {
 case 'gwupgrade':
-    $GW = Shop\Gateway::getInstance($actionval);
+    $GW = Gateway::getInstance($actionval);
     if ($GW->doUpgrade()) {
         SHOP_setMsg($LANG_SHOP['upgrade_ok']);
     }
@@ -63,7 +60,7 @@ case 'gwupgrade':
     break;
 
 case 'gwupload':
-    $status = Shop\GatewayManager::upload();
+    $status = GatewayManager::upload();
     if ($status) {
         SHOP_setMsg("The gateway was successfully uploaded");
     } else {
@@ -73,8 +70,8 @@ case 'gwupload':
     break;
 
 case 'gwinstall':
-    $gwname = $_GET['gwname'];
-    $gw = Shop\Gateway::create($gwname);
+    $gwname = $Request->getString('gwname');
+    $gw = Gateway::create($gwname);
     if ($gw !== NULL) {
         if ($gw->Install()) {
             $msg[] = "Gateway \"$gwname\" installed successfully";
@@ -86,30 +83,30 @@ case 'gwinstall':
     break;
 
 case 'gwdelete':
-    $gw = \Shop\Gateway::getInstance($_GET['id']);
+    $gw = Gateway::getInstance($Request->getString('id'));
     if ($gw !== NULL) {
         $gw->ClearButtonCache();
     }
-    $status = \Shop\Gateway::Remove($_GET['id']);
+    $status = Gateway::Remove($Request->getString('id'));
     echo COM_refresh(SHOP_ADMIN_URL . '/gateways.php');
     break;
 
 case 'gwsave':
     // Save a payment gateway configuration
-    $gw = \Shop\Gateway::getInstance($_POST['gw_id']);
+    $gw = Gateway::getInstance($Request->getString('gw_id'));
     if ($gw !== NULL) {
-        $status = $gw->saveConfig($_POST);
+        $status = $gw->saveConfig($Request);
     }
     echo COM_refresh(SHOP_ADMIN_URL . '/gateways.php');
     break;
 
 case 'gwmove':
-    \Shop\Gateway::moveRow($_GET['id'], $actionval);
+    Gateway::moveRow($Request->getString('id'), $actionval);
     echo COM_refresh(SHOP_ADMIN_URL . '/gateways.php');
     break;
 
 case 'gwedit':
-    $gw = \Shop\Gateway::getInstance($_GET['gw_id']);
+    $gw = Gateway::getInstance($Request->getString('gw_id'));
     if ($gw !== NULL) {
         $content .= $gw->Configure();
     }
@@ -117,7 +114,7 @@ case 'gwedit':
 
 case 'gwadmin':
 default:
-    $content .= Shop\GatewayManager::adminList();
+    $content .= GatewayManager::adminList();
     break;
 }
 

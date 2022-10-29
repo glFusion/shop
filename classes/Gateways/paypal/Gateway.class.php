@@ -20,6 +20,7 @@ use Shop\Currency;
 use Shop\Order;
 use Shop\Shipper;
 use Shop\Models\CustomInfo;
+use Shop\Models\DataArray;
 use Shop\Models\Token;
 use Shop\Template;
 use Shop\Tax;
@@ -698,9 +699,9 @@ class Gateway extends \Shop\Gateway
      * @param   array   $A      Array of name=>value pairs (e.g. $_POST)
      * @return  boolean     True on success, False on error
      */
-    public function saveConfig(?array $A = NULL) : bool
+    public function saveConfig(?DataArray $A = NULL) : bool
     {
-        if (is_array($A)) {
+        if (!empty($A)) {
             foreach ($this->getConfig() as $name=>$value) {
                 switch ($name) {
                 case 'encrypt':
