@@ -20,6 +20,8 @@ use Shop\Shipper;
 use Shop\Cache;
 use Shop\FieldList;
 use Shop\Template;
+use Shop\Models\DataArray;
+use Shop\Util\JSON;
 
 
 /**
@@ -193,7 +195,7 @@ class Product
             $data = false;
         }
         if (is_array($data)) {
-            $this->setVars($data, true);
+            $this->setVars(new DataArray($data), true);
             return true;
         } else {
             return false;
@@ -208,20 +210,22 @@ class Product
      * @param   boolean $fromDB True if reading from DB, false if from form
      * @return  boolean     True on success, False if $A is not an array
      */
-    public function setVars($A, $fromDB=true)
+    public function setVars(DataArray $A, $fromDB=true)
     {
-        if (is_array($A)) {
+        if (!empty($A)) {
             $this
-                ->setId(SHOP_getVar($A, 'pr_id', 'integer'))
-                ->setName(SHOP_getVar($A, 'pr_name', 'string'))
-                ->setHazmat(SHOP_getVar($A, 'pr_hazmat', 'int', 0))
-                //->setShipperIds(SHOP_getVar($A, 'shipper_ids', 'string'))
-                ->setDscp($A['pr_dscp']);
+                ->setId($A->getInt('pr_id'))
+                ->setName($A->getString('pr_name'))
+                ->setHazmat($A->getInt('pr_hazmat'))
+                ->setDscp($A->getString('pr_dscp'));
         }
         if ($fromDB) {
-            $shipper_ids = json_decode($A['pr_shipper_ids'], true);
+            $shipper_ids = json_decode($A->getString('pr_shipper_ids'), true);
         } else {
-            $shipper_ids = (array)SHOP_getVar($A, 'pr_shipper_ids', 'array');
+            $shipper_ids = $A->getArray('pr_shipper_ids');
+        }
+        if (!is_array($shipper_ids)) {
+            $shipper_ids = array();
         }
         $this->setShipperIds($shipper_ids);
         return $this;
@@ -398,43 +402,43 @@ class Product
      * @param   array   $A  Optional array of data to save
      * @return  boolean     True on success, False on DB error
      */
-    public function Save(?array $A= NULL) : bool
+    public function Save(?DataArray $A= NULL) : bool
     {
         global $_TABLES;
 
-        if (is_array($A)) {
+        if (!empty($A)) {
             $this->setVars($A, false);
         }
 
         $db = Database::getInstance();
-        $qb = $db->conn->createQueryBuilder();
-        if ($this->id == 0) {
-            $qb->insert($_TABLES['shop.product_rules'])
-               ->setValue('pr_name', ':name')
-               ->setValue('pr_dscp', ':dscp')
-               ->setValue('pr_shipper_ids', ':shipper_ids')
-               ->setValue('pr_hazmat', ':is_hazmat');
-        } else {
-            $qb->update($_TABLES['shop.product_rules'])
-               ->set('pr_name', ':name')
-               ->set('pr_dscp', ':dscp')
-               ->set('pr_shipper_ids', ':shipper_ids')
-               ->set('pr_hazmat', ':is_hazmat')
-               ->where('pr_id = :id');
-        }
+        $values = array(
+            'pr_name' => $this->name,
+            'pr_dscp' => $this->dscp,
+            'pr_shipper_ids' => JSON::encode($this->shipper_ids),
+            'pr_hazmat' => $this->is_hazmat ? 1 : 0,
+        );
+        $types = array(
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::INTEGER,
+        );
         try {
-            $qb->setParameter('name', $this->name, Database::STRING)
-               ->setParameter('dscp', $this->dscp, Database::STRING)
-               ->setParameter('shipper_ids', json_encode($this->shipper_ids), DATABASE::STRING)
-               ->setParameter('is_hazmat', $this->is_hazmat, Database::INTEGER)
-               ->setParameter('id', $this->id, Database::INTEGER)
-               ->execute();
-        } catch (\Exception $e) {
+            if ($this->id == 0) {
+                $db->conn->insert($_TABLES['shop.product_rules'], $values, $types);
+                $this->id = $db->conn->lastInsertId();
+            } else {
+                $types[] = Database::INTEGER;
+                $db->conn->update(
+                    $_TABLES['shop.product_rules'],
+                    $values,
+                    array('pr_id' => $this->id),
+                    $types
+                );
+            }
+        } catch (\Throwable $e) {
             Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
-        }
-        if ($this->id == 0) {
-            $this->id = $db->conn->lastInsertId();
         }
         Cache::clear(self::TAG);
         return true;
@@ -473,17 +477,6 @@ class Product
             Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
         Cache::clear(self::TAG);
-    }
-
-
-    /**
-     * Get the product ID for this variant.
-     *
-     * @return  string      Product ID
-     */
-    public function getItemId()
-    {
-        return $this->item_id;
     }
 
 

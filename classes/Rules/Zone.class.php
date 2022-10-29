@@ -24,6 +24,7 @@ use Shop\GeoLocator;
 use Shop\Field;
 use Shop\Tooltipster;
 use Shop\FieldList;
+use Shop\Models\DataArray;
 
 
 /**
@@ -161,6 +162,8 @@ class Zone
         try {
             $row = Database::getInstance()->conn->executeQuery(
                 "SELECT * FROM {$_TABLES['shop.zone_rules']} WHERE rule_id = ?",
+                array($rule_id),
+                array(Database::INTEGER)
             )->fetchAssociative();
         } catch (\Throwable $e) {
             Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
@@ -368,15 +371,15 @@ class Zone
      * @param  array   $A      Optional array of values from $_POST
      * @return boolean         True if no errors, False otherwise
      */
-    public function Save(?array $A = NULL) : bool
+    public function Save(?DataArray $A = NULL) : bool
     {
         global $_TABLES, $_SHOP_CONF;
 
-        if (is_array($A)) {
-            $this->rule_name = $A['rule_name'];
-            $this->rule_dscp = $A['rule_dscp'];
-            $this->allow = (int)$A['allow'];
-            $this->enabled = isset($A['enabled']) ? 1 : 0;
+        if (!empty($A)) {
+            $this->rule_name = $A->getString('rule_name');
+            $this->rule_dscp = $A->getString('rule_dscp');
+            $this->allow = $A->getInt('allow');
+            $this->enabled = $A->getBool('enabled') ? 1 : 0;
         }
 
         $db = Database::getInstance();
@@ -405,7 +408,7 @@ class Zone
                 $this->rule_id = $db->conn->lastInsertId();
             } else {
                 $types[] = Database::INTEGER;   // for rule_id
-                $db->conn->insert(
+                $db->conn->update(
                     $_TABLES['shop.zone_rules'],
                     $values,
                     array('rule_id' => $this->rule_id),

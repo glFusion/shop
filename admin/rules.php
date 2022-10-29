@@ -25,12 +25,12 @@ if (
 }
 require_once('../../auth.inc.php');
 USES_lib_admin();
-
+$Request = Shop\Models\Request::getInstance();
 $content = '';
 
 // Get the message to the admin, if any
 $msg = array();
-if (isset($_REQUEST['msg'])) $msg[] = $_REQUEST['msg'];
+if (isset($Request['msg'])) $msg[] = $Request->getString('msg');
 
 $action = 'pr_list';     // Default if no correct view specified
 $expected = array(
@@ -41,27 +41,23 @@ $expected = array(
     'zr_list', 'rule_edit', 'pr_list', 'pr_edit',
 );
 foreach($expected as $provided) {
-    if (isset($_POST[$provided])) {
+    if (isset($Request[$provided])) {
         $action = $provided;
-        $actionval = $_POST[$provided];
-        break;
-    } elseif (isset($_GET[$provided])) {
-        $action = $provided;
-        $actionval = $_GET[$provided];
+        $actionval = $Request->getString($provided);
         break;
     }
 }
 
 switch ($action) {
 case 'rule_add':
-    $rule_id = SHOP_getVar($_POST, 'rule_id', 'integer', 0);
+    $rule_id = $Request->getInt('rule_id');
     if ($actionval > 0) {
         switch ($actionval) {
         case 'region':
         case 'country':
         case 'state':
             Shop\Rules\Zone::getInstance($rule_id)
-                ->add($actionval, SHOP_getVar($_POST, $actionval . '_id', 'array', array()))
+                ->add($actionval, $Request->getArray($actionval . '_id'))
                 ->Save();
             break;
         }
@@ -77,9 +73,10 @@ case 'rule_del':
     break;
 
 case 'delbutton_x':
-    if (is_array($_POST['delitem'])) {
+    $items = $Request->getArray('delitem');
+    if (!empty($items)) {
         // Delete some checked options
-        foreach ($_POST['delitem'] as $opt_id) {
+        foreach ($items as $opt_id) {
             Shop\Rules\Zone::deleteRule($opt_id);
         }
     }
@@ -87,20 +84,20 @@ case 'delbutton_x':
     break;
 
 case 'rule_save':
-    $rule_id = SHOP_getVar($_POST, 'rule_id', 'integer', 0);
+    $rule_id = $Request->getInt('rule_id');
     $Rule = Shop\Rules\Zone::getInstance($rule_id);
     if ($Rule->getID() > 0) {
-        if (isset($_POST['region_del'])) {
-            $Rule->del('region', $_POST['region_del']);
+        if (isset($Request['region_del'])) {
+            $Rule->del('region', $Request->getArray('region_del'));
         }
-        if (isset($_POST['country_del'])) {
-            $Rule->del('country', $_POST['country_del']);
+        if (isset($Request['country_del'])) {
+            $Rule->del('country', $Request->getArray('country_del'));
         }
-        if (isset($_POST['state_del'])) {
-            $Rule->del('state', $_POST['state_del']);
+        if (isset($Request['state_del'])) {
+            $Rule->del('state', $Request->getArray('state_del'));
         }
     }
-    $Rule->Save($_POST);
+    $Rule->Save($Request);
     echo COM_refresh(SHOP_ADMIN_URL . '/rules.php?zr_list');
     break;
 
@@ -117,8 +114,8 @@ case 'pr_edit':
     break;
 
 case 'pr_save':
-    $PC = new Shop\Rules\Product((int)$_POST['pr_id']);
-    if ($PC->Save($_POST)) {
+    $PC = new Shop\Rules\Product($Request->getInt('pr_id'));
+    if ($PC->Save($Request)) {
         COM_setMsg($LANG_SHOP['item_updated']);
     } else {
         COM_setMsg($LANG_SHOP['item_upd_err']);
@@ -127,7 +124,7 @@ case 'pr_save':
     break;
 
 case 'pr_del':
-    if (isset($_POST['delbutton_x']) && is_array($actionval)) {
+    if (isset($Request['delbutton_x']) && is_array($actionval)) {
         foreach ($actionval as $val) {
         Shop\Rules\Product::Delete((int)$val);
         }
