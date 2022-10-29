@@ -13,7 +13,8 @@
  */
 namespace Shop;
 use glFusion\Database\Database;
-use Shop\Models\PostGet;
+use Shop\Models\Request;
+use Shop\Models\DataArray;
 
 
 /**
@@ -81,8 +82,15 @@ class Address
     /** Address field names.
      * @var array */
     protected $_fields = array(
-        'name', 'company', 'address1', 'address2',
-        'city', 'state', 'zip', 'country', 'phone',
+        'name' => array('type' => 'string', 'size' => 255),
+        'company' => array('type' => 'string', 'size' => 255),
+        'address1' => array('type' => 'string', 'size' => 255),
+        'address2' => array('type' => 'string', 'size' => 255),
+        'city' => array('type' => 'string', 'size' => 255),
+        'state' => array('type' => 'string', 'size' => 255),
+        'zip' => array('type' => 'string', 'size' => 40),
+        'country' => array('type' => 'string', 'size' => 255),
+        'phone' => array('type' => 'string', 'size' => 255),
     );
 
 
@@ -101,7 +109,7 @@ class Address
             $data = json_decode($data, true);
         }
         if (is_array($data)) {
-            $this->setVars($data);
+            $this->setVars(new DataArray($data));
         }
         if ($this->addr_id < 1) {
             // in case an empty object is being created, set the user ID
@@ -114,10 +122,10 @@ class Address
     /**
      * Set all the properties from a provided array.
      *
-     * @param   array   $data   Array of property name->value pairs
+     * @param   DataArray   $data   Array of property name->value pairs
      * @return  object  $this
      */
-    public function setVars($data)
+    public function setVars(DataArray $data) : self
     {
         global $_SHOP_CONF;
 
@@ -846,7 +854,7 @@ class Address
             'def_shipto_chk' => $this->isDefaultShipto() ? 'checked="checked"' : '',
             'def_billto_chk' => $this->isDefaultBillto() ? 'checked="checked"' : '',
             'cancel_url' => SHOP_getUrl(SHOP_URL . '/account.php?addresses'),
-            'return' => PostGet::getInstance()->getString('return'),
+            'return' => Request::getInstance()->getString('return'),
             'action_url' => SHOP_URL . '/account.php',
         ) );
         $T->parse('output', 'form');
@@ -857,10 +865,10 @@ class Address
     /**
      * Save the address to the database.
      *
-     * @param   array   $A  Record array to save (not used)
+     * @param   DataArray   $A  Record array to save (not used)
      * @return  integer     Record ID of address, zero on error
      */
-    public function Save(?array $A=NULL) : int
+    public function Save(?DataArray $A=NULL) : int
     {
         global $_TABLES;
 
@@ -871,15 +879,15 @@ class Address
 
         $values = array(
             'uid' => $this->uid,
-            'name' => substr($this->name, 0, 255),
-            'company' => substr($this->company, 0, 255),
-            'address1' => substr($this->address1, 0, 255),
-            'address2' => substr($this->address2, 0, 255),
-            'city' => substr($this->city, 0, 255),
-            'state' => substr($this->state, 0, 255),
-            'country' => substr($this->country, 0, 255),
-            'phone' => substr($this->getPhone(), 0, 255),
-            'zip' => substr($this->zip, 0, 40),
+            'name' => $this->name,
+            'company' => $this->company,
+            'address1' => $this->address1,
+            'address2' => $this->address2,
+            'city' => $this->city,
+            'state' => $this->state,
+            'country' => $this->country,
+            'phone' => $this->getPhone(),
+            'zip' => $this->zip,
             'billto_def' => $this->isDefaultBillto(),
             'shipto_def' => $this->isDefaultShipto(),
         );
@@ -978,10 +986,14 @@ class Address
         if (isset($A[$prefix . 'id'])) {
             $this->addr_id = (int)$A[$prefix . 'id'];
         }
-        foreach ($this->_fields as $fldname) {
+        foreach ($this->_fields as $fldname=>$info) {
             $var = $prefix . $fldname;
             if (isset($A[$var])) {
-                $this->$fldname = $A[$var];
+                if ($info['type'] == 'int') {
+                    $this->$fldname = (int)$A[$var];
+                } else {
+                    $this->$fldname = substr($A[$var], 0, $info['size']);
+                }
             } else {
                 $this->$fldname = '';
             }

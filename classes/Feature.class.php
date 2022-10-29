@@ -197,16 +197,15 @@ class Feature
     /**
      * Save the current values to the database.
      *
-     * @param   array   $A      Array of values from $_POST
+     * @param   DataArray   $A  Array of values from $_POST
      * @return  boolean         True if no errors, False otherwise
      */
-    public function Save(?array $A = NULL) : bool
+    public function Save(?DataArray $A=NULL) : bool
     {
         global $_TABLES, $_SHOP_CONF;
 
         $reorder = false;
-        if (is_array($A) && !empty($A)) {
-            $A = new DataArray($A);
+        if (!empty($A)) {
             if (!isset($A['orderby'])) {
                 // Put this field at the end of the line by default.
                 $A['orderby'] = 9999;

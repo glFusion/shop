@@ -335,7 +335,7 @@ class OrderItem
             $row = false;
         }
         if (is_array($row)) {
-            $this->setVars($row);
+            $this->setVars(new DataArray($row));
             $this->options = OrderItemOption::getOptionsForItem($this);
             return true;
         } else {

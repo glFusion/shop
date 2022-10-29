@@ -15,6 +15,8 @@ namespace Shop\Products;
 use Shop\Currency;
 use Shop\Models\ProductType;
 use Shop\Models\CustomInfo;
+use Shop\Models\DataArray;
+use Shop\Models\Request;
 use Shop\Config;
 use Shop\Field;
 use Shop\Template;
@@ -135,39 +137,40 @@ class Plugin extends \Shop\Product
             )
         );
         if ($status == PLG_RET_OK) {
-            $this->price = SHOP_getVar($A, 'price', 'float', $def_price);
-            $this->name = SHOP_getVar($A, 'name');
-            $this->item_name = SHOP_getVar($A, 'name');
-            $this->short_description = SHOP_getVar($A, 'short_description');
-            $this->description = SHOP_getVar($A, 'description', 'string', $this->short_description);
-            $this->taxable = SHOP_getVar($A, 'taxable', 'integer', $def_taxable);
-            $this->url = SHOP_getVar($A, 'url');
-            $this->override_price = SHOP_getVar($A, 'override_price', 'integer', $def_price);
-            $this->btn_type = SHOP_getVar($A, 'btn_type', 'string', 'buy_now');
-            $this->btn_text = SHOP_getVar($A, 'btn_text');
-            $this->_have_detail_svc = SHOP_getVar($A, 'have_detail_svc', 'boolean', false);
-            $this->_fixed_q = SHOP_getVar($A, 'fixed_q', 'integer', 0);
-            $this->img_url = SHOP_getVar($A, 'img_url');
+            $A = new DataArray($A);
+            $this->price = $A->getFloat('price', $def_price);
+            $this->name = $A->getString('name');
+            $this->item_name = $A->getString('name');
+            $this->short_description = $A->getString('short_description');
+            $this->description = $A->getString('description', $this->short_description);
+            $this->taxable = $A->getInt('taxable', $def_taxable);
+            $this->url = $A->getString('url');
+            $this->override_price = $A->getInt('override_price', $def_price);
+            $this->btn_type = $A->getString('btn_type', 'buy_now');
+            $this->btn_text = $A->getString('btn_text');
+            $this->_have_detail_svc = $A->getBool('have_detail_svc');
+            $this->_fixed_q = $A->getInt('fixed_q');
+            $this->img_url = $A->getString('img_url');
             $this->isNew = false;
             // Plugins normally can't allow more than one purchase,
             // so default to "true"
-            $this->isUnique = SHOP_getVar($A, 'isUnique', 'boolean', true);
-            $this->rating_enabled = (bool)SHOP_getVar($A, 'supportsRatings', 'boolean', false);
+            $this->isUnique = $A->getBool('isUnique', true);
+            $this->rating_enabled = $A->getBool('supportsRatings');
             //$this->rating_enabled = true;   // TODO testing
-            $this->votes = SHOP_getVar($A, 'votes', 'integer');
-            $this->rating = SHOP_getVar($A, 'rating', 'float');
+            $this->votes = $A->getInt('votes');
+            $this->rating = $A->getFloat('rating');
             // Set enabled flag, assume true unless set
-            $this->enabled = SHOP_getVar($A, 'enabled', 'boolean', true);
-            $this->cancel_url = SHOP_getVar($A, 'cancel_url', 'string', SHOP_URL . '/index.php');
+            $this->enabled = $A->getBool('enabled', true);
+            $this->cancel_url = $A->getString('cancel_url', SHOP_URL . '/index.php');
             if (isset($A['canApplyDC']) && !$A['canApplyDC']) {
                 $this->canApplyDC = false;
             }
             if (isset($A['custom_price']) && $A['custom_price']) {
                 $this->custom_price = true;
             }
-            $this->aff_percent = SHOP_getVar($A, 'aff_percent', 'float', 0);
+            $this->aff_percent = $A->getFloat('aff_percent');
             if ($this->aff_percent > 0) {
-                $this->aff_apply_bonus = SHOP_getVar($A, 'aff_apply_bonus', 'boolean', false);
+                $this->aff_apply_bonus = $A->getBool('aff_apply_bonus');
             } else {
                 $this->aff_apply_bonus = false;
             }
@@ -187,44 +190,43 @@ class Plugin extends \Shop\Product
                 )
             );
             if (is_array($A) && !empty($A)) {
-                $this->price = SHOP_getVar($A, 'price', 'float', $def_price);
-                $this->name = SHOP_getVar($A, 'title');
-                $this->item_name = SHOP_getVar($A, 'title');
+                $A = new DataArray($A);
+                $this->price = $A->getFloat('price', $def_price);
+                $this->name = $A->getString('title');
+                $this->item_name = $this->name;
                 $this->short_description = $this->name;
                 /*if (empty($this->short_description)) {
-                    $this->short_description = SHOP_getVar($A, 'title', 'string', '');
+                    $this->short_description = $A->getString('title');
                 }*/
-                $this->description = SHOP_getVar($A, 'description', 'string', $this->short_description);
-                if (isset($A['taxable']) && is_integer($A['taxable'])) {
-                    $this->taxable = $A['taxable'] ? 1 : 0;
-                }
-                $this->url = SHOP_getVar($A, 'url');
-                $this->override_price = SHOP_getVar($A, 'override_price', 'integer', $def_price);
-                $this->btn_type = SHOP_getVar($A, 'btn_type', 'string', 'buy_now');
-                $this->btn_text = SHOP_getVar($A, 'btn_text');
-                $this->_have_detail_svc = SHOP_getVar($A, 'have_detail_svc', 'boolean', false);
-                $this->_fixed_q = SHOP_getVar($A, 'fixed_q', 'integer', 0);
-                $this->img_url = SHOP_getVar($A, 'img_url');
+                $this->description = $A->getString('description', $this->short_description);
+                $this->taxable = $A->getInt($A['taxable']);
+                $this->url = $A->getString('url');
+                $this->override_price = $A->getInt('override_price', $def_price);
+                $this->btn_type = $A->getString('btn_type', 'buy_now');
+                $this->btn_text = $A->getString('btn_text');
+                $this->_have_detail_svc = $A->getBool('have_detail_svc', false);
+                $this->_fixed_q = $A->getInt('fixed_q');
+                $this->img_url = $A->getString('img_url');
                 $this->isNew = false;
                 // Plugins normally can't allow more than one purchase,
                 // so default to "true"
-                $this->isUnique = SHOP_getVar($A, 'isUnique', 'boolean', true);
-                $this->rating_enabled = (bool)SHOP_getVar($A, 'supportsRatings', 'boolean', false);
+                $this->isUnique = $A->getBool('isUnique', true);
+                $this->rating_enabled = $A->getBool('supportsRatings');
                 //$this->rating_enabled = true;   // TODO testing
-                $this->votes = SHOP_getVar($A, 'votes', 'integer');
-                $this->rating = SHOP_getVar($A, 'rating', 'float');
+                $this->votes = $A->getInt('votes');
+                $this->rating = $A->getFloat('rating');
                 // Set enabled flag, assume true unless set
-                $this->enabled = SHOP_getVar($A, 'enabled', 'boolean', true);
-                $this->cancel_url = SHOP_getVar($A, 'cancel_url', 'string', SHOP_URL . '/index.php');
+                $this->enabled = $A->getBool('enabled', true);
+                $this->cancel_url = $A->getString('cancel_url', SHOP_URL . '/index.php');
                 if (isset($A['canApplyDC']) && !$A['canApplyDC']) {
                     $this->canApplyDC = false;
                 }
                 if (isset($A['custom_price']) && $A['custom_price']) {
                     $this->custom_price = true;
                 }
-                $this->aff_percent = SHOP_getVar($A, 'aff_percent', 'float', 0);
+                $this->aff_percent = $A->getFloat('aff_percent');
                 if ($this->aff_percent > 0) {
-                    $this->aff_apply_bonus = SHOP_getVar($A, 'aff_apply_bonus', 'boolean', false);
+                    $this->aff_apply_bonus = $A->getBool('aff_apply_bonus');
                 } else {
                     $this->aff_apply_bonus = false;
                 }
@@ -245,7 +247,6 @@ class Plugin extends \Shop\Product
                 $this->enabled = false;
             }
         }
-        //var_dump($this);die;
     }
 
 
@@ -661,9 +662,10 @@ class Plugin extends \Shop\Product
         ) );
 
         // Filter on category, brand and supplier
-        $cat_id = SHOP_getVar($_GET, 'cat_id', 'integer', 0);
-        $brand_id = SHOP_getVar($_GET, 'brand_id', 'integer', 0);
-        $supplier_id = SHOP_getVar($_GET, 'supplier_id', 'integer', 0);
+        $Request = Request::getInstance();
+        $cat_id = $Request->getInt('cat_id');
+        $brand_id = $Request->getInt('brand_id');
+        $supplier_id = $Request->getInstance('supplier_id');
         $def_filter = 'WHERE 1=1';
 
         $query_arr = array(

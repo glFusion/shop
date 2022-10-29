@@ -18,6 +18,7 @@ use Shop\Models\Dates;
 use Shop\Models\ShippingQuote;
 use Shop\Models\DataArray;
 use Shop\Config;
+use Shop\Util\JSON;
 
 
 /**
@@ -269,7 +270,7 @@ class Shipper
             $this->setValidFrom($A->getString('valid_from', Dates::MIN_DATE));
             $this->free_threshold = isset($A['ena_free']) ? (float)$A['free_threshold'] : 0;
             $rates = array();
-            foreach ($A['rateRate'] as $id=>$txt) {
+            foreach ($A->getArray('rateRate') as $id=>$txt) {
                 if (empty($A['rateDscp'][$id])) {
                     $A['rateDscp'][$id] = $LANG_SHOP['shipping_type'];;
                 }
@@ -301,7 +302,7 @@ class Shipper
             $rates = array();
             if (isset($A['rates'])) {
                 $rates = json_decode($A['rates']);
-                if ($rates === NULL) $rates = array();
+                if (!is_array($rates)) $rates = array();
             }
             $this->rates = $rates;
             $this->free_threshold = (float)$A['free_threshold'];
@@ -352,7 +353,7 @@ class Shipper
      * @param   string  $code   Module code
      * @return  object  $this
      */
-    private function setModuleCode($code)
+    public function setModuleCode($code)
     {
         $this->module_code = $code;
         return $this;
@@ -615,6 +616,7 @@ class Shipper
             $cls = '\\Shop\\Shippers\\' . $shipper_code;
             if (class_exists($cls)) {
                 $shippers[$shipper_code] = new $cls;
+                $shippers[$shipper_code]->setModuleCode($shipper_code);
             } else {
                 $shippers[$shipper_code] = NULL;
             }
@@ -978,12 +980,11 @@ class Shipper
      * @param   array   $A      Optional array of values from $_POST
      * @return  boolean         True if no errors, False otherwise
      */
-    public function Save(?array $A =NULL) : bool
+    public function Save(?DataArray $A =NULL) : bool
     {
         global $_TABLES, $_SHOP_CONF;
 
-        if (is_array($A)) {
-            $A = new DataArray($A);
+        if (!empty($A)) {
             $this->setVars($A, false);
         }
 
@@ -1009,11 +1010,12 @@ class Shipper
             Database::INTEGER,
             Database::INTEGER,
             Database::INTEGER,
+            Database::INTEGER,
+            Database::INTEGER,
             Database::STRING,
             Database::STRING,
             Database::INTEGER,
-            Database::INTEGER,
-            Database::INTEGER,
+            Database::STRING,
             Database::INTEGER,
             Database::INTEGER,
             Database::STRING,
@@ -1713,17 +1715,17 @@ class Shipper
      * Save a shipper's configuration from a submitted form.
      * Encrypts password fields prior to saving.
      *
-     * @param   array   $form   Form data, e.g. $_POST
+     * @param   DataArray   $form   Form data, e.g. $_POST
      * @return  boolean     True on success, False on failure
      */
-    public function saveConfig($form)
+    public function saveConfig(?DataArray $form=NULL) : bool
     {
         global $_TABLES;
 
         // Seed data with common data for all shippers
         $cfg_data = array(
-            'ena_quotes'    => isset($form['ena_quotes']) ? 1 : 0,
-            'ena_tracking'  => isset($form['ena_tracking']) ? 1 : 0,
+            'ena_quotes'    => $form->getInt('ena_quotes'),
+            'ena_tracking'  => $form->getInt('ena_tracking'),
         );
 
         foreach ($this->cfgFields as $name=>$type) {
@@ -1735,11 +1737,13 @@ class Shipper
                 if (!isset($form[$name])) {
                     return false;       // required field missing
                 } else {
-                    $value = COM_encrypt($form[$name]);
+                    $value = COM_encrypt($form->getString($name));
                 }
                 break;
             default:
                 if (!isset($form[$name])) {
+                    echo "$name<br />\n";
+                    var_dump($form);die;
                     return false;       // required field missing
                 } else {
                     $value = $form[$name];
@@ -1749,21 +1753,22 @@ class Shipper
             $cfg_data[$name] = $value;
         }
         if (isset($form['services'])) {
-            $cfg_data['services'] = $form['services'];
+            $cfg_data['services'] = $form->getArray('services');
         }
 
-        $data = json_encode($cfg_data);
+        $data = JSON::encode($cfg_data);
+        $db = Database::getInstance();
         try {
             $db->conn->insert(
                 $_TABLES['shop.carrier_config'],
-                array('code' => $code, 'data' => $data),
+                array('code' => $this->module_code, 'data' => $data),
                 array(Database::STRING, Database::STRING)
             );
         } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $k) {
             $db->conn->update(
                 $_TABLES['shop.carrier_config'],
                 array('data' => $data),
-                array('code' => $code),
+                array('code' => $this->module_code),
                 array(Database::STRING, Database::STRING)
             );
         } catch (\Throwable $e) {
@@ -1814,6 +1819,7 @@ class Shipper
                 $fld = $F->finish($F->get_var('output'));*/
                 break;
             case 'text':
+            case 'string':
             case 'password':
                 $fld = FieldList::text(array(
                     'name' => $name,
@@ -1840,6 +1846,7 @@ class Shipper
                     // N/A service is a special case in the default svc_codes
                     continue;
                 }
+                //var_dump($this->supportsService($key));die;
                 $T->set_var(array(
                     'svc_chk' => $this->supportsService($key) ? 'checked="checked"' : '',
                     'svc_key' => $key,

@@ -15,6 +15,7 @@ namespace Shop;
 use glFusion\Database\Database;
 use glFusion\Log\Log;
 use Shop\Models\Dates;
+use Shop\Models\DataArray;
 
 
 /**
@@ -74,7 +75,7 @@ class DiscountCode
         $this->percent = 0;
         $this->code = '';
         if (is_array($A) && !empty($A)) {
-            $this->setVars($A);
+            $this->setVars(new DataArray($A));
         } elseif (is_numeric($A) && $A > 0) {
             // single ID passed in, e.g. from admin form
             $this->Read($A);
@@ -145,7 +146,7 @@ class DiscountCode
             $row = false;
         }
         if (is_array($row)) {
-            $this->setVars($row);
+            $this->setVars(new DataArray($row));
             $this->setValid(true);
             return true;
         }
@@ -156,10 +157,10 @@ class DiscountCode
     /**
      * Set the variables from a DB record into object properties.
      *
-     * @param   array   $A      Array of properties
+     * @param   DataArray   $A  Array of properties
      * @param   boolean $fromDB True if reading from DB, False if from a form
      */
-    public function setVars($A, $fromDB=true)
+    public function setVars(DataArray $A, bool $fromDB=true)
     {
         if (!$fromDB) {
             // If coming from the form, convert individual fields to a datetime.
@@ -184,12 +185,12 @@ class DiscountCode
                 $A['end'] = trim($A['end']) . ' ' . trim($A['end_time']);
             }
         }
-        $this->setCodeID(SHOP_getVar($A, 'code_id', 'integer'))
-            ->setCode(SHOP_getVar($A, 'code'))
-            ->setPercent(SHOP_getVar($A, 'percent', 'float'))
-            ->setStart(SHOP_getVar($A, 'start'))
-            ->setEnd(SHOP_getVar($A, 'end'))
-            ->setMinOrder(SHOP_getVar($A, 'min_order', 'float'));
+        $this->setCodeID($A->getInt('code_id'))
+            ->setCode($A->getString('code'))
+            ->setPercent($A->getFloat('percent'))
+            ->setStart($A->getString('start'))
+            ->setEnd($A->getString('end'))
+            ->setMinOrder($A->getFloat('min_order'));
         return $this;;
     }
 
@@ -360,11 +361,11 @@ class DiscountCode
      * @param   array   $A      Array of values from $_POST
      * @return  boolean         True if no errors, False otherwise
      */
-    public function Save(?array $A = NULL) : bool
+    public function Save(?DataArray $A = NULL) : bool
     {
-        global $_TABLES, $_SHOP_CONF;
+        global $_TABLES;
 
-        if (is_array($A)) {
+        if (!empty($A)) {
             // Saving from a form
             $this->setVars($A, false);
         }
@@ -386,7 +387,7 @@ class DiscountCode
 
         $db = Database::getInstance();
         try {
-            if ($this->code_id > 0) {
+            if ($this->code_id == 0) {
                 $db->conn->insert($_TABLES['shop.discountcodes'], $values, $types);
                 $this->code_id = $db->conn->lastInsertId();
             } else {
@@ -398,7 +399,7 @@ class DiscountCode
                     $types
                 );
             }
-            return tue;
+            return true;
         } catch (\Throwable $e) {
             Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;

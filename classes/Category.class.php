@@ -3,15 +3,16 @@
  * Class to manage product categories.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
+use Shop\Models\DataArray;
 
 
 /**
@@ -115,10 +116,8 @@ class Category
     {
         global $_USER, $_VARS;
 
-        $this->isNew = true;
-
         if (is_array($id)) {
-            $this->setVars($id, true);
+            $this->setVars(new DataArray($id), false);
         } elseif ($id > 0) {
             $this->cat_id = $id;
             if (!$this->Read()) {
@@ -135,23 +134,21 @@ class Category
      * @param   array   $row    Array of values, from DB or $_POST
      * @param   boolean $fromDB True if read from DB, false if from a form
      */
-    public function setVars($row, $fromDB=false)
+    public function setVars(DataArray $row, ?bool $fromDB=NULL) : void
     {
-        if (!is_array($row)) return;
-
-        $this->cat_id = $row['cat_id'];
-        $this->parent_id = $row['parent_id'];
-        $this->dscp = $row['description'];
-        $this->enabled = $row['enabled'];
-        $this->cat_name = $row['cat_name'];
-        $this->grp_access = $row['grp_access'];
-        $this->disp_name = isset($row['disp_name']) ? $row['disp_name'] : $row['cat_name'];
-        $this->lft = isset($row['lft']) ? $row['lft'] : 0;
-        $this->rgt = isset($row['rgt']) ? $row['rgt'] : 0;
-        $this->google_taxonomy = $row['google_taxonomy'];
-        $this->image = $row['image'];
-        $this->zone_rule = (int)$row['zone_rule'];
-        $this->prod_rule = (int)$row['prod_rule'];
+        $this->cat_id = $row->getInt('cat_id');
+        $this->parent_id = $row->getInt('parent_id');
+        $this->dscp = $row->getString('description');
+        $this->enabled = $row->getBool('enabled');
+        $this->cat_name = $row->getString('cat_name');
+        $this->grp_access = $row->getInt('grp_access');
+        $this->disp_name = $row->getString('disp_name', $this->cat_name);
+        $this->lft = $row->getInt('lft');
+        $this->rgt = $row->getInt('rgt');
+        $this->google_taxonomy = $row->getString('google_taxonomy');
+        $this->image = $row->getString('image');
+        $this->zone_rule = $row->getInt('zone_rule');
+        $this->prod_rule = $row->getInt('prod_rule');
     }
 
 
@@ -193,7 +190,7 @@ class Category
             return false;
         } else {
             $row = DB_fetchArray($result, false);
-            $this->setVars($row, true);
+            $this->setVars(new DataArray($row), true);
             $this->isNew = false;
             Cache::set(self::_makeCacheKey($id), $this, self::$TABLE);
             return true;
@@ -250,11 +247,11 @@ class Category
      * @param  array   $A      Optional array of values from $_POST
      * @return boolean         True if no errors, False otherwise
      */
-    public function Save($A = array())
+    public function Save(?DataArray $A=NULL) : bool
     {
         global $_TABLES, $_SHOP_CONF;
 
-        if (is_array($A)) {
+        if (!empty($A)) {
             $this->setVars($A);
         }
 

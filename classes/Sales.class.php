@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2018-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.4.2
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -15,6 +15,7 @@ namespace Shop;
 use glFusion\Database\Database;
 use glFusion\Log\Log;
 use Shop\Models\Dates;
+use Shop\Models\DataArray;
 
 
 /**
@@ -69,7 +70,7 @@ class Sales
     {
         if (is_array($A) && !empty($A)) {
             // DB record passed in, e.g. from _getSales()
-            $this->setVars($A);
+            $this->setVars(new DataArray($A));
         } elseif (is_numeric($A) && $A > 0) {
             // single ID passed in, e.g. from admin form
             if (!$this->Read($A)) {
@@ -103,7 +104,7 @@ class Sales
             $row = false;
         }
         if (is_array($row)) {
-            $this->setVars($row);
+            $this->setVars(new DataArray($row));
             return true;
         }
         return false;
@@ -116,13 +117,13 @@ class Sales
      * @param   array   $A      Array of properties
      * @param   boolean $fromDB True if reading from DB, False if from a form
      */
-    public function setVars($A, $fromDB=true)
+    public function setVars(DataArray $A, bool $fromDB=true)
     {
-        $this->sale_id = SHOP_getVar($A, 'id', 'integer');
-        $this->setItemType(SHOP_getVar($A, 'item_type'));
-        $this->discount_type = SHOP_getVar($A, 'discount_type');
-        $this->amount = SHOP_getVar($A, 'amount', 'float');
-        $this->name = SHOP_getVar($A, 'name', 'string');
+        $this->sale_id = $A->getInt('id');
+        $this->setItemType($A->getString('item_type'));
+        $this->discount_type = $A->getString('discount_type');
+        $this->amount = $A->getFloat('amount');
+        $this->name = $A->getString('name');
         if (!$fromDB) {
             // If coming from the form, convert individual fields to a datetime.
             // Use the minimum start date if none provided.
@@ -149,15 +150,15 @@ class Sales
             // Get the item type from the correct form field depending on
             // whether it's applied to a category or product.
             if ($this->item_type == 'product') {
-                $this->item_id = $A['item_id'];
+                $this->item_id = $A->getInt('item_id');
             } else {
-                $this->item_id = $A['cat_id'];
+                $this->item_id = $A->getInt('cat_id');
             }
         } else {
-            $this->item_id = $A['item_id'];
+            $this->item_id = $A->getInt('item_id');
         }
-        $this->setStartDate($A['start']);
-        $this->setEndDate($A['end']);
+        $this->setStartDate($A->getString('start'));
+        $this->setEndDate($A->getString('end'));
     }
 
 
@@ -373,14 +374,14 @@ class Sales
     /**
      * Save the current values to the database.
      *
-     * @param   array   $A      Array of values from $_POST
+     * @param   DataArray   $A  Array of values from $_POST
      * @return  boolean         True if no errors, False otherwise
      */
-    public function Save($A = array())
+    public function Save(?DataArray $A=NULL)
     {
         global $_TABLES, $_SHOP_CONF;
 
-        if (is_array($A)) {
+        if (!empty($A)) {
             $this->setVars($A, false);
         }
 
@@ -399,7 +400,7 @@ class Sales
             Database::STRING,
             Database::STRING,
             Database::STRING,
-            Database::INTEGER,
+            Database::STRING,
             Database::STRING,
         );
         $db = Database::getInstance();

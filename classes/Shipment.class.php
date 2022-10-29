@@ -15,6 +15,7 @@ namespace Shop;
 use glFusion\Database\Database;
 use glFusion\Log\Log;
 use Shop\Models\OrderStatus;
+use Shop\Models\DataArray;
 
 
 /**
@@ -79,7 +80,7 @@ class Shipment
             }
         } elseif (is_array($shipment_id)) {
             // Got a shipment record, just set the variables
-            $this->setVars($shipment_id);
+            $this->setVars(new DataArray($shipment_id));
         }
     }
 
@@ -121,7 +122,7 @@ class Shipment
             $data = false;
         }
         if (is_array($data)) {
-            $this->setVars($data);
+            $this->setVars(new DataArray($data));
             $this->getItems();
             $this->getPackages();
             return true;
@@ -135,13 +136,11 @@ class Shipment
     /**
      * Set the object variables from an array.
      *
-     * @param   array   $A      Array of values
+     * @param   DataArray   $A  Array of values
      * @return  boolean     True on success, False if $A is not an array
      */
-    public function setVars($A)
+    public function setVars(DataArray $A) : bool
     {
-        if (!is_array($A)) return false;
-
         foreach (self::$fields as $field) {
             if (isset($A[$field])) {
                 $this->$field = $A[$field];
@@ -268,11 +267,11 @@ class Shipment
      * @param   array   $form   Optional array of data to save ($_POST)
      * @return  boolean     True on success, False on DB error
      */
-    public function Save(?array $form = NULL) : bool
+    public function Save(?DataArray $form = NULL) : bool
     {
         global $_TABLES;
 
-        if (is_array($form)) {
+        if (!empty($form)) {
             if (!$this->_isValidRecord($form)) {
                 return false;
             }
@@ -297,6 +296,7 @@ class Shipment
             Database::STRING,
         );
 
+        $db = Database::getInstance();
         try {
             if ($this->shipment_id > 0) {
                 // Updating a shipment
@@ -359,7 +359,7 @@ class Shipment
      * @param   array   $form   Array of form fields ($_POST)
      * @return  boolean     True if the record is OK to save, False if not
      */
-    private function _isValidRecord(array &$form) : bool
+    private function _isValidRecord(DataArray &$form) : bool
     {
         // Check that only physical items are being shipped.
         // Remove any download or virtual items. If the resulting dataset has

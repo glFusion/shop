@@ -37,6 +37,7 @@ class PackingList extends Invoice
     public function __construct()
     {
         $this->tplname = 'packinglist';
+        parent::__construct();
         //$this->Shipment = new Shipment($shipment_id);
         //$this->Order = $this->Shipment->getOrder();
     }
@@ -65,12 +66,13 @@ class PackingList extends Invoice
      *
      * @return  string|void     HTML or nothing
      */
-    public function Render()
+    public function Render() : ?string
     {
         if ($this->output_type == 'html') {
             return $this->createHTML();
         } else {
             self::printPDF(array($this->shipment_id));
+            return NULL;
         }
     }
 
@@ -94,6 +96,9 @@ class PackingList extends Invoice
         $T->set_var(array(
             'page_title'    => $LANG_SHOP[$title],
             'shipment_id'    => $this->shipment_id,
+            'logo_url' => $_SHOP_CONF['logo_url'],
+            'logo_width' => $_SHOP_CONF['logo_width'],
+            'logo_height' => $_SHOP_CONF['logo_height'],
         ) );
         $T->set_block('order', 'ItemRow', 'iRow');
         foreach ($this->Items as $Item) {

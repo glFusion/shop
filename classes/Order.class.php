@@ -469,9 +469,10 @@ class Order
     /**
      * Set the billing address.
      *
-     * @param   array   $A      Array of info, such as from $_POST
+     * @param   object  $A      Address object
+     * @return  object  $this
      */
-    public function setBillto($A)
+    public function setBillto(Address $A) : self
     {
         global $_TABLES;
 
@@ -537,10 +538,10 @@ class Order
     /**
      * Set the shipping address.
      *
-     * @param   array|NULL  $A      Array of info, or NULL to clear
-     * @return  object      Current Order object
+     * @param   object  $A      Address object
+     * @return  object  $this
      */
-    public function setShipto($A) : self
+    public function setShipto(Address $A) : self
     {
         global $_TABLES;
 
@@ -649,7 +650,7 @@ class Order
         $this->instructions = $A->getString('instructions');
         $this->by_gc = $A->getFloat('by_gc');
         $this->token = $A->getString('token');
-        $this->buyer_email = $A->getString('buyer_email');
+        $this->buyer_email = substr($A->getString('buyer_email'), 0, 255);  // user input
         $this->billto_id = $A->getInt('billto_id');
         $this->shipto_id = $A->getInt('shipto_id');
         $this->order_seq = $A->getInt('order_seq');
@@ -663,12 +664,7 @@ class Order
         //$this->m_info = new CustomInfo(SHOP_getVar($A, 'info'));
         $this->m_info = CustomInfo::fromString($A->getString('info'));
         //if ($this->m_info === false) $this->m_info = array();
-        /*foreach (array('billto', 'shipto') as $type) {
-            foreach ($this->_addr_fields as $name) {
-                $fld = $type . '_' . $name;
-                $this->$fld = $A[$fld];
-            }
-        }*/
+
         $this->Billto = (new Address())->fromArray(
             $this->getAddressArray('billto', $A), 'billto'
         );
@@ -2741,7 +2737,7 @@ class Order
         } catch (\Exception $e) {
             Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $count = 0;
-        } 
+        }
         return ($count > 0 || IPN::Count() > 0);
     }
 

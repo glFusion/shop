@@ -3,9 +3,9 @@
  * Class to handle addresses for suppliers and brands.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2020-2021 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2020-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.1
+ * @version     v1.5.0
  * @since       v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -13,10 +13,11 @@
  */
 namespace Shop;
 use glFusion\Database\Database;
+use Shop\Models\DataArray;
 
 
 /**
- * Class for supplier and brand information
+ * Class for supplier and brand information.
  * @package shop
  */
 class Supplier extends Address
@@ -81,7 +82,7 @@ class Supplier extends Address
                 $A = false;
             }
             if (is_array($A)) {
-                $this->setAddress($A);
+                $this->setVars(new DataArray($A));
             } else {
                 $this->setID(0);
             }
@@ -95,15 +96,15 @@ class Supplier extends Address
      * @param   integer $id Record ID to retrieve
      * @return  object      Supplier object, empty if not found
      */
-    public static function getInstance(?int $addr_id=NULL) : self
+    public static function getInstance(?int $id=NULL) : self
     {
-        static $addrs = array();
+        static $suppliers = array();
 
-        $addr_id = (int)$addr_id;
-        if (isset($addrs[$addr_id])) {
-            return $addrs[$addr_id];
+        $id = (int)$id;
+        if (isset($suppliers[$id])) {
+            return $suppliers[$id];
         } else {
-            return new self($addr_id);
+            return new self($id);
         }
     }
 
@@ -111,30 +112,30 @@ class Supplier extends Address
     /**
      * Set the record values into local variables.
      *
-     * @param   array   $data   Form or DB record data
+     * @param   DataArray   $data   Form or DB record data
      * @return  object  $this
      */
-    private function setAddress($data)
+    public function setVars(DataArray $data) : self
     {
         global $_SHOP_CONF;
 
         if (isset($data['logo_image'])) {
-            $this->setLogoImage(SHOP_getVar($data, 'logo_image', 'string', ''));
+            $this->setLogoImage($data->getString('logo_image'));
         }
-        return $this->setID(SHOP_getVar($data, 'sup_id', 'integer'))
-            ->setName(SHOP_getVar($data, 'name'))
-            ->setCompany(SHOP_getVar($data, 'company'))
-            ->setAddress1(SHOP_getVar($data, 'address1'))
-            ->setAddress2(SHOP_getVar($data, 'address2'))
-            ->setCity(SHOP_getVar($data, 'city'))
-            ->setState(SHOP_getVar($data, 'state'))
-            ->setPostal(SHOP_getVar($data, 'zip'))
-            ->setCountry(SHOP_getVar($data, 'country', 'string', $_SHOP_CONF['country']))
-            ->setPhone(SHOP_getVar($data, 'phone', 'string'))
-            ->setDscp(SHOP_getVar($data, 'dscp', 'string'))
-            ->setIsSupplier(SHOP_getVar($data, 'is_supplier', 'integer', 1))
-            ->setIsBrand(SHOP_getVar($data, 'is_brand', 'integer', 0))
-            ->setLeadTime(SHOP_getVar($data, 'lead_time', 'string', ''));
+        return $this->setID($data->getInt('sup_id'))
+            ->setName($data->getString('name'))
+            ->setCompany($data->getString('company'))
+            ->setAddress1($data->getString('address1'))
+            ->setAddress2($data->getString('address2'))
+            ->setCity($data->getString('city'))
+            ->setState($data->getString('state'))
+            ->setPostal($data->getString('zip'))
+            ->setCountry($data->getString('country', $_SHOP_CONF['country']))
+            ->setPhone($data->getString('phone'))
+            ->setDscp($data->getString('dscp'))
+            ->setIsSupplier($data->getInt('is_supplier', 0))
+            ->setIsBrand($data->getInt('is_brand', 0))
+            ->setLeadTime($data->getString('lead_time'));
     }
 
 
@@ -366,7 +367,7 @@ class Supplier extends Address
      * @param   array   $A  Optional data array from $_POST
      * @return  int     Record number saved
      */
-    public function Save(?array $A=NULL) : int
+    public function Save(?DataArray $A=NULL) : int
     {
         global $_TABLES;
 
@@ -388,8 +389,8 @@ class Supplier extends Address
                 $this->setLogoImage($Img->getFilenames()[0]);
             }
         }
-        if (is_array($A)) {
-            $this->setAddress($A);
+        if (!empty($A)) {
+            $this->setVars($A);
             if (isset($A['del_logo']) && !empty($this->getLogoImage())) {
                 $this->deleteImage();
             }
@@ -408,9 +409,10 @@ class Supplier extends Address
             'is_supplier' => $this->getIsSupplier(),
             'is_brand' => $this->getIsBrand(),
             'lead_time' => $this->getLeadTime(),
-            'logo_image' => $this->logo_image,
+            'logo_image' => $this->getLogoImage(),
         );
         $types = array(
+            Database::STRING,
             Database::STRING,
             Database::STRING,
             Database::STRING,
