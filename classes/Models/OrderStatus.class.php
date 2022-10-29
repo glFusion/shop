@@ -124,7 +124,7 @@ class OrderStatus
     public function __construct(?array $A=NULL)
     {
         if (is_array($A)) {
-            $this->setVars($A);
+            $this->setVars(new DataArray($A));
         }
     }
 
@@ -132,18 +132,18 @@ class OrderStatus
     /**
      * Set the record variables into the array.
      *
-     * @param   array   $A      Array from DB or $_POST
+     * @param   DataArray   $A  Array from DB or $_POST
      * @return  object  $this
      */
-    public function setVars(array $A) : self
+    public function setVars(DataArray $A) : self
     {
-        $this->id           = SHOP_getVar($A, 'id', 'integer', 0);
-        $this->name         = SHOP_getVar($A, 'name', 'string', 'undefined');
-        $this->enabled      = SHOP_getVar($A, 'enabled', 'integer', 0);
-        $this->notify_buyer = SHOP_getVar($A, 'notify_buyer', 'integer', 0);
-        $this->notify_admin = SHOP_getVar($A, 'notify_admin', 'integer', 0);
-        $this->order_valid  = isset($A['order_valid']) ? (int)$A['order_valid'] : 0;
-        $this->aff_eligible = isset($A['aff_eligible']) ? (int)$A['aff_eligible'] : 0;
+        $this->id           = $A->getInt('id');
+        $this->name         = $A->getString('name', 'undefined');
+        $this->enabled      = $A->getInt('enabled');
+        $this->notify_buyer = $A->getInt('notify_buyer');
+        $this->notify_admin = $A->getInt('notify_admin');
+        $this->order_valid  = $A->getInt('order_valid');
+        $this->aff_eligible = $A->getInt('aff_eligible');
         return $this;
     }
 
@@ -172,7 +172,7 @@ class OrderStatus
         }
         $retval = new self;
         if (is_array($data)) {
-            $retval->setVars($data);
+            $retval->setVars(new DataArray($data));
         }
         return $retval;
     }
@@ -620,15 +620,15 @@ class OrderStatus
     /**
      * Save the current values to the database.
      *
-     * @param   array   $A      Array of values from $_POST
+     * @param   DataArray   $A  Array of values from $_POST
      * @return  boolean         True if no errors, False otherwise
      */
-    public function Save(?array $A = NULL) : bool
+    public function Save(?DataArray $A=NULL) : bool
     {
         global $_TABLES, $_SHOP_CONF;
 
         $reorder = false;
-        if (is_array($A) && !empty($A)) {
+        if (!empty($A)) {
             $this->setVars($A);
         }
         $this->name = strtolower($this->name);
