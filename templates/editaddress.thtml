@@ -8,90 +8,97 @@
 	<input type="hidden" name="return" value="{return}" />
 
 	<div class="uk-form-row uk-margin">
-		<label class="uk-form-label" for="name">{$LANG_SHOP['fullname']}</label>
-		<div class="uk-form-controls">
-			<input required class="uk-input required" type="text" id="name" name="name" value="{name}" size="60" maxlength="255" />
+		<label class="uk-form-label" for="name">{$LANG_SHOP['fullname']}
 			<i class="uk-icon uk-icon-warning uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
+		</label>
+		<div class="uk-form-controls">
+			<input required class="uk-input required uk-form-width-large" type="text" id="name" name="name" value="{name}" maxlength="127"/>
 		</div>
 	</div>
 
 	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label" for="company">{$LANG_SHOP['company']}</label>
 		<div class="uk-form-controls">
-			<input class="uk-input" type="text" id="company" name="company" size="60" value="{company}" />
+			<input class="uk-input uk-form-width-large" type="text" id="company" name="company" value="{company}" maxlength="127"/>
 		</div>
 	</div>
 
 	<div class="uk-form-row uk-margin">
-		<label class="uk-form-label" for="address1">{$LANG_SHOP['address1']}</label>
+		<label class="uk-form-label" for="address1">{$LANG_SHOP['address1']}
+			<i class="uk-icon uk-icon-warning uk-text-warning tooltip tooltip" title="{$LANG_SHOP['required']}"></i>
+		</label>
 		<div class="uk-form-controls">
-			<input required class="uk-input required" type="text" id="address1" name="address1" size="60" value="{address1}" />
-			  <i class="uk-icon uk-icon-warning uk-text-warning tooltip tooltip" title="{$LANG_SHOP['required']}"></i>
+			<input required class="uk-input required uk-form-width-large" type="text" id="address1" name="address1" value="{address1}" maxlength="127"/>
 		</div>
 	</div>
 
 	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label" for="address2">{$LANG_SHOP['address2']}</label>
 		<div class="uk-form-controls">
-			<input class="uk-input" type="text" id="address2" name="address2" size="60" value="{address2}" />
+			<input class="uk-input uk-form-width-large" type="text" id="address2" name="address2" value="{address2}" maxlength="127"/>
 		</div>
 	</div>
 
 	<div class="uk-form-row uk-margin">
-		<label class="uk-form-label" for="countrySelect">{$LANG_SHOP['country']}</label>
+		<label class="uk-form-label" for="countrySelect">{$LANG_SHOP['country']}
+			<i class="uk-icon uk-icon-warning uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
+		</label>
 		<div class="uk-form-controls">
 			<select required class="uk-select required" id="countrySelect" name="country"
 					onchange='chgCountrySel(this.value)' class="shopStateSelect">
 				{country_options}
 			</select>
-			<i class="uk-icon uk-icon-warning uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
 		</div>
 	</div>
 
 	<div class="uk-form-row uk-margin" id="stateSelectDiv" style="display:{state_sel_vis};">
-		<label class="uk-form-label" for="state">{$LANG_SHOP['state']}</label>
+		<label class="uk-form-label" for="state">{$LANG_SHOP['state']}
+			<i class="uk-icon uk-icon-warning uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
+		</label>
 		<div class="uk-form-controls">
 			<select class="uk-select" id="stateSelect" name="state" class="shopStateSelect">
 				{state_options}
 			</select>
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label" for="city">{$LANG_SHOP['city']}
 			<i class="uk-icon uk-icon-warning uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
+		</label>
+		<div class="uk-form-controls">
+			<input required class="uk-input required uk-form-width-large" type="text" id="city" name="city" value="{city}" maxlength="127"/>
 		</div>
 	</div>
 
 	<div class="uk-form-row uk-margin">
-		<label class="uk-form-label" for="city">{$LANG_SHOP['city']}</label>
+		<label class="uk-form-label" for="zip">{$LANG_SHOP['zip']}
+			<i class="uk-icon uk-icon-warning uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
+		</label>
 		<div class="uk-form-controls">
-			<input required class="uk-input required" type="text" id="city" name="city" size="60" value="{city}" />
-				<i class="uk-icon uk-icon-warning uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
+			<input required class="uk-input uk-form-width-large" type="text" id="zip" name="zip" value="{zip}" maxlength="127"/>
 		</div>
 	</div>
 
 	<div class="uk-form-row uk-margin">
-		<label class="uk-form-label" for="zip">{$LANG_SHOP['zip']}</label>
+		<label class="uk-form-label" for="zip">{$LANG_SHOP['phone']}
+			<i class="uk-icon uk-icon-warning uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
+		</label>
 		<div class="uk-form-controls">
-			<input required class="uk-input" type="text" id="zip" name="zip" size="60" value="{zip}" />
-				<i class="uk-icon uk-icon-warning uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
-		</div>
-	</div>
-
-	<div class="uk-form-row uk-margin">
-		<label class="uk-form-label" for="zip">{$LANG_SHOP['phone']}</label>
-		<div class="uk-form-controls">
-			<input required class="uk-input required" type="text" id="phone" name="phone" size="60" value="{phone}" />
-				<i class="uk-icon uk-icon-warning uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
+			<input required class="uk-input required uk-form-width-large" type="text" id="phone" name="phone" value="{phone}" maxlength="127"/>
 		</div>
 	</div>
 
 	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{$LANG_SHOP['def_billto']}</label>
-		<div class="uk-form-controls">
+		<div class="uk-form-controls uk-form-controls-text">
 			<input class="uk-checkbox" type="checkbox" name="billto_def" value="1" {def_billto_chk} />
 		</div>
 	</div>
 
 	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{$LANG_SHOP['def_shipto']}</label>
-		<div class="uk-form-controls">
+		<div class="uk-form-controls uk-form-controls-text">
 			<input class="uk-checkbox" type="checkbox" name="shipto_def" value="1" {def_shipto_chk} />
 		</div>
 	</div>
