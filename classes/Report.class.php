@@ -825,13 +825,14 @@ class Report
             break;
 
         case 'sales_amt':
+            $fieldvalue = (float)$fieldvalue;
             if (!$extra['isAdmin']) {
                 $total = (float)$fieldvalue;
                 $tip = '<table width=&quot;50%&quot; align=&quot;center&quot;>' . LB;
                 $tip .= '<tr><td>' . $LANG_SHOP['item_total'] .
                     ': </td><td style=&quot;text-align:right&quot;>' .
                     self::formatMoney($fieldvalue) . '</td></tr>' . LB;
-                $disc_amt = $A['gross_items'] - $A['net_nontax'] - $A['net_taxable'];
+                $disc_amt = (float)($A['gross_items'] - $A['net_nontax'] - $A['net_taxable']);
                 if ($disc_amt > 0) {
                     $total -= $disc_amt;
                     $tip .= '<tr><td>' . $LANG_SHOP['discount'] .
@@ -842,7 +843,7 @@ class Report
                     if (isset($A[$fld]) && is_numeric($A[$fld]) && $A[$fld] > 0) {
                         $tip .= '<tr><td>' . $LANG_SHOP[$fld] .
                                 ': </td><td style=&quot;text-align:right&quot;>' .
-                                self::formatMoney($A[$fld]) .
+                                self::formatMoney((float)$A[$fld]) .
                                 '</td></tr>' . LB;
                         $total += (float)$A[$fld];
                     }
@@ -867,7 +868,7 @@ class Report
         case 'net_nontax':
         case 'tax':
         case 'paid':
-            $retval = self::formatMoney($fieldvalue);
+            $retval = self::formatMoney((float)$fieldvalue);
             break;
 
         case 'customer':
