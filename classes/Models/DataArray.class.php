@@ -197,10 +197,13 @@ class DataArray implements \ArrayAccess
      * @param   string  $var    Key name
      * @return  array       Array value, empty array if undefined
      */
-    public function getBool(string $var, int $default=0) : int
+    public function getBool(string $var, bool $default=false) : bool
     {
         if (!array_key_exists($var, $this->properties)) {
             return $default;
+        } elseif ($this->properties[$var] == 'false') {
+            // Handle "false" string, which evaluates to boolean true.
+            return false;
         } else {
             return (bool)$this->properties[$var];
         }
@@ -208,7 +211,7 @@ class DataArray implements \ArrayAccess
 
 
     /**
-     * Get an array value.
+     * Get an array value. Converts to an array if necessary.
      *
      * @param   string  $var    Key name
      * @return  array       Array value, empty array if undefined
