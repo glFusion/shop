@@ -1,7 +1,8 @@
 <?php
 /**
  * Utility class to get values from URL parameters.
- * This should be instantiated via getInstance() to ensure consistency.
+ * This should be instantiated via getInstance() to ensure consistency in case
+ * parameters are "stuffed" into the parameter array.
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2022 Lee Garner <lee@leegarner.com>
@@ -34,6 +35,11 @@ class Request extends DataArray
     }
 
 
+    /**
+     * Get the current request instance.
+     *
+     * @return  object  Request object
+     */
     public static function getInstance() : self
     {
         static $instance = NULL;

@@ -604,28 +604,12 @@ class Cart extends Order
 
 
     /**
-     * Get the cart ID.
-     * Returns either the native cart ID, or a version escaped for SQL
-     *
-     * @param   boolean $escape True to escape return value for DB
-     * @return  string      Cart ID string
-     */
-    public function cartID($escape=false)
-    {
-        if ($escape)
-            return DB_escapeString($this->order_id);
-        else
-            return $this->order_id;
-    }
-
-
-    /**
      * Set the address values for a single address.
      *
-     * @param   array   $A      Array of address elements
+     * @param   array   $A      Address object
      * @param   string  $type   Type of address, billing or shipping
      */
-    public function setAddress($A, $type = 'billto')
+    public function setAddress(Address $A, string $type = 'billto') : self
     {
         switch ($type) {
         case 'billto':
@@ -635,6 +619,7 @@ class Cart extends Order
             $this->setShipto($A);
             break;
         }
+        return $this;
     }
 
 

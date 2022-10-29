@@ -122,7 +122,7 @@ class Webhook extends \Shop\Webhook
      * This webhook is called directly by the buyer, so redirect back to
      * the Shop homepage.
      */
-    public function redirectAfterCompletion()
+    public function redirectAfterCompletion() : void
     {
         echo COM_refresh(SHOP_URL . '/index.php');
     }

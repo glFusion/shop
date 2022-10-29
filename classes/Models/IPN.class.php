@@ -48,7 +48,7 @@ class IPN extends DataArray
      *
      * @param   string|array    $val    Optonal initial properties
      */
-    public function __construct(array $vals=array)
+    public function __construct(array $vals=array())
     {
         global $_CONF;
 

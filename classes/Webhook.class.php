@@ -138,7 +138,7 @@ class Webhook
      * @param   array   $blob   Gateway variables to be passed to the IPN
      * @return  object          IPN handler object
      */
-    public static function getInstance($name, $blob='')
+    public static function getInstance(string $name, $blob=array()) : ?object
     {
         $cls = __NAMESPACE__ . '\\Gateways\\' . $name . '\\Webhook';
         if (class_exists($cls)) {
@@ -153,7 +153,7 @@ class Webhook
     /**
      * Save the webhook to the database.
      */
-    protected function saveToDB()
+    protected function saveToDB() : void
     {
         global $_TABLES;
 
@@ -167,7 +167,7 @@ class Webhook
      * @param   string  $whID   Webhook ID
      * @return  object  $this
      */
-    public function setID($whID)
+    public function setID(string $whID) : self
     {
         $this->whID = $whID;
         $this->setIPN('txn_id', $this->whID);
@@ -180,7 +180,7 @@ class Webhook
      *
      * @return  string      Webhook ID
      */
-    public function getID()
+    public function getID() : string
     {
         return $this->whID;
     }
@@ -205,7 +205,7 @@ class Webhook
      * @param   string  $source     Webhook source (gateway name)
      * @return  object  $this
      */
-    public function setSource($source)
+    public function setSource(string $source) : self
     {
         $this->whSource = $source;
         $this->setIPN('gw_name', $this->whSource);
@@ -218,7 +218,7 @@ class Webhook
      *
      * @return  string      Webhook source (gateway name)
      */
-    public function getSource()
+    public function getSource() : string
     {
         return $this->whSource;
     }
@@ -230,7 +230,7 @@ class Webhook
      * @param   string|null $dt     Date/time string or null for current
      * @return  object  $this
      */
-    public function setTxnDate($dt=NULL)
+    public function setTxnDate(?string $dt=NULL) : self
     {
         global $_CONF;
 
@@ -274,7 +274,7 @@ class Webhook
      *
      * @return  array   Webhook data
      */
-    public function getData() : object
+    public function getData()
     {
         return $this->whData;
     }
@@ -286,7 +286,7 @@ class Webhook
      * @param   integer $ts     Timestamp value
      * @return  object  $this
      */
-    public function setTimestamp($ts=NULL)
+    public function setTimestamp(?int $ts=NULL) : self
     {
         global $_CONF;
 
@@ -305,7 +305,7 @@ class Webhook
      *
      * @return  integer     Timestamp value
      */
-    public function getTimestamp()
+    public function getTimestamp() : int
     {
         return $this->whTS;
     }
@@ -317,7 +317,7 @@ class Webhook
      * @param   string  $event      Webhook event type
      * @return  object  $this
      */
-    public function setEvent($event)
+    public function setEvent(string $event) : self
     {
         $this->whEvent = $event;
         return $this;
@@ -329,7 +329,7 @@ class Webhook
      *
      * @return  string      Event string
      */
-    public function getEvent()
+    public function getEvent() : string
     {
         return $this->whEvent;
     }
@@ -341,7 +341,7 @@ class Webhook
      * @param   string  $order_id   Order ID
      * @return  object  $this
      */
-    public function setOrderID($order_id)
+    public function setOrderID(string $order_id) : self
     {
         $this->whOrderID = $order_id;
         return $this;
@@ -353,7 +353,7 @@ class Webhook
      *
      * @return  string      Order ID
      */
-    public function getOrderID()
+    public function getOrderID() : string
     {
         return $this->whOrderID;
     }
@@ -365,7 +365,7 @@ class Webhook
      * @param   float   $amount     Payment amount
      * @return  object  $this
      */
-    public function setPayment($amount)
+    public function setPayment(float $amount) : self
     {
         $this->whPmtTotal = (float)$amount;
         $this->setIPN('pmt_gross', $this->whPmtTotal);
@@ -378,7 +378,7 @@ class Webhook
      *
      * @return  float       Payment amount
      */
-    public function getPayment()
+    public function getPayment() : float
     {
         return (float)$this->whPmtTotal;
     }
@@ -390,7 +390,7 @@ class Webhook
      * @param   string  $method     Payment method
      * @return  object  $this
      */
-    public function setPmtMethod($method)
+    public function setPmtMethod(string $method) : self
     {
         $this->pmt_method = $method;
         return $this;
@@ -402,7 +402,7 @@ class Webhook
      *
      * @return  string      Payment method
      */
-    public function getPmtMethod()
+    public function getPmtMethod() : string
     {
         return $this->pmt_method;
     }
@@ -414,7 +414,7 @@ class Webhook
      * @param   boolean $verified   True if verified, False if not
      * @return  object  $this
      */
-    public function setVerified($verified)
+    public function setVerified(bool $verified=true) : self
     {
         $this->whVerified = $verified ? 1 : 0;
         return $this;
@@ -426,7 +426,7 @@ class Webhook
      *
      * @return  integer     1 if verified, 0 if not
      */
-    public function isVerified()
+    public function isVerified() : int
     {
         return $this->whVerified ? 1 : 0;
     }
@@ -435,10 +435,8 @@ class Webhook
     /**
      * Record a payment via webhook in the database.
      * Creates a Payment object from the webhook data and saves it.
-     *
-     * @return  object      Payment object
      */
-    public function recordPayment()
+    public function recordPayment() : void
     {
         if ($this->ipnLogId == 0) { // Webhook not logged yet
             $this->logIPN();
@@ -488,7 +486,7 @@ class Webhook
      * @param   array   $arr    Specified array of headers for debugging
      * @return  object  $this
      */
-    public function setHeaders($arr = NULL)
+    public function setHeaders(?array $arr=NULL) : self
     {
         $this->whHeaders = array();
         if ($arr === NULL) {
@@ -511,7 +509,7 @@ class Webhook
      * @param   string|null $header     Header name, NULL for all
      * @return  string|array    One or all headers
      */
-    public function getHeader($header=NULL)
+    public function getHeader(?string $header=NULL)
     {
         if ($header === NULL) {
             return $this->whHeaders;
@@ -529,7 +527,7 @@ class Webhook
      * @param   string  $code   Currency code, empty for site default
      * @return  object  $this
      */
-    public function setCurrency($code='')
+    public function setCurrency(string $code='') : self
     {
         $this->Currency = Currency::getInstance(strtoupper($code));
         return $this;
@@ -541,7 +539,7 @@ class Webhook
      *
      * @return string  Currency code
      */
-    public function getCurrency()
+    public function getCurrency() : string
     {
         if ($this->Currency === NULL) {
             $this->setCurrency();
@@ -555,7 +553,7 @@ class Webhook
      *
      * @return boolean                 True for sufficient funds, False if not
      */
-    protected function isSufficientFunds()
+    protected function isSufficientFunds() : bool
     {
         if (!$this->Order) {
             return false;
@@ -583,7 +581,7 @@ class Webhook
      * @param   integer $type   Type of failure that occurred
      * @param   string  $msg    Failure message
      */
-    protected function handleFailure($type = self::FAILURE_UNKNOWN, $msg = '')
+    protected function handleFailure(int $type = self::FAILURE_UNKNOWN, string $msg = '') : void
     {
         // Log the failure to glFusion's error log
         $this->Error($this->gw_id . '-IPN: ' . $msg, 1);
@@ -598,7 +596,7 @@ class Webhook
      *
      * @return  boolean     True if processed successfully, False if not
      */
-    public function handlePurchase()
+    public function handlePurchase() : bool
     {
         if (is_null($this->Order)) {
             $this->Order = Order::getInstance($this->getOrderID());
@@ -635,7 +633,7 @@ class Webhook
      *
      * @param   object  $Order  Order object being refunded
      */
-    protected function handleFullRefund($Order)
+    protected function handleFullRefund(object $Order) : void
     {
         // Completely refunded, let the items handle any refund actions.
         // None for catalog items since there's no inventory,
@@ -655,7 +653,7 @@ class Webhook
      *
      * @return  boolean             True if unique, False otherwise
      */
-    protected function isUniqueTxnId()
+    protected function isUniqueTxnId() : bool
     {
         global $_TABLES;
 
@@ -693,7 +691,7 @@ class Webhook
      * @param   mixed   $value  Value
      * @return  object  $this
      */
-    protected function setIPN($key, $value)
+    protected function setIPN(string $key, $value) : self
     {
         if ($this->IPN === NULL) {
             $this->IPN = new IPNModel;
@@ -708,7 +706,7 @@ class Webhook
      * Typical webhooks only display a message and return HTTP 200, which is
      * done in webhook.php.
      */
-    public function redirectAfterCompletion()
+    public function redirectAfterCompletion() : void
     {
         return;
     }
