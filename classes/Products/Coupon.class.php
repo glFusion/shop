@@ -116,7 +116,7 @@ class Coupon extends \Shop\Product
         $numbers    = '1234567890';
         $symbols    = '`~!@#$%^&*()-_=+[]{}|";:/?.>,<';
 
-        $characters = array();
+        $characters = '';
         $coupon = '';
 
         switch ($options['letters']) {
@@ -146,6 +146,8 @@ class Coupon extends \Shop\Product
         if ($options['mask'] != '') {
             $mask = $options['mask'];
             $len = strlen($mask);
+            $characters = $uppercase;
+            $charcount = strlen($characters);
             for ($i = 0; $i < $len; $i++) {
                 if ($mask[$i] === 'X') {
                     $coupon .= $characters[random_int(0, $charcount - 1)];
