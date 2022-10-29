@@ -3,15 +3,17 @@
  * Class to handle currency display.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2014-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2014-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.2.1
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
+use glFusion\Database\Database;
+
 
 /**
  * Class to handle currencies.
@@ -49,7 +51,7 @@ class Currency
 
     /** Character used as a decimal point. Some use a comma.
      * @var string */
-    private $decimals_sep = '.';
+    private $decimal_sep = '.';
 
     /** Major currency unit, e.g. `dollars`.
      * @var string */
@@ -84,25 +86,73 @@ class Currency
 
 
     /**
-     * Constructor. Simply sets an initial default currency.
+     * Constructor. Loads a currency from the database.
      *
      * @param   mixed   $code   Currency code, or DB record as an array
      */
-    public function __construct($code = NULL)
+    public function __construct(?string $code = NULL)
     {
         global $_SHOP_CONF, $_TABLES;
 
-        if (is_array($code)) {      // a DB record already read
-            $this->setVars($code);
-        } else {                    // just a currency code supplied
-            if ($code === NULL) $code = $_SHOP_CONF['currency'];
-            $res = DB_query("SELECT * FROM {$_TABLES['shop.currency']}
-                        WHERE code = '" . DB_escapeString($code) . "'");
-            if ($res) {
-                $A = DB_fetchArray($res, false);
-                $this->setVars($A);
+        if (empty($code)) {
+            $code = $_SHOP_CONF['currency'];
+        }
+        try {
+            $row = Database::getInstance()->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.currency']}
+                WHERE code = ?",
+                array($code),
+                array(Database::STRING)
+            )->fetchAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $row = false;
+        }
+        if (is_array($row)) {
+            $this->setVars($row);
+        }
+    }
+
+
+    /**
+     * Create a Currency object from a raw array, e.g. DB record.
+     *
+     * @param   array   $A      Array of data
+     * @return  object      Currency object
+     */
+    public static function fromArray(array $A) : self
+    {
+        $retval = new self;
+        $retval->setVars($A);
+        return $retval;
+    }
+
+
+    /**
+     * Get an instance of a currency.
+     * Caches in a static variable for quick repeated retrivals,
+     * and also caches using glFusion caching if available.
+     *
+     * @param   string  $code   Currency Code
+     * @return  object      Currency Object
+     */
+    public static function getInstance(?string $code = NULL) : self
+    {
+        global $_SHOP_CONF;
+        static $currencies = array();
+        if (empty($code)) {
+            $code = $_SHOP_CONF['currency'];
+        }
+
+        if (!isset($currencies[$code])) {
+            $key = 'currency_' . $code;
+            $currencies[$code] = Cache::get($key);
+            if (!$currencies[$code]) {
+                $currencies[$code] = new self($code);
+                Cache::set($key, $currencies[$code]);
             }
         }
+        return $currencies[$code];
     }
 
 
@@ -111,7 +161,7 @@ class Currency
      *
      * @return  string  String value (currency code)
      */
-    public function __toString()
+    public function __toString() : string
     {
         return $this->code;
     }
@@ -123,7 +173,7 @@ class Currency
      * @param   array   $A      Array of key->value pairs
      * @return  object  $this
      */
-    public function setVars($A)
+    public function setVars(array $A) : self
     {
         $this->code = $A['code'];
         $this->symbol = $A['symbol'];
@@ -149,7 +199,7 @@ class Currency
      *
      * @return  string      Currency code
      */
-    public function getCode()
+    public function getCode() : string
     {
         return $this->code;
     }
@@ -160,36 +210,9 @@ class Currency
      *
      * @return  string      Full name of currency
      */
-    public function getName()
+    public function getName() : string
     {
         return $this->name;
-    }
-
-
-    /**
-     * Get an instance of a currency.
-     * Caches in a static variable for quick repeated retrivals,
-     * and also caches using glFusion caching if available.
-     *
-     * @param   string  $code   Currency Code
-     * @return  array           Array of information
-     */
-    public static function getInstance($code = NULL)
-    {
-        global $_SHOP_CONF;
-        static $currencies = array();
-
-        if (empty($code)) $code = $_SHOP_CONF['currency'];
-
-        if (!isset($currencies[$code])) {
-            $key = 'currency_' . $code;
-            $currencies[$code] = Cache::get($key);
-            if (!$currencies[$code]) {
-                $currencies[$code] = new self($code);
-                Cache::set($key, $currencies[$code]);
-            }
-        }
-        return $currencies[$code];
     }
 
 
@@ -198,7 +221,7 @@ class Currency
      *
      * @return  integer     Number of decimal places used for the currency
      */
-    public function Decimals()
+    public function Decimals() : int
     {
         return (int)$this->decimals;
     }
@@ -209,7 +232,7 @@ class Currency
      *
      * @return  string      Prefix, e.g. dollar sign
      */
-    public function Pre()
+    public function Pre() : string
     {
         static $prefixes = array();
         if (!isset($prefixes[$this->code])) {
@@ -218,7 +241,7 @@ class Currency
                 $prefix .= $this->symbol . $this->symbol_spacer;
             }
             if ($this->code_placement == 'before') {
-                $prefix .= $this->code . $this->code_spacer;
+                $prefix .= $this->code . $this->symbol_spacer;
             }
             $prefixes[$this->code] = $prefix;
         }
@@ -231,7 +254,7 @@ class Currency
      *
      * @return  string      Postfix, e.g. Euro sign
      */
-    public function Post()
+    public function Post() : string
     {
         static $postfixes = array();
         if (!isset($postfixes[$this->code])) {
@@ -241,7 +264,7 @@ class Currency
             }
 
             if ($this->code_placement == 'after') {
-                $postfix .= $this->code . $this->code_spacer;
+                $postfix .= $this->code . $this->symbol_spacer;
             }
             $postfixes[$this->code] = $postfix;
         }
@@ -256,7 +279,7 @@ class Currency
      * @param   boolean $symbol True to format as "$1.00", False for "1.00 USD"
      * @return  string      Formatted string for display
      */
-    public function Format($amount, $symbol = true)
+    public function Format(float $amount, bool $symbol = true) : string
     {
         $val = $this->_Format($amount);
         if ($symbol) {
@@ -271,9 +294,9 @@ class Currency
      * Get just the numeric part of the formatted price, e.g. "125.00" for "125".
      *
      * @param   float   $amount Dollar amount
-     * @return  float       Formatted numeric value
+     * @return  string      Formatted numeric value
      */
-    public function FormatValue($amount)
+    public function FormatValue(float $amount) : string
     {
         $val = $this->_Format($amount);
         return $val[1];
@@ -286,7 +309,7 @@ class Currency
      * @param   float   $amount A numeric price amount value.
      * @return  array   Array of prefix, number, postfix
      */
-    private function _Format($amount)
+    private function _Format(float $amount) : array
     {
         static $amounts = array();
 
@@ -322,7 +345,7 @@ class Currency
      * @param   float   $amount The numeric amount value of the price to be rounded.
      * @return  string          The rounded numeric amount value for the price.
      */
-    public function RoundVal($amount)
+    public function RoundVal(float $amount) : float
     {
         if ($this->rounding_step < .01) {
             return round($amount, $this->decimals);
@@ -340,7 +363,7 @@ class Currency
      * @param   float   $amount Original value
      * @return  float       Rounded value
      */
-    public function RoundUp($amount)
+    public function RoundUp(float $amount) : float
     {
         $fig = pow(10, $this->decimals);
         return (ceil($amount * $fig) / $fig);
@@ -359,7 +382,7 @@ class Currency
      * @param   string  $fromCurrency   Source currency override
      * @return  float       The converted amount
      */
-    public function Convert($amount, $toCurrency, $fromCurrency='')
+    public function Convert(float $amount, string $toCurrency, string $fromCurrency='') : float
     {
         $retval = $amount * self::ConversionRate($toCurrency, $fromCurrency);
         return self::getInstance($toCurrency)->RoundVal($retval);
@@ -374,12 +397,14 @@ class Currency
      * @param   string  $fromCurrency   Starting currency code
      * @return  float       Conversion rate to get $from to $to
      */
-    public static function ConversionRate($toCurrency, $fromCurrency='')
+    public static function ConversionRate(string $toCurrency, string $fromCurrency='') : float
     {
         global $_SHOP_CONF;
         static $rates = array();
 
-        if (empty($fromCurrency)) $fromCurrency = $_SHOP_CONF['currency'];
+        if (empty($fromCurrency)) {
+            $fromCurrency = $_SHOP_CONF['currency'];
+        }
         if (!isset($rates[$fromCurrency])) $rates[$fromCurrency] = array();
 
         // check if this conversion has already been done this session
@@ -390,8 +415,24 @@ class Currency
             $cache_key = 'curr_conv_' . $fldname;
             $rate = Cache::get($cache_key);
             if ($rate === NULL) {
-                $amount = urlencode($amount);
-                $url = "https://free.currencyconverterapi.com/api/v6/convert?q={$fldname}&compact=ultra";
+                $rate = 1;      // default
+                // It's faster to get the whole latest array
+                $url = "https://api.exchangerate.host/latest?base=$fromCurrency";
+                $ch = curl_init();
+                curl_setopt ($ch, CURLOPT_URL, $url);
+                curl_setopt ($ch, CURLOPT_RETURNTRANSFER, 1);
+                curl_setopt ($ch, CURLOPT_USERAGENT,
+                     "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1)");
+                curl_setopt ($ch, CURLOPT_CONNECTTIMEOUT, 0);
+                $data = curl_exec($ch);
+                curl_close($ch);
+                $data = json_decode($data, true);
+                if (isset($data['success']) && $data['success']) {
+                    if (isset($data['rates']) && isset($data['rates'][$toCurrency])) {
+                        $rate = $data['rates'][$toCurrency];
+                    }
+                }
+                /*$url = "https://free.currencyconverterapi.com/api/v6/convert?q={$fldname}&compact=ultra";
                 $ch = curl_init();
                 curl_setopt ($ch, CURLOPT_URL, $url);
                 curl_setopt ($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -401,7 +442,8 @@ class Currency
                 $data = curl_exec($ch);
                 curl_close($ch);
                 $data = json_decode($data);
-                $rate = $data->$fldname;
+                var_dump($data);die;
+                $rate = $data->$fldname;*/
                 // Cache for an hour
                 Cache::set($cache_key, $rate, 'currency', 3600);
             }
@@ -417,21 +459,27 @@ class Currency
      *
      * @return  array   Array of all DB records
      */
-    public static function getAll()
+    public static function getAll() : array
     {
         global $_TABLES;
 
         $currencies = Cache::get('shop.currencies');
         if ($currencies === NULL) {
             $currencies = array();
-            $res = DB_query(
-                "SELECT * FROM {$_TABLES['shop.currency']}
-                ORDER BY code ASC"
-            );
-            while ($A = DB_fetchArray($res, false)) {
-                $currencies[$A['code']] = new self($A);
+            try {
+                $stmt = Database::getInstance()->conn->executeQuery(
+                    "SELECT * FROM {$_TABLES['shop.currency']} ORDER BY code ASC"
+                );
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $stmt = false;
             }
-            Cache::set('shop.currencies', $currencies, 'currency', 86400);
+            if ($stmt) {
+                while ($A = $stmt->fetchAssociative()) {
+                    $currencies[$A['code']] = self::fromArray($A);
+                }
+                Cache::set('shop.currencies', $currencies, 'currency', 86400);
+            }
         }
         return $currencies;
     }
@@ -444,7 +492,7 @@ class Currency
      * @param   float   $amount     Money amount to convert
      * @return  integer             Integer version of the amount
      */
-    public function toInt($amount)
+    public function toInt(float $amount) : int
     {
         return round($amount * (10 ** $this->decimals), 0);
     }
@@ -457,7 +505,7 @@ class Currency
      * @param   integer $intval     Integer version of the amount
      * @return  float               Money amount to convert
      */
-    public function fromInt($intval)
+    public function fromInt(int $intval) : float
     {
         return round($intval / (10 ** $this->decimals), $this->decimals);
     }
@@ -469,7 +517,7 @@ class Currency
      * @param   string  $sel    Currently-selected currency code
      * @return  string      Option elements for a selection list
      */
-    public static function optionList($sel = '')
+    public static function optionList(string $sel = '') : string
     {
         $currencies = self::getAll();
         $retval = '';
@@ -488,7 +536,7 @@ class Currency
      * @param   boolean $sign   True to show currency sign
      * @return  string  Formatted currency string
      */
-    public static function formatMoney($amt, $sign=false)
+    public static function formatMoney(float $amt, ?bool $sign=false) : string
     {
         static $Cur = NULL;
         if ($Cur === NULL) {
@@ -503,4 +551,3 @@ class Currency
 
 }
 
-?>
