@@ -39,6 +39,8 @@ Release TBD
   * Add admin-selectable order ID format options, remove custom function.
   * Get version info from JSON file for installable gateways.
   * Move payment gateway management functions to a separate class.
+  * Add syndication classes to support catalog feeds.
+  * Deprecate updating cart currency, just purge carts if currency is changed.
 
 ## v1.4.1
 Release 2022-04-07

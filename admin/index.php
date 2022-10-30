@@ -48,7 +48,7 @@ $expected = array(
     'carrier_save', 'pv_save', 'pv_del', 'pv_del_bulk',
     'attrcopy', 'pov_move', 'wfmove', 'pv_move',
     'prod_clone', 'runreport', 'configreport', 'sendcards', 'purgecache',
-    'delsale', 'savesale', 'purgecarts', 'saveshipper', 'updcartcurrency',
+    'delsale', 'savesale', 'purgecarts', 'saveshipper',
     'delcode', 'savecode', 'save_sup',
     'migrate_pp', 'purge_trans', 'pog_del', 'pog_move', 'pog_save',
     'addshipment', 'updateshipment', 'del_shipment', 'delshipping',
@@ -273,27 +273,6 @@ case 'pov_del':
 case 'resetbuttons':
     DB_query("TRUNCATE {$_TABLES['shop.buttons']}");
     SHOP_setMsg($LANG_SHOP['buttons_purged']);
-    echo COM_refresh(SHOP_ADMIN_URL . '/index.php?other=x');
-    break;
-
-case 'updcartcurrency':
-    $updated = 0;
-    $Carts = \Shop\Cart::getAll();    // get all carts
-    $convert = $Request->getInt('conv_cart_curr');
-    foreach ($Carts as $Cart) {         // loop through all
-        if ($Cart->currency == $_SHOP_CONF['currency']) {
-            continue;
-        }
-        if ($convert == 1) {
-            $Cart->convertCurrency();
-        } else {
-            // Just changing the currency code.
-            $Cart->currency = $_SHOP_CONF['currency'];
-            $Cart->Save();
-        }
-        $updated++;
-    }
-    SHOP_setMsg(sprintf($LANG_SHOP['x_carts_updated'], $updated));
     echo COM_refresh(SHOP_ADMIN_URL . '/index.php?other=x');
     break;
 

@@ -483,9 +483,6 @@ $LANG_SHOP = array (
 'dscp_purge_buttons' => 'Delete all of the stored enrypted buttons in the database. This will force the buttons to be recreated the next time they are needed.',
 'dscp_purge_cache' => 'Purge all of the cached orders, items, logs, etc. This is typically needed if the database has been restored from a backup or changed manuallly and the cache is out of sync.',
 'dscp_purge_carts' => 'Delete all customer shopping carts that have not been finalized as orders.<br /><b>This will impact the guest experience and should not normally be necessary.</b>',
-'dscp_update_currency' => 'Update the currency code for all outstanding shopping carts to the configured currency.<br />Note that changing amounts back and forth between currencies may result in rounding errors.',
-'dscp_convert_cart_currency' => 'Check this box to convert existing order amounts to the new currency',
-'update_cart_currency' => 'Update Cart Currency',
 'include' => 'Include',
 'exclude' => 'Exclude',
 'buy_x_save' => 'Buy %1$d, save %2$s%%',
@@ -798,6 +795,7 @@ $LANG_SHOP = array (
 'aff_eligible' => 'Allow Affiliate Pmts',
 'complete' => 'Complete',
 'invoice' => 'Invoice',
+'qty_prompt' => 'Quantity Prompt',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
