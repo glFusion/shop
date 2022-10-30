@@ -240,6 +240,7 @@ class Webhook
         $this->IPN['sql_date'] = $dt;
         $Date = new \Date($dt, $_CONF['timezone']);
         $this->whTS = $Date->toUnix();
+        return $this;
     }
 
 
