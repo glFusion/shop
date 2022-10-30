@@ -384,7 +384,7 @@ class Currency
      */
     public function Convert(float $amount, string $toCurrency, string $fromCurrency='') : float
     {
-        $retval = $amount * self::ConversionRate($toCurrency, $fromCurrency);
+        $retval = $amount * self::getConversionRate($toCurrency, $fromCurrency);
         return self::getInstance($toCurrency)->RoundVal($retval);
     }
 
@@ -397,7 +397,7 @@ class Currency
      * @param   string  $fromCurrency   Starting currency code
      * @return  float       Conversion rate to get $from to $to
      */
-    public static function ConversionRate(string $toCurrency, string $fromCurrency='') : float
+    public static function getConversionRate(string $toCurrency, string $fromCurrency='') : float
     {
         global $_SHOP_CONF;
         static $rates = array();
