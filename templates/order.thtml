@@ -51,7 +51,7 @@
 
 {!if checkout}
 {!else}
-        <div uk-grid class="uk-grid uk-width-1-1@s uk-width-1-2@m uk-width-small-1-1 uk-width-medium-1-2 uk-child-width-1-1@s uk-child-width-1-2@m uk-grid-width-1-2 uk-grid-small" id="shopOrderNumber">
+        <div uk-grid class="uk-grid uk-width-1-1@s uk-width-1-2@m uk-width-small-1-1 uk-width-medium-1-2 uk-child-width-1-1@s uk-child-width-1-2@m uk-grid-width-1-2 uk-grid-small" id="shopOrderNumber" style="margin-top:0px">
   {!if invoice_number}
             <div>{$LANG_SHOP['invoice_number']}:</div><div>{invoice_number}</div>
   {!endif}
