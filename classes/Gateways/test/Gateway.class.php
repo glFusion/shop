@@ -85,7 +85,7 @@ class Gateway extends \Shop\Gateway
         }
         $gatewayVars = array(
             '<input type="hidden" name="processorder" value="by_gc" />',
-            '<input type="hidden" name="order_id" value="' . $cart->CartID() . '" />',
+            '<input type="hidden" name="order_id" value="' . $cart->getOrderID() . '" />',
             '<input type="hidden" name="payment_status" value="Completed" />',
             '<input type="hidden" name="pmt_gross" value="' . $pmt_gross . '" />',
             '<input type="hidden" name="txn_id" value="' . Token::create(16) . '" />',
