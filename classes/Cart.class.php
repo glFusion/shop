@@ -16,6 +16,7 @@
  *
  */
 namespace Shop;
+use glFusion\Database\Database;
 use Shop\Models\OrderStatus;
 use Shop\Models\Session;
 use Shop\Models\Stock;
@@ -96,36 +97,24 @@ class Cart extends Order
     }
 
 
-    public static function exists($cart_id)
-    {
-        global $_TABLES;
-        return DB_count(
-            $_TABLES['shop.orders'],
-            'order_id',
-            DB_escapeString($cart_id)
-        );
-    }
-
-
     /**
-     * Get all active carts.
+     * Check if a cart exists in the database.
      *
-     * @return  array   Array of cart objects
+     * @param   string  $cart_id    Cart/Order ID
+     * @return  boolean     True if exists
      */
-    public static function getAll()
+    public static function exists(?string $cart_id=NULL) : bool
     {
         global $_TABLES;
-
-        $retval = array();
-        $sql = "SELECT order_id FROM {$_TABLES['shop.orders']}
-            WHERE status = '" . OrderStatus::CART . "'";
-        $res = DB_query($sql);
-        if ($res) {
-            while ($A = DB_fetchArray($res, false)) {
-                $retval[$A['order_id']] = new self($A['order_id']);
-            }
+        if (!empty($cart_id)) {
+            return DB_count(
+                $_TABLES['shop.orders'],
+                'order_id',
+                DB_escapeString($cart_id)
+            );
+        } else {
+            return false;
         }
-        return $retval;
     }
 
 
