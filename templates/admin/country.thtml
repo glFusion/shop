@@ -15,7 +15,7 @@
 			<span id="hlp_region" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls uk-form-controls-text">
-			<select class="uk-select uk-form-small uk-form-width-medium" name="region_id">
+			<select class="uk-select uk-form-width-medium" name="region_id">
 				<option value="0">--{$LANG_SHOP['none']}--</option>
 				{region_options}
 			</select>
@@ -27,7 +27,7 @@
 			<span id="hlp_alpha2" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls">
-			<input class="uk-input uk-form-small uk-form-width-xsmall" required type="text" id="f_alpha2" name="alpha2" value="{alpha2}" size="2" maxlength="2" />
+			<input class="uk-input uk-form-width-xsmall" required type="text" id="f_alpha2" name="alpha2" value="{alpha2}" size="2" maxlength="2" />
 			<i class="uk-icon uk-icon-exclamation-triangle uk-text-danger" data-uk-tooltip title="{$LANG_SHOP['required']}"></i>
 		</div>
 	</div>
@@ -37,7 +37,7 @@
 			<span id="hlp_alpha2" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls">
-			<input class="uk-input uk-form-small uk-form-width-xsmall" type="text" id="f_alpha3" name="alpha3" value="{alpha3}" size="3" maxlength="3" />
+			<input class="uk-input uk-form-width-xsmall" type="text" id="f_alpha3" name="alpha3" value="{alpha3}" size="3" maxlength="3" />
 		</div>
 	</div>
 
@@ -46,7 +46,7 @@
 			<span id="hlp_code" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls">
-			<input class="uk-input uk-form-small uk-form-width-xsmall" type="text" id="f_code" name="country_code" value="{country_code}" size="5" maxlength="5" />
+			<input class="uk-input uk-form-width-xsmall" type="text" id="f_code" name="country_code" value="{country_code}" size="5" maxlength="5" />
 		</div>
 	</div>
 
@@ -55,7 +55,7 @@
 			<span id="hlp_country_name" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls">
-			<input class="uk-input uk-form-small uk-form-width-large" required type="text" id="f_name" name="country_name" size="60" value="{country_name}" />
+			<input class="uk-input uk-form-width-large" required type="text" id="f_name" name="country_name" size="60" value="{country_name}" />
 			<i class="uk-icon uk-icon-exclamation-triangle uk-text-danger" data-uk-tooltip title="{$LANG_SHOP['required']}"></i>
 		</div>
 	</div>
@@ -65,7 +65,7 @@
 			<span id="hlp_dialing" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls">
-			<input class="uk-input uk-form-small uk-form-width-xsmall" type="text" id="f_dialing" name="dial_code" size="6" value="{dial_code}" />
+			<input class="uk-input uk-form-width-xsmall" type="text" id="f_dialing" name="dial_code" size="6" value="{dial_code}" />
 		</div>
 	</div>
 
@@ -74,7 +74,7 @@
 			<span id="hlp_currency" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls uk-form-controls-text">
-			<select class="uk-select uk-form-small uk-form-width-medium" id="f_currency" name="currency_code">
+			<select class="uk-select uk-form-width-medium" id="f_currency" name="currency_code">
 				{currency_options}
 			</select>
 		</div>
