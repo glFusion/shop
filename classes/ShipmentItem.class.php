@@ -14,6 +14,7 @@
 namespace Shop;
 use glFusion\Database\Database;
 use Shop\Log;
+use Shop\Models\DataArray;
 
 
 /**
@@ -66,7 +67,7 @@ class ShipmentItem
             }
         } elseif (is_array($si_id) && isset($si_id['quantity'])) {
             // Got a shipment record, just set the variables
-            $this->setVars($si_id);
+            $this->setVars(new DataArray($si_id));
         }
     }
 
@@ -93,7 +94,7 @@ class ShipmentItem
             $data = false;
         }
         if (is_array($data)) {
-            $this->setVars($data);
+            $this->setVars(new DataArray($data));
             return true;
         } else {
             $this->si_id = 0;
@@ -262,16 +263,16 @@ class ShipmentItem
     /**
      * Set the object variables from an array.
      *
-     * @param   array   $A      Array of values
+     * @param   DataArray   $A  Array of values
      * @return  boolean     True on success, False if $A is not an array
      */
-    public function setVars($A)
+    public function setVars(DataArray $A) : self
     {
         if (is_array($A))  {
-            $this->si_id = isset($A['si_id']) ? (int)$A['si_id'] : 0;
-            $this->shipment_id = (int)$A['shipment_id'];
-            $this->orderitem_id = (int)$A['orderitem_id'];
-            $this->quantity = (float)$A['quantity'];
+            $this->si_id = $A->getInt('si_id');
+            $this->shipment_id = $A->getInt('shipment_id');
+            $this->orderitem_id = $A->getInt('orderitem_id');
+            $this->quantity = $A->getFloat('quantity');
         }
         return $this;
     }
@@ -280,39 +281,41 @@ class ShipmentItem
     /**
      * Save an order item to the database.
      *
-     * @param   array   $A  Optional array of data to save
+     * @param   DataArray   $A  Optional array of data to save
      * @return  boolean     True on success, False on DB error
      */
-    public function Save($A= NULL)
+    public function Save(?DataArray $A= NULL)
     {
         global $_TABLES;
 
-        if (is_array($A)) {
+        if (!empty($A)) {
             $this->setVars($A);
         }
 
         $db = Database::getInstance();
-        $qb = $db->conn->createQueryBuilder();
-        if ($this->si_id > 0) {
-            $qb->update($_TABLES['shop.shipment_items'])
-               ->set('shipment_id', ':shipment_id')
-               ->set('orderitem_id', ':orderitem_id')
-               ->set('quantity', ':quantity')
-               ->where('si_id = :si_id')
-               ->setParameter('si_id', $this->si_id, Database::INTEGER);
-        } else {
-            $qb->insert($_TABLES['shop.shipment_items'])
-               ->setValue('shipment_id', ':shipment_id')
-               ->setValue('orderitem_id', ':orderitem_id')
-               ->setValue('quantity', ':quantity');
-        }
-        $qb->setParameter('shipment_id', $this->shipment_id, Database::INTEGER)
-           ->setParameter('orderitem_id', $this->orderitem_id, Database::INTEGER)
-           ->setParameter('quantity', $this->quantity, Database::STRING);
+        $values = array(
+            'shipment_id' => $this->shipment_id,
+            'orderitem_id' => $this->orderitem_id,
+            'quantity' => (float)$this->quantity,
+        );
+        $types = array(
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::STRING,
+
+        );
         try {
-            $qb->execute();
             if ($this->si_id == 0) {
+                $db->conn->insert($_TABLES['shop.shipment_items'], $values, $types);
                 $this->si_id = $db->conn->lastInsertId();
+            } else {
+                $types[] = Database::INTEGER;
+                $db->conn->update(
+                    $_TABLES['shop.shipment_items'],
+                    $values,
+                    array('si_id' => $this->si_id),
+                    $types
+                );
             }
         } catch (\Exception $e) {
             Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());

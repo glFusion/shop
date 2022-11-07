@@ -387,7 +387,7 @@ class Product
         } elseif ($id == 0) {
             // No catalog item requested, return an empty object
             $this->prod_type = $_SHOP_CONF['def_prod_type'];
-            $this->expiration = $_SHOP_CONF['def_expiration'];
+            $this->expiration = Config::get('def_expiration');
             $this->enabled = $_SHOP_CONF['def_enabled'];
             $this->featured = $_SHOP_CONF['def_featured'];
             $this->taxable = $_SHOP_CONF['def_taxable'];
@@ -714,7 +714,7 @@ class Product
         $this->short_description = $row->getString('short_description');
         $this->price = $row->getFloat('price');
         $this->filename = $row->getString('file');
-        $this->expiration = $row->getString('expiration');
+        $this->expiration = $row->getInt('expiration');
         $this->keywords = $row->getString('keywords');
         $this->prod_type = $row->getInt('prod_type');
         $this->weight = $row->getFloat('weight');
@@ -739,7 +739,6 @@ class Product
             // Get the stock count from the base Stock record
             $this->Stock = Stock::getByItem($this->id);
         }
-
         // Get the quantity discount table. If coming from a form,
         // there will be two array variables for qty and discount percent.
         // From the DB there's a single serialized string
@@ -1020,10 +1019,10 @@ class Product
      * Does not save values from $this->Images.
      * Appends error messages to the $Errors property.
      *
-     * @param   array   $A      Optional array of values from $_POST
+     * @param   DataArray   $A  Optional array of values from $_POST
      * @return  boolean         True if no errors, False otherwise
      */
-    public function Save(?array $A = NULL) : bool
+    public function Save(?DataArray $A=NULL) : bool
     {
         global $_TABLES, $_SHOP_CONF, $LANG_SHOP;
 
@@ -1034,8 +1033,7 @@ class Product
         // updated.
         $this->old_sku = $this->name;
 
-        if (is_array($A)) {
-            $A = DataArray::fromArray($A);
+        if ($A) {
             $this->setVars($A);
         }
 
@@ -1151,31 +1149,28 @@ class Product
             // The product form will have one "quantities" array with index "0"
             // to represent the base product, while the variants form will have
             // multiple quantities.
-            if (isset($A['quantities']) && is_array($A['quantities'])) {
-                foreach($A['quantities'] as $pv_id=>$data) {
-                    Stock::getByItem($this->id, $pv_id)
-                        ->withOnhand($data['qty_onhand'])
-                        ->withReserved($data['qty_reserved'])
-                        ->withReorder($data['qty_reorder'])
-                        ->Save();
-                }
+            $stk_levels = $A->getArray('quantities');
+            foreach($stk_levels as $pv_id=>$data) {
+                Stock::getByItem($this->id, $pv_id)
+                    ->withOnhand($data['qty_onhand'])
+                    ->withReserved($data['qty_reserved'])
+                    ->withReorder($data['qty_reorder'])
+                    ->Save();
             }
 
             // Add any new features
-            if (array_key_exists('new_ft', $A)) {
-                foreach ($A['new_ft'] as $idx=>$ft_id) {
-                    Feature::getInstance($ft_id)->addProduct(
-                        $this->id,
-                        $A['new_fv_sel'][$idx],
-                        $A['new_fv_custom'][$idx]
-                    );
-                }
+            $new_ft = $A->getArray('new_ft');
+            foreach ($new_ft as $idx=>$ft_id) {
+                Feature::getInstance($ft_id)->addProduct(
+                    $this->id,
+                    $A['new_fv_sel'][$idx],
+                    $A['new_fv_custom'][$idx]
+                );
             }
             // Delete any features checked for deletion
-            if (array_key_exists('del_ft', $A)) {
-                foreach ($A['del_ft'] as $ft_id=>$val) {
-                    Feature::deleteProduct($this->id, $ft_id);
-                }
+            $del_ft = $A->getArray('del_ft');
+            foreach ($del_ft as $ft_id=>$val) {
+                Feature::deleteProduct($this->id, $ft_id);
             }
 
             // Add any new product checkboxes.
@@ -1833,7 +1828,6 @@ class Product
             // functions on null objects
             $this->Variant = new ProductVariant;
         }
-
         $cbOpts = ProductCheckbox::getByProduct($this->item_id);
 
         // Set the template dir based on the configured template version
@@ -2280,11 +2274,11 @@ class Product
      * Gets the purchase links appropriate for the product.
      * May be Shop buttons, login-required link, or download button.
      *
-     * @param   string  $type   View type where the button will be shown
+     * @param   integer $type   View type where the button will be shown
      * @param   string  $frm_id Form ID, NULL to create a random form
      * @return  array   Array of buttons as name=>html.
      */
-    public function PurchaseLinks($type=Views::DETAIL, $frm_id=NULL)
+    public function PurchaseLinks(int $type=Views::DETAIL, ?string $frm_id=NULL) : array
     {
         global $_CONF, $_USER, $_SHOP_CONF, $_TABLES;
 

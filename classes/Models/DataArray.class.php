@@ -161,7 +161,7 @@ class DataArray implements \ArrayAccess
     }
 
 
-    public function getString(string $var, string $default='') : string
+    public function getString(string $var, ?string $default='') : ?string
     {
         if (!array_key_exists($var, $this->properties)) {
             return $default;
@@ -171,7 +171,7 @@ class DataArray implements \ArrayAccess
     }
 
 
-    public function getInt(string $var, int $default=0) : int
+    public function getInt(string $var, ?int $default=0) : ?int
     {
         if (!array_key_exists($var, $this->properties)) {
             return $default;
@@ -181,7 +181,7 @@ class DataArray implements \ArrayAccess
     }
 
 
-    public function getFloat(string $var, float $default=0) : float
+    public function getFloat(string $var, ?float $default=0) : ?float
     {
         if (!array_key_exists($var, $this->properties)) {
             return $default;
@@ -216,7 +216,7 @@ class DataArray implements \ArrayAccess
      * @param   string  $var    Key name
      * @return  array       Array value, empty array if undefined
      */
-    public function getArray(string $var, array $default=array()) : array
+    public function getArray(string $var, ?array $default=array()) : ?array
     {
         if (!array_key_exists($var, $this->properties)) {
             $retval = $default;
@@ -257,7 +257,7 @@ class DataArray implements \ArrayAccess
      */
     public function encode() : string
     {
-        return base64_encode(json_encode($this->properties));
+        return base64_encode(@json_encode($this->properties));
     }
 
 
@@ -269,7 +269,43 @@ class DataArray implements \ArrayAccess
      */
     public function decode(string $data) : array
     {
-        $this->properties = json_decode(base64_decode($data), true);
+        $this->properties = @json_decode(base64_decode($data), true);
+        if ($this->properties === NULL) {
+            $this->properties = array();
+        }
+        return $this->properties;
+    }
+
+
+    /**
+     * Serialize the properties into a string.
+     * Ensures that a valid empty string is returned on error.
+     *
+     * @return  string  Serialized string
+     */
+    public function serialize() : string
+    {
+        $retval = @serialize($this->properties);
+        if ($retval === false) {
+            $retval = '';
+        }
+        return $retval;
+    }
+
+
+    /**
+     * Unserialize a string into the properties array.
+     * Ensures that a valid empty array is returned on error.
+     *
+     * @param   string  $data   Serialized string
+     * @return  array       Unserialized data
+     */
+    public function unserialize(string $data) : array
+    {
+        $this->properties = @unserialize($data);
+        if ($this->properties === false) {
+            $this->properties = array();
+        }
         return $this->properties;
     }
 

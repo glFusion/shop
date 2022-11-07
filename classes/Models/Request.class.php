@@ -62,5 +62,20 @@ class Request extends DataArray
             strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
     }
 
+
+    public function getAction(array $expected) : array
+    {
+        $action = '';
+        $actionval = '';
+        foreach($expected as $provided) {
+            if (isset($this[$provided])) {
+                $action = $provided;
+                $actionval = $this->getString($provided);
+                break;
+            }
+        }
+        return array($action, $actionval);
+    }
+
 }
 

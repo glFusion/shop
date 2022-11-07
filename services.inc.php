@@ -19,6 +19,7 @@ if (!defined ('GVERSION')) {
 use glFusion\Database\Database;
 use glFusion\Log\Log;
 use Shop\Models\DataArray;
+use Shop\Config;
 
 
 /**
@@ -44,17 +45,20 @@ use Shop\Models\DataArray;
  * @param   array   $svc_msg    Unused
  * @return  integer             Status code
  */
-function service_genButton_shop($args, &$output, &$svc_msg)
+function service_genButton_shop(array $args, &$output, &$svc_msg) : int
 {
     global $_CONF, $_SHOP_CONF;
 
-    if (isset($args['amount'])) {
+    $args = new DataArray($args);
+    $price = $args->getFloat('amount', NULL);
+    /*if (isset($args['amount'])) {
         $price = $args['amount'];
     } else {
         $price = NULL;
-    }
+    }*/
 
-    $btn_type = isset($args['btn_type']) ? $args['btn_type'] : 'buy_now';
+    $btn_type = $args->getString('btn_type', 'buy_now');
+    //$btn_type = isset($args['btn_type']) ? $args['btn_type'] : 'buy_now';
     $output = array();
 
     if (!SHOP_access_check()) {
@@ -69,21 +73,23 @@ function service_genButton_shop($args, &$output, &$svc_msg)
             if ($gw->Supports('external') && $gw->Supports($btn_type)) {
                 $P = Shop\Product::getByID($args['item_number']);
                 $output['buy_now'] = $gw->ProductButton($P, $price);
+                break;
             }
         }
     }
     // Now create an add-to-cart button, if requested.
-    if (
-        isset($args['add_cart']) &&
+    if ($args->getInt('add_cart') && Config::get('ena_cart')) {
+/*        isset($args['add_cart']) &&
         $args['add_cart'] &&
         $_SHOP_CONF['ena_cart'] == 1
-    ) {
+    ) {*/
         if (!isset($args['item_type'])) {
             $args['item_type'] = Shop\Models\ProductType::VIRTUAL;
         }
         $btn_cls = 'orange';
         $btn_disabled = '';
-        $unique = isset($args['unique']) ? 1 : 0;
+        //$unique = isset($args['unique']) ? 1 : 0;
+        $unique = $args->getInt('unique');
         $Cart = Shop\Cart::getInstance();
         if ($unique) {
             // If items may only be added to the cart once, check that
@@ -102,10 +108,14 @@ function service_genButton_shop($args, &$output, &$svc_msg)
             'amount'        => $args['amount'],
             'pi_url'        => SHOP_URL,
             'item_type'     => $args['item_type'],
-            'have_tax'      => isset($args['tax']) ? 'true' : '',
+            /*'have_tax'      => isset($args['tax']) ? 'true' : '',
             'tax'           => isset($args['tax']) ? $args['tax'] : 0,
             'quantity'      => isset($args['quantity']) ? $args['quantity'] : '',
-            '_ret_url'      => isset($args['_ret_url']) ? $args['_ret_url'] : '',
+            '_ret_url'      => isset($args['_ret_url']) ? $args['_ret_url'] : '',*/
+            'have_tax'      => $args->getBool('tax'),
+            'tax'           => $args->getFloat('tax'),
+            'quantity'      => $args->getInt('quantity'),
+            '_ret_url'      => $args->getString('_ret_url'),
             '_unique'       => $unique,
             'frm_id'        => md5($args['item_name'] . rand()),
             'btn_cls'       => $btn_cls,
@@ -461,7 +471,7 @@ function service_approvesubmission_shop($args, &$output, &$svc_msg)
                 // Verify that the correct form is being used.
                 if (
                     !isset($args['source_id']) ||
-                    $args['source_id'] != Shop\Config::get('aff_form_id')
+                    $args['source_id'] != Config::get('aff_form_id')
                 ) {
                     return false;
                 }

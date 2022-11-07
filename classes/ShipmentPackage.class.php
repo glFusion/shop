@@ -15,6 +15,7 @@
 namespace Shop;
 use glFusion\Database\Database;
 use glFusion\Log\Log;
+use Shop\Models\DataArray;
 
 
 /**
@@ -64,7 +65,7 @@ class ShipmentPackage
             }
         } elseif (is_array($pkg_id)) {
             // Got a shipment record, just set the variables
-            $this->setVars($pkg_id);
+            $this->setVars(new DataArray($pkg_id));
         } else {
             $this->pkg_id = 0;
         }
@@ -77,7 +78,7 @@ class ShipmentPackage
      * @param   integer $shipment_id     Shipment ID
      * @return  array       Array of ShipmentPackage objects
      */
-    public static function getByShipment($shipment_id)
+    public static function getByShipment(int $shipment_id) : array
     {
         global $_TABLES;
 
@@ -105,12 +106,12 @@ class ShipmentPackage
 
 
     /**
-    * Load the record information.
-    *
-    * @param    integer $rec_id     DB record ID of item
-    * @return   boolean     True on success, False on failure
-    */
-    public function Read($rec_id)
+     * Load the record information.
+     *
+     * @param   integer $rec_id     DB record ID of item
+     * @return  boolean     True on success, False on failure
+     */
+    public function Read(int $rec_id) : bool
     {
         global $_TABLES;
 
@@ -125,7 +126,7 @@ class ShipmentPackage
             $row = false;
         }
         if (is_array($row)) {
-            $this->setVars($row);
+            $this->setVars(new DataArray($row));
             return true;
         } else {
             $this->shipment_id = 0;
@@ -140,17 +141,15 @@ class ShipmentPackage
      * @param   array   $A      Array of values
      * @return  boolean     True on success, False if $A is not an array
      */
-    public function setVars($A)
+    public function setVars(?DataArray $A) : self
     {
-        if (!is_array($A)) return false;
-
-        $this->pkg_id = SHOP_getVar($A, 'pkg_id', 'integer', 0);
-        $this->shipment_id = SHOP_getVar($A, 'shipment_id', 'integer', 0);
-        $this->shipper_id = SHOP_getVar($A, 'shipper_id', 'integer', 0);
-        $this->shipper_info = SHOP_getVar($A, 'shipper_info', 'string', '');
-        $this->tracking_num = SHOP_getVar($A, 'tracking_num', 'string', '');
-        $this->comment = SHOP_getVar($A, 'comment', 'string', '');
-        return true;
+        $this->pkg_id = $A->getInt('pkg_id');
+        $this->shipment_id = $A->getInt('shipment_id');
+        $this->shipper_id = $A->getInt('shipper_id');
+        $this->shipper_info = $A->getString('shipper_info');
+        $this->tracking_num = $A->getString('tracking_num');
+        $this->comment = $A->getString('comment');
+        return $this;
     }
 
 
@@ -264,14 +263,14 @@ class ShipmentPackage
     /**
      * Save a shipment package to the database.
      *
-     * @param   array   $form   Array of data to save
+     * @param   DataArray   $form   Array of data to save
      * @return  boolean     True on success, False on DB error
      */
-    public function Save(?array $form = NULL) : bool
+    public function Save(?DataArray $form=NULL) : bool
     {
         global $_TABLES;
 
-        if (is_array($form)) {
+        if (!empty($form)) {
             // This sets the base info, ShipmentItems are created after saving
             // the shipment.
             $this->setVars($form);

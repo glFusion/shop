@@ -225,11 +225,12 @@ class Gateway
         }
 
         if (!empty($A)) {
-            $this->orderby = (int)$A['orderby'];
-            $this->enabled = (int)$A['enabled'];
-            $this->grp_access = SHOP_getVar($A, 'grp_access', 'integer', 2);
-            $this->version = SHOP_getVar($A, 'version');
-            $services = @unserialize($A['services']);
+            $A = new DataArray($A);
+            $this->orderby = $A->getInt('orderby');
+            $this->enabled = $A->getInt('enabled');
+            $this->grp_access = $A->getInt('grp_access', 2);
+            $this->version = $A->getString('version');
+            $services = @unserialize($A->getString('services'));
             if ($services) {
                 foreach ($services as $name=>$status) {
                     if (isset($this->services[$name])) {
@@ -237,7 +238,7 @@ class Gateway
                     }
                 }
             }
-            $cfg_arr = @unserialize($A['config']);
+            $cfg_arr = @unserialize($A->getString('config'));
             if (!empty($cfg_arr)) {
                 foreach ($cfg_arr as $env=>$props) {
                     if (!is_array($props)) {
@@ -277,7 +278,7 @@ class Gateway
 
     /**
      * Magic getter function.
-     * Returns the requeste value if set, otherwise returns NULL.
+     * Returns the requested value if set, otherwise returns NULL.
      * Note that derived classes must define their own __set() function.
      *
      * @param   string  $key    Name of property to return
@@ -290,11 +291,12 @@ class Gateway
         case 'pay_now':
         case 'donation':
         case 'subscribe':
-            if (isset($this->services[$key])) {
+            return $this->services->getInt($key, NULL);
+            /*if (isset($this->services[$key])) {
                 return $this->services[$key];
             } else {
                 return NULL;
-            }
+            }*/
             break;
         default:
             if (isset($this->properties[$key])) {
@@ -375,12 +377,10 @@ class Gateway
      * @param   string  $btn_key    Button Key, btn_type + price
      * @return  string      Button code, or empty if not available
      */
-    protected function _ReadButton($P, $btn_key)
+    protected function _ReadButton(object $P, string $btn_key) : string
     {
         global $_TABLES;
 
-        $pi_name = DB_escapeString($P->getPluginName());
-        $item_id = DB_escapeString($P->getItemID());
         $BtnKey = new ButtonKey(array(
             'btn_type' => $btn_key,
             'price' => $P->getPrice(),
@@ -714,9 +714,9 @@ class Gateway
      * @param   string  $btn_type   Button type to check
      * @return  boolean             True if the button is supported
      */
-    public function Supports($btn_type)
+    public function Supports(string $btn_type) : bool
     {
-        $supports = SHOP_getVar($this->services, $btn_type, 'integer', 0);
+        $supports = isset($this->services[$btn_type]) && $this->services[$btn_type];
         return $supports && $this->hasValidConfig();
     }
 

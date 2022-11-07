@@ -70,7 +70,7 @@ $expected = array(
     'newpayment',
     'importtaxform', 'taxrates', 'edittaxrate', 'suppliers', 'edit_sup',
     'prod_bulk_frm','pv_edit_bulk', 'variants', 'options',
-    'regions', 'countries', 'states',
+    'regions', 'countries',
     'features', 'ft_view', 'ft_edit',
     'pi_products', 'pi_edit', 'pi_save', 'pi_del',
     'products', 'ipndetail', 'pr_edit', 'pr_list',

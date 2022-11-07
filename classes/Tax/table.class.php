@@ -17,6 +17,7 @@ use Shop\Template;
 use Shop\Config;
 use Shop\FieldList;
 use Shop\Log;
+use Shop\Models\DataArray;
 
 
 /**
@@ -62,26 +63,27 @@ class table extends \Shop\Tax
             }
 
             if (is_array($A)) {
+                $A = new DataArray($A);
                 $data = array(
-                    'totalRate' => SHOP_getVar($A, 'combined_rate', 'float'),
+                    'totalRate' => $A->getFloat('combined_rate'),
                     'rates' => array(
                         array(
-                            'rate'  => SHOP_getVar($A, 'state_rate', 'float'),
+                            'rate'  => $A->getFloat('state_rate'),
                             'name'  => $A['state'] . ' ' . $LANG_SHOP['state_rate'],
                             'type'  => 'State',
                         ),
                         array(
-                            'rate'  => SHOP_getVar($A, 'county_rate', 'float'),
+                            'rate'  => $A->getFloat('county_rate'),
                             'name'  => $A['state'] . ' ' . $LANG_SHOP['county_rate'],
                             'type'  => 'County',
                         ),
                         array(
-                            'rate'  => SHOP_getVar($A, 'city_rate', 'float'),
+                            'rate'  => $A->getFloat('city_rate'),
                             'name'  => $A['region'] . ' ' . $LANG_SHOP['city_rate'],
                             'type'  => 'City',
                         ),
                         array(
-                            'rate'  => SHOP_getVar($A, 'special_rate', 'float'),
+                            'rate'  => $A->getFloat('special_rate'),
                             'name'  => $A['region'] . ' ' . $LANG_SHOP['special_rate'],
                             'type'  => 'Special',
                         ),

@@ -28,12 +28,12 @@ require_once('../../auth.inc.php');
 USES_lib_admin();
 use Shop\Affiliate;
 use Shop\Models\AffiliatePayment;
-
+$Request = Shop\Models\Request::getInstance();
 $content = '';
 
 // Get the message to the admin, if any
 $msg = array();
-if (isset($_REQUEST['msg'])) $msg[] = $_REQUEST['msg'];
+if (isset($Request['msg'])) $msg[] = $Request->getString('msg');
 
 $action = 'affiliates';     // Default if no correct view specified
 $expected = array(
@@ -42,35 +42,24 @@ $expected = array(
     // Views to display
     'affiliates', 'payout',
 );
-foreach($expected as $provided) {
-    if (isset($_POST[$provided])) {
-        $action = $provided;
-        $actionval = $_POST[$provided];
-        break;
-    } elseif (isset($_GET[$provided])) {
-        $action = $provided;
-        $actionval = $_GET[$provided];
-        break;
-    }
-}
-
+list($action, $actionval) = $Request->getAction($expected);
 switch ($action) {
 case 'approve':
-    if (isset($_POST['aff_uid'])) {
-        Affiliate::Restore($_POST['aff_uid']);
+    if (isset($Request['aff_uid'])) {
+        Affiliate::Restore($Request->getRaw('aff_uid'));
     }
     echo COM_refresh(SHOP_ADMIN_URL . '/affiliates.php');
     break;
 
 case 'reject':
-    if (isset($_POST['aff_uid'])) {
-        Affiliate::Reject($_POST['aff_uid']);
+    if (isset($Request['aff_uid'])) {
+        Affiliate::Reject($Request->getRaw('aff_uid'));
     }
     echo COM_refresh(SHOP_ADMIN_URL . '/affiliates.php');
     break;
 
 case 'do_payout':
-    AffiliatePayment::generate($_POST['aff_uid']);
+    AffiliatePayment::generate($Request->getInt('aff_uid'));
     AffiliatePayment::process();
     echo COM_refresh(SHOP_ADMIN_URL . '/affiliates.php');
     break;
@@ -86,7 +75,7 @@ case 'payout':
 
 case 'affiliates':
 default:
-    $uid = SHOP_getVar($_GET, 'uid', 0);
+    $uid = $Request->getInt('uid');
     if ($uid > 0) {
         $content .= Shop\Affiliate::userList($uid);
     } else {

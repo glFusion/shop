@@ -253,10 +253,10 @@ class Plugin extends \Shop\Product
     /**
      * Dummy function since plugin items don't support saving.
      *
-     * @param   array   $A      Optional record array to save
+     * @param   DataArray   $A  Optional record array to save
      * @return  boolean         True, always
      */
-    public function Save(?array $A = NULL) : bool
+    public function Save(?DataArray $A=NULL) : bool
     {
         return true;
     }

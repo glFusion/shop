@@ -14,6 +14,7 @@
 namespace Shop;
 use glFusion\Database\Database;
 use glFusion\Log\Log;
+use Shop\Models\DataArray;
 
 
 /**
@@ -59,10 +60,7 @@ class Region extends RegionBase
     public function __construct(?array $A=NULL)
     {
         if (is_array($A)) {
-            $this->setID($A['region_id'])
-                 ->setCode($A['region_code'])
-                 ->setName($A['region_name'])
-                 ->setEnabled($A['region_enabled']);
+            $this->setVars(new DataArray($A));
         }
     }
 
@@ -71,9 +69,9 @@ class Region extends RegionBase
      * Get an instance of a Region object.
      *
      * @param   integer $id     Region DB record ID
-     * @return  object  Country object
+     * @return  object  Region object
      */
-    public static function getInstance($id)
+    public static function getInstance(int $id) : self
     {
         global $_TABLES;
         static $instances = array();
@@ -98,12 +96,28 @@ class Region extends RegionBase
 
 
     /**
+     * Set properties from variables.
+     *
+     * @param   DataArray   $A      Array of variables
+     * @return  object  $this
+     */
+    public function setVars(DataArray $A) : self
+    {
+        $this->setID($A->getInt('region_id'))
+             ->setCode($A->getInt('region_code'))
+             ->setName($A->getString('region_name'))
+             ->setEnabled($A->getInt('region_enabled'));
+        return $this;
+    }
+
+
+    /**
      * Set the record ID.
      *
      * @param   integer $id     DB record ID
      * @return  object  $this
      */
-    private function setID($id)
+    private function setID(int $id) : self
     {
         $this->region_id = (int)$id;
         return $this;
@@ -115,7 +129,7 @@ class Region extends RegionBase
      *
      * @return  integer     Record ID
      */
-    public function getID()
+    public function getID() : int
     {
         return (int)$this->region_id;
     }
@@ -126,7 +140,7 @@ class Region extends RegionBase
      *
      * @param   $code   integer     Region code
      */
-    private function setCode($code)
+    private function setCode(int $code) : self
     {
         $this->region_code = (int)$code;
         return $this;
@@ -138,7 +152,7 @@ class Region extends RegionBase
      *
      * @return  integer     Region code
      */
-    public function getCode()
+    public function getCode() : int
     {
         return (int)$this->region_code;
     }
@@ -150,9 +164,9 @@ class Region extends RegionBase
      * @param   integer $enabled    Zero to disable, nonzero to enable
      * @return  object  $this
      */
-    private function setEnabled($enabled)
+    private function setEnabled(bool $enabled) : self
     {
-        $this->region_enabled = $enabled == 0 ? 0 : 1;
+        $this->region_enabled = $enabled ? 1 : 0;
         return $this;
     }
 
@@ -162,7 +176,7 @@ class Region extends RegionBase
      *
      * @return  integer     1 if enabled, 0 if not
      */
-    public function isEnabled()
+    public function isEnabled() : int
     {
         return (int)$this->region_enabled;
     }
@@ -174,7 +188,7 @@ class Region extends RegionBase
      * @param   string  $name   Name of region
      * @return  object  $this
      */
-    private function setName($name)
+    private function setName(string $name) : self
     {
         $this->region_name = $name;
         return $this;
@@ -186,7 +200,7 @@ class Region extends RegionBase
      *
      * @return  string      Country name, empty string if not found
      */
-    public function getName()
+    public function getName() : string
     {
         return $this->region_name;
     }
@@ -198,7 +212,7 @@ class Region extends RegionBase
      * @param   string  $enabled    True to only include enabled regions
      * @return  array       Array of Region objects
      */
-    public static function getAll($enabled=true)
+    public static function getAll(bool $enabled=true) : array
     {
         global $_TABLES;
 
@@ -242,7 +256,7 @@ class Region extends RegionBase
      * @param   boolean $enabled    True for only enabled regions
      * @return  string      Option tags for selection list
      */
-    public static function optionList($sel = 0, $enabled = true)
+    public static function optionList(int $sel = 0, bool $enabled = true) : string
     {
         $retval = '';
         $arr = self::getAll($enabled);
@@ -259,8 +273,11 @@ class Region extends RegionBase
      *
      * @return  string      HTML for editing form
      */
-    public function Edit()
+    public function Edit(?DataArray $A=NULL) : string
     {
+        if (!empty($A)) {
+            $this->setVars($A);
+        }
         $T = new Template('admin');
         $T->set_file(array(
             'form' => 'region.thtml',
@@ -281,18 +298,15 @@ class Region extends RegionBase
     /**
      * Save the region information.
      *
-     * @param   array   $A  Optional data array from $_POST
+     * @param   DataArray   $A  Optional data array from $_POST
      * @return  boolean     True on success, False on failure
      */
-    public function Save($A=NULL)
+    public function Save(?DataArray $A=NULL) : bool
     {
         global $_TABLES;
 
         if (is_array($A)) {
-            $this->setID($A['region_id'])
-                ->setCode($A['region_code'])
-                ->setName($A['region_name'])
-                ->setEnabled($A['region_enabled']);
+            $this->setVars($A);
         }
         $db = Database::getInstance();
         $values = array(
@@ -302,12 +316,12 @@ class Region extends RegionBase
         );
         $types = array(
             Database::STRING,
-            Database::STRING,
+            Database::INTEGER,
             Database::INTEGER,
         );
         try {
             if ($this->getID() > 0) {
-                $values[] = Database::INTEGER;
+                $types[] = Database::INTEGER;
                 $db->conn->update(
                     $_TABLES['shop.regions'],
                     $values,
@@ -320,8 +334,8 @@ class Region extends RegionBase
                     $values,
                     $types
                 );
+                $this->setID($db->conn->lastInsertId());
             }
-            $this->setID($db->conn->lastInsertId());
             $status = true;
         } catch (\Throwable $e) {
             Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
@@ -336,7 +350,7 @@ class Region extends RegionBase
      *
      * @return  string      HTML for the product list.
      */
-    public static function adminList()
+    public static function adminList() : string
     {
         global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $LANG_SHOP_HELP;
 

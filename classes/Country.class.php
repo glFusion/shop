@@ -14,6 +14,7 @@
 namespace Shop;
 use glFusion\Database\Database;
 use glFusion\Log\Log;
+use Shop\Models\DataArray;
 
 
 /**
@@ -83,6 +84,7 @@ class Country extends RegionBase
     public function __construct(?array $A=NULL)
     {
         if (is_array($A)) {
+            $A = new DataArray($A);
             $this->setVars($A);
         }
     }
@@ -91,37 +93,19 @@ class Country extends RegionBase
     /**
      * Set variables from a DB record or form into local variables.
      *
-     * @param   array   $A      Array from $_POST or DB
+     * @param   DataArray   $A  Data Array from $_POST or DB
      */
-    private function setVars($A)
+    private function setVars(DataArray $A) : void
     {
-        if (isset($A['country_id'])) {
-            $this->setID($A['country_id']);
-        }
-        if (isset($A['alpha2'])) {
-            $this->setAlpha2($A['alpha2']);
-        }
-        if (isset($A['alpha3'])) {
-            $this->setAlpha3($A['alpha3']);
-        }
-        if (isset($A['region_id'])) {
-            $this->setRegionID($A['region_id']);
-        }
-        if (isset($A['country_code'])) {
-            $this->setCode($A['country_code']);
-        }
-        if (isset($A['country_name'])) {
-            $this->setName($A['country_name']);
-        }
-        if (isset($A['currency_code'])) {
-            $this->setCurrencyCode($A['currency_code']);
-        }
-        if (isset($A['country_enabled'])) {
-            $this->setEnabled($A['country_enabled']);
-        }
-        if (isset($A['dial_code'])) {
-            $this->setDialCode($A['dial_code']);
-        }
+        $this->setID($A->getInt('country_id'));
+        $this->setAlpha2($A->getString('alpha2'));
+        $this->setAlpha3($A->getString('alpha3'));
+        $this->setRegionID($A->getInt('region_id'));
+        $this->setCode($A->getString('country_code'));
+        $this->setName($A->getString('country_name'));
+        $this->setCurrencyCode($A->getString('currency_code'));
+        $this->setEnabled($A->getInt('country_enabled'));
+        $this->setDialCode($A->getString('dial_code'));
     }
 
 
@@ -504,12 +488,12 @@ class Country extends RegionBase
     /**
      * Edit a country record.
      *
-     * @param   array   $A  $_POST values, if re-editing due to an error
+     * @param   DataArray   $A  $_POST values, if re-editing due to an error
      * @return  string      HTML for editing form
      */
-    public function Edit($A=NULL)
+    public function Edit(?DataArray $A=NULL)
     {
-        if (is_array($A)) {
+        if (!empty($A)) {
             $this->setVars($A);
         }
         $T = new Template('admin');
@@ -536,23 +520,15 @@ class Country extends RegionBase
     /**
      * Save the country information.
      *
-     * @param   array   $A  Optional data array from $_POST
+     * @param   DataArray   $A  Optional data array from $_POST
      * @return  boolean     True on success, False on failure
      */
-    public function Save(?array $A=NULL) : bool
+    public function Save(?DataArray $A=NULL) : bool
     {
         global $_TABLES, $LANG_SHOP;
 
-        if (is_array($A)) {
-            $this->setID($A['country_id'])
-                ->setAlpha2($A['alpha2'])
-                ->setAlpha3($A['alpha3'])
-                ->setRegionID($A['region_id'])
-                ->setCode($A['country_code'])
-                ->setName($A['country_name'])
-                ->setCurrencyCode($A['currency_code'])
-                ->setEnabled($A['country_enabled'])
-                ->setDialCode($A['dial_code']);
+        if (!empty($A)) {
+            $this->setVars($A);
         }
         $values = array(
             'alpha2' => $this->getAlpha2(),
@@ -577,7 +553,7 @@ class Country extends RegionBase
         $db = Database::getInstance();
         try {
             if ($this->getID() > 0) {
-                $types[] = Database::INTGER;
+                $types[] = Database::INTEGER;
                 $db->conn->update(
                     $_TABLES['shop.countries'],
                     $values,

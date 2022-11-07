@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Shop;
+use Shop\Models\DataArray;
 
 
 /**
@@ -54,17 +55,18 @@ class Tracking
      */
     public function addStep(array $info) : self
     {
-        if (isset($info['datetime'])) {
+        $info = new DataArray($info);
+        if (isset($info['datetime']) && is_object($info['datetime'])) {
             $datetime = $info['datetime'];
         } else {
             $datetime = NULL;
         }
         $this->steps[] = array(
-            'date'      => SHOP_getVar($info, 'date'),
-            'time'      => SHOP_getVar($info, 'time'),
+            'date'      => $info->getString('date'),
+            'time'      => $info->getString('time'),
             'datetime'  => $datetime,   // date object option
-            'location'  => SHOP_getVar($info, 'location'),
-            'message'   => SHOP_getVar($info, 'message'),
+            'location'  => $info->getString('location'),
+            'message'   => $info->getString('message'),
         );
         return $this;
     }
@@ -181,7 +183,7 @@ class Tracking
      * @param   string  $tracknum   Tracking Number
      * @return  object|null     Tracking object, NULL if not found
      */
-    public static function getCache(string $shipper, string $tracknum)
+    public static function getCache(string $shipper, string $tracknum) : ?self
     {
         $key = self::_makeCacheKey($shipper, $tracknum);
         $data = Cache::get($key);
@@ -195,7 +197,7 @@ class Tracking
      * @param   string  $shipper    Shipper ID code
      * @param   string  $tracknum   Tracking Number
      */
-    public function setCache(string $shipper, string $tracknum)
+    public function setCache(string $shipper, string $tracknum) : void
     {
         $key = self::_makeCacheKey($shipper, $tracknum);
         $this->setTimestamp();

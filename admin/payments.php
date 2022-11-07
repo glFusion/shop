@@ -26,12 +26,12 @@ if (
 
 require_once('../../auth.inc.php');
 USES_lib_admin();
-
+$Request = Shop\Models\Request::getInstance();
 $content = '';
 
 // Get the message to the admin, if any
 $msg = array();
-if (isset($_REQUEST['msg'])) $msg[] = $_REQUEST['msg'];
+if (isset($Request['msg'])) $msg[] = $Request->getString('msg');
 
 // Set view and action variables.  We use $action for things to do, and
 // $view for the page to show.  $mode is often set by glFusion functions,
@@ -47,13 +47,9 @@ $expected = array(
     'webhooks',
 );
 foreach($expected as $provided) {
-    if (isset($_POST[$provided])) {
+    if (isset($Request[$provided])) {
         $action = $provided;
-        $actionval = $_POST[$provided];
-        break;
-    } elseif (isset($_GET[$provided])) {
-        $action = $provided;
-        $actionval = $_GET[$provided];
+        $actionval = $Request->getString($provided);
         break;
     }
 }
@@ -108,7 +104,7 @@ case 'ipndetail':
     break;
 
 case 'pmtdetail':
-    $val = SHOP_getVar($_GET, 'pmt_id', 'integer');
+    $val = $Request->getInt('pmt_id');
     if ($val > 0) {
         $content .= \Shop\Report::getInstance('payment')->RenderDetail($val);
         break;

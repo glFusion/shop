@@ -14,6 +14,7 @@
 namespace Shop;
 use glFusion\Database\Database;
 use glFusion\Log\Log;
+use Shop\Models\DataArray;
 
 
 /**
@@ -79,14 +80,15 @@ class State extends RegionBase
     public function __construct(?array $A=NULL)
     {
         if (is_array($A)) {
-            $this->setID(SHOP_getVar($A, 'state_id', 'integer'))
-                 ->setCountryID(SHOP_getVar($A, 'country_id', 'integer'))
-                 ->setCountryISO(SHOP_getVar($A, 'country_iso'))
-                 ->setISO(SHOP_getVar($A, 'iso_code'))
-                 ->setName(SHOP_getVar($A, 'state_name'))
-                 ->setEnabled(SHOP_getVar($A,'state_enabled', 'integer', 1))
-                 ->setTaxHandling(SHOP_getVar($A, 'tax_handling', 'integer'))
-                 ->setTaxShipping(SHOP_getVar($A, 'tax_shipping', 'integer'));
+            $A = new DataArray($A);
+            $this->setID($A->getInt('state_id'))
+                 ->setCountryID($A->getInt('country_id'))
+                 ->setCountryISO($A->getString('country_iso'))
+                 ->setISO($A->getString('iso_code'))
+                 ->setName($A->getString('state_name'))
+                 ->setEnabled($A->getInt('state_enabled', 1))
+                 ->setTaxHandling($A->getInt('tax_handling'))
+                 ->setTaxShipping($A->getInt('tax_shipping'));
         }
     }
 
@@ -264,9 +266,9 @@ class State extends RegionBase
      * @param   integer $enabled    Zero to disable, nonzero to enable
      * @return  object  $this
      */
-    private function setEnabled($enabled)
+    private function setEnabled(bool $enabled) : self
     {
-        $this->state_enabled = $enabled == 0 ? 0 : 1;
+        $this->state_enabled = $enabled  ? 1 : 0;
         return $this;
     }
 
@@ -276,7 +278,7 @@ class State extends RegionBase
      *
      * @return  integer     Zero if disabled, 1 if enabled
      */
-    public function getEnabled()
+    public function getEnabled() : int
     {
         return $this->state_enabled ? 1 : 0;
     }
@@ -455,7 +457,7 @@ class State extends RegionBase
      *
      * @return  string      HTML for editing form
      */
-    public function Edit()
+    public function Edit() : string
     {
         $T = new Template('admin');
         $T->set_file(array(
@@ -480,22 +482,24 @@ class State extends RegionBase
     /**
      * Save the state information.
      *
-     * @param   array   $A  Optional data array from $_POST
+     * @param   DataArray   $A  Optional DataArray from $_POST
      * @return  boolean     True on success, False on failure
      */
-    public function Save($A=NULL)
+    public function Save(?DataArray $A=NULL)
     {
         global $_TABLES, $LANG_SHOP;
 
         $this->Country = Country::getByIsoCode($A['country_iso']);
         $country_id = $this->Country->getID();
-        if (is_array($A)) {
-            $this->setID($A['state_id'])
+        if (!empty($A)) {
+            $this->setID($A->getInt('state_id'))
                 ->setCountryID($country_id)
-                ->setCountryISO($A['country_iso'])
-                ->setISO($A['iso_code'])
-                ->setName($A['state_name'])
-                ->setEnabled($A['state_enabled']);
+                ->setCountryISO($A->getString('country_iso'))
+                ->setISO($A->getString('iso_code'))
+                ->setName($A->getString('state_name'))
+                ->setEnabled($A->getInt('state_enabled'))
+                 ->setTaxHandling($A->getInt('tax_handling'))
+                 ->setTaxShipping($A->getInt('tax_shipping'));
         }
         $values = array(
             'country_id' => $this->getCountryID(),
@@ -503,7 +507,7 @@ class State extends RegionBase
             'state_name' => $this->getName(),
             'state_enabled' => $this->getEnabled(),
             'tax_shipping' =>$this->taxesShipping(),
-            'tax_handling' => $this->taxesShipping(),
+            'tax_handling' => $this->taxesHandling(),
         );
         $types = array(
             Database::STRING,

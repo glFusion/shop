@@ -27,6 +27,7 @@ if (
 require_once('../../auth.inc.php');
 USES_lib_admin();
 
+$Request = Shop\Models\Request::getInstance();
 $content = '';
 $action = 'regions';
 $expected = array(
@@ -41,13 +42,9 @@ $expected = array(
     'regions', 'countries', 'states',
 );
 foreach($expected as $provided) {
-    if (isset($_POST[$provided])) {
+    if (isset($Request[$provided])) {
         $action = $provided;
-        $actionval = $_POST[$provided];
-        break;
-    } elseif (isset($_GET[$provided])) {
-        $action = $provided;
-        $actionval = $_GET[$provided];
+        $actionval = $Request->getString($provided);
         break;
     }
 }
@@ -55,14 +52,14 @@ foreach($expected as $provided) {
 switch ($action) {
 case 'rule_add':
     // Adds a rule to a state, country or region
-    $rule_id = SHOP_getVar($_POST, 'rule_id', 'integer', 0);
+    $rule_id = $Request->getInt('rule_id');
     if ($rule_id > 0) {
         switch ($actionval) {
         case 'region':
         case 'country':
         case 'state':
             Shop\Rules\Zone::getInstance($rule_id)
-                ->add($actionval, SHOP_getVar($_POST, $actionval . '_id', 'array', array()))
+                ->add($actionval, $Request->getArray($actionval . '_id'))
                 ->Save();
             break;
         }
@@ -72,8 +69,8 @@ case 'rule_add':
 
 case 'saveregion':
     // Save a region record
-    $R = Shop\Region::getInstance($_POST['region_id']);
-    if ($R->Save($_POST)) {
+    $R = Shop\Region::getInstance($Request->getInt('region_id'));
+    if ($R->Save($Request)) {
         SHOP_setMsg($LANG_SHOP['msg_updated']);
         echo COM_refresh(SHOP_ADMIN_URL . '/regions.php?regions');
     } else {
@@ -84,20 +81,20 @@ case 'saveregion':
 
 case 'savecountry':
     // Save a country record
-    $C = Shop\Country::getByRecordId($_POST['country_id']);
-    if ($C->Save($_POST)) {
+    $C = Shop\Country::getByRecordId($Request->getInt('country_id'));
+    if ($C->Save($Request)) {
         SHOP_setMsg($LANG_SHOP['msg_updated']);
         echo COM_refresh(SHOP_ADMIN_URL . '/regions.php?countries');
     } else {
         SHOP_setMsg($C->getErrors());
-        $content = $C->Edit($_POST);
+        $content = $C->Edit($Request);
     }
     break;
 
 case 'savestate':
     // Save a state record
-    $S = Shop\State::getByRecordId((int)$_POST['state_id']);
-    if ($S->Save($_POST)) {
+    $S = Shop\State::getByRecordId($Request->getInt('state_id'));
+    if ($S->Save($Request)) {
         SHOP_setMsg($LANG_SHOP['msg_updated']);
         echo COM_refresh(SHOP_ADMIN_URL . '/regions.php?states');
     } else {
@@ -107,7 +104,7 @@ case 'savestate':
     break;
 
 case 'ena_region':
-    $regions = SHOP_getVar($_POST, 'region_id', 'array', array());
+    $regions = $Requst->getArray('region_id');
     if (!empty($regions)) {
         Shop\Region::BulkToggle(0, 'region_enabled', $regions);
     }
@@ -115,7 +112,7 @@ case 'ena_region':
     break;
 
 case 'disa_region':
-    $regions = SHOP_getVar($_POST, 'region_id', 'array', array());
+    $regions = $Request->getArray('region_id');
     if (!empty($regions)) {
         Shop\Region::BulkToggle(1, 'region_enabled', $regions);
     }
@@ -124,7 +121,7 @@ case 'disa_region':
 
 
 case 'ena_country':
-    $countries = SHOP_getVar($_POST, 'country_id', 'array', array());
+    $countries = $Request->getArray('country_id');
     if (!empty($countries)) {
         Shop\Country::BulkToggle(0, 'country_enabled', $countries);
     }
@@ -132,7 +129,7 @@ case 'ena_country':
     break;
 
 case 'disa_country':
-    $countries = SHOP_getVar($_POST, 'country_id', 'array', array());
+    $countries = $Request->getArray('country_id');
     if (!empty($countries)) {
         Shop\Country::BulkToggle(1, 'country_enabled', $countries);
     }
@@ -140,7 +137,7 @@ case 'disa_country':
     break;
 
 case 'ena_state':
-    $states = SHOP_getVar($_POST, 'state_id', 'array', array());
+    $states = $Request->getArray('state_id');
     if (!empty($states)) {
         Shop\State::BulkToggle(0, 'state_enabled', $states);
     }
@@ -148,7 +145,7 @@ case 'ena_state':
     break;
 
 case 'disa_state':
-    $states = SHOP_getVar($_POST, 'state_id', 'array', array());
+    $states = $Request('state_id');
     if (!empty($states)) {
         Shop\State::BulkToggle(1, 'state_enabled', $states);
     }
@@ -174,13 +171,13 @@ case 'editstate':
     break;
 
 case 'countries':
-    $region_id = SHOP_getVar($_GET, 'region_id', 'integer', 0);
+    $region_id = $Request->getInt('region_id');
     $content .= Shop\Menu::adminRules($action);
     $content .= Shop\Country::adminList($region_id);
     break;
 
 case 'states':
-    $country_id = SHOP_getVar($_GET, 'country_id', 'integer', 0);
+    $country_id = $Request->getInt('country_id');
     $content .= Shop\Menu::adminRules($action);
     $content .= Shop\State::adminList($country_id);
     break;
