@@ -661,7 +661,6 @@ class Order
         //}
         $this->setTaxShipping($A->getFloat('tax_shipping'))
              ->setTaxHandling($A->getFloat('tax_handling'));
-        //$this->m_info = new CustomInfo(SHOP_getVar($A, 'info'));
         $this->m_info = CustomInfo::fromString($A->getString('info'));
         //if ($this->m_info === false) $this->m_info = array();
 
@@ -985,6 +984,7 @@ class Order
         } catch (\Exception $e) {
             Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
+        self::$OrderCache[$this->order_id] = $this;
         return $this->order_id;
     }
 
@@ -1379,12 +1379,11 @@ class Order
             $text = $this->_prepareNotification($T, $gw_msg, true);
 
             Log::write('shop_system', Log::DEBUG, "Sending email to " . $this->uid . ' at ' . $this->buyer_email);
-            $subject = SHOP_getVar(
-                $LANG_SHOP['subj_email_user'],
-                $status,
-                'string',
-                $LANG_SHOP['sub_email']
-            );
+            if (isset($LANG_SHOP['subj_email_user'][$status])) {
+                $subject = $LANG_SHOP['subj_email_user'][$status];
+            } else {
+                $subject = $LANG_SHOP['sub_email'];
+            }
             $subject = sprintf($subject, $Shop->getCompany());
 
             COM_emailNotification(array(
@@ -3312,7 +3311,7 @@ class Order
      * @param   string  $newstatus  New status to set
      * @return  object  $this
      */
-    public function setStatus($newstatus)
+    public function setStatus(string $newstatus) : self
     {
         global $LANG_SHOP;
 

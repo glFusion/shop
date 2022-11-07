@@ -34,7 +34,11 @@ class Menu
 
         USES_lib_admin();
 
-        $hdr_txt = SHOP_getVar($LANG_SHOP, 'user_hdr_' . $view);
+        if (isset($LANG_SHOP['user_hdr_' . $view])) {
+            $hdr_txt = $LANG_SHOP['user_hdr_' . $view];
+        } else {
+            $hdr_txt = '';
+        }
         $menu_arr = array(
             array(
                 'url'  => SHOP_URL . '/index.php',
@@ -424,11 +428,11 @@ class Menu
             ),
         );
         $retval .= self::_makeSubMenu($menu_arr);
-        $retval .= COM_startBlock(
+        /*$retval .= COM_startBlock(
             $LANG_SHOP['order'] . ' ' . $Order->getOrderID(), '',
             COM_getBlockTemplate('_admin_block', 'header')
         );
-        $retval .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
+        $retval .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));*/
         return $retval;
     }
 
