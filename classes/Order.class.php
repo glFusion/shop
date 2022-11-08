@@ -1061,7 +1061,7 @@ class Order
                $this->updateStatus(OrderStatus::PROCESSING, true, $notify);
             } else {
                 // No physical items, consider the order closed.
-                $this->updateStatus(OrderStatus::CLOSED, true, $notify);
+                $this->updateStatus(Config::get('virt_ord_paid_status'), true, $notify);
             }
         }
         return $this;

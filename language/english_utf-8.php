@@ -986,6 +986,7 @@ $LANG_confignames['shop'] = array(
     'logo_width' => 'Logo image width, in pixels',
     'logo_height' => 'Logo image height, in pixels',
     'order_id_format' => 'Format for order reference ID',
+    'virt_ord_paid_status' => 'Status for virtual-only orders when paid',
 );
 
 /** Language strings for the subgroup names in the config section */
@@ -1026,6 +1027,11 @@ $LANG_fs['shop'] = array(
 $LANG_configSelect['shop'] = array(
     0 => array(1 => 'True', 0 => 'False'),
     2 => array(1 => 'Yes', 0 => 'No'),
+    3 => array(
+        'processing' => 'Processing',
+        'shipped' => 'Shipped',
+        'closed' => 'Closed',
+    ),
     5 => array(
         'name' => 'Name',
         'price' => 'Price',

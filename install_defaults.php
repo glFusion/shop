@@ -317,6 +317,17 @@ $shopConfigData = array(
         'set' => true,
         'group' => 'shop',
     ),
+    array(
+        'name' => 'virt_ord_paid_status',
+        'default_value' => 'processing',
+        'type' => 'select',
+        'subgroup' => 0,
+        'fieldset' => 0,
+        'selection_array' => 3,
+        'sort' => 250,
+        'set' => true,
+        'group' => 'shop',
+    ),
 
     array (
         'name' => 'fs_features',            // Enabling features, etc.
