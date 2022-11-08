@@ -329,7 +329,9 @@ class Customer
         if (count($this->addresses) > 0) {
             return reset($this->addresses);
         } else {
-            return new Address;
+            $retval = new Address;
+            $retval->withName($this->fullname);
+            return $retval;
         }
     }
 
