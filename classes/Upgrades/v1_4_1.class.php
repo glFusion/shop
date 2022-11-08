@@ -34,7 +34,7 @@ class v1_4_1 extends Upgrade
             return false;
         }
         if ($populate_units) {
-            Log::write('shop_system', Log::INFO, "Adding shipping_units to order items for catalog items");
+            Log::write('system', Log::INFO, "Adding shipping_units to order items for catalog items");
             $sql = "SELECT * FROM {$_TABLES['shop.orderitems']}";
             $res = DB_query($sql, 1);
             if ($res && DB_numRows($res) > 0) {
