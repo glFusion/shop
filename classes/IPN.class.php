@@ -128,7 +128,7 @@ class IPN
      * standard variables.
      * @var array
      */
-    protected $ipn_data = array();
+    protected $ipn_data = NULL;
 
     /** Custom data that comes from the IPN provider, typically pass-through.
      * @var array
@@ -181,9 +181,9 @@ class IPN
      *
      * @param   array   $A      $_POST'd variables from the gateway
      */
-    public function __construct($A=array())
+    public function __construct(?DataArray $A=NULL)
     {
-        if (is_array($A)) {
+        if ($A) {
             $this->ipn_data = $A;
         }
         $this->IPN = new IPNModel;
@@ -622,6 +622,8 @@ class IPN
             return;
         }
 
+        $args = new DataArray($args);
+
         // Separate the item ID and options to get pricing
         $tmp = explode('|', $args['item_id']);
         $P = Product::getByID($tmp[0], $this->custom);
@@ -638,22 +640,22 @@ class IPN
         // IPN-supplied price. This is the case for donations.
         //$overrides = $this->custom->toArray();
         $overrides = array();
-        $overrides['price'] = $args['price'];
-        $overrides['tax'] = SHOP_getVar($args, 'tax', 'float');
-        $price = $P->getPrice($opts, $args['quantity'], $overrides);
+        $overrides['price'] = $args->getFloat('price');
+        $overrides['tax'] = $args->getFloat('tax');
+        $price = $P->getPrice($opts, $args->getInt('quantity'), $overrides);
 
         $this->items[] = array(
-            'item_id'   => $args['item_id'],
+            'item_id'   => $args->getString('item_id'),
             'item_number' => $tmp[0],
-            'name'      => isset($args['item_name']) ? $args['item_name'] : '',
-            'quantity'  => $args['quantity'],
+            'name'      => $args->getString('item_name'),
+            'quantity'  => $args->getInt('quantity'),
             'price'     => $price,      // price including options
-            'shipping'  => isset($args['shipping']) ? $args['shipping'] : 0,
-            'handling'  => isset($args['handling']) ? $args['handling'] : 0,
+            'shipping'  => $args->getFloat('shipping'),
+            'handling'  => $args->getFloat('handling'),
             //'tax'       => $tax,
             'taxable'   => $P->isTaxable() ? 1 : 0,
             'options'   => isset($tmp[1]) ? $tmp[1] : '',
-            'extras'    => isset($args['extras']) ? $args['extras'] : '',
+            'extras'    => $args->getString('extras'),
             'overrides' => $overrides,
             'custom'    => $this->custom->toArray(),
         );
@@ -688,7 +690,7 @@ class IPN
             ->setGateway($this->gw_id)
             ->setEvent($this->event)
             ->setVerified($verified)
-            ->setData($this->ipn_data);
+            ->setData($this->ipn_data->toArray());
         $this->ipnLogId = $ipn->Write();
         return $this->ipnLogId;
     }
@@ -810,7 +812,7 @@ class IPN
                         sprintf(
                             $LANG_SHOP['amt_paid_gw'],
                             $val,
-                            SHOP_getVar($LANG_SHOP, $key, 'string', 'Unknown')
+                            isset($LANG_SHOP[$key]) ? $LANG_SHOP[$key] : 'Unknown'
                         )
                     );
                 }
@@ -876,8 +878,9 @@ class IPN
             }
 
             foreach ($this->items as $id=>$item) {
+                $item = new DataArray($item);
                 $option_desc = array();
-                $P = Product::getByID($item['item_id'], $this->custom);
+                $P = Product::getByID($item->getString('item_id'), $this->custom);
                 $item['short_description'] = $P->getShortDscp();
                 if (!empty($item['options'])) {
                     // options is expected as CSV
@@ -914,9 +917,9 @@ class IPN
                 }
                 $args = array(
                     'order_id' => $this->Order->getorderID(),
-                    'product_id' => $item['item_number'],
-                    'description' => $item['short_description'],
-                    'quantity' => $item['quantity'],
+                    'product_id' => $item->getString('item_number'),
+                    'description' => $item->getString('short_description'),
+                    'quantity' => $item->getInt('quantity'),
                     'txn_type' => $this->custom['transtype'],
                     'txn_id' => $this->txn_id,
                     'status' => 'pending',
@@ -926,8 +929,8 @@ class IPN
                     'options' => $item['options'],
                     'options_text' => $option_desc,
                     'extras' => $item['extras'],
-                    'shipping' => SHOP_getVar($item, 'shipping', 'float'),
-                    'handling' => SHOP_getVar($item, 'handling', 'float'),
+                    'shipping' => $item->getFloat('shipping'),
+                    'handling' => $item->getFloat('handling'),
                     'paid' => SHOP_getVar($item['overrides'], 'price', 'float', $item['price']),
                 );
                 $this->Order->addItem(new DataArray($args));
