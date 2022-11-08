@@ -441,53 +441,46 @@ class Payment
         global $_TABLES, $LANG_SHOP;
 
         $db = Database::getInstance();
-        $qb = $db->conn->createQueryBuilder();
-        if ($this->pmt_id == 0) {
-            $qb->insert($_TABLES['shop.payments'])
-               ->setValue('pmt_ts', ':pmt_ts')
-               ->setValue('is_money', ':is_money')
-               ->setValue('pmt_gateway', ':pmt_gateway')
-               ->setValue('pmt_amount', ':pmt_amount')
-               ->setValue('pmt_ref_id', ':pmt_ref_id')
-               ->setValue('pmt_order_id', ':pmt_order_id')
-               ->setValue('pmt_method', ':pmt_method')
-               ->setValue('pmt_comment', ':pmt_comment')
-               ->setValue('pmt_status', ':pmt_status')
-               ->setValue('is_complete', ':is_complete')
-               ->setValue('pmt_uid', ':pmt_uid');
-        } else {
-            $qb->update($_TABLES['shop.payments'])
-               ->set('pmt_ts', ':pmt_ts')
-               ->set('is_money', ':is_money')
-               ->set('pmt_gateway', ':pmt_gateway')
-               ->set('pmt_amount', ':pmt_amount')
-               ->set('pmt_ref_id', ':pmt_ref_id')
-               ->set('pmt_order_id', ':pmt_order_id')
-               ->set('pmt_method', ':pmt_method')
-               ->set('pmt_comment', ':pmt_comment')
-               ->set('pmt_status', ':pmt_status')
-               ->set('is_complete', ':is_complete')
-               ->set('pmt_uid', ':pmt_uid')
-               ->where('pmt_id = :pmt_id')
-               ->setParameter('pmt_id', $this->pmt_id);
-        }
-        $qb->setParameter('pmt_ts', $this->getTS(), Database::INTEGER)
-           ->setParameter('is_money', $this->isMoney(), Database::INTEGER)
-           ->setParameter('pmt_gateway', $this->getGateway(), Database::STRING)
-           ->setParameter('pmt_amount', $this->getAmount(), Database::STRING)
-           ->setParameter('pmt_ref_id', $this->getRefID(), Database::STRING)
-           ->setParameter('pmt_order_id', $this->getOrderID(), Database::STRING)
-           ->setParameter('pmt_method', $this->method, Database::STRING)
-           ->setParameter('pmt_comment', $this->comment, Database::STRING)
-           ->setParameter('pmt_status', $this->getStatus(), Database::STRING)
-           ->setParameter('is_complete', $this->isComplete(), Database::INTEGER)
-           ->setParameter('pmt_uid', $this->uid, Database::INTEGER);
+        $values = array(
+            'pmt_ts' => $this->getTS(),
+            'is_money' => $this->isMoney(),
+            'pmt_gateway' => $this->getGateway(),
+            'pmt_amount' => $this->getAmount(),
+            'pmt_ref_id' => $this->getRefID(),
+            'pmt_order_id' => $this->getOrderID(),
+            'pmt_method' => $this->method,
+            'pmt_comment' => $this->comment,
+            'pmt_status' => $this->getStatus(),
+            'is_complete' => $this->isComplete(),
+            'pmt_uid' => $this->uid,
+        );
+        $types = array(
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::INTEGER,
+            Database::INTEGER,
+        );
         try {
-            $qb->execute();
-            $stat = true;
             if ($this->pmt_id == 0) {
+                $db->conn->insert($_TABLES['shop.payments'], $values, $types);
                 $this->setPmtId($db->conn->lastInsertId());
+            } else {
+                $types[] = Database::INTEGER;
+                $db->conn->update(
+                    $_TABLES['shop.payments'],
+                    $values,
+                    array('pmt_id' => $this->pmt_id),
+                    $types
+                );
             }
+            $stat = true;
         } catch (\Exception $e) {
             Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $stat = false;
