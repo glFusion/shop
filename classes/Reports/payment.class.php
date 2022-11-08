@@ -184,7 +184,7 @@ class payment extends \Shop\Report
         $query_arr = array(
             'table' => 'shop.payments',
             'sql' => $sql,
-            'query_fields' => array(),
+            'query_fields' => array('pmt_gateway', 'pmt_method', 'pmt_ref_id', 'pmt_comment'),
             'default_filter' => $filter,
         );
         $text_arr = array(
