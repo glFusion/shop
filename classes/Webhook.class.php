@@ -16,6 +16,8 @@
 namespace Shop;
 use Shop\Loggers\IPN as logIPN;
 use Shop\Models\IPN as IPNModel;
+use Shop\Customer;
+use Shop\Address;
 use glFusion\Database\Database;
 use glFusion\Log\Log;
 
@@ -611,6 +613,33 @@ class Webhook
         if ($this->Order->isNew()) {
             Log::write('shop_system', Log::ERROR, __METHOD__ . ": Order {$this->getOrderID()} is not valid");
             return false;
+        }
+        if ($this->Order->getUid() > 1) {
+            $Customer = Customer::getInstance($this->Order->getUid());
+            if ($this->Order->getBillto()->getID() == 0) {
+                $this->Order->setBillto($Customer->getDefaultAddress('billto'));
+            }
+            if ($this->Order->getShipto()->getID() == 0) {
+                $this->Order->setShipto($Customer->getDefaultAddress('billto'));
+            }
+        } else {
+            // For anonymous buyers, try to get a name to put into the order.
+            // Try the email address as a last resort.
+            if (!empty($this->IPN['payer_name'])) {
+                $name = $this->IPN['payer_name'];
+            } else {
+                $name = trim($this->IPN['first_name'] . ' ' . $this->IPN['last_name']);
+            }
+            if (empty($name)) {
+                $name = $this->IPN['payer_email'];
+            }
+            var_dump($this->IPN);die;
+            if (!empty($name)) {
+                $Address = new Address;
+                $Address->setName($name);
+                $this->Order->setBillto($Address);
+                $this->Order->setShipto($Address);
+            }
         }
 
         if (
