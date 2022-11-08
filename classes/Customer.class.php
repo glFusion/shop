@@ -61,7 +61,7 @@ class Customer
 
     /** Customer IDs created by payment gateways.
      * @var array */
-    private $gw_ids = array();
+    private $gw_ids = NULL;
 
     /** Shopping cart information.
      * @var array */
@@ -95,6 +95,7 @@ class Customer
             $uid = $_USER['uid'];
         }
         $this->uid = (int)$uid;  // Save the user ID
+        $this->gw_ids = new DataArray;
         $this->ReadUser();  // Load the user's stored addresses
     }
 

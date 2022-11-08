@@ -28,6 +28,7 @@ use Shop\Loggers\IPN as logIPN;
 use Shop\Products\Coupon;
 use Shop\Models\OrderStatus;
 use Shop\Models\CustomInfo;
+use Shop\Models\DataArray;
 use Shop\Models\IPN as IPNModel;
 
 
@@ -756,7 +757,7 @@ class IPN
     /**
      * Handles the item purchases.
      * The purchase should already have been validated; this function simply
-     * records the purchases.  Purchased files will be emailed to the
+     * records the purchases. Purchased files will be emailed to the
      * customer by Order::Notify().
      *
      * @uses    self::createOrder()
@@ -768,11 +769,10 @@ class IPN
 
         $status = is_null($this->Order) ? $this->createOrder() : 0;
         if ($status) {
-            $order_id = 'Unknown';
+            Log::write('shop_system', Log::ERROR, 'Error creating order: ' . print_r($status,true));
+            return false;
         } else {
             $order_id  = $this->Order->getOrderId();
-        }
-        if ($status == 0) {
             // Now all of the items are in the order object, check for sufficient
             // funds. If OK, then save the order and call each handlePurchase()
             // for each item.
@@ -826,9 +826,6 @@ class IPN
             //$ipn_data['sql_date'] = $_CONF['_now']->toMySQL(true);
             $this->IPN['uid'] = $this->Order->getUid();
             $this->Order->handlePurchase($this->IPN);
-        } else {
-            Log::write('shop_system', Log::ERROR, 'Error creating order: ' . print_r($status,true));
-            return false;
         }
         return true;
     }
@@ -933,7 +930,7 @@ class IPN
                     'handling' => SHOP_getVar($item, 'handling', 'float'),
                     'paid' => SHOP_getVar($item['overrides'], 'price', 'float', $item['price']),
                 );
-                $this->Order->addItem($args);
+                $this->Order->addItem(new DataArray($args));
             }   // foreach item
         }
         $this->Order->setUid($this->uid);

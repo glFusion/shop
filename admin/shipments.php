@@ -27,12 +27,12 @@ if (
 
 require_once('../../auth.inc.php');
 USES_lib_admin();
-
+$Request = Shop\Models\Request::getInstance();
 $content = '';
 
 // Get the message to the admin, if any
 $msg = array();
-if (isset($_REQUEST['msg'])) $msg[] = $_REQUEST['msg'];
+if (isset($Request['msg'])) $msg[] = $Request->getString('msg');
 
 // Set view and action variables.  We use $action for things to do, and
 // $view for the page to show.  $mode is often set by glFusion functions,
@@ -47,13 +47,9 @@ $expected = array(
     'packinglist', 'edit', 'shipments', 'list',
 );
 foreach($expected as $provided) {
-    if (isset($_POST[$provided])) {
+    if (isset($Request[$provided])) {
         $action = $provided;
-        $actionval = $_POST[$provided];
-        break;
-    } elseif (isset($_GET[$provided])) {
-        $action = $provided;
-        $actionval = $_GET[$provided];
+        $actionval = $Request->getString($provided);
         break;
     }
 }
@@ -67,28 +63,6 @@ case 'delete':
     echo COM_refresh($url);
     break;
 
-case 'updstatus':
-    $newstatus = SHOP_getVar($_POST, 'newstatus');
-    if ($newstatus == '') {
-        break;
-    }
-    $orders = SHOP_getVar($_POST, 'orders', 'array');
-    $oldstatus = SHOP_getVar($_POST, 'oldstatus', 'array');
-    foreach ($orders as $id=>$order_id) {
-        if (!isset($oldstatus[$order_id]) || $oldstatus[$order_id] != $newstatus) {
-            $Order = Shop\Order::getInstance($order_id);
-            if (!$Order->isNew) {
-                $Order->updateStatus($newstatus);
-                Log::write('shop_system', Log::INFO, "Updated order $order_id from {$oldstatus[$order_id]} to $newstatus");
-            }
-        }
-    }
-    $actionval = SHOP_getVar($_REQUEST, 'run');
-    if ($actionval != '') {
-        $view = 'run';
-    }
-    break;
-
 default:
     $view = $action;
     break;
@@ -96,25 +70,19 @@ default:
 
 switch ($view) {
 case 'packinglist':
-    if ($actionval == 'x') {
-        $shipments = SHOP_getVar($_POST, 'shipments', 'array');
-    } else {
-        $shipments = $actionval;
-    }
     $PL = new Shop\Views\PackingList();
-    $PL->withOutput('pdf')->withShipmentId($shipments)->Render();
+    $PL->withOutput('pdf')->withShipmentId($actionval)->Render();
     break;
 
 case 'edit':
     $shipment_id = (int)$actionval;
     if ($shipment_id > 0) {
-        if (isset($_REQUEST['ret_url'])) {
-            SHOP_setUrl($_REQUEST['ret_url']);
+        if (isset($Request['ret_url'])) {
+            SHOP_setUrl($Request->getString('ret_url'));
         }
         $S = new Shop\Shipment($shipment_id);
         $V = new Shop\Views\ShipmentForm($S->getOrderID());
         $content = $V->withShipmentId($shipment_id)->Render();
-        //$content = $V->Render($action);
     }
     break;
 

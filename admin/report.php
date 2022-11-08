@@ -26,12 +26,12 @@ if (
 
 require_once('../../auth.inc.php');
 USES_lib_admin();
-
+$Request = Shop\Models\Request::getInstance();
 $content = '';
 
 // Get the message to the admin, if any
 $msg = array();
-if (isset($_REQUEST['msg'])) $msg[] = $_REQUEST['msg'];
+if (isset($Request['msg'])) $msg[] = $Request->getString('msg');
 
 // Set view and action variables.  We use $action for things to do, and
 // $view for the page to show.  $mode is often set by glFusion functions,
@@ -46,13 +46,9 @@ $expected = array(
     'configure', 'run', 'report', 'list',
 );
 foreach($expected as $provided) {
-    if (isset($_POST[$provided])) {
+    if (isset($Request[$provided])) {
         $action = $provided;
-        $actionval = $_POST[$provided];
-        break;
-    } elseif (isset($_GET[$provided])) {
-        $action = $provided;
-        $actionval = $_GET[$provided];
+        $actionval = $Request->getString($provided);
         break;
     }
 }
@@ -60,12 +56,13 @@ $view = 'list';
 
 switch ($action) {
 case 'updstatus':
-    $newstatus = SHOP_getVar($_POST, 'newstatus');
+    echo "remove reports.php updatestatus";die;
+    $newstatus = $Request->getString('newstatus');
     if ($newstatus == '') {
         break;
     }
-    $orders = SHOP_getVar($_POST, 'orders', 'array');
-    $oldstatus = SHOP_getVar($_POST, 'oldstatus', 'array');
+    $orders = $Request->getArray('orders');
+    $oldstatus = $Request->getArray('oldstatus');
     foreach ($orders as $id=>$order_id) {
         if (!isset($oldstatus[$order_id]) || $oldstatus[$order_id] != $newstatus) {
             $Order = Shop\Order::getInstance($order_id);
@@ -75,7 +72,7 @@ case 'updstatus':
             }
         }
     }
-    $actionval = SHOP_getVar($_REQUEST, 'run');
+    $actionval = $Request->getString('run');
     if ($actionval != '') {
         $view = 'run';
     }
@@ -108,19 +105,9 @@ case 'run':
     }
     break;
 
-case 'shipment_pl':
-    echo __LINE__ . ' deprecated';
-    if ($actionval == 'x') {
-        $shipments = SHOP_getVar($_POST, 'shipments', 'array');
-    } else {
-        $shipments = $actionval;
-    }
-    Shop\Views\ShipmentPL::printPDF($shipments, $view);
-    break;
-
 case 'pdfpl':
     if ($actionval == 'x') {
-        $orders = SHOP_getVar($_POST, 'orders', 'array');
+        $orders = $Request->getArray('orders');
     } else {
         $orders = $actionval;
     }
@@ -133,7 +120,7 @@ case 'pdfpl':
     break;
 case 'pdforder':
     if ($actionval == 'x') {
-        $orders = SHOP_getVar($_POST, 'orders', 'array');
+        $orders = $Request->getArray('orders');
     } else {
         $orders = $actionval;
     }
