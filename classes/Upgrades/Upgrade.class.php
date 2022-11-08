@@ -14,6 +14,7 @@
 namespace Shop\Upgrades;
 use Shop\Cache;
 use Shop\Gateway;
+use Shop\GatewayManager;
 use glFusion\Log\Log;
 
 
