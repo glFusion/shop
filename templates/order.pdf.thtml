@@ -35,6 +35,7 @@
 {!if is_invoice}
       <br />
       {billto_addr}
+	  <br /><br />{payer_email}
 {!endif}
   </td>
   <td style="width:50%;vertical-align:top;">
