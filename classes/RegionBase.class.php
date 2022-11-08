@@ -45,7 +45,7 @@ class RegionBase
      * @param   integer $id         ID number of element to modify
      * @return  integer     New value, or old value upon failure
      */
-    public static function Toggle($oldvalue, $varname, $id)
+    public static function Toggle(int $oldvalue, string $varname, $id) : int
     {
         global $_TABLES;
 
@@ -53,7 +53,6 @@ class RegionBase
             $id = array($id);
         }
         $db = Database::getInstance();
-        $varname = $db->conn->quoteIdentifier($varname);
         switch ($varname) {     // allow only valid field names
         case static::$KEY . '_enabled':
         case 'tax_shipping':
@@ -61,12 +60,13 @@ class RegionBase
             // Determing the new value (opposite the old)
             $oldvalue = $oldvalue == 1 ? 1 : 0;
             $newvalue = $oldvalue == 1 ? 0 : 1;
-
+            $esc_varname = $db->conn->quoteIdentifier($varname);
+            $esc_keyname = $db->conn->quoteIdentifier(static::$KEY . '_id');
             try {
                 $db->conn->executeStatement(
                     "UPDATE {$_TABLES[static::$TABLE]}
-                    SET $varname = ?
-                    WHERE " . static::$KEY . "_id IN (?)",
+                    SET $esc_varname = ?
+                    WHERE $esc_keyname IN (?)",
                     array($newvalue, $id),
                     array(Database::INTEGER, Database::PARAM_INT_ARRAY)
                 );
@@ -77,6 +77,7 @@ class RegionBase
                 return $oldvalue;
             }
         }
+        return $oldvalue;
     }
 
 
