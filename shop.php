@@ -20,7 +20,7 @@ if (!defined ('GVERSION')) {
 
 global $_DB_table_prefix, $_TABLES;
 
-Shop\Config::set('pi_version', '1.4.1.6');
+Shop\Config::set('pi_version', '1.4.1.7');
 Shop\Config::set('gl_version', '2.0.0');
 
 $_SHOP_table_prefix = $_DB_table_prefix . 'shop_';
