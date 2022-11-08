@@ -136,7 +136,7 @@ class Currency
      * @param   string  $code   Currency Code
      * @return  object      Currency Object
      */
-    public static function getInstance(?string $code = NULL) : self
+    public static function getInstance(?string $code=NULL) : self
     {
         global $_SHOP_CONF;
         static $currencies = array();
@@ -279,9 +279,9 @@ class Currency
      * @param   boolean $symbol True to format as "$1.00", False for "1.00 USD"
      * @return  string      Formatted string for display
      */
-    public function Format(float $amount, bool $symbol = true) : string
+    public function Format($amount, bool $symbol = true) : string
     {
-        $val = $this->_Format($amount);
+        $val = $this->_Format((float)$amount);
         if ($symbol) {
             return $val[0] . $val[1] . $val[2];
         } else {
@@ -296,9 +296,9 @@ class Currency
      * @param   float   $amount Dollar amount
      * @return  string      Formatted numeric value
      */
-    public function FormatValue(float $amount) : string
+    public function FormatValue(string $amount) : string
     {
-        $val = $this->_Format($amount);
+        $val = $this->_Format((float)$amount);
         return $val[1];
     }
 

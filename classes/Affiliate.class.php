@@ -542,7 +542,7 @@ class Affiliate
      *
      * @param   array|integer   One or an array of user IDs
      */
-    public static function Restore($uids) : void
+    public static function Restore(array|int $uids) : void
     {
         if (!is_array($uids)) {
             $uids = array($uids);
@@ -561,7 +561,7 @@ class Affiliate
      *
      * @param   array|integer   One or an array of user IDs
      */
-    public static function Reject($uids) : void
+    public static function Reject(array|int $uids) : void
     {
         if (!is_array($uids)) {
             $uids = array($uids);
@@ -592,7 +592,7 @@ class Affiliate
 
     /**
      * Check if this affiliate is valid.
-     * Returns true if the affiliate ID is not empty, rejected or pending.
+     * Returns true if the affiliate ID is empty, rejected or pending.
      *
      * @return  boolean     True if a valid affiliate
      */

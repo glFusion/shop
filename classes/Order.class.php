@@ -472,7 +472,7 @@ class Order
      * @param   object  $A      Address object
      * @return  object  $this
      */
-    public function setBillto(Address $A) : self
+    public function setBillto(?Address $A=NULL) : self
     {
         global $_TABLES;
 
@@ -541,7 +541,7 @@ class Order
      * @param   object  $A      Address object
      * @return  object  $this
      */
-    public function setShipto(Address $A) : self
+    public function setShipto(?Address $A=NULL) : self
     {
         global $_TABLES;
 

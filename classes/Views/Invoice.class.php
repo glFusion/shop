@@ -176,13 +176,9 @@ class Invoice extends OrderBaseView
             $this->order_ids = array($this->order_id);
         }
         if ($this->output_type == 'pdf') {
-            //$this->tplname .= '.pdf';
             $this->initPDF();
         }
         foreach ($this->order_ids as $order_id) {
-            /*if (!$this->Order->canView($this->token)) {
-                continue;
-        }*/
             $output = $this->withOrderId($order_id)->createHTML();
             if ($this->output_type == 'html') {
                 // HTML is only available for single orders, so return here.
@@ -194,17 +190,6 @@ class Invoice extends OrderBaseView
         if ($this->output_type == 'pdf') {
             $this->finishPDF();
         }
-        /*if (!$this->Order->canView($this->token)) {
-            return '';
-        }
-        if ($this->output_type == 'html') {
-            $output = $this->createHTML();
-            return $output;
-        } elseif ($this->output_type == 'pdf') {
-            $this->tplname .= '.pdf';
-            $output = $this->createHTML();
-            return $this->createPDF($output);
-        }*/
         return NULL;
     }
 
