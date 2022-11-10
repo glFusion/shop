@@ -68,19 +68,15 @@
 	</div>
 
 	<div class="uk-form-row uk-margin">
-		<label class="uk-form-label">{$LANG_SHOP['min_ship_units']}:
+		<label class="uk-form-label">{$LANG_SHOP['shipping_units']}:
+			<span id="ship_units" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls uk-form-controls-text">
+			{$LANG_SHOP['minimum']}:
 			<span id="min_units" class="tooltip_cfg tooltipstered"></span>
-		</label>
-		<div class="uk-form-controls uk-form-controls-text">
 			<input class="uk-input uk-form-width-small" type="text" name="min_units" value="{min_units}" maxlength="40" />
-		</div>
-	</div>
-
-	<div class="uk-form-row uk-margin" id="prod_sel">
-		<label class="uk-form-label">{$LANG_SHOP['max_ship_units']}:
+			{$LANG_SHOP['maximum']}:
 			<span id="max_units" class="tooltip_cfg tooltipstered"></span>
-		</label>
-		<div class="uk-form-controls uk-form-controls-text">
 			<input class="uk-input uk-form-width-small" type="text" name="max_units" value="{max_units}" maxlength="40" />
 		</div>
 	</div>
