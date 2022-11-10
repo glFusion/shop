@@ -129,7 +129,7 @@ div.shopProductDetail .shopShortDesc {
 
 .shopProductDetail #shopProductAttrib {
     float: right;
-    text-align: right;
+    /*text-align: right;*/
     margin-right: 30px;
     clear: right;
     padding-bottom: 10px;
@@ -465,9 +465,9 @@ div.shopProductListItem.v1 div.ItemButtons {
     width: 50%;
 }*/
 
-div.orderAddress {
+/*div.orderAddress {
     margin-bottom: 15px;
-}
+}*/
 div.orderAddress span.header {
     font-size: 18px;
     font-weight: bold;
@@ -946,7 +946,7 @@ dl#featurelist dd {
 }
 
 div.cart {
-    width: 90%;
+/*    width: 90%;*/
     margin: auto;
 }
 
@@ -983,6 +983,7 @@ div.cart {
 }
 div.cart-item {
     margin-bottom: 15px;
+	padding-right: 10px;
 }
 .cart-item .cart-item-product .cart-item-image {
     float:left;
@@ -1082,6 +1083,11 @@ div.cart-item {
         /*width: 100%;*/
         *zoom: 1;
     }
+
+	/* Make the workflow selectors smaller on small screens */
+	li.shop-wf-panel {
+		padding: 3px;
+	}
 }
 
 .shopCustomPriceField {
@@ -1122,4 +1128,12 @@ div.cart-item {
 
 div.shopIpnLog a {
 	text-decoration: none;
+}
+
+div.orderSection {
+	border: 1px solid grey;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	margin-top: 5px !important;
+	padding-right: 10px;
 }

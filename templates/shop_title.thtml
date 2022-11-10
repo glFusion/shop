@@ -3,7 +3,7 @@
 <script src="{site_url}/shop/js/admin.js"></script>
 {!endif}
 <div class="uk-grid" uk-grid>
-	<div class="uk-width-3-4">
+	<div class="uk-width-3-4 uk-hidden-small uk-visible@m">
 {!if icon}
 		<div style="float:left;margin-right:10px;">
 			<img src="{icon}" />
@@ -18,7 +18,7 @@
 {!endif}
 		</div>
 	</div>
-	<div class="uk-width-1-4" style="text-align:right;">
+	<div class="uk-width-1-4 uk-width-small-1-1 uk-width-1-1@s" style="text-align:right;">
 {!if link_admin}
 		<a href="{site_admin_url}/plugins/shop/index.php"
 			class="uk-button uk-button-danger uk-button-mini">{$LANG_SHOP['mnu_admin']}</a>
