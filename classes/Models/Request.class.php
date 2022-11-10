@@ -63,6 +63,12 @@ class Request extends DataArray
     }
 
 
+    /**
+     * Get the action and action value from the parameters.
+     *
+     * @param   array   $expected   Array of expected options
+     * @return  array       Array of (action, actionvalue)
+     */
     public function getAction(array $expected) : array
     {
         $action = '';
@@ -75,6 +81,17 @@ class Request extends DataArray
             }
         }
         return array($action, $actionval);
+    }
+
+
+    /**
+     * Get the HTTP query string. Useful for debugging.
+     *
+     * @return  string      HTTP query string (a=x&b=7...)
+     */
+    public function getQueryString() : string
+    {
+        return http_build_query($this->properties);
     }
 
 }

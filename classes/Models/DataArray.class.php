@@ -309,5 +309,40 @@ class DataArray implements \ArrayAccess
         return $this->properties;
     }
 
+
+    /**
+     * Implode the properties into a string separated by the given character.
+     * Just a wrapper for the native implode() function, included for
+     * consistency with self::explode().
+     *
+     * @param   string  $char   Separation character, e.g ','
+     * @return  string      String with properties separated by $char
+     */
+    public function implode(string $char) : string
+    {
+        return implode($char, $this->properties);
+    }
+
+
+    /**
+     * Explode a property that is a string, e.g. CSV.
+     * Unlike regular `explode()`, this returns a truly empty array if
+     * the property is not set and does not include an empty element "0".
+     *
+     * @param   string  $char   Separation character
+     * @param   string  $key    Key into the properties array
+     * @return  array       Exploded array, empty if $key is not set
+     */
+    public function explode(string $char, string $key) : array
+    {
+        if (isset($this->properties[$key]) && !empty($this->properties[$key])) {
+            return explode($char, $this->properties[$key]);
+        } else {
+            return array();
+        }
+    }
+
+
+
 }
 
