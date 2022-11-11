@@ -430,7 +430,7 @@ class Product
         if (is_array($A) && isset($A['id'])) {
             // A complete product record
             return self::_getInstance($A);
-        } elseif (is_string($A)) {
+        } elseif (is_string($A) || is_int($A)) {
             // A single product ID
             $id = $A;
         }
