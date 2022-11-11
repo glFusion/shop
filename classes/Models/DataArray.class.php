@@ -186,7 +186,7 @@ class DataArray implements \ArrayAccess
         if (!array_key_exists($var, $this->properties)) {
             return $default;
         } else {
-            return $this->properties[$var];
+            return (float)$this->properties[$var];
         }
     }
 
