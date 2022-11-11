@@ -2,7 +2,7 @@
 {!if is_admin}
 <script src="{site_url}/shop/js/admin.js"></script>
 {!endif}
-<div class="uk-grid" uk-grid>
+<div class="uk-grid uk-margin-small" uk-grid>
 	<div class="uk-width-3-4 uk-hidden-small uk-visible@m">
 {!if icon}
 		<div style="float:left;margin-right:10px;">
