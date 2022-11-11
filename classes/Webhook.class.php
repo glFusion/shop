@@ -622,24 +622,6 @@ class Webhook
             if ($this->Order->getShipto()->getID() == 0) {
                 $this->Order->setShipto($Customer->getDefaultAddress('billto'));
             }
-        } else {
-            // For anonymous buyers, try to get a name to put into the order.
-            // Try the email address as a last resort.
-            if (!empty($this->IPN['payer_name'])) {
-                $name = $this->IPN['payer_name'];
-            } else {
-                $name = trim($this->IPN['first_name'] . ' ' . $this->IPN['last_name']);
-            }
-            if (empty($name)) {
-                $name = $this->IPN['payer_email'];
-            }
-            var_dump($this->IPN);die;
-            if (!empty($name)) {
-                $Address = new Address;
-                $Address->setName($name);
-                $this->Order->setBillto($Address);
-                $this->Order->setShipto($Address);
-            }
         }
 
         if (
