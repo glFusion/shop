@@ -37,7 +37,6 @@ if (isset($Request['msg'])) $msg[] = $Request->getString('msg');
 // $view for the page to show.  $mode is often set by glFusion functions,
 // so we'll check for it and see if we should use it, but by using $action
 // and $view we don't tend to conflict with glFusion's $mode.
-$action = '';
 $expected = array(
     // Actions to perform
     'updstatus',
@@ -45,13 +44,7 @@ $expected = array(
     'pdfpl', 'pdforder', 'shipment_pl',
     'configure', 'run', 'report', 'list',
 );
-foreach($expected as $provided) {
-    if (isset($Request[$provided])) {
-        $action = $provided;
-        $actionval = $Request->getString($provided);
-        break;
-    }
-}
+list($action, $actionval) = $Request->getAction($expected);
 $view = 'list';
 
 switch ($action) {

@@ -25,6 +25,7 @@ if (
     exit;
 }
 use Shop\Models\Request;
+$Request = Request::getInstance();
 
 $content = '';
 $action = '';
@@ -38,15 +39,7 @@ $expected = array(
     'editcart', 'viewcart', 'cancel', 'view', 'billto', 'shipto', 'addresses', 'shipping',
     'payment', 'confirm',
 );
-$Request = Request::getInstance();
-
-foreach($expected as $provided) {
-    if (isset($Request[$provided])) {
-        $action = $provided;
-        $actionval = $Request[$provided];
-        break;
-    }
-}
+list($action, $actionval) = $Request->getAction($expected);
 
 if ($action == '') {
     // Not defined in URL arguments

@@ -35,20 +35,13 @@ $content = '';
 $msg = array();
 if (isset($Request['msg'])) $msg[] = $Request->getString('msg');
 
-$action = 'gwadmin';     // Default if no correct view specified
 $expected = array(
     // Actions to perform
     'gwmove', 'gwsave', 'gwinstall', 'gwdelete', 'gwupload', 'gwupgrade',
     // Views to display
     'gwadmin', 'gwedit',
 );
-foreach($expected as $provided) {
-    if (isset($Request[$provided])) {
-        $action = $provided;
-        $actionval = $Request->getRaw($provided);
-        break;
-    }
-}
+list($action, $actionval) = $Request->getAction($expected, 'gwadmin');
 
 switch ($action) {
 case 'gwupgrade':

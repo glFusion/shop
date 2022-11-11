@@ -48,15 +48,8 @@ $expected = array(
     'couponlog', 'category',
     'cart', 'pidetail', 'viewcart',
 );
-$action = 'products';    // default view
 $Request = Request::getInstance();
-foreach($expected as $provided) {
-    if (isset($Request[$provided])) {
-        $action = $provided;
-        $actionval = $Request[$provided];
-        break;
-    }
-}
+list($action, $actionval) = $Request->getAction($expected, 'products');
 $id = $Request->getString('id');
 $content = '';
 

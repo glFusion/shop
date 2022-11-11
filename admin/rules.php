@@ -32,7 +32,6 @@ $content = '';
 $msg = array();
 if (isset($Request['msg'])) $msg[] = $Request->getString('msg');
 
-$action = 'pr_list';     // Default if no correct view specified
 $expected = array(
     // Actions to perform
     'rule_del', 'rule_add', 'rule_save', 'delbutton_x',
@@ -40,13 +39,7 @@ $expected = array(
     // Views to display
     'zr_list', 'rule_edit', 'pr_list', 'pr_edit',
 );
-foreach($expected as $provided) {
-    if (isset($Request[$provided])) {
-        $action = $provided;
-        $actionval = $Request->getString($provided);
-        break;
-    }
-}
+list($action, $actionval) = $Request->getAction($expected, 'pr_list');
 
 switch ($action) {
 case 'rule_add':

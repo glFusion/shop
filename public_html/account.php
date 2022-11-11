@@ -38,7 +38,6 @@ if (COM_isAnonUser()) {
     exit;
 }
 
-$mode = '';
 // Get the mode first from possibly posted variables
 $expected = array(
     // Actions
@@ -46,14 +45,7 @@ $expected = array(
     // Views
     'orderhist', 'addresses', 'editaddr',
 );
-
-foreach($expected as $provided) {
-    if (isset($Request[$provided])) {
-        $mode = $provided;
-        $actionval = $Request[$provided];
-        break;
-    }
-}
+list($mode, $actionval) = $Request->getAction($expected);
 
 if ($mode == '') {
     // Retrieve and sanitize input variables.

@@ -39,8 +39,6 @@ if (isset($Request['msg'])) $msg[] = $Request['msg'];
 // $view for the page to show.  $mode is often set by glFusion functions,
 // so we'll check for it and see if we should use it, but by using $action
 // and $view we don't tend to conflict with glFusion's $mode.
-//$action = $_SHOP_CONF['adm_def_view'];
-$action = '';
 $expected = array(
     // Actions to perform
     'deleteproduct', 'deletecatimage', 'deletecat',
@@ -78,14 +76,7 @@ $expected = array(
     // deprecated
     'history', 'orders', 'shipments', 'ord_ship', 'ord_pmts',
 );
-foreach($expected as $provided) {
-    if (isset($Request[$provided])) {
-        $action = $provided;
-        $actionval = $Request[$provided];
-        break;
-    }
-}
-
+list($action, $actionval) = $Request->getAction($expected);
 $mode = $Request->getString('mode');
 $view = 'products';     // Default if no correct view specified
 

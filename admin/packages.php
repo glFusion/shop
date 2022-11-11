@@ -33,20 +33,13 @@ $content = '';
 $msg = array();
 if (isset($Request['msg'])) $msg[] = $Request->getString('msg');
 
-$action = 'packages';     // Default if no correct view specified
 $expected = array(
     // Actions to perform
     'pkgsave', 'pkgdelete',
     // Views to display
     'pkglist', 'pkgedit',
 );
-foreach($expected as $provided) {
-    if (isset($Request[$provided])) {
-        $action = $provided;
-        $actionval = $Request->getString($provided);
-        break;
-    }
-}
+list($action, $actionval) = $Request->getAction($expected, 'packages');
 
 switch ($action) {
 case 'pkgdelete':

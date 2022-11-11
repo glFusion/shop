@@ -29,7 +29,6 @@ USES_lib_admin();
 
 $Request = Shop\Models\Request::getInstance();
 $content = '';
-$action = 'regions';
 $expected = array(
     // Actions to perform
     'saveregion', 'savecountry', 'savestate',
@@ -41,13 +40,7 @@ $expected = array(
     'editregion', 'editcountry', 'editstate',
     'regions', 'countries', 'states',
 );
-foreach($expected as $provided) {
-    if (isset($Request[$provided])) {
-        $action = $provided;
-        $actionval = $Request->getString($provided);
-        break;
-    }
-}
+list($action, $actionval) = $Request->getAction($expected, 'regions');
 
 switch ($action) {
 case 'rule_add':

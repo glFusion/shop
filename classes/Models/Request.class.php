@@ -69,9 +69,9 @@ class Request extends DataArray
      * @param   array   $expected   Array of expected options
      * @return  array       Array of (action, actionvalue)
      */
-    public function getAction(array $expected) : array
+    public function getAction(array $expected, string $defaction='') : array
     {
-        $action = '';
+        $action = $defaction;
         $actionval = '';
         foreach($expected as $provided) {
             if (isset($this[$provided])) {
