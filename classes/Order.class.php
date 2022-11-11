@@ -439,7 +439,10 @@ class Order
         $pov_ids = array();
         if (isset($args['options']) && is_array($args['options'])) {
             foreach ($args['options'] as $pov) {
-                $pov_ids[] = $pov->getID();
+                $POG = ProductOptionGroup::getInstance($pov->getGroupID());
+                if ($POG->getType() != 'checkbox') {
+                    $pov_ids[] = $pov->getID();
+                }
             }
         }
         $PV = ProductVariant::getByAttributes($args['product_id'], $pov_ids);
@@ -1881,10 +1884,9 @@ class Order
 
         $db = Database::getInstance();
         do {
-            $id = Token::create(16, Config::get('order_id_format'));
+            $id = Config::get('order_id_prefix') . Token::create(16, Config::get('order_id_format'));
         } while (
-            $db->getCount($_TABLES['shop.orders'], 'order_id', $id, Database::STRING)
-            > 0
+            $db->getCount($_TABLES['shop.orders'], 'order_id', $id, Database::STRING) > 0
         );
         return $id;
     }
@@ -4287,7 +4289,7 @@ class Order
         }
         $action = Config::get('redact_action');
 
-        $order_states = array_keys(OrderStatus::allAtLeast(OrderStatus::CLOSED));
+        $order_states = array_keys(OrderStatus::getOrderClosed());
         $cutoff = time() - ($years * 31536000); // convert to int timestamp
         $db = Database::getInstance();
         $qb = $db->conn->createQueryBuilder();

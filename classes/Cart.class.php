@@ -224,8 +224,6 @@ class Cart extends Order
             // to check whether the product already exists in the cart.
             //$opt_str = implode(',', $options);
             //$item_id .= '|' . $opt_str;
-        } else {
-            $opts = array();
         }
         if (isset($args['extras']['options']) && is_array($args['extras']['options'])) {
             // Checkbox option IDs. Get the item options to check against
