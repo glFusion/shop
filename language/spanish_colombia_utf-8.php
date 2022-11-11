@@ -991,6 +991,7 @@ $LANG_confignames['shop'] = array(
 'logo_width' => 'Logo image width, in pixels',
 'logo_height' => 'Logo image height, in pixels',
 'order_id_format' => 'Format for order reference ID',
+'order_id_prefix' => 'Order ID Prefix',
 'virt_ord_paid_status' => 'Status for virtual-only orders when paid',
 );
 

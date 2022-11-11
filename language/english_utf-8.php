@@ -795,7 +795,6 @@ $LANG_SHOP = array (
 'aff_eligible' => 'Allow Affiliate Pmts',
 'complete' => 'Complete',
 'invoice' => 'Invoice',
-'qty_prompt' => 'Quantity Prompt',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -986,6 +985,7 @@ $LANG_confignames['shop'] = array(
     'logo_width' => 'Logo image width, in pixels',
     'logo_height' => 'Logo image height, in pixels',
     'order_id_format' => 'Format for order reference ID',
+    'order_id_prefix' => 'Order ID Prefix',
     'virt_ord_paid_status' => 'Status for virtual-only orders when paid',
 );
 
