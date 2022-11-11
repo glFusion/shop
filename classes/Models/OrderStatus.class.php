@@ -212,6 +212,80 @@ class OrderStatus
 
 
     /**
+     * Get all the order status names where $fldname matches the integer $value.
+     *
+     * @param   string  $fld_name   Field to check
+     * @param   integer $value      Value, default is "1"
+     * @return  array       Array of order status names
+     */
+    private static function _getByStatus(string $fld_name, int $value=1) : array
+    {
+        global $_TABLES;
+
+        $db = Database::getInstance();
+        $fld_name = $db->conn->quoteIdentifier($fld_name);
+        try {
+            $rows = $db->conn->executeQuery(
+                "SELECT name FROM {$_TABLES['shop.orderstatus']} WHERE $fld_name = ?",
+                array($value),
+                array(Database::INTEGER)
+            )->fetchAllAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $rows = false;
+        }
+        if (!is_array($rows)) {
+            $rows = array();
+        }
+        return $rows;
+    }
+
+
+    /**
+     * Get all the order statuses that are considered "closed".
+     *
+     * @return  array   Array of order status names.
+     */
+    public static function getClosed() : array
+    {
+        return self::_getByStatus('order_closed');
+    }
+
+
+    /**
+     * Get all the order statuses that are considered "valid".
+     *
+     * @return  array   Array of order status names.
+     */
+    public static function getValid() : array
+    {
+        return self::_getByStatus('order_valid');
+    }
+
+
+    /**
+     * Get all the order statuses that are considered "affiliate-eligible".
+     *
+     * @return  array   Array of order status names.
+     */
+    public static function getAffiliateEligible() : array
+    {
+        return self::_getByStatus('aff_eligible');
+    }
+
+
+    /**
+     * Get all the order statuses that are considered "customer-viewable".
+     *
+     * @return  array   Array of order status names.
+     */
+    public static function getCustomerViewable() : array
+    {
+        return self::_getByStatus('cust_viewable');
+    }
+
+
+    /**
      * Get a single status instance.
      *
      * @param   string  Name of status to get
@@ -236,9 +310,8 @@ class OrderStatus
      * @param   string  $selected   Current order status
      * @return  string      HTML for select block
      */
-    public static function Selection($order_id, $showlog=0, $selected = '')
+    public static function Selection(string $order_id, int $showlog=0, string $selected = '') : string
     {
-        /* TODO - glFusion 2.0 */
         $options = array();
         foreach (self::getAll() as $key => $data) {
             if (!$data->enabled) continue;
@@ -325,7 +398,7 @@ class OrderStatus
     }
 
 
-    private static function _getByFlagValue(?string $column=NULL, ?int $status=NULL) : array
+    private static function _getByAttribute(?string $column=NULL, ?int $status=NULL) : array
     {
         global $_TABLES;
 
@@ -364,7 +437,7 @@ class OrderStatus
     public static function getOrderValid(bool $flag=true) : array
     {
         $flag = $flag ? 1 : 0;
-        return self::_getByFlagValue('order_valid', $flag);
+        return self::_getByAttribute('order_valid', $flag);
     }
 
 
@@ -377,7 +450,7 @@ class OrderStatus
     public static function getAffiliateEligible(bool $flag=true) : array
     {
         $flag = $flag ? 1 : 0;
-        return self::_getByFlagValue('aff_eligible', $flag);
+        return self::_getByAttribute('aff_eligible', $flag);
     }
 
 
@@ -390,7 +463,7 @@ class OrderStatus
     public static function getCustomerViewable(bool $flag=true) : array
     {
         $flag = $flag ? 1 : 0;
-        return self::_getByFlagValue('cust_viewable', $flag);
+        return self::_getByAttribute('cust_viewable', $flag);
     }
 
 
