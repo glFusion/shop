@@ -78,6 +78,20 @@ class Stock
 
 
     /**
+     * Create a Stock object from an array, e.g. database record.
+     *
+     * @param   array   $A      Array of properties
+     * @return  object      New Stock object
+     */
+    public static function createFromArray(array $A) : self
+    {
+        $retval = new self;
+        $retval->setVars($A);
+        return $retval;
+    }
+
+
+    /**
      * Set all the object properties.
      *
      * @param   array   $A      Array of properties
