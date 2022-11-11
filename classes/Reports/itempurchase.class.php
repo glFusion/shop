@@ -15,7 +15,9 @@
 namespace Shop\Reports;
 use Shop\Product;
 use Shop\ProductVariant;
+use Shop\ProductOptionGroup;
 use Shop\Models\Request;
+use Shop\Models\ProductCheckbox;
 
 
 /**
@@ -174,6 +176,16 @@ class itempurchase extends \Shop\Report
             $total_total = 0;
             $items = array();
             $variant_headers = array();
+            $POGs = ProductOptionGroup::getByProduct($this->item_id);
+            foreach ($POGs as $POG) {
+                $variant_headers['pog_' . $POG->getID()] = $this->remQuote($POG->getName());
+            }
+            $cbox_headers = array();
+            $Checkboxes = ProductCheckbox::getByProduct($this->item_id);
+            foreach ($Checkboxes as $cBox) {
+                $cbox_headers[$cBox->getOptionID()] = $cBox->getOptionValue();
+            }
+
             while ($A = DB_fetchArray($res, false)) {
                 if (!empty($A['billto_company'])) {
                     $customer = $A['billto_company'];
@@ -204,13 +216,16 @@ class itempurchase extends \Shop\Report
                     $PV = ProductVariant::getInstance($A['variant_id']);
                     if ($PV->getID() > 0) {     // make sure it's a good record
                         foreach ($PV->getDscp() as $dscp) {
-                            $variant_headers[$dscp['name']] = $this->remQuote($dscp['name']);
+                            //$variant_headers[$dscp['name']] = $this->remQuote($dscp['name']);
                             $items[$A['id']]['variants'][$dscp['name']] = $this->remQuote($dscp['value']);
                         }
                     }
                 }
+                $extras = json_decode($A['extras'], true);
+                if (isset($extras[0])) {
+                    $extras = json_decode($extras[0],true);
+                }
                 if ($has_custom) {
-                    $extras = json_decode($A['extras'], true);
                     if (!empty($extras) && isset($extras['custom']) && is_array($extras['custom'])) {
                         foreach ($extras['custom'] as $idx=>$val) {
                             $extras['custom'][$idx] = $this->remQuote($val);
@@ -218,10 +233,25 @@ class itempurchase extends \Shop\Report
                         $items[$A['id']]['custom'] = ',"' . implode('","', $extras['custom']) . '"';
                     }
                 }
+                if (!empty($cbox_headers)) {
+                    $cbox_flds = array();
+                    foreach ($cbox_headers as $opt_id=>$dummy) {
+                        if (in_array($opt_id, $extras['options'])) {
+                            $cbox_flds[$opt_id] = 'X';
+                        } else {
+                            $cbox_flds[$opt_id] = '';
+                        }
+                    }
+                    $items[$A['id']]['cbox_flds'] = ',"' . implode('","', $cbox_flds) . '"';
+                }
             }
             if (!empty($variant_headers)) {
                 $T->set_var('variant_header', ',"' . implode('","', $variant_headers) . '"');
             }
+            if (!empty($cbox_headers)) {
+                $T->set_var('cbox_header', ',"' . implode('","', $cbox_headers) . '"');
+            }
+
 
             $T->set_block('report', 'ItemRow', 'row');
             foreach ($items as $item) {
@@ -247,6 +277,9 @@ class itempurchase extends \Shop\Report
                         $variants[] = $item['variants'][$var_name];
                     }
                     $T->set_var('variants', ',"' . implode('","', $variants) . '"');
+                }
+                if (!empty($cbox_headers)) {
+                    $T->set_var('cbox_flds', $item['cbox_flds']);
                 }
                 $T->parse('row', 'ItemRow', true);
             }

@@ -12,6 +12,9 @@
  * @filesource
  */
 namespace Shop;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
+use Shop\Models\DataArray;
 
 
 /**
@@ -54,10 +57,6 @@ class ProductOptionGroup
      * @var string */
     private $pog_name = '';
 
-    /** Indicate whether the current object is a new entry or not.
-     * @var boolean */
-    private $isNew = true;
-
     /** Array of error messages, to be accessible by the calling routines.
      * @var array */
     private  $Errors = array();
@@ -76,7 +75,7 @@ class ProductOptionGroup
     public function __construct($id=0)
     {
         if (is_array($id)) {
-            $this->setVars($id);
+            $this->setVars(new DataArray($id));
         } else {
             $id = (int)$id;
             if ($id >= 1) {
@@ -120,7 +119,7 @@ class ProductOptionGroup
      * @param   integer $og_id  ProductOptionGroup record ID
      * @return  object      ProductOptionGroup object
      */
-    public static function getInstance($og_id)
+    public static function getInstance(int $og_id) : self
     {
         static $grps = NULL;
         if ($grps === NULL) {
@@ -139,15 +138,13 @@ class ProductOptionGroup
      *
      * @param   array $A    Array of values, from DB or $_POST
      */
-    public function setVars($A)
+    public function setVars(DataArray $A) : self
     {
-        if (!is_array($A)) {
-            return;
-        }
-        $this->pog_id = (int)$A['pog_id'];
-        $this->pog_type = $A['pog_type'];
-        $this->pog_name = $A['pog_name'];
-        $this->pog_orderby = (int)$A['pog_orderby'];
+        $this->pog_id = $A->getInt('pog_id');
+        $this->pog_type = $A->getString('pog_type');
+        $this->pog_name = $A->getString('pog_name');
+        $this->pog_orderby = $A->getInt('pog_orderby');
+        return $this;
     }
 
 
@@ -176,8 +173,7 @@ class ProductOptionGroup
             return false;
         } else {
             $A = DB_fetchArray($result, false);
-            $this->setVars($A);
-            $this->isNew = false;
+            $this->setVars(new DataArray($A));
             return true;
         }
     }
@@ -221,7 +217,7 @@ class ProductOptionGroup
 
         if (is_array($A) && !empty($A)) {
             // Put this field at the end of the line by default
-            $this->setVars($A);
+            $this->setVars(new DataArray($A));
         }
 
         // Make sure the necessary fields are filled in
@@ -230,7 +226,7 @@ class ProductOptionGroup
         }
 
         // Insert or update the record, as appropriate.
-        if ($this->isNew) {
+        if ($this->pog_id == 0) {
             $sql1 = "INSERT INTO {$_TABLES['shop.prod_opt_grps']} SET ";
             $sql3 = '';
         } else {
@@ -246,7 +242,7 @@ class ProductOptionGroup
         DB_query($sql, 1);
         $err = DB_error();
         if ($err == '') {
-            if ($this->isNew) {
+            if ($this->pog_id == 0) {
                 $this->pog_id = DB_insertID();
             }
             self::reOrder();
@@ -326,7 +322,7 @@ class ProductOptionGroup
             'doc_url'       => SHOP_getDocURL('option_grp_form', $_CONF['language']),
             'pog_name'      => $this->pog_name,
             'orderby_opts'  => COM_optionList($_TABLES['shop.prod_opt_grps'], 'pog_orderby,pog_name', $orderby_sel, 0),
-            'orderby_last'  => $this->isNew ? 'selected="selected"' : '',
+            'orderby_last'  => $this->pog_id == 0 ? 'selected="selected"' : '',
             'sel_' . $this->pog_type => 'selected="selected"',
         ) );
 
@@ -544,39 +540,41 @@ class ProductOptionGroup
      * @param   integer $prod_id    Product ID
      * @return  array       Array of OptionGroup objects
      */
-    public static function getByProduct($prod_id)
+    public static function getByProduct(int $item_id) : array
     {
         global $_TABLES;
 
-        $prod_id = (int)$prod_id;
-        static $retval = array();
-        if (isset($retval[$prod_id])) {
-            return $retval[$prod_id];
+        /*$cache_key = 'og_prod_' . $prod_id;
+        $retval = Cache::get($cache_key);
+        if (is_array($retval)) {
+            return $retval;
+        }*/
+
+        $retval = array();
+        $qb = Database::getInstance()->conn->createQueryBuilder();
+        $qb->select('pog.*')
+           ->distinct()
+           ->from($_TABLES['shop.product_variants'], 'pv')
+           ->leftJoin('pv', $_TABLES['shop.variantXopt'], 'vxo', 'pv.pv_id = vxo.pv_id')
+           ->leftJoin('vxo', $_TABLES['shop.prod_opt_vals'], 'pov', 'vxo.pov_id = pov.pov_id')
+           ->leftJoin('pov', $_TABLES['shop.prod_opt_grps'], 'pog', 'pov.pog_id = pog.pog_id')
+           ->where('pv.item_id = :item_id')
+           ->orderBy('pog.pog_id', 'ASC')
+           ->setParameter('item_id', $item_id, Database::INTEGER);
+        try {
+            $stmt = $qb->execute();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $stmt = false;
         }
-        $retval[$prod_id] = array();
-        //$cache_key = 'og_prod_' . $prod_id;
-        //$grps = Cache::get($cache_key);
-        //if ($grps === NULL) {
-            //$grps = array();
-            $sql = "SELECT DISTINCT pog.pog_id FROM {$_TABLES['shop.prod_opt_vals']} pov
-                LEFT JOIN {$_TABLES['shop.prod_opt_grps']} pog ON pog.pog_id = pov.pog_id
-                LEFT JOIN {$_TABLES['shop.variantXopt']} vxo ON vxo.pov_id = pov.pov_id
-                LEFT JOIN {$_TABLES['shop.product_variants']} pv ON pv.pv_id = vxo.pv_id
-                WHERE pv.item_id = $prod_id AND pv.enabled = 1
-                ORDER BY pog.pog_orderby, pov.orderby asc";
-            //echo $sql;die;
-            $res = DB_query($sql);
-            while ($A = DB_fetchArray($res, false)) {
-                $retval[$prod_id][$A['pog_id']] = new self($A['pog_id']);
-                $retval[$prod_id][$A['pog_id']]->setOptionValues(
-                    ProductOptionValue::getByProduct($prod_id, $A['pog_id'])
-                );
+        if ($stmt) {
+            while ($row = $stmt->fetchAssociative()) {
+                $retval[$row['pog_id']] = new self;
+                $retval[$row['pog_id']]->setVars(new DataArray($row));
             }
-            //Cache::set($cache_key, $grps, self::$TAGS);
-        //} else {
-        //    $x = new ProductOptionValue;    // just to get the class loaded.
-        //}
-        return $retval[$prod_id];
+            //Cache::set($cache_key, $retval, self::$TAGS);
+        }
+        return $retval;
     }
 
 
@@ -650,4 +648,3 @@ class ProductOptionGroup
 
 }
 
-?>
