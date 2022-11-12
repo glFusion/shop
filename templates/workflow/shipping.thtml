@@ -1,49 +1,53 @@
 {# begin {templatelocation} #}
-<div id="shop_delivery_options" class="delivery_options" style="width:60%;margin:auto;">
+<div class="uk-width-6-10" style="margin:auto">
+<div class="uk-width-1-1">
 <h2>{$LANG_SHOP['select_shipping']}</h2>
-<!-- BEGIN shipMethods -->
-    <div class="uk-grid delivery_option">
-        <div class="uk-width-1-10">
-            <input type="radio" name="method_id" id="selshipper_{method_id}" value="{method_id}" {method_sel}
-                onclick="SHOP_setShipper({method_id});" />
-        </div>
-        <div class="uk-width-7-10">
-            <label for="selshipper_{method_id}" style="width:100%;display:inline-block;">
-            {method_name}
-            </label>
-        </div>
-        <div class="uk-width-2-10" style="text-align:right;">
-            <label for="selshipper_{method_id}" style="width:100%;display:inline-block;">
-            {method_rate}
-        </div>
-    </div>
-<!-- END shipMethods -->
 </div>
+<table class="uk-table uk-table-divider uk-table-hover">
+<!-- BEGIN shipMethods -->
+	<tr>
+		<td>
+			<input type="radio" name="method_id" id="selshipper_{method_id}" value="{method_id}" {method_sel}
+				onclick="SHOP_setShipper({method_id});" />
+		</td>
+		<td>
+			<label for="selshipper_{method_id}" style="width:100%;display:inline-block;">
+			{method_name}
+			</label>
+		</td>
+		<td style="text-align:right;">
+			<label for="selshipper_{method_id}" style="width:100%;display:inline-block;">
+			{method_rate}
+			</label>
+		</td>
+	</tr>
+<!-- END shipMethods -->
+</table>
 {form_footer}
 
 <script>
 function SHOP_setShipper(method_id)
 {
-    var dataS = {
-        "method_id": method_id
-    };
-    data = $.param(dataS);
+	var dataS = {
+		"method_id": method_id
+	};
+	data = $.param(dataS);
 console.log(data);
 
-    $.ajax({
-        type: "POST",
-        dataType: "text",
-        url: glfusionSiteUrl + "/shop/ajax.php?action=setShipper",
-        data: data,
-        success: function(result) {
-            try {
+	$.ajax({
+		type: "POST",
+		dataType: "text",
+		url: glfusionSiteUrl + "/shop/ajax.php?action=setShipper",
+		data: data,
+		success: function(result) {
+			try {
 console.log(result);
-                $("#"+elem+"_addr").html(result);
-            } catch(err) {
-            }
-        }
-    });
-    return false;
+				$("#"+elem+"_addr").html(result);
+			} catch(err) {
+			}
+		}
+	});
+	return false;
 }
 </script>
 {# end {templatelocation} #}

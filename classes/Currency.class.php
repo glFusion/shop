@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2014-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.5.0
+ * @version     v1.6.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -180,7 +180,7 @@ class Currency
         $this->name = $A['name'];
         $this->numeric_code = (int)$A['numeric_code'];
         $this->symbol_placement = $A['symbol_placement'];
-        $this->symbol_spacer = $A['symbol_spacer'];
+        $this->symbol_spacer = str_replace(' ', '&nbsp;', $A['symbol_spacer']);
         $this->code_placement = $A['code_placement'];
         $this->decimals = (int)$A['decimals'];
         $this->rounding_step = (float)$A['rounding_step'];
@@ -285,7 +285,7 @@ class Currency
         if ($symbol) {
             return $val[0] . $val[1] . $val[2];
         } else {
-            return $val[1] . ' ' . $this->code;
+            return $val[1] . $this->code;
         }
     }
 
