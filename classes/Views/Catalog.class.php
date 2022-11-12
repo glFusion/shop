@@ -384,7 +384,7 @@ class Catalog
                 'on_sale'       => $P->isOnSale(),
                 'small_pic'     => $P->getImage('', 200)['url'],
                 'tpl_ver'       => Config::get('list_tpl_ver'),
-                'nonce'         => $Cart->makeNonce($P->getID() . $P->getName()),
+                //'nonce'         => $Cart->makeNonce($P->getID() . $P->getName()),
                 'can_add_cart'  => $P->canBuyNow(), // must have no attributes
                 'rating_bar'    => $P->ratingBar(true),
                 'oos'           => !$P->isInStock(),
@@ -567,7 +567,7 @@ class Catalog
                     'track_onhand' => '',   // not available for plugins
                     'small_pic' => $P->getImage()['url'],
                     'on_sale'   => '',
-                    'nonce'     => $Cart->makeNonce($P->getID(). $P->getName()),
+                    //'nonce'     => $Cart->makeNonce($P->getID(). $P->getName()),
                     'can_add_cart'  => $P->canPurchase(),
                     'rating_bar' => $P->ratingBar(true),
                 ) );

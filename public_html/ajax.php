@@ -131,13 +131,13 @@ case 'addcartitem':
     }
     $item_name = $Request->getString('item_name', $P->getName());
     $Cart = Shop\Cart::getInstance();
-    $nonce = $Cart->makeNonce($item_number . $item_name);
+    /*$nonce = $Cart->makeNonce($item_number . $item_name);
     $supplied_nonce = $Request->getString('nonce');
     if ($supplied_nonce != $nonce) {
         Log::write('shop_system', Log::ERROR, "Bad nonce: {$supplied_nonce} for cart {$Cart->getOrderID()}, should be $nonce");
         echo json_encode(array('content' => '', 'statusMessage' => ''));
         exit;
-    }
+    }*/
 
     $req_qty = $Request->getInt('quantity', $P->getMinOrderQty());
     //$exp_qty = $Cart->getItem($item_number)->getQuantity() + $req_qty;

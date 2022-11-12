@@ -265,7 +265,7 @@ class Order
      *
      * @param   string  $id     Optional order ID to read
      */
-    public function __construct($id='')
+    public function __construct(?string $id='')
     {
         global $_USER;
 
@@ -281,6 +281,7 @@ class Order
                 // Only create a new ID if one wasn't supplied.
                 // Carts may supply an ID that needs to be static.
                 $this->order_id = self::_createID();
+                Session::set('cart_id', $this->order_id);
             }
             $this->order_date = SHOP_now();
             $this->token = Token::create();
@@ -871,7 +872,7 @@ class Order
      *
      * @return  string      Order ID
      */
-    public function Save($save_items=false)
+    public function Save(bool $save_items=false) : string
     {
         global $_TABLES, $_SHOP_CONF;
 

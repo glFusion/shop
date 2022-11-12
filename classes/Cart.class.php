@@ -42,7 +42,7 @@ class Cart extends Order
      * @param   string  $cart_id    ID of an existing cart to read
      * @param   boolean $interactive    True if this is an interactive session
      */
-    public function __construct($cart_id='', $interactive=true)
+    public function __construct(?string $cart_id='', bool $interactive=true)
     {
         global $_TABLES, $_SHOP_CONF, $_USER;
 
@@ -56,7 +56,7 @@ class Cart extends Order
             if (!COM_isAnonUser()) {
                 $this->buyer_email = $_USER['email'];
             }
-            $this->Save();    // Save to reserve the ID
+            //$this->Save();    // Save to reserve the ID
         }
         self::_setCookie($this->order_id);
     }
@@ -79,7 +79,7 @@ class Cart extends Order
         $uid = (int)$uid;
         if ($uid < 2) {
             if ($cart_id == '') {
-                $cart_id = Session::get('cart_id');
+                $cart_id = Session::get('order_id');
             }
         } else {
             $cart_id = self::getCartID($uid);
@@ -645,26 +645,28 @@ class Cart extends Order
      * @param   integer $uid    User ID
      * @return  string          Cart ID
      */
-    public static function getCartID($uid = 0)
+    public static function getCartID(int $uid=0) : ?string
     {
         global $_USER, $_TABLES, $_SHOP_CONF, $_PLUGIN_INFO;
 
         // Flag indicating the cart was read, so deleting old
         // carts happens only once.
         static $read_cart = array();
+        $cart_id = NULL;
 
         // Guard against invalid SQL if the DB hasn't been updated
         if (!SHOP_isMinVersion()) return NULL;
 
+        $db = Database::getInstance();
         $uid = $uid > 0 ? (int)$uid : (int)$_USER['uid'];
         if ($uid < 2) {
             $cart_id = self::getAnonCartID();
             if (!empty($cart_id)) {
                 // Check if the order exists but is not a cart.
-                $status = DB_getItem(
+                $status = $db->getItem(
                     $_TABLES['shop.orders'],
                     'status',
-                    "order_id = '" . DB_escapeString($cart_id) . "'"
+                    array('order_id' => $cart_id)
                 );
             } else {
                 $status = NULL;
@@ -673,20 +675,33 @@ class Cart extends Order
                 $cart_id = NULL;
             }
         } else {
-            $cart_id = DB_getItem(
-                $_TABLES['shop.orders'],
-                'order_id',
-                "uid = $uid AND status = '" . OrderStatus::CART .
-                "' ORDER BY last_mod DESC limit 1"
-            );
-            if (!empty($cart_id) && !isset($read_cart[$uid])) {
-                // For logged-in usrs, delete superfluous carts
-                DB_query("DELETE FROM {$_TABLES['shop.orders']}
-                    WHERE uid = $uid
-                    AND status = '" . OrderStatus::CART . "'
-                    AND order_id <> '" . DB_escapeString($cart_id) . "'");
+            try {
+                $row = $db->conn->executeQuery(
+                    "SELECT order_id FROM {$_TABLES['shop.orders']}
+                    WHERE uid = ? AND status = ?
+                    ORDER BY last_mod DESC limit 1",
+                    array($uid, OrderStatus::CART),
+                    array(Database::INTEGER, Database::INTEGER)
+                )->fetchAssociative();
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $row = false;
             }
-            $read_cart[$uid] = true;
+            if (is_array($row)) {
+                $cart_id = $row['order_id'];
+            }
+            if (!empty($cart_id)) {
+                if (!isset($read_cart[$uid])) {
+                    // For logged-in usrs, delete superfluous carts
+                    $db->conn->executeStatement(
+                        "DELETE FROM {$_TABLES['shop.orders']}
+                        WHERE uid = ? AND status = ? AND order_id <> ?",
+                        array($uid, OrderStatus::CART, $cart_id),
+                        array(Database::INTEGER, Database::INTEGER, Database::STRING)
+                    );
+                }
+                $read_cart[$uid] = true;
+            }
         }
         return $cart_id;
     }
@@ -764,9 +779,9 @@ class Cart extends Order
      *
      * @return  mixed   Cart ID, or Null if not set
      */
-    public static function getAnonCartID()
+    public static function getAnonCartID() : ?string
     {
-        $cart_id = Session::get('cart_id');
+        $cart_id = Session::get('order_id');
         return $cart_id;
     }
 
@@ -870,7 +885,7 @@ class Cart extends Order
 
         $exp = time() + ($_SHOP_CONF['days_purge_cart'] * 86400);
         SEC_setCookie(self::$session_var, $value, $exp);
-        Session::set('cart_id', $value);
+        Session::set('order_id', $value);
     }
 
 

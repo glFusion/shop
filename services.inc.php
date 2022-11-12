@@ -120,7 +120,7 @@ function service_genButton_shop(array $args, &$output, &$svc_msg) : int
             'frm_id'        => md5($args['item_name'] . rand()),
             'btn_cls'       => $btn_cls,
             'btn_disabled'  => $btn_disabled,
-            'nonce'         => $Cart->makeNonce($args['item_number'] . $args['item_name']),
+            //'nonce'         => $Cart->makeNonce($args['item_number'] . $args['item_name']),
         ) );
         $output['add_cart'] = $T->parse('', 'cart');
     }

@@ -2379,7 +2379,7 @@ class Product
                 'form_url'  => $add_form_url,
                 'tpl_ver'   => $_SHOP_CONF['product_tpl_ver'],
                 'quantity'  => $this->getFixedQuantity(),
-                'nonce'     => Cart::getInstance()->makeNonce($this->id . $this->name),
+                //'nonce'     => Cart::getInstance()->makeNonce($this->id . $this->name),
                 'max_ord_qty'   => $this->getMaxOrderQty(),
                 'min_ord_qty'   => $this->min_ord_qty,
                 'btn_cls'   => $btn_class,

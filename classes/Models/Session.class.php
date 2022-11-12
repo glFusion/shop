@@ -31,7 +31,7 @@ class Session
      * @param   string  $key    Name of variable
      * @param   mixed   $value  Value to set
      */
-    public static function set($key, $value)
+    public static function set(string $key, $value) : void
     {
         if (!isset($_SESSION[self::$session_var])) {
             $_SESSION[self::$session_var] = array();
@@ -46,7 +46,7 @@ class Session
      * @param   string  $key    Name of variable
      * @return  mixed       Variable value, or NULL if it is not set
      */
-    public static function get($key)
+    public static function get(string $key)
     {
         if (isset($_SESSION[self::$session_var][$key])) {
             return $_SESSION[self::$session_var][$key];
@@ -61,7 +61,7 @@ class Session
      *
      * @param   string  $key    Name of variable, null to clear all
      */
-    public static function clear($key=NULL)
+    public static function clear(?string $key=NULL) : void
     {
         if ($key === NULL) {
             unset($_SESSION[self::$session_var]);
