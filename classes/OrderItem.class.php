@@ -16,6 +16,7 @@ use glFusion\Database\Database;
 use Shop\Models\Stock;
 use Shop\Models\ProductCheckbox;
 use Shop\Models\DataArray;
+use Shop\Util\JSON;
 
 
 /**
@@ -367,7 +368,7 @@ class OrderItem
         $this->setDiscount($A->getFloat('qty_discount'));
         $this->token = $A->getString('token');
         $this->net_price = $A->getFloat('net_price');
-        $this->setExtras($A->getArray('extras'));
+        $this->setExtras($A['extras']);
         $this->taxable = $A->getInt('taxable');
         $this->shipping = $A->getFloat('shipping');
         $this->shipping_units = $A->getFloat('shipping_units');
@@ -629,8 +630,8 @@ class OrderItem
             'net_price' => $this->net_price,
             'taxable' => $this->taxable,
             'token' => $this->token,
-            'options_text' => @json_encode($this->options_text),
-            'extras' => @json_encode($this->extras),
+            'options_text' => JSON::encode($this->options_text),
+            'extras' => JSON::encode($this->extras),
             'shipping' => $this->shipping,
             'shipping_units' => $this->shipping_units,
             'shipping_weight' => $this->shipping_weight,
@@ -1256,7 +1257,7 @@ class OrderItem
     public function setExtras($value) : self
     {
         if (is_string($value)) {    // convert to array
-            $value = @json_decode($value, true);
+            $value = JSON::decode($value);
         }
         if (!$value) $value = array();
         $this->extras = $value;
@@ -1300,7 +1301,7 @@ class OrderItem
     public function setOptionsText($value=array()) : self
     {
         if (is_string($value)) {    // convert to array
-            $value = @json_decode($value, true);
+            $value = JSON::decode($value);
             if (!$value) $value = array();
         }
         $this->options_text  = $value;
