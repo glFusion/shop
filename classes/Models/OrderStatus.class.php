@@ -454,6 +454,19 @@ class OrderStatus
 
 
     /**
+     * Check if an order can be deleted.
+     * Hard-coded to allow only `cart` and `pending` orders to be removed.
+     *
+     * @param   string  $status     Status to check
+     * @return  boolean     True if valid, False if non-existent
+     */
+    public static function isDeletable(string $status) : bool
+    {
+        return $status == 'pending' || $status == 'cart';
+    }
+
+
+    /**
      * Display the admin list order statuses.
      *
      * @return  string      Display HTML
