@@ -255,9 +255,9 @@ class orderlist extends \Shop\Report
             $res = DB_query($sql);
             if ($res) {
                 $A = DB_fetchArray($res, false);
-                $total_sales = $A['total_sales'];
-                $total_tax = $A['total_tax'];
-                $total_shipping = $A['total_shipping'];
+                $total_sales = (float)$A['total_sales'];
+                $total_tax = (float)$A['total_tax'];
+                $total_shipping = (float)$A['total_shipping'];
                 $total_total = $total_sales + $total_tax + $total_shipping;
             }
             //var_dump($_POST);die;
@@ -276,10 +276,6 @@ class orderlist extends \Shop\Report
             );
             break;
         case 'csv':
-            $total_sales = 0;
-            $total_tax = 0;
-            $total_shipping = 0;
-            $total_total = 0;
             // Assemble the SQL manually from the Admin list components
             $sql .= ' ' . $query_arr['default_filter'];
             $sql .= ' ORDER BY ' . $defsort_arr['field'] . ' ' . $defsort_arr['direction'];

@@ -1702,7 +1702,7 @@ class Gateway
             $params = '';
         }
         return $urls[$this->gw_name] . $params;
-     }
+    }
 
 
     /**

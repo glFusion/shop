@@ -30,8 +30,8 @@ if (!plugin_ismoderator_shop()) {
     echo json_encode($retval);
     exit;
 }
-$Request = Shop\Models\Request::getInstance();
 
+$Request = Shop\Models\Request::getInstance();
 $action = $Request->getString('action');
 $title = NULL;      // title attribute to be set
 switch ($action) {
@@ -437,6 +437,7 @@ case 'toggle':
        break;
 
     case 'gateway':
+        $id = $Request->getString('id');
         switch ($type) {
         case 'enabled':
             $newval = \Shop\Gateway::toggleEnabled($oldval, $id);

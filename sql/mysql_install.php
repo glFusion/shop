@@ -979,7 +979,7 @@ $SHOP_UPGRADE['1.5.0'] = array(
     "CREATE TABLE `{$_TABLES['shop.invoices']}` (
       `invoice_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
       `order_id` varchar(40) DEFAULT NULL,
-      `invoice_dt` int(11) unsigned NOT NULL NULL UNIX_TIMESTAMP(),
+      `invoice_dt` int(11) unsigned NOT NULL DEFAULT UNIX_TIMESTAMP(),
       PRIMARY KEY (`invoice_id`),
       KEY `order_id` (`order_id`)
     ) ENGINE=MyISAM",

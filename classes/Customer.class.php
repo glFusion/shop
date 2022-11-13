@@ -330,7 +330,7 @@ class Customer
             return reset($this->addresses);
         } else {
             $retval = new Address;
-            $retval->withName($this->fullname);
+            $retval->setName($this->fullname);
             return $retval;
         }
     }

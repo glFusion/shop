@@ -121,7 +121,7 @@ case 'view':            // "?view=" url passed in
 case 'processorder':
     // Process the order, similar to what an IPN would normally do.
     // This is for internal, manual processes like C.O.D. or Prepayment orders
-    $gw_name = UrlArgs->getString('gateway', 'check');
+    $gw_name = $Request->getString('gateway', 'check');
     $gw = \Shop\Gateway::getInstance($gw_name);
     if ($gw !== NULL && $gw->allowNoIPN()) {
         $output = $gw->handlePurchase($Request->toArray());  // TODO: change to $Request native
