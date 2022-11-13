@@ -833,6 +833,7 @@ function plugin_autouninstall_shop()
             // v1.5.0
             'shop.product_rules',
             'shop.prodXcbox',
+            'shop.invoices',
         ),
         // Give the full name of the group, as in the db
         'groups' => array(

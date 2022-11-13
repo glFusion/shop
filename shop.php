@@ -74,6 +74,7 @@ $_TABLES['shop.stock'] = $_SHOP_table_prefix . 'stock';
 $_TABLES['shop.plugin_products'] = $_SHOP_table_prefix . 'plugin_products';
 $_TABLES['shop.product_rules'] = $_SHOP_table_prefix . 'product_rules';
 $_TABLES['shop.prodXcbox'] = $_SHOP_table_prefix . 'prodXcbox';
+$_TABLES['shop.invoices'] = $_SHOP_table_prefix . 'invoices';
 
 // Deprecate eventually
 $_TABLES['shop.prod_attr']    = $_SHOP_table_prefix . 'product_attributes';

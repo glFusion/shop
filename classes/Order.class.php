@@ -29,6 +29,30 @@ use glFusion\Database\Database;
  */
 class Order
 {
+    /** Order number.
+     * @var string */
+    protected $order_id = '';
+
+    /** Order sequence.
+     * This is incremented when an order moves out of "pending" status
+     * and becomes a real order.
+     * @var integer */
+    protected $order_seq = 0;
+
+    /** Buyer's user ID.
+     * @var integer */
+    protected $uid = 0;
+
+    /** Order Date.
+     * This field is defined here since it contains an object and
+     * needs to be accessed directly.
+     * @var object */
+    protected $order_date = NULL;
+
+    /** Last modified timestamp.
+     * @var string */
+    protected $last_mod = '';
+
     /** Flag to indicate that administrative actions are being done.
      * @var boolean */
     private $isAdmin = false;
@@ -98,30 +122,6 @@ class Order
     /** Currency object, used for formatting amounts.
      * @var object */
     protected $Currency;
-
-    /** Order number.
-     * @var string */
-    protected $order_id = '';
-
-    /** Buyer's user ID.
-     * @var integer */
-    protected $uid = 0;
-
-    /** Order sequence.
-     * This is incremented when an order moves out of "pending" status
-     * and becomes a real order.
-     * @var integer */
-    protected $order_seq = 0;
-
-    /** Order Date.
-     * This field is defined here since it contains an object and
-     * needs to be accessed directly.
-     * @var object */
-    protected $order_date = NULL;
-
-    /** Last modified timestamp.
-     * @var string */
-    protected $last_mod = '';
 
     /** Record ID of the billing address.
      * @var integer */
@@ -349,21 +349,23 @@ class Order
 
         $db = Database::getInstance();
         try {
-            $data = $db->conn->executeQuery(
-                "SELECT ord.*,
+            $row = $db->conn->executeQuery(
+                "SELECT ord.*, inv.invoice_id,
                 ( SELECT sum(pmt_amount) FROM {$_TABLES['shop.payments']} pmt
                 WHERE pmt.pmt_order_id = ord.order_id AND is_complete = 1
                 ) as amt_paid
                 FROM {$_TABLES['shop.orders']} ord
+                LEFT JOIN {$_TABLES['shop.invoices']} inv ON ord.order_id = inv.order_id
                 WHERE ord.order_id = ?",
                 array($this->order_id),
                 array(Database::STRING)
             )->fetchAssociative();
         } catch (\Exception $e) {
             Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
-            $data = false;
+            $row = false;
         }
-        if (is_array($data) && $this->setVars($data)) {
+        if (is_array($row)) {
+            $this->setVars($row);
             $this->isNew = false;
             // Now load the items
             $this->Items = OrderItem::getByOrder($this->order_id);
@@ -657,7 +659,7 @@ class Order
         $this->buyer_email = substr($A->getString('buyer_email'), 0, 255);  // user input
         $this->billto_id = $A->getInt('billto_id');
         $this->shipto_id = $A->getInt('shipto_id');
-        $this->order_seq = $A->getInt('order_seq');
+        $this->order_seq = $A->getInt('invoice_id');
         $this->setDiscountPct($A->getFloat('discount_pct'));
         $this->setDiscountCode($A->getString('discount_code'));
         //if ($this->status != 'cart') {
@@ -684,8 +686,8 @@ class Order
             $this->isNew = true;
             Cart::clearSession('order_id');
         }
-            $this->shipper_id = $A->getString('shipper_id');
-            $this->gross_items = $A->getFloat('gross_items');
+        $this->shipper_id = $A->getString('shipper_id');
+        $this->gross_items = $A->getFloat('gross_items');
         $this->net_taxable = $A->getFloat('net_taxable');
         $this->net_nontax = $A->getfloat('net_nontax');
         if (isset($A['amt_paid'])) {    // only present in DB record
@@ -1101,6 +1103,9 @@ class Order
         if ($oldstatus == $newstatus) {
             return $oldstatus;
         }
+        if ($oldstatus == OrderStatus::CART) {
+            Session::set('order_id', NULL);
+        }
 
         $this->status = $newstatus;
         $log_user = $this->log_user;
@@ -1109,17 +1114,24 @@ class Order
         // If promoting from a cart status to a real order, add the sequence number.
         if ($this->isFinal() && $this->order_seq < 1) {
             $qb = $db->conn->createQueryBuilder();
-            $db->conn->beginTransaction();
+            //$db->conn->beginTransaction();
             try {
-                $db->conn->executestatement(
+                $db->conn->insert(
+                    $_TABLES['shop.invoices'],
+                    array('order_id' => $this->order_id, 'invoice_dt' => time()),
+                    array(Database::STRING, Database::INTEGER)
+                );
+                $this->order_seq = $db->conn->lastInsertId();
+                /*$db->conn->executestatement(
                     "SELECT COALESCE(MAX(order_seq)+1,1)
                     FROM {$_TABLES['shop.orders']} INTO @seqno FOR UPDATE"
-                );
+                );*/
                 $qb->update($_TABLES['shop.orders'])
                    ->set('status', ':status')
-                   ->set('order_seq', '@seqno')
+                   ->set('order_seq', ':order_seq')
                    ->where('order_id = :order_id')
                    ->setParameter('order_id', $this->order_id, Database::STRING)
+                   ->setParameter('order_seq', $this->order_seq, Database::STRING)
                    ->setParameter('status', $this->status, Database::STRING);
                 if (!$this->verifyReferralTag()) {
                     // If the referrer is invalid, remove from the order record
@@ -1129,17 +1141,17 @@ class Order
                        ->setParameter('m_info', (string)$this->m_info, Database::STRING);
                 }
                 $qb->execute();
-                $db->conn->commit();
+                //$db->conn->commit();
             } catch (\Exception $e) {
                 Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $db->conn->rollback();
             }
 
-            $this->order_seq = $db->getItem(
+            /*$this->order_seq = $db->getItem(
                 $_TABLES['shop.orders'],
                 'order_seq',
                 array('order_id' => $this->order_id)
-            );
+            );*/
         } else {
             // Update the status but leave the sequence alone
             try {
@@ -2670,6 +2682,17 @@ class Order
 
 
     /**
+     * Check if this is a cart record.
+     *
+     * @return  boolean     True if a cart, False otherwise.
+     */
+    public function isCart() : bool
+    {
+        return $this->status == OrderStatus::CART;
+    }
+
+
+    /**
      * Convert from one currency to another.
      *
      * @param   string  $new    New currency, configured currency by default
@@ -3989,7 +4012,7 @@ class Order
         if (
             $this->isNew ||
             $this->order_seq ||
-            $this->isFinal()
+            !OrderStatus::isDeletable($this->status)
         ) {
             return false;
         }

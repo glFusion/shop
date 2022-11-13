@@ -167,6 +167,30 @@ class v1_5_0 extends Upgrade
             ) );
         }
 
+        // Populate the invoice table with the order sequence values.
+        try {
+            $stmt = $db->conn->executeQuery(
+                "SELECT order_id, order_seq FROM {$_TABLES['shop.orders']}
+                WHERE order_seq > 0 ORDER BY order_seq ASC"
+            );
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $stmt = false;
+        }
+        if ($stmt) {
+            while ($A = $stmt->fetchAssociative()) {
+                try {
+                    $db->conn->insert(
+                        $_TABLES['shop.invoices'],
+                        array('invoice_id' => $A['order_seq'], 'order_id' => $A['order_id']),
+                        array(Database::INTEGER, Database::STRING)
+                    );
+                } catch (\Exception $e) {
+                    Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                }
+            }
+        }
+
         return self::setVersion(self::$ver);
     }
 

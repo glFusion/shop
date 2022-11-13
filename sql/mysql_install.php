@@ -976,6 +976,13 @@ $SHOP_UPGRADE['1.5.0'] = array(
       PRIMARY KEY (`x_id`),
       UNIQUE KEY `idx_item` (`item_id`,`pov_id`)
     ) ENGINE=MyISAM",
+    "CREATE TABLE `{$_TABLES['shop.invoices']}` (
+      `invoice_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `order_id` varchar(40) DEFAULT NULL,
+      `invoice_dt` int(11) unsigned NOT NULL NULL UNIX_TIMESTAMP(),
+      PRIMARY KEY (`invoice_id`),
+      KEY `order_id` (`order_id`)
+    ) ENGINE=MyISAM",
     "ALTER TABLE {$_TABLES['shop.orderitems']} ADD `shipping_units` decimal(9,4) unsigned NOT NULL DEFAULT 0.0000",
     "ALTER TABLE {$_TABLES['shop.coupon_log']} ADD `done_by` int(11) unsigned NOT NULL DEFAULT 0 AFTER `uid`",
     "ALTER TABLE {$_TABLES['shop.orders']} CHANGE `billto_id` `billto_id` int(11) NOT NULL DEFAULT 0",
@@ -1025,4 +1032,5 @@ $_SQL['shop.stock'] = $SHOP_UPGRADE['1.3.1'][0];
 $_SQL['shop.plugin_products'] = $SHOP_UPGRADE['1.3.1'][1];
 $_SQL['shop.product_rules'] = $SHOP_UPGRADE['1.5.0'][0];
 $_SQL['shop.prodXcbox'] = $SHOP_UPGRADE['1.5.0'][1];
+$_SQL['shop.invoices'] = $SHOP_UPGRADE['1.5.0'][2];
 
