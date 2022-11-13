@@ -85,7 +85,7 @@
 			<i class="uk-icon uk-icon-warning uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
 		</label>
 		<div class="uk-form-controls">
-			<input required class="uk-input required uk-form-width-large" type="text" id="phone" name="phone" value="{phone}" maxlength="127"/>
+			<input required class="uk-input required uk-form-width-large" type="tel" id="phone" name="phone" value="{phone}" maxlength="127"/>
 		</div>
 	</div>
 
@@ -123,7 +123,7 @@ function validateAddress(form)
 	}
 	data = $("#" + form.id).serialize();
 	$.ajax({
-		type: "POST",
+		type: "post",
 		dataType: "json",
 		url: glfusionSiteUrl + "/shop/ajax.php?action=validateAddress",
 		data: data,
