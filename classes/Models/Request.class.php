@@ -89,7 +89,7 @@ class Request extends DataArray
      *
      * @return  string      HTTP query string (a=x&b=7...)
      */
-    public function getQueryString() : string
+    public function asQueryString() : string
     {
         return http_build_query($this->properties);
     }
