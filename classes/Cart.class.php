@@ -58,6 +58,9 @@ class Cart extends Order
             }
             //$this->Save();    // Save to reserve the ID
         }
+        if (!$this->isCart()) {
+            $this->order_id = NULL;
+        }
         self::_setCookie($this->order_id);
     }
 
@@ -681,7 +684,7 @@ class Cart extends Order
                     WHERE uid = ? AND status = ?
                     ORDER BY last_mod DESC limit 1",
                     array($uid, OrderStatus::CART),
-                    array(Database::INTEGER, Database::INTEGER)
+                    array(Database::INTEGER, Database::STRING)
                 )->fetchAssociative();
             } catch (\Throwable $e) {
                 Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
@@ -697,7 +700,7 @@ class Cart extends Order
                         "DELETE FROM {$_TABLES['shop.orders']}
                         WHERE uid = ? AND status = ? AND order_id <> ?",
                         array($uid, OrderStatus::CART, $cart_id),
-                        array(Database::INTEGER, Database::INTEGER, Database::STRING)
+                        array(Database::INTEGER, Database::STRING, Database::STRING)
                     );
                 }
                 $read_cart[$uid] = true;
