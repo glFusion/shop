@@ -139,7 +139,7 @@
 {!endif}
 				<div class="orderInstructions">
 					{$LANG_SHOP['enter_email']}:
-					<input class="uk-input uk-form-width-large" id="buyer_email" type="text"
+					<input class="uk-input uk-form-width-large" id="buyer_email" type="email"
 						name="buyer_email" value="{buyer_email}"/>
 					<i class="uk-icon uk-icon-exclamation-triangle uk-text-danger"></i>
 				</div>

@@ -70,7 +70,7 @@
 	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label" for="{addr_type}_phone">{$LANG_SHOP['phone']}</label>
 		<div class="uk-form-controls">
-			<input required class="uk-input uk-form-width-large required" type="text" id="{addr_type}_phone" name="{addr_type}_phone" value="{phone}" />
+			<input required class="uk-input uk-form-width-large required" type="tel" id="{addr_type}_phone" name="{addr_type}_phone" value="{phone}" />
 				<i class="uk-icon uk-icon-warning uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
 		</div>
 	</div>

@@ -113,7 +113,7 @@ class OrderBaseView
      * @param   string  $order_id   Order record ID
      * @return  object  $this
      */
-    public function withOrderId($order_id)
+    public function withOrderId(string $order_id) : self
     {
         if (!is_array($order_id)) {
             $this->order_ids = array($order_id);

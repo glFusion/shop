@@ -42,13 +42,13 @@ case 'getAddressHTML':
     if ($uid < 2) break;
     $Cart = Shop\Cart::getInstance();
     $type = $Request->getString('type');
-    $id = $Request->getString('id');
+    $id = $Request->getInt('id');
     $Address = Shop\Customer::getInstance($uid)->getAddress($id);
     $output = array(
         'addr_text' => $Address->toHTML(),
     );
     if ($Address->getID() != $Cart->getAddress($type)->getID()) {
-        $Cart->setAddress($Address->toArray(), $type);
+        $Cart->setAddress($Address, $type);
     }
     break;
 
@@ -287,7 +287,7 @@ case 'validateAddress':
         $A2 = $A1->Validate();
         if (!$A1->Matches($A2)) {
             $save_url = $Request->getString('save_url', SHOP_URL . '/cart.php');
-            $return_url = $UrlARgs->getString('return', SHOP_URL . '/cart.php');
+            $return_url = $Request->getString('return', SHOP_URL . '/cart.php');
             $T = new Shop\Template;
             $T->set_file('popup', 'address_select.thtml');
             $T->set_var(array(
@@ -310,7 +310,7 @@ case 'validateAddress':
 case 'getStateOpts':
     $output = array(
         'status' => true,
-        'opts' => Shop\State::optionList($UrlARgs->getString('country_iso')),
+        'opts' => Shop\State::optionList($Request->getString('country_iso')),
     );
     break;
 

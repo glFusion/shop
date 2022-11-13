@@ -279,7 +279,7 @@ class Customer
      * @param   integer $add_id     DB Id of address
      * @return  array               Array of address values
      */
-    public function getAddress($add_id) : Address
+    public function getAddress(int $add_id) : Address
     {
         global $_TABLES;
 

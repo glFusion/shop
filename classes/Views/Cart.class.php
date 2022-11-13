@@ -46,7 +46,7 @@ class Cart extends OrderBaseView
     /**
      * Set internal variables and read the existing order if an id is provided.
      */
-    public function __construct($order_id = NULL)
+    public function __construct(?string $order_id=NULL)
     {
         $this->tplname = 'viewcart';
         $this->TPL = new Template('workflow/');
@@ -64,7 +64,7 @@ class Cart extends OrderBaseView
      * @param   string  $order_id   Order record ID
      * @return  object  $this
      */
-    public function withOrderId($order_id)
+    public function withOrderId(string $order_id) : self
     {
         $this->order_id = $order_id;
         $this->Order = \Shop\Cart::getInstance($order_id);
@@ -86,7 +86,7 @@ class Cart extends OrderBaseView
      * @param   string  $view   View type
      * @return  object  $this
      */
-    public function withView($view)
+    public function withView(string $view) : self
     {
         $this->TPL = new Template;
         switch ($view) {
@@ -112,7 +112,7 @@ class Cart extends OrderBaseView
      *
      * @return  string      HTML for cart view.
      */
-    public function Render()
+    public function Render() : string
     {
         // Make sure there's a valid address object for the Shipto address
         // instead of NULL
@@ -135,7 +135,7 @@ class Cart extends OrderBaseView
      * @param  boolean  $final      True if this is a final, non-editable fiew
      * @return string       HTML for order view
      */
-    public function createHTML2($final = false)
+    public function createHTML2(bool $final = false) : string
     {
         global $_SHOP_CONF, $_USER, $LANG_SHOP, $LANG_SHOP_HELP;
 
@@ -235,7 +235,7 @@ class Cart extends OrderBaseView
      *
      * @return  string      HTML for shipping info block
      */
-    public function getShipmentBlock()
+    public function getShipmentBlock() : string
     {
         global $_CONF;
 
@@ -281,7 +281,7 @@ class Cart extends OrderBaseView
      *
      * @return  string      HTML for shipping selection form
      */
-    public function shippingSelection()
+    public function shippingSelection() : string
     {
         $methods = $this->Order->getShippingOptions();
 
@@ -316,7 +316,7 @@ class Cart extends OrderBaseView
      *
      * @return  string      HTML payment selection form
      */
-    public function paymentSelection()
+    public function paymentSelection() : string
     {
         global $_SHOP_CONF;
 
@@ -405,7 +405,7 @@ class Cart extends OrderBaseView
      *
      * @return  string      HTML for address selection form
      */
-    public function addressSelection()
+    public function addressSelection() : string
     {
         SHOP_setUrl(SHOP_URL . '/cart.php?addresses');
         $Cust = Customer::getInstance($this->Order->getUid());
@@ -478,21 +478,28 @@ class Cart extends OrderBaseView
                 'footer' => 'footer.thtml',
             ) );
 
-            if ($this->Order->getBillto()->getID() < 1) {
+            $billto_id = $this->Order->getBillto()->getID();
+            if ($billto_id < 1) {
                 $this->Order->setBillto($Cust->getDefaultAddress('billto'));
+            } else {
+                $this->Order->setBillto($Cust->getAddress($billto_id));
             }
-            if ($this->Order->getShipto()->getID() < 1) {
+            $shipto_id = $this->Order->getShipto()->getID();
+            if ($shipto_id < 1) {
                 $this->Order->setShipto($Cust->getDefaultAddress('shipto'));
+            } else {
+                $this->Order->setShipto($Cust->getAddress($shipto_id));
             }
+
             $billto_opts = Address::optionList(
                 $this->Order->getUid(),
                 'billto',
-                $this->Order->getBillto()->getID()
+                $billto_id
             );
             $shipto_opts = Address::optionList(
                 $this->Order->getUid(),
                 'shipto',
-                $this->Order->getShipto()->getID()
+                $shipto_id
             );
             $T->set_var(array(
                 'billto_addr'   => $this->Order->getBillto()->toHTML(),
@@ -501,8 +508,8 @@ class Cart extends OrderBaseView
                 'shipto_opts'   => $shipto_opts,
                 'order_instr'   => $this->Order->getInstructions(),
                 'buyer_email'   => $this->Order->getBuyerEmail(),
-                'billto_id'     => $this->Order->getBillto()->getID(),
-                'shipto_id'     => $this->Order->getShipto()->getID(),
+                'billto_id'     => $billto_id,
+                'shipto_id'     => $shipto_id,
                 'wrap_form'     => true,
                 'is_anonuser'   => COM_isAnonUser(),
             ) );
@@ -521,7 +528,7 @@ class Cart extends OrderBaseView
      *
      * @return  string      HTML for final checkout page
      */
-    public function confirmCheckout()
+    public function confirmCheckout() : string
     {
         if (!$this->Order->isCurrent()) {
             echo COM_refresh(SHOP_URL . '/cart.php');

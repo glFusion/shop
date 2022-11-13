@@ -16,6 +16,7 @@
 require_once '../lib-common.php';
 
 use Shop\Models\OrderStatus;
+use Shop\Models\DataArray;
 use Shop\Models\Request;
 use Shop\Template;
 
@@ -135,8 +136,9 @@ case 'savevalidated':
 case 'saveaddr':
     if ($actionval == 1 || $actionval == 2) {
         $addr_vars = json_decode($Request['addr'][$actionval], true);
+        $addr_vars = new DataArray($addr_vars);
     } else {
-        $addr_vars = $Request->toArray();   // todo
+        $addr_vars = $Request;
     }
     if (isset($addr_vars['addr_id'])) {
         $id = $addr_vars['addr_id'];
