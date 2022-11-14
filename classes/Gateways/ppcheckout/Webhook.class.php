@@ -306,7 +306,8 @@ class Webhook extends \Shop\Webhook
                     $this->Order->setGatewayRef($invoice->id)
                           ->setInfo('terms_gw', $this->GW->getName())
                           ->Save();
-                    $this->Order->updateStatus($terms_gw->getConfig('after_inv_status'));
+                    $this->Order->createInvoice()
+                                ->updateStatus($terms_gw->getConfig('after_inv_status'));
                 }
             }
             if (!$status) {
