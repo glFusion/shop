@@ -78,7 +78,7 @@
                 <label class="uk-form-label">{cb_group_name}:</label>
                     <div class="uk-form-controls">
 <!-- BEGIN checkboxOptions -->
-                        <input class="uk-checkbox" type="checkbox" name="extras[options][]" value="{option_id}" onchange="ProcessForm('{frm_id}');"/>&nbsp;{option_dscp}<br />
+                        <input id="cbox_opt_{option_id}" class="uk-checkbox" type="checkbox" name="extras[options][]" value="{option_id}" onchange="ProcessForm('{frm_id}');"/>&nbsp;<label for="cbox_opt_{option_id}">{option_dscp}</label><br />
 <!-- END checkboxOptions -->
                     </div>
             </div>
