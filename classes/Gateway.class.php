@@ -1844,7 +1844,10 @@ class Gateway
             // legacy
             return (string)$this->VERSION;
         } else {
-            var_dump($this->readJSON());die;
+            // Bundled plugins that still have a gateway.json file
+            // may get here. v1.5.0 upgrade removes those files so this
+            // should happen only once.
+            Log::write('system', Log::ERROR, var_export($this->readJSON(),true));
             return 'unknown';
         }
     }
