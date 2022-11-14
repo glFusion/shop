@@ -979,9 +979,9 @@ $SHOP_UPGRADE['1.5.0'] = array(
     "CREATE TABLE `{$_TABLES['shop.invoices']}` (
       `invoice_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
       `order_id` varchar(40) DEFAULT NULL,
-      `invoice_dt` int(11) unsigned NOT NULL DEFAULT UNIX_TIMESTAMP(),
+      `invoice_dt` int(11) unsigned NOT NULL DEFAULT 0,
       PRIMARY KEY (`invoice_id`),
-      KEY `order_id` (`order_id`)
+      UNIQUE KEY `order_id` (`order_id`)
     ) ENGINE=MyISAM",
     "ALTER TABLE {$_TABLES['shop.orderitems']} ADD `shipping_units` decimal(9,4) unsigned NOT NULL DEFAULT 0.0000",
     "ALTER TABLE {$_TABLES['shop.coupon_log']} ADD `done_by` int(11) unsigned NOT NULL DEFAULT 0 AFTER `uid`",

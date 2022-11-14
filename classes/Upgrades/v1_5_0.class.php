@@ -170,8 +170,8 @@ class v1_5_0 extends Upgrade
         // Populate the invoice table with the order sequence values.
         try {
             $stmt = $db->conn->executeQuery(
-                "SELECT order_id, order_seq FROM {$_TABLES['shop.orders']}
-                WHERE order_seq > 0 ORDER BY order_seq ASC"
+                "SELECT order_id, order_seq, UNIX_TIMESTAMP(last_mod) AS last_mod
+                FROM {$_TABLES['shop.orders']} WHERE order_seq > 0 ORDER BY order_seq ASC"
             );
         } catch (\Exception $e) {
             Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
@@ -182,8 +182,12 @@ class v1_5_0 extends Upgrade
                 try {
                     $db->conn->insert(
                         $_TABLES['shop.invoices'],
-                        array('invoice_id' => $A['order_seq'], 'order_id' => $A['order_id']),
-                        array(Database::INTEGER, Database::STRING)
+                        array(
+                            'invoice_id' => $A['order_seq'],
+                            'order_id' => $A['order_id'],
+                            'invoice_dt' => $A['last_mod'],
+                        ),
+                        array(Database::INTEGER, Database::STRING, Database::INTEGER)
                     );
                 } catch (\Exception $e) {
                     Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
