@@ -88,7 +88,7 @@ class Gateway extends \Shop\Gateway
             '<input type="hidden" name="order_id" value="' . $cart->getOrderID() . '" />',
             '<input type="hidden" name="payment_status" value="Completed" />',
             '<input type="hidden" name="pmt_gross" value="' . $pmt_gross . '" />',
-            '<input type="hidden" name="txn_id" value="' . Token::create(16) . '" />',
+            '<input type="hidden" name="txn_id" value="' . Token::create(NULL, 16) . '" />',
             '<input type="hidden" name="status" value="paid" />',
             '<input type="hidden" name="transtype" value="' . $this->gw_name . '" />',
             '<input type="hidden" name="uid" value="' . $_USER['uid'] . '" />',

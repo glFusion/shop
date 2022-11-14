@@ -312,6 +312,35 @@ class Order
 
 
     /**
+     * Get an order by it's invoice number.
+     *
+     * @param   integer $inv_num    Invoice number
+     * @return  object      Order object
+     */
+    public static function getByInvoice(int $inv_num) : self
+    {
+        if (empty($inv_num)) {
+            return new self;
+        }
+        try {
+            $order_id = Database::getInstance()->getItem(
+                $_TABLES['shop.invoices'],
+                'order_id',
+                array('invoice_id' => $inv_num)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $order_id = false;
+        }
+        if ($order_id) {
+            return self::getInstance($order_id);
+        } else {
+            return new self;
+        }
+    }
+
+
+    /**
      * Get the order status.
      *
      * @return  string      Order status
@@ -1876,7 +1905,7 @@ class Order
 
         $db = Database::getInstance();
         do {
-            $id = Config::get('order_id_prefix') . Token::create(16, Config::get('order_id_format'));
+            $id = Config::get('order_id_prefix') . Token::create(Config::get('order_id_format'));
         } while (
             $db->getCount($_TABLES['shop.orders'], 'order_id', $id, Database::STRING) > 0
         );

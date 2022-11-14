@@ -34,9 +34,15 @@ class Token
      * @param   integer $len    Token length, default = 12 characters
      * @return  string      Token string
      */
-    public static function create(int $len=12, int $format=self::RANDOM) : string
+    public static function create(?int $format=self::RANDOM, int $len=12) : string
     {
         $retval = '';
+        if ($len < 1) {
+            $len = 12;
+        }
+        if (empty($format)) {
+            $format = self::RANDOM;
+        }
         if ($format & self::RANDOM) {
             try {
                 $bytes = random_bytes(ceil($len / 2));
