@@ -1,0 +1,8 @@
+{# begin {templatelocation} #}
+<div class="uk-alert uk-alert-{level}">
+{!if header}
+<h2>{header}</h2>
+{!endif}
+{message}
+</div>
+{# end {templatelocation} #}
