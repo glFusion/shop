@@ -1113,15 +1113,13 @@ class Order
         $db = Database::getInstance();
 
         // If promoting from a cart status to a real order, add the sequence number.
-        if ($this->isFinal() && $this->order_seq < 1) {
+        if ($this->isFinal()) {
             $qb = $db->conn->createQueryBuilder();
             try {
                 $qb->update($_TABLES['shop.orders'])
                    ->set('status', ':status')
-                   ->set('order_seq', ':order_seq')
                    ->where('order_id = :order_id')
                    ->setParameter('order_id', $this->order_id, Database::STRING)
-                   ->setParameter('order_seq', $this->order_seq, Database::STRING)
                    ->setParameter('status', $this->status, Database::STRING);
                 if (!$this->verifyReferralTag()) {
                     // If the referrer is invalid, remove from the order record
@@ -3883,7 +3881,6 @@ class Order
     public function requiresShipto()
     {
 
-        //if ($this->hasPhysical() && Shipper::getInstance($this->shipper_id)->requiresShipto()) {
         if ($this->needsShipping() && Shipper::getInstance($this->shipper_id)->requiresShipto()) {
             // Have to have a physical shipping address for physical products.
             return true;
@@ -3902,24 +3899,6 @@ class Order
             return true;
         }
         return false;
-
-        /*if (!$this->hasPhysical()) {
-            return false;
-        }
-        if (
-            (
-                // Shippers normally need an address, but "will call" doesn't.
-                Shipper::getInstance($this->shipper_id)->requiresShipto()
-            )
-            ||
-            (
-                $this->hasTaxable()
-                $this->getTotal() > 0
-            )
-        ) {
-            return true;
-        }
-        return false;*/
     }
 
 
