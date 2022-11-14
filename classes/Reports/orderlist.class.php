@@ -127,8 +127,8 @@ class orderlist extends \Shop\Report
                         'sort'  => true,
                     ),
                     array(
-                        'text'  => $LANG_SHOP['order_seq'],
-                        'field' => 'order_seq',
+                        'text'  => $LANG_SHOP['invoice'],
+                        'field' => 'invoice_id',
                         'sort'  => true,
                         'align' => 'right',
                     ),
@@ -179,15 +179,13 @@ class orderlist extends \Shop\Report
             'direction' => 'DESC',
         );
 
-//                SELECT sum(itm.price * itm.quantity)
-//                FROM {$_TABLES['shop.orderitems']} itm
-//                WHERE itm.order_id = ord.order_id
-//            ) as sales_amt,
         $sql = "SELECT ord.*, ord.net_nontax + ord.net_taxable AS sales_amt,
             ( SELECT sum(pmt_amount) FROM {$_TABLES['shop.payments']} pmt
                 WHERE pmt.pmt_order_id = ord.order_id
-            ) as paid
-            FROM {$_TABLES['shop.orders']} ord ";
+            ) as paid, inv.invoice_id
+            FROM {$_TABLES['shop.orders']} ord
+            LEFT JOIN {$_TABLES['shop.invoices']} inv ON ord.order_id = inv.order_id ";
+
         $orderstatus = $this->allowed_statuses;
         if (empty($orderstatus)) {
             $orderstatus = self::_getSessVar('orderstatus');
@@ -293,7 +291,7 @@ class orderlist extends \Shop\Report
                 $order_total = $A['sales_amt'] + $A['tax'] + $A['shipping'];
                 $T->set_var(array(
                     'order_id'      => $A['order_id'],
-                    'invoice'       => $A['order_seq'],
+                    'invoice'       => $A['invoice_id'],
                     'order_date'    => $order_date->format('Y-m-d', true),
                     'customer'      => $this->remQuote($customer),
                     'sales_amt'     => self::formatMoney((float)$A['sales_amt']),
@@ -381,6 +379,5 @@ class orderlist extends \Shop\Report
         return $retval;
     }
 
-}   // class orderlist
+}
 
-?>
