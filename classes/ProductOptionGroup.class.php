@@ -63,7 +63,7 @@ class ProductOptionGroup
 
     /** Array of Option objects under this Option Group for a specific product.
      * @var array */
-    private $Options = array();
+    private $Options = NULL;
 
     /**
      * Constructor.
@@ -584,8 +584,11 @@ class ProductOptionGroup
      *
      * @return  array       Array of Option objects
      */
-    public function getOptions()
+    public function getOptions() : array
     {
+        if ($this->Options === NULL) {
+            $this->Options = ProductOptionValue::getByGroup($this->pog_id);
+        }
         return $this->Options;
     }
 
