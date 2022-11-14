@@ -296,11 +296,11 @@ class orderlist extends \Shop\Report
                     'invoice'       => $A['order_seq'],
                     'order_date'    => $order_date->format('Y-m-d', true),
                     'customer'      => $this->remQuote($customer),
-                    'sales_amt'     => self::formatMoney($A['sales_amt']),
-                    'tax'           => self::formatMoney($A['tax']),
-                    'shipping'      => self::formatMoney($A['shipping']),
+                    'sales_amt'     => self::formatMoney((float)$A['sales_amt']),
+                    'tax'           => self::formatMoney((float)$A['tax']),
+                    'shipping'      => self::formatMoney((float)$A['shipping']),
                     'total'         => self::formatMoney($order_total),
-                    'paid'          => self::formatMoney($A['paid']),
+                    'paid'          => self::formatMoney((float)$A['paid']),
                     'nl'            => "\n",
                 ) );
                 $T->parse('row', 'ItemRow', true);

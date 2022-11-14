@@ -909,7 +909,7 @@ class Report
      * @param   float   $amt    Amount
      * @return  string  Formatted currency string
      */
-    protected static function formatMoney($amt)
+    protected static function formatMoney(float $amt) : string
     {
         return Currency::formatMoney($amt);
     }
