@@ -15,6 +15,7 @@ namespace Shop;
 use glFusion\Database\Database;
 use Shop\Models\Request;
 use Shop\Models\DataArray;
+use Shop\Models\ProductType;
 
 
 /**
@@ -857,6 +858,12 @@ class Address
             'return' => Request::getInstance()->getString('return'),
             'action_url' => SHOP_URL . '/account.php',
         ) );
+        $required = $this->getRequiredElements();
+        foreach ($required as $key=>$prod_type) {
+            if ($prod_type > 0) {
+                $T->set_var('req_addr_' . $key, 'required');
+            }
+        }
         $T->parse('output', 'form');
         return  $T->finish($T->get_var('output'));
     }
@@ -1008,40 +1015,24 @@ class Address
      * @param   boolean $required   True if an address is required at all
      * @return  string      List of invalid items, or empty string for success
      */
-    public function isValid($required=true) : string
+    public function isValid(bool $has_physical=false) : string
     {
         global $LANG_SHOP, $_SHOP_CONF;
 
+        if ($has_physical) {
+            $val = ProductType::PHYSICAL;
+        } else {
+            $val = ProductType::VIRTUAL;
+        }
+
         $invalid = array();
         $retval = '';
+        $required = $this->getRequiredElements();
 
-        if (empty($this->name) && empty($this->company)) {
-            $invalid[] = 'name_or_company';
-        }
-        if (
-            $required && empty($this->address1)
-        ) {
-            $invalid[] = 'address1';
-        }
-        if (
-            $required && empty($this->city)
-        ) {
-            $invalid[] = 'city';
-        }
-        if (
-            $required && empty($this->state)
-        ) {
-            $invalid[] = 'state';
-        }
-        if (
-            $required && empty($this->zip)
-        ) {
-            $invalid[] = 'zip';
-        }
-        if (
-            $required && $this->country == ''
-        ) {
-            $invalid[] = 'country';
+        foreach ($this->_fields as $key=>$dummy) {
+            if (empty($this->$key) && ($required[$key] & $val)) {
+                $invalid[] = $key;
+            }
         }
 
         if (!empty($invalid)) {
@@ -1373,6 +1364,24 @@ class Address
             break;
         }
         return $retval;
+    }
+
+
+    /**
+     * Get a keyed array of required elements from the global config.
+     *
+     * @return  array   Array of name->required_type
+     */
+    public function getRequiredElements() : array
+    {
+        static $required = NULL;
+        if ($required === NULL) {
+            $required = array();
+            foreach ($this->_fields as $fld=>$dummy) {
+                $required[$fld] = (int)Config::get('req_addr_' . $fld);
+            }
+        }
+        return $required;
     }
 
 }

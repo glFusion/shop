@@ -40,7 +40,6 @@ $expected = array(
     'payment', 'confirm',
 );
 list($action, $actionval) = $Request->getAction($expected);
-
 if ($action == '') {
     // Not defined in URL arguments
     COM_setArgNames(array('action', 'id', 'token'));
@@ -273,49 +272,6 @@ case 'save_addresses':
     echo COM_refresh(SHOP_URL . '/cart.php?' . $wf->getName());
     break;
 
-case 'savebillto':
-case 'saveshipto':
-    echo "here";die;
-    $addr_type = substr($action, 4);   // get 'billto' or 'shipto'
-    if ($actionval == 1 || $actionval == 2) {
-        $addr = json_decode($Request['addr'][$actionval], true);  // todo
-    } else {
-        $addr = $Request->toArray();
-    }
-    $Address = new Shop\Address($addr);
-    $status = $Address->isValid($addr);
-    if ($status != '') {
-        $content .= SHOP_errorMessage($status, 'danger', $LANG_SHOP['invalid_form']);
-        $view = $addr_type;
-        break;
-    }
-    $U = Shop\Customer::getInstance();
-    if ($U->getUid() > 1) {      // only save addresses for logged-in users
-        $data = $U->saveAddress($addr, $addr_type);
-        if ($data[0] < 0) {
-            if (!empty($data[1])) {
-                $content .= SHOP_errorMessage(
-                    $data[1],
-                    'alert',
-                    $LANG_SHOP['missing_fields']
-                );
-            }
-            $view = $addr_type;
-            break;
-        } else {
-            $Request['useaddress'] = $data[0];
-            $addr['addr_id'] = $data[0];
-        }
-    }
-    $Cart = Shop\Cart::getInstance();
-    $Cart->setAddress($addr, $addr_type);
-    //$next_step = $Request->getInt('next_step');
-    //$content = $Cart->getView($next_step);
-    //$content = $Cart->getView(0);
-    echo COM_refresh(SHOP_URL . '/cart.php');
-    $view = 'none';
-    break;
-
 case 'nextstep':
     $next_step = $Request->getInt('next_step');
     $content = Shop\Cart::getInstance()->getView($next_step);
@@ -357,7 +313,8 @@ case 'saveaddr':
     }
 
     $Addr = Shop\Address::getInstance($id);
-    $status = $Addr->setVars($addr_vars)
+    $Cart = Shop\Cart::getInstance();
+    $status = $Addr->setVars($Cart->hasPhysical())
                    ->isValid();
     if ($status != '') {
         $content .= COM_showMessageText(

@@ -1,11 +1,11 @@
 <?php
 /**
- * Class to present an view of an order
+ * Class to present an view of a cart during checkout.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -24,6 +24,7 @@ use Shop\Customer;
 use Shop\Address;
 use Shop\IPN;
 use Shop\Models\OrderStatus;
+use Shop\Models\ProductType;
 use Shop\Country;
 use Shop\State;
 
@@ -421,6 +422,7 @@ class Cart extends OrderBaseView
             ) );
             $Billto = $this->Order->getBillto();
             $Shipto = $this->Order->getShipto();
+            $hasPhysical = $this->Order->hasPhysical() ? ProductType::PHYSICAL : ProductType::VIRTUAL;
             $Shop = new Company;
             if (empty($Billto->getCountry())) {
                 $Billto->setCountry($Shop->getCountry());
@@ -434,6 +436,7 @@ class Cart extends OrderBaseView
                     $Shipto->setState($Shop->getState());
                 }
             }
+            $required = $Billto->getRequiredElements();
             $T->set_var(array(
                 'uid' => $Cust->getUid(),
                 'addr_type' => 'billto',
@@ -451,6 +454,11 @@ class Cart extends OrderBaseView
                 ),
                 'phone' => $Billto->getPhone(),
             ) );
+            foreach ($required as $key=>$prod_type) {
+                if ($prod_type & $hasPhysical) {
+                    $T->set_var('req_addr_' . $key, 'required');
+                }
+            }
             $T->parse('billto_form', 'addr_form');
             $T->set_var(array(
                 'uid' => $Cust->getUid(),

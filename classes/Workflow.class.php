@@ -6,7 +6,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2011-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.4.2
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -16,6 +16,7 @@ namespace Shop;
 use glFusion\Database\Database;
 use glFusion\Log\Log;
 use Shop\Models\Session;
+use Shop\Models\ProductType;
 use Shop\Cart;
 
 
@@ -164,7 +165,15 @@ class Workflow
     {
         switch ($this->wf_name) {
         case 'addresses':
-            $retval = $Cart->requiresBillto() || $Cart->requiresShipto();
+            $retval = false;
+            $prod_type = $Cart->hasPhysical() ? ProductType::PHYSICAL : ProductType::VIRTUAL;
+            $required = $Cart->getBillto()->getRequiredElements();
+            foreach ($required as $key=>$is_required) {
+                if ($is_required & $prod_type) {
+                    $retval = true;
+                    break;
+                }
+            }
             break;
         case 'shipping':
             $retval = $Cart->requiresShipto() && $Cart->hasPhysical();
@@ -203,11 +212,11 @@ class Workflow
             // Check that an address was entered. 0 indicates to-do.
             $billto = !$Cart->requiresBillto() || (
                 $Cart->getBillto()->getID() != 0 &&
-                $Cart->getBillto()->isValid() == ''
+                $Cart->getBillto()->isValid($Cart->hasPhysical()) == ''
             );
             $shipto = !$Cart->requiresShipto() || (
                     $Cart->getShipto()->getID() != 0 &&
-                    $Cart->getShipto()->isValid() == ''
+                    $Cart->getShipto()->isValid($Cart->hasPhysical()) == ''
             );
             $email = !empty($Cart->getBuyerEmail());
             $status = ($billto && $shipto && $email);

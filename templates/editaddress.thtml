@@ -9,42 +9,56 @@
 
 	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label" for="name">{$LANG_SHOP['fullname']}
+{!if req_addr_name}
 			<i class="uk-icon uk-icon-warning uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
+{!endif}
 		</label>
 		<div class="uk-form-controls">
-			<input required class="uk-input required uk-form-width-large" type="text" id="name" name="name" value="{name}" maxlength="127"/>
+			<input {req_addr_name} class="uk-input required uk-form-width-large" type="text" id="name" name="name" value="{name}" maxlength="127"/>
 		</div>
 	</div>
 
 	<div class="uk-form-row uk-margin">
-		<label class="uk-form-label" for="company">{$LANG_SHOP['company']}</label>
+		<label class="uk-form-label" for="company">{$LANG_SHOP['company']}
+{!if req_addr_company}
+			<i class="uk-icon uk-icon-warning uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
+{!endif}
+		</label>
 		<div class="uk-form-controls">
-			<input class="uk-input uk-form-width-large" type="text" id="company" name="company" value="{company}" maxlength="127"/>
+			<input {req_addr_company} class="uk-input uk-form-width-large" type="text" id="company" name="company" value="{company}" maxlength="127"/>
 		</div>
 	</div>
 
 	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label" for="address1">{$LANG_SHOP['address1']}
+{!if req_addr_address1}
 			<i class="uk-icon uk-icon-warning uk-text-warning tooltip tooltip" title="{$LANG_SHOP['required']}"></i>
+{!endif}
 		</label>
 		<div class="uk-form-controls">
-			<input required class="uk-input required uk-form-width-large" type="text" id="address1" name="address1" value="{address1}" maxlength="127"/>
+			<input {req_addr_address1} class="uk-input required uk-form-width-large" type="text" id="address1" name="address1" value="{address1}" maxlength="127"/>
 		</div>
 	</div>
 
 	<div class="uk-form-row uk-margin">
-		<label class="uk-form-label" for="address2">{$LANG_SHOP['address2']}</label>
+		<label class="uk-form-label" for="address2">{$LANG_SHOP['address2']}
+{!if req_addr_address2}
+		<i class="uk-icon uk-icon-warning uk-text-warning tooltip tooltip" title="{$LANG_SHOP['required']}"></i>
+{!endif}
+		</label>
 		<div class="uk-form-controls">
-			<input class="uk-input uk-form-width-large" type="text" id="address2" name="address2" value="{address2}" maxlength="127"/>
+			<input {req_addr_address2} class="uk-input uk-form-width-large" type="text" id="address2" name="address2" value="{address2}" maxlength="127"/>
 		</div>
 	</div>
 
 	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label" for="countrySelect">{$LANG_SHOP['country']}
+{!if req_addr_country}
 			<i class="uk-icon uk-icon-warning uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
+{!endif}
 		</label>
 		<div class="uk-form-controls">
-			<select required class="uk-select required" id="countrySelect" name="country"
+			<select {req_addr_country} class="uk-select {req_addr_country}" id="countrySelect" name="country"
 					onchange='chgCountrySel(this.value)' class="shopStateSelect">
 				{country_options}
 			</select>
@@ -53,7 +67,9 @@
 
 	<div class="uk-form-row uk-margin" id="stateSelectDiv" style="display:{state_sel_vis};">
 		<label class="uk-form-label" for="state">{$LANG_SHOP['state']}
+{!if req_addr_state}
 			<i class="uk-icon uk-icon-warning uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
+{!endif}
 		</label>
 		<div class="uk-form-controls">
 			<select class="uk-select" id="stateSelect" name="state" class="shopStateSelect">
@@ -64,28 +80,34 @@
 
 	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label" for="city">{$LANG_SHOP['city']}
+{!if req_addr_city}
 			<i class="uk-icon uk-icon-warning uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
+{!endif}
 		</label>
 		<div class="uk-form-controls">
-			<input required class="uk-input required uk-form-width-large" type="text" id="city" name="city" value="{city}" maxlength="127"/>
+			<input {req_addr_city} class="uk-input required uk-form-width-large" type="text" id="city" name="city" value="{city}" maxlength="127"/>
 		</div>
 	</div>
 
 	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label" for="zip">{$LANG_SHOP['zip']}
+{!if req_addr_zip}
 			<i class="uk-icon uk-icon-warning uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
+{!endif}
 		</label>
 		<div class="uk-form-controls">
-			<input required class="uk-input uk-form-width-large" type="text" id="zip" name="zip" value="{zip}" maxlength="127"/>
+			<input {req_addr_zip} class="uk-input uk-form-width-large" type="text" id="zip" name="zip" value="{zip}" maxlength="127"/>
 		</div>
 	</div>
 
 	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label" for="zip">{$LANG_SHOP['phone']}
+{!if req_addr_phone}
 			<i class="uk-icon uk-icon-warning uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
+{!endif}
 		</label>
 		<div class="uk-form-controls">
-			<input required class="uk-input required uk-form-width-large" type="tel" id="phone" name="phone" value="{phone}" maxlength="127"/>
+			<input {req_addr_phone} class="uk-input required uk-form-width-large" type="tel" id="phone" name="phone" value="{phone}" maxlength="127"/>
 		</div>
 	</div>
 

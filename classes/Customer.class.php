@@ -12,9 +12,10 @@
  * @filesource
  */
 namespace Shop;
+use glFusion\Database\Database;
 use Shop\Models\ReferralTag;
 use Shop\Models\DataArray;
-use glFusion\Database\Database;
+use Shop\Models\ProductType;
 
 
 /**
@@ -471,7 +472,7 @@ class Customer
         $type = $type == 'billto' ? 'billto' : 'shipto';
         $Address = new Address($A);
         $Address->setUid($this->uid);     // Probably not included in $_POST
-        $msg = $Address->isValid();
+        $msg = $Address->isValid(ProductType::PHYSICAL);
         if (!empty($msg)) {
             return array(-1, $msg);
         }

@@ -972,7 +972,7 @@ class Cart extends Order
 
         if ($this->requiresShipto()) {
             $Addr = new Address($this->Shipto->toArray());
-            if ($Addr->isValid(true) != '') {
+            if ($Addr->isValid($this->hasPhysical()) != '') {
                 $errors['shipto'] = $LANG_SHOP['req_shipto'];
                 if ($new_wf == '') {
                     $new_wf = 'addresses';
@@ -982,7 +982,7 @@ class Cart extends Order
 
         if ($this->requiresBillto()) {
             $Addr = new Address($this->Billto->toArray());
-            if ($Addr->isValid(true) != '') {
+            if ($Addr->isValid($this->hasPhysical()) != '') {
                 $errors['billtoto'] = $LANG_SHOP['req_billto'];
                 if ($new_wf == '') {
                     $new_wf = 'addresses';

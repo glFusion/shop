@@ -226,6 +226,7 @@ $LANG_SHOP = array (
 'customize'     => 'Details',
 'fullname'      => 'Name',
 'lastname'      => 'Last Name',
+'name'          => 'Name',
 'company'       => 'Company',
 'address1'      => 'Address Line 1',
 'address2'      => 'Address Line 2',
@@ -987,6 +988,16 @@ $LANG_confignames['shop'] = array(
     'order_id_format' => 'Format for order reference ID',
     'order_id_prefix' => 'Order ID Prefix',
     'virt_ord_paid_status' => 'Status for virtual-only orders when paid',
+    'fset_address_required' => 'Address Elements Required',
+    'req_addr_name' => 'Require Name',
+    'req_addr_company' => 'Require Company',
+    'req_addr_address1' => 'Require Street Line 1',
+    'req_addr_address2' => 'Require Street Line 2',
+    'req_addr_city' => 'Require City',
+    'req_addr_state' => 'Require State',
+    'req_addr_country' => 'Require Country',
+    'req_addr_zip' => 'Require Postal Code',
+    'req_addr_phone' => 'Require Telephone Number',
 );
 
 /** Language strings for the subgroup names in the config section */
@@ -1031,6 +1042,12 @@ $LANG_configSelect['shop'] = array(
         'processing' => 'Processing',
         'shipped' => 'Shipped',
         'closed' => 'Closed',
+    ),
+    4 => array(
+        0 => 'Not Required',
+        1 => 'Require for Physical Goods',
+        4 => 'Require for Virtual Goods',
+        7 => 'Require for all product types',
     ),
     5 => array(
         'name' => 'Name',

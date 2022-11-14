@@ -15,6 +15,7 @@
 /** Require core glFusion code */
 require_once '../lib-common.php';
 
+use Shop\Models\ProductType;
 use Shop\Models\OrderStatus;
 use Shop\Models\DataArray;
 use Shop\Models\Request;
@@ -147,11 +148,11 @@ case 'saveaddr':
     }
     $Addr = Shop\Address::getInstance($id);
     $status = $Addr->setVars($addr_vars)
-                   ->isValid();
+                   ->isValid(ProductType::PHYSICAL);
     if ($status != '') {
         $content .= Shop\Menu::User('addresses');
         $content .= COM_showMessageText(
-            $status,
+            $LANG_SHOP['missing_fields'] . $status,
             $LANG_SHOP['invalid_form'],
             true,
             'error'

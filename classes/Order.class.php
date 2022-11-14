@@ -1054,6 +1054,7 @@ class Order
             $total_paid += $Pmt->getAmount();
         }
         $this->_amt_paid = $total_paid;
+        $this->createInvoice();
         if (
             (
                 $this->getStatus() == OrderStatus::CART ||
@@ -1114,18 +1115,7 @@ class Order
         // If promoting from a cart status to a real order, add the sequence number.
         if ($this->isFinal() && $this->order_seq < 1) {
             $qb = $db->conn->createQueryBuilder();
-            //$db->conn->beginTransaction();
             try {
-                $db->conn->insert(
-                    $_TABLES['shop.invoices'],
-                    array('order_id' => $this->order_id, 'invoice_dt' => time()),
-                    array(Database::STRING, Database::INTEGER)
-                );
-                $this->order_seq = $db->conn->lastInsertId();
-                /*$db->conn->executestatement(
-                    "SELECT COALESCE(MAX(order_seq)+1,1)
-                    FROM {$_TABLES['shop.orders']} INTO @seqno FOR UPDATE"
-                );*/
                 $qb->update($_TABLES['shop.orders'])
                    ->set('status', ':status')
                    ->set('order_seq', ':order_seq')
@@ -1141,19 +1131,10 @@ class Order
                        ->setParameter('m_info', (string)$this->m_info, Database::STRING);
                 }
                 $qb->execute();
-                //$db->conn->commit();
             } catch (\Exception $e) {
                 Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
-                $db->conn->rollback();
             }
-
-            /*$this->order_seq = $db->getItem(
-                $_TABLES['shop.orders'],
-                'order_seq',
-                array('order_id' => $this->order_id)
-            );*/
         } else {
-            // Update the status but leave the sequence alone
             try {
                 $db->conn->update(
                     $_TABLES['shop.orders'],
@@ -4182,6 +4163,34 @@ class Order
         default:
             return false;
         }
+    }
+
+
+    /**
+     * Create an invoice record for this order.
+     *
+     * @return  integer     Invoice sequence number
+     */
+    public function createInvoice() : int
+    {
+        global $_TABLES;
+
+        if ((int)$this->order_seq < 1) {
+            $db = Database::getInstance();
+            try {
+                $db->conn->insert(
+                    $_TABLES['shop.invoices'],
+                    array('order_id' => $this->order_id, 'invoice_dt' => time()),
+                    array(Database::STRING, Database::INTEGER)
+                );
+                $this->order_seq = $db->conn->lastInsertId();
+            } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $e) {
+                // noop, order_id is already in the table
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            }
+        }
+        return (int)$this->order_seq;
     }
 
 
