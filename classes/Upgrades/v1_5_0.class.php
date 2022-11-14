@@ -195,6 +195,11 @@ class v1_5_0 extends Upgrade
             }
         }
 
+        // Update the ena_ratings config to include anonymous, if set.
+        if ((int)Config::get('anon_can_rate')) {
+            Config::set('ena_ratings', 2, true);
+        }
+
         return self::setVersion(self::$ver);
     }
 

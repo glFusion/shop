@@ -3,9 +3,9 @@
  * Class to read and manipulate Shop configuration values.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2020-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.5.0
  * @since       v1.3.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -102,33 +102,55 @@ final class Config
 
     /**
      * Set a configuration value.
-     * Unlike the root glFusion config class, this does not add anything to
-     * the database. It only adds temporary config vars.
      *
      * @param   string  $key    Configuration item name
      * @param   mixed   $val    Value to set
+     * @param   boolean $save   True to save in the DB
+     * @return  object  $this
      */
-    private function _set(string $key, $val) : self
+    private function _set(string $key, $val, bool $save=false) : self
     {
         global $_SHOP_CONF;
 
         $this->properties[$key] = $val;
         $_SHOP_CONF[$key] = $val;
+        if ($save) {
+            \config::get_instance()->set($key, $val, self::PI_NAME);
+        }
         return $this;
     }
 
 
     /**
-     * Set a configuration value.
-     * Unlike the root glFusion config class, this does not add anything to
-     * the database. It only adds temporary config vars.
+     * Set a configuration value, optionally saving permanently.
      *
      * @param   string  $key    Configuration item name
      * @param   mixed   $val    Value to set, NULL to unset
+     * @param   boolean $save   True to save in the DB
+     * @return  object  $this
      */
-    public static function set(string $key, $val=NULL) : self
+    public static function set(string $key, $val=NULL, bool $save=false) : self
     {
-        return self::getInstance()->_set($key, $val);
+        return self::getInstance()->_set($key, $val, $save);
+    }
+
+
+    /**
+     * Delete a configuration value.
+     * Always removes the value from the properties and the DB, since there's
+     * no need to simply remove from the properties.
+     *
+     * @param   string  $key    Configuration item name
+     * @return  object  $this
+     */
+    private function _del(string $key) : self
+    {
+        global $_SHOP_CONF;
+
+        unset($this->properties[$key]);
+        unset($_SHOP_CONF[$key]);
+        \config::get_instance()->del($key, self::PI_NAME);
+        return $this;
     }
 
 
@@ -143,6 +165,15 @@ final class Config
     public static function get(?string $key=NULL, $default=NULL)
     {
         return self::getInstance()->_get($key, $default);
+    }
+
+
+    /**
+     * Permanently delete a config option from the database.
+     */
+    public static function del(string $key) : self
+    {
+        return self::agetInstance()->_del($key);
     }
 
 

@@ -354,10 +354,6 @@ class Catalog
 
         $display .= $T->parse('', 'start');
 
-        if (Config::get('ena_ratings') == 1) {
-            $SHOP_ratedIds = SHOP_getRatedIds(Config::PI_NAME);
-        }
-
         // Display each product
         $prodrows = 0;
         $T->set_block('wrapper', 'ProductItems', 'PI');

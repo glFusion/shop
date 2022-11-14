@@ -1531,10 +1531,15 @@ function plugin_canuserrate_shop($item_id, $uid)
     static $canRate = NULL;
 
     if ($canRate === NULL) {
-        if (Config::get('anon_can_rate') == 0 && COM_isAnonUser()) {
-            $canRate = false;
-        } else {
+        switch (Config::get('ena_ratings')) {
+        case 2:
             $canRate = true;
+            break;
+        case 1:
+            $canRate = !COM_isAnonUser();
+            break;
+        default:
+            $canRate = false;
         }
     }
     return $canRate;

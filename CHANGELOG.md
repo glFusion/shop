@@ -42,6 +42,7 @@ Release TBD
   * Add syndication classes to support catalog feeds.
   * Deprecate updating cart currency, just purge carts if currency is changed.
   * Allow sites to define where each address field is required.
+  * Combine enable-ratings configs for logged-in and anon users.
 
 ## v1.4.1
 Release 2022-04-07

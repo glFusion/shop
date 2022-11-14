@@ -394,7 +394,7 @@ class Product
             $this->dt_add = SHOP_now()->toMySQL();
             $this->comments_enabled = $_SHOP_CONF['ena_comments'] == 1 ?
                     SHOP_COMMENTS_ENABLED : SHOP_COMMENTS_DISABLED;
-            $this->rating_enabled = $_SHOP_CONF['ena_ratings'] == 1 ? 1 : 0;
+            $this->rating_enabled = Config::get('ena_ratings') > 0 ? 1 : 0;
             $this->track_onhand = $_SHOP_CONF['def_track_onhand'];
             $this->oversell = $_SHOP_CONF['def_oversell'];
             $this->qty_discounts = array();
@@ -3719,9 +3719,7 @@ class Product
      */
     public function supportsRatings()
     {
-        global $_SHOP_CONF;
-
-        return ($_SHOP_CONF['ena_ratings'] == 1) && $this->rating_enabled;
+        return (Config::get('ena_ratings') > 0) && $this->rating_enabled;
     }
 
 

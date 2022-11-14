@@ -894,7 +894,6 @@ $LANG_confignames['shop'] = array(
     'tmpdir'        => 'Temporäres Verzeichnis',
     'ena_comments'  => 'Kommentare aktivieren',
     'ena_ratings'   => 'Bewertungen aktivieren',
-    'anon_can_rate' => 'Gäste können bewerten',
     'displayblocks'  => 'Blöcke anzeigen',
     'log_level'      => 'Log Level',
     'def_enabled'   => 'Produkt ist verfügbar',

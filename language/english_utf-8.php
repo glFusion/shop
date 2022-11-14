@@ -890,7 +890,6 @@ $LANG_confignames['shop'] = array(
     'tmpdir'        => 'Temporary Working Directory',
     'ena_comments'  => 'Enable Comments?',
     'ena_ratings'   => 'Enable Product Ratings?',
-    'anon_can_rate' => 'Anonymous can rate products?',
     'displayblocks'  => 'Display glFusion Blocks',
     'log_level'      => 'Log Level',
     'def_enabled'   => 'Product Enabled?',
@@ -1037,6 +1036,11 @@ $LANG_fs['shop'] = array(
  */
 $LANG_configSelect['shop'] = array(
     0 => array(1 => 'True', 0 => 'False'),
+    1 => array(
+        0 => 'None',
+        1 => 'Logged-In Users',
+        2 => 'All Users',
+    ),
     2 => array(1 => 'Yes', 0 => 'No'),
     3 => array(
         'processing' => 'Processing',

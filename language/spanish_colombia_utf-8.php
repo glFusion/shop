@@ -895,7 +895,6 @@ $LANG_confignames['shop'] = array(
     'tmpdir'        => 'Temporary Working Directory',
     'ena_comments'  => 'Enable Comments?',
     'ena_ratings'   => 'Enable Product Ratings?',
-    'anon_can_rate' => 'Anonymous can rate products?',
     'displayblocks'  => 'Display glFusion Blocks',
     'log_level'     => 'Log Level',
     'def_enabled'   => 'Product Enabled?',
