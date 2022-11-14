@@ -2896,6 +2896,7 @@ class Order
         $db->conn->executeStatement("TRUNCATE {$_TABLES['shop.orderitems']}");
         $db->conn->executeStatement("TRUNCATE {$_TABLES['shop.oi_opts']}");
         $db->conn->executeStatement("TRUNCATE {$_TABLES['shop.order_log']}");
+        $db->conn->executeStatement("TRUNCATE {$_TABLES['shop.invoices']}");
     }
 
 
