@@ -449,7 +449,7 @@ class OrderStatus
      */
     public static function isValid(string $status) : bool
     {
-        return array_key_exists($status, self::getAll());
+        return $status == 'cart' || array_key_exists($status, self::getAll());
     }
 
 

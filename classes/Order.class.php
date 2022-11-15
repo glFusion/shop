@@ -3037,6 +3037,20 @@ class Order
 
 
     /**
+     * Set the order ID.
+     * This may be needed if the ID is reset and needs to be overridden.
+     *
+     * @param   string  $order_id   Order ID
+     * @return  object  $this
+     */
+    public function setOrderID(string $order_id) : self
+    {
+        $this->order_id = $order_id;
+        return $this;
+    }
+
+
+    /**
      * Get the order ID.
      *
      * @return  string  Order ID
@@ -4084,7 +4098,7 @@ class Order
      *
      * @return  object  $this
      */
-    public function cancelFinal()
+    public function cancelFinal() : self
     {
         // Get any coupons that were applied and restore their balances
         $cards = $this->getInfo('applied_gc');
@@ -4093,13 +4107,15 @@ class Order
                 \Shop\Products\Coupon::Restore($code, $amount);
             }
         }
-
         // Set the order status back to "cart" and reset the token
         // to prevent duplication of this function.
         $this->setStatus(OrderStatus::CART)
              ->remInfo('applied_gc')
              ->setToken()
              ->Save(false);
+
+        Session::set('cart_id', $this->order_id);
+        Session::set('order_id', $this->order_id);
         return $this;
     }
 

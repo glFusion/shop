@@ -295,6 +295,11 @@ case 'addresses':
         echo COM_refresh(SHOP_URL . '/index.php');
     }
     $V = new Shop\Views\Cart;
+    $cart_wf = Shop\Workflow::getInstance('viewcart');
+    if (!$cart_wf->isSatisfied($Cart)) {
+        SHOP_setMsg($LANG_SHOP['err_missing_email'], 'error');
+        echo COM_refresh(SHOP_URL . '/cart.php?viewcart');
+    }
     $content .= Shop\Menu::checkoutFlow($Cart, 'addresses');
     $content .= $V->withOrder($Cart)->addressSelection();
     break;
@@ -421,6 +426,9 @@ case 'cancel':
         // Don't use getInstance() to avoid creating a new cart
         $Cart = new Shop\Cart($cart_id, false);
         if ($token == $Cart->getToken()) {
+            // Order ID may be reset due to an invalid status for a cart,
+            // so put it back.
+            $Cart->setOrderID($cart_id);
             // Only reset if the token is valid, then update the token to
             // invalidate further changes using this token.
             $Cart->cancelFinal();
