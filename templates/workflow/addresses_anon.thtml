@@ -2,11 +2,11 @@
 	<input type="hidden" name="is_anon" value="1" />
 	<div class="uk-grid uk-child-width-1-1@small uk-child-width-1-2@m uk-grid-width-small-1-1 uk-grid-width-medium-1-2">
 		<div>
-			Shipping Address
+			{$LANG_SHOP['shipto']}
 			{shipto_form}
 		</div>
 		<div>
-			Billing Address <input type="checkbox" name="shipto_is_billto" value="1" onclick="toggleBillto(this);"/> Same as Shipping
+			{$LANG_SHOP['billto']} <input type="checkbox" name="shipto_is_billto" value="1" onclick="toggleBillto(this);"/> {$LANG_SHOP['same_as_shipping']}
 			{billto_form}
 		</div>
 	</div>
@@ -23,6 +23,7 @@
 	</div>
 #}
 {form_footer}
+{side_buttons}
 </form>
 <script>
 function _toggleRequired(fld_id, flag)

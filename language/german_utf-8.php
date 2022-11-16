@@ -736,6 +736,7 @@ $LANG_SHOP = array (
 'select_billto' => 'Select your Billing Address:',
 'select_shipto' => 'Select your Shipping Address:',
 'billto_is_shipto' => 'Billing address is the same as Shipping',
+'same_as_shipping' => 'Same as Shipping',
 'select_shipping' => 'Choose a shipping option:',
 'select_payment' => 'Select a payment method:',
 'dc_applied_tip' => '%.02f%% Discount code applied to this item.',
@@ -1120,6 +1121,11 @@ $LANG_configSelect['shop'] = array(
 
 $LANG_configselects['shop'] = array(
     0 => array('Ja' => 1, 'Nein' => 0),
+    1 => array(
+        0 => 'None',
+        1 => 'Logged-In Users',
+        2 => 'All Users',
+    ),
     2 => array('Ja' => 1, 'Nein' => 0),
     5 => array('Name' => 'name', 'Preis' => 'price', 'Produkt-ID' => 'id'),
     11 => array(

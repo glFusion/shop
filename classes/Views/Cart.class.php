@@ -51,7 +51,10 @@ class Cart extends OrderBaseView
     {
         $this->tplname = 'viewcart';
         $this->TPL = new Template('workflow/');
-        $this->TPL->set_file($this->tplname, 'viewcart.thtml');
+        $this->TPL->set_file(array(
+            $this->tplname => 'viewcart.thtml',
+            'side_buttons' => 'side_buttons1.thtml',
+        ) );
         $this->Currency = Currency::getInstance();
         if ($order_id !== NULL) {
             $this->Order = \Shop\Cart::getInstance($order_id);
@@ -224,6 +227,8 @@ class Cart extends OrderBaseView
             $T1 = new Template('workflow/');
             $T1->set_file('footer', 'footer.thtml');
             $this->TPL->set_var('footer', $T1->parse('', 'footer'));
+            $T1->set_file('side_buttons', 'side_buttons1.thtml');
+            $this->TPL->set_var('side_buttons', $T1->parse('', 'side_buttons'));
         }
         $this->TPL->parse('output', $this->tplname);
         $form = $this->TPL->finish($this->TPL->get_var('output'));
@@ -290,6 +295,7 @@ class Cart extends OrderBaseView
         $T->set_file(array(
             'form' => 'shipping.thtml',
             'footer' => 'footer.thtml',
+            'side_buttons' => 'side_buttons1.thtml',
         ) );
         $T->set_block('form', 'shipMethods', 'SM');
         foreach ($methods as $method_id=>$method) {
@@ -306,6 +312,7 @@ class Cart extends OrderBaseView
                 $this->Order->setShipping($s_amt);
             }
         }
+        $T->set_var('side_buttons', $T->parse('', 'side_buttons'));
         $T->set_var('form_footer', $T->parse('', 'footer'));
         $T->parse('output', 'form');
         return  $T->finish($T->get_var('output'));
@@ -330,6 +337,7 @@ class Cart extends OrderBaseView
         $T->set_file(array(
             'form' => 'payment.thtml',
             'footer' => 'footer.thtml',
+            'side_buttons' => 'side_buttons1.thtml',
         ) );
         $total = $this->Order->getTotal();
         if (!$_SHOP_CONF['anon_buy'] && COM_isAnonUser()) {
@@ -392,6 +400,7 @@ class Cart extends OrderBaseView
             }
         }
         $T->set_var('wrap_form', true);
+        $T->set_var('side_buttons', $T->parse('', 'side_buttons'));
         $T->set_var('form_footer', $T->parse('', 'footer'));
         $T->parse('output', 'form');
         $retval = $T->finish($T->get_var('output'));
@@ -419,6 +428,7 @@ class Cart extends OrderBaseView
                 'form' => 'addresses_anon.thtml',
                 'addr_form' => 'addressform_base.thtml',
                 'footer' => 'footer.thtml',
+                'side_buttons' => 'side_buttons1.thtml',
             ) );
             $Billto = $this->Order->getBillto();
             $Shipto = $this->Order->getShipto();
@@ -479,11 +489,13 @@ class Cart extends OrderBaseView
             ) );
             $T->parse('shipto_form', 'addr_form');
             $T->set_var('form_footer', $T->parse('', 'footer'));
+            $T->set_var('side_buttons', $T->parse('', 'side_buttons'));
         } else {
             // Logged-in uses select from saved addresses and can add others.
             $T->set_file(array(
                 'form' => 'addresses.thtml',
                 'footer' => 'footer.thtml',
+                'side_buttons' => 'side_buttons1.thtml',
             ) );
 
             $billto_id = $this->Order->getBillto()->getID();
@@ -522,6 +534,7 @@ class Cart extends OrderBaseView
                 'is_anonuser'   => COM_isAnonUser(),
             ) );
             $T->set_var('form_footer', $T->parse('', 'footer'));
+            $T->set_var('side_buttons', $T->parse('', 'side_buttons'));
         }
 
         $T->parse('output', 'form');

@@ -206,7 +206,7 @@ class Workflow
 
         switch ($this->wf_name) {
         case 'viewcart':
-            $status = true;
+            $status = !empty($Cart->getBuyerEmail());
             break;
         case 'addresses':
             // Check that an address was entered. 0 indicates to-do.

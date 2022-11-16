@@ -50,7 +50,7 @@
     {$LANG_SHOP['order_instr']}:<br />
     <textarea class="uk-textarea uk-width-1-1" name="order_instr" rows="5">{order_instr}</textarea>
 </div>
-
+{side_buttons}
 {form_footer}
 </form>
 <script>

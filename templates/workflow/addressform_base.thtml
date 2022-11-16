@@ -7,7 +7,7 @@
 {!endif}
 		</label>
 		<div class="uk-form-controls">
-			<input {req_addr_name} class="uk-input uk-form-width-large {req_addr_name}" type="text" id="{addr_type}_name" name="{addr_type}_name" value="{name}" maxlength="255" />
+			<input {req_addr_name} class="uk-input uk-width-1-1 {req_addr_name}" type="text" id="{addr_type}_name" name="{addr_type}_name" value="{name}" maxlength="255" />
 		</div>
 	</div>
 
@@ -18,7 +18,7 @@
 {!endif}
 		</label>
 		<div class="uk-form-controls">
-			<input {req_addr_company} class="uk-input uk-form-width-large {req_addr_company}" type="text" id="{addr_type}_company" name="{addr_type}_company" size="60" value="{company}" />
+			<input {req_addr_company} class="uk-input uk-width-1-1 {req_addr_company}" type="text" id="{addr_type}_company" name="{addr_type}_company" size="60" value="{company}" />
 		</div>
 	</div>
 
@@ -29,7 +29,7 @@
 {!endif}
 		</label>
 		<div class="uk-form-controls">
-			<input {req_addr_address1} class="uk-input uk-form-width-large {req_addr_address1}" type="text" id="{addr_type}_address1" name="{addr_type}_address1" value="{address1}" />
+			<input {req_addr_address1} class="uk-input uk-width-1-1 {req_addr_address1}" type="text" id="{addr_type}_address1" name="{addr_type}_address1" value="{address1}" />
 		</div>
 	</div>
 
@@ -40,7 +40,7 @@
 {!endif}
 		</label>
 		<div class="uk-form-controls">
-			<input {req_addr_address2} class="uk-input uk-form-width-large {req_addr_address2}" type="text" id="{addr_type}_address2" name="{addr_type}_address2" size="60" value="{address2}" />
+			<input {req_addr_address2} class="uk-input uk-width-1-1 {req_addr_address2}" type="text" id="{addr_type}_address2" name="{addr_type}_address2" size="60" value="{address2}" />
 		</div>
 	</div>
 
@@ -78,7 +78,7 @@
 {!endif}
 		</label>
 		<div class="uk-form-controls">
-			<input {req_addr_city} class="uk-input uk-form-width-large {req_addr_city}" type="text" id="{addr_type}_city" name="{addr_type}_city" value="{city}" />
+			<input {req_addr_city} class="uk-input uk-width-1-1 {req_addr_city}" type="text" id="{addr_type}_city" name="{addr_type}_city" value="{city}" />
 		</div>
 	</div>
 
@@ -89,7 +89,7 @@
 {!endif}
 		</label>
 		<div class="uk-form-controls">
-			<input {req_addr_zip} class="uk-input uk-form-width-large {req_addr_zip}" type="text" id="{addr_type}_zip" name="{addr_type}_zip" value="{zip}" />
+			<input {req_addr_zip} class="uk-input uk-width-1-1 {req_addr_zip}" type="text" id="{addr_type}_zip" name="{addr_type}_zip" value="{zip}" />
 		</div>
 	</div>
 
@@ -100,7 +100,7 @@
 {!endif}
 		</label>
 		<div class="uk-form-controls">
-			<input {req_addr_phone} class="uk-input uk-form-width-large {req_addr_phone}" type="tel" id="{addr_type}_phone" name="{addr_type}_phone" value="{phone}" />
+			<input {req_addr_phone} class="uk-input uk-width-1-1 {req_addr_phone}" type="tel" id="{addr_type}_phone" name="{addr_type}_phone" value="{phone}" />
 		</div>
 	</div>
 	</div>
