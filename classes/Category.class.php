@@ -302,8 +302,7 @@ class Category
                         $_POST['old_grp'] != $this->grp_access) {
                     $this->_propagatePerms($_POST['old_grp']);
                 }*/
-                Cache::clear(self::$TABLE);
-                Cache::clear('sitemap');
+                self::clearCache();
             } else {
                 $this->AddError('Failed to insert or update record');
             }
@@ -339,9 +338,8 @@ class Category
             $sql = "UPDATE {$_TABLES[self::$TABLE]}
                     SET grp_access = {$this->grp_access}
                     WHERE cat_id IN ($upd_cats)";
-            Cache::clear(self::$TABLE);
-            Cache::clear('sitemap');
             DB_query($sql);
+            self::clearCache();
         }
     }
 
@@ -358,9 +356,8 @@ class Category
 
         $this->deleteImage(false);
         DB_delete($_TABLES[self::$TABLE], 'cat_id', $this->cat_id);
+        self::clearCache();
         PLG_itemDeleted($this->cat_id, 'shop_category');
-        Cache::clear(self::$TABLE);
-        Cache::clear('sitemap');
         $this->cat_id = 0;
         return true;
     }
@@ -385,8 +382,7 @@ class Category
             DB_query("UPDATE {$_TABLES[self::$TABLE]}
                     SET image=''
                     WHERE cat_id='" . $this->cat_id . "'");
-            Cache::clear(self::$TABLE);
-            Cache::clear('sitemap');
+            self::clearCache();
         }
         $this->image = '';
     }
@@ -538,8 +534,7 @@ class Category
     {
         $newval = self::Toggle($oldvalue, $varname, $id);
         if ($newval != $oldvalue) {
-            Cache::clear(self::$TABLE);
-            Cache::clear('sitemap');
+            self::clearCache();
         }
         return $newval;
     }
@@ -739,6 +734,16 @@ class Category
 
 
     /**
+     * Clear all category-related caches.
+     */
+    public static function clearCache() : void
+    {
+        Cache::clear(self::$TABLE);
+        Cache::clear('sitemap');
+    }
+
+
+    /**
      * Read all the categories into a static array.
      *
      * @param   integer $root_id    Root category ID
@@ -934,8 +939,7 @@ class Category
                 SET lft = '$left', rgt = '$right'
                 WHERE cat_id = '$parent'";
         DB_query($sql1);
-        Cache::clear(self::$TABLE);
-        Cache::clear('sitemap');
+        self::clearCache();
 
         // return the right value of this node + 1
         return $right + 1;

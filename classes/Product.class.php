@@ -1179,11 +1179,6 @@ class Product
             }
         }
 
-        // Clear all product caches since this save may affect availablity
-        // and product lists.
-        Cache::clear(self::$TABLE);
-        Cache::clear('sitemap');
-
         if ($status) {
             // Handle image uploads.  This is done last because we need
             // the product id to name the images filenames.
@@ -1198,6 +1193,10 @@ class Product
             // Clear the button cache
             self::deleteButtons($this->id);
         }
+
+        // Clear all product caches since this save may affect availablity
+        // and product lists.
+        self::clearCache();
 
         // Final check to catch error messages from the SQL update
         if (empty($this->Errors)) {
@@ -1391,8 +1390,7 @@ class Product
         } catch (\Throwable $e) {
             Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
-        Cache::clear(self::$TABLE);
-        Cache::clear('sitemap');
+        self::clearCache();
         PLG_itemDeleted($this->id, $_SHOP_CONF['pi_name']);
         $this->id = 0;
         $this->isNew = true;
@@ -1700,8 +1698,7 @@ class Product
     {
         $newval = self::_toggle($oldvalue, $varname, $id);
         if ($newval != $oldvalue) {
-            Cache::clear(self::$TABLE);
-            Cache::clear('sitemap');
+            self::clearCache();
         }
         return $newval;
     }
@@ -1928,7 +1925,7 @@ class Product
                     $T->set_var(array(
                         'frm_id' => $frm_id,
                         'opt_id' => $Opt->getID(),
-                        'opt_str' => htmlspecialchars($Opt->getValue()),
+                        'opt_str' => htmlentities($Opt->getValue(), ENT_QUOTES | ENT_HTML5),
                         'radio_selected' => $Opt->getID() == $sel_opt ? 'checked="checked"' : '',
                         'select_selected' => $Opt->getID() == $sel_opt ? 'selected="selected"' : '',
                     ) );
@@ -2740,8 +2737,7 @@ class Product
         // update the qty on hand, if tracking and not already zero
         if ($this->track_onhand) {
             Stock::recordPurchase($this->id, $Item->getVariantId(), $Item->getQuantity());
-            Cache::clear(self::$TABLE);
-            Cache::clear('sitemap');
+            self::clearCache();
         }
         return $status;
     }
@@ -3219,6 +3215,16 @@ class Product
     {
         if ($type != '') $type .= '_';
         return 'product_' . $type . $id;
+    }
+
+
+    /**
+     * Clear all the product-related caches.
+     */
+    public static function clearCache() : void
+    {
+        Cache::clear(static::$TABLE);
+        Cache::clear('sitemap');
     }
 
 
@@ -4596,7 +4602,6 @@ class Product
         } elseif (!is_array($cat_ids)) {
             return $this;
         }
-
         $db = Database::getInstance();
         try {
             $db->conn->delete(
@@ -4618,6 +4623,7 @@ class Product
             (product_id, cat_id) VALUES " . implode(',', $vals);
         try {
             $db->conn->executeStatement($sql);
+            Category::clearCache();
         } catch (\Throwable $e) {
             Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
@@ -4919,7 +4925,7 @@ class Product
      * @param   integer $prod_id    Product ID, zero if no selected cats needed.
      * @return  array   Array of (available options, selected options)
      */
-    private static function getCatSelections($prod_id)
+    private static function getCatSelections(int $prod_id) : array
     {
         $allcats = Category::getAll();
         if ($prod_id > 0) {
