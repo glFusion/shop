@@ -559,7 +559,7 @@ class ProductOptionGroup
            ->leftJoin('vxo', $_TABLES['shop.prod_opt_vals'], 'pov', 'vxo.pov_id = pov.pov_id')
            ->leftJoin('pov', $_TABLES['shop.prod_opt_grps'], 'pog', 'pov.pog_id = pog.pog_id')
            ->where('pv.item_id = :item_id')
-           ->orderBy('pog.pog_id', 'ASC')
+           ->orderBy('pog.pog_orderby', 'ASC')
            ->setParameter('item_id', $item_id, Database::INTEGER);
         try {
             $stmt = $qb->execute();
