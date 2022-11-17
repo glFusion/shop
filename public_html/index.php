@@ -187,7 +187,7 @@ case 'products':
 default:
     SHOP_setUrl();
     if (Shop\Config::get('catalog_enabled')) {
-        $cat_id = $Request->getRaw('category');
+        $cat_id = $Request->getInt('category');
         $brand_id = $Request->getInt('brand');
         $Cat = new Shop\Views\Catalog;
         if (isset($_REQUEST['query']) && !isset($_REQUEST['clearsearch'])) {

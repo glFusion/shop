@@ -46,14 +46,14 @@ list($action, $actionval) = $Request->getAction($expected);
 switch ($action) {
 case 'approve':
     if (isset($Request['aff_uid'])) {
-        Affiliate::Restore($Request->getRaw('aff_uid'));
+        Affiliate::Restore($Request->get('aff_uid'));
     }
     echo COM_refresh(SHOP_ADMIN_URL . '/affiliates.php');
     break;
 
 case 'reject':
     if (isset($Request['aff_uid'])) {
-        Affiliate::Reject($Request->getRaw('aff_uid'));
+        Affiliate::Reject($Request->get('aff_uid'));
     }
     echo COM_refresh(SHOP_ADMIN_URL . '/affiliates.php');
     break;

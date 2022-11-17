@@ -232,7 +232,7 @@ class ProductVariant
             ->setSku($A->getString($pfx.'sku'))
             ->setSupplierRef($A->getString($pfx.'supplier_ref'))
             ->setTrackOnhand($A->getInt($pfx.'track_onhand'))
-            ->setImageIDs($A->getRaw($pfx.'img_ids'))
+            ->setImageIDs($A->get($pfx.'img_ids'))
             ->setEnabled($A->getInt($pfx.'enabled', 1));
         if (isset($A['dscp'])) {        // won't be set from the edit form
             $this->setDscp($A->getString('dscp'));

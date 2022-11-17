@@ -240,7 +240,7 @@ class DataArray implements \ArrayAccess
      * @param   string  $key    Key name
      * @return  mixed       Property value, NULL if undefined
      */
-    public function getRaw(string $key, $default=NULL)
+    public function get(string $key, $default=NULL)
     {
         if (array_key_exists($key, $this->properties)) {
             return $this->properties[$key];

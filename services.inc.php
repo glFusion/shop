@@ -372,7 +372,7 @@ function service_sendcards_shop($args, &$output, &$svc_msg)
 
     $args = new DataArray($args);
     $amt = $args->getFloat('amount');
-    $uids = $args->getRaw('members');
+    $uids = $args->get('members');
     $gid = $args->getInt('group_id');
     $exp = $args->getString('expires');
     $msg = $args->getString('message');

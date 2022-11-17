@@ -148,7 +148,7 @@ class Report
         $this->allowed_statuses = $Args->getArray('orderstatus');
         self::_setSessVar('orderstatus', $this->allowed_statuses);
         $this->setUid($Args->getInt('uid'));
-        $period = $Args->getRaw('period');
+        $period = $Args->get('period');
         $from = $Args->getString('from_date');
         $to = $Args->getString('to');
         $dates = $this->getDates($period, $from, $to);
