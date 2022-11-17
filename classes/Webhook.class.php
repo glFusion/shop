@@ -260,6 +260,17 @@ class Webhook
 
 
     /**
+     * Get the payment reference ID.
+     *
+     * @return  string      Payment ID
+     */
+    public function getRefID() : string
+    {
+        return $this->refID;
+    }
+
+
+    /**
      * Set the webhook data.
      *
      * @param   mixed   $data   Raw webhook data array
