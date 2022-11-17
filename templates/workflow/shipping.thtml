@@ -24,6 +24,24 @@
 <!-- END shipMethods -->
 </table>
 {form_footer}
+{side_buttons}
+{#
+<div class="uk-margin-right-small uk-hidden-small tm-admin-save" data-uk-scrollspy="{cls:'uk-animation-slide-bottom', delay:900}">
+		<ul>
+			<li>
+				<button class="uk-button uk-button-success tm-admin-save-button-width" type="submit" value="x" name="next_step" data-uk-tooltip="{pos:'left'}" title="{$LANG_ADMIN['next_step']}">
+						<i class="uk-icon-forward"></i>
+				</button>
+			</li>
+			<li></li>
+			<li>
+				<a href="{pi_url}/index.php" class="uk-button tm-admin-save-button-width uk-button-primary" title="{$LANG_SHOP['continue_shopping']}">
+					<i class="uk-icon uk-icon-backward"></i>
+				</a>
+			</li>
+		</ul>
+	</div>
+#}
 
 <script>
 function SHOP_setShipper(method_id)

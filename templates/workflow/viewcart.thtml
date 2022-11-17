@@ -4,7 +4,6 @@
 {!if rules_msg}
 	<div class="uk-alert uk-alert-danger alignleft">{rules_msg}</div>
 {!endif}
-
 		<input type="hidden" name="order_id" value="{order_number}" />
 
 {!if final_checkout}
@@ -174,6 +173,7 @@
 	</div>
 {!endif}
 </div>
+{side_buttons}
 </form>
 <div height="200px"></div>
 {footer}
