@@ -4194,9 +4194,9 @@ class Order
     /**
      * Create an invoice record for this order.
      *
-     * @return  integer     Invoice sequence number
+     * @return  object  $this
      */
-    public function createInvoice() : int
+    public function createInvoice() : self
     {
         global $_TABLES;
 
@@ -4210,12 +4210,16 @@ class Order
                 );
                 $this->order_seq = $db->conn->lastInsertId();
             } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $e) {
-                // noop, order_id is already in the table
+                $this->order_seq = $db->getItem(
+                    $_TABLES['shop.invoices'],
+                    'invoice_id',
+                    array('order_id' => $this->order_id)
+                );
             } catch (\Throwable $e) {
                 Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             }
         }
-        return (int)$this->order_seq;
+        return $this;
     }
 
 
