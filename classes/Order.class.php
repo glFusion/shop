@@ -341,6 +341,55 @@ class Order
 
 
     /**
+     * Get order information for a customer in XML format.
+     * Used for privacy export. Only invoiced orders are included.
+     *
+     * @param   integer $uid    Customer user ID
+     * @return  string      XML containing order info
+     */
+    public static function privacyExport(int $uid) : string
+    {
+        global $_TABLES;
+
+        $retval = '';
+        $db = Database::getInstance();
+        try {
+            $stmt = $db->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.orders']} ord
+                LEFT JOIN {$_TABLES['shop.invoices']} inv ON ord.order_id = inv.order_id
+                WHERE uid = ? AND status NOT IN ('cart', 'pending') AND inv.invoice_id IS NOT NULL",
+                array($uid),
+                array(Database::INTEGER)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $stmt = false;
+        }
+        if ($stmt) {
+            while ($A = $stmt->fetchAssociative()) {
+                $Order = new self;
+                $Order->setVars($A);
+                $retval .= "<order>\n";
+                $retval .= "<id>{$Order->getOrderID()}</id>\n";
+                $retval .= "<invoice>{$Order->getInvoiceNumber()}</invoice>\n";
+                $retval .= "<date>{$Order->getOrderDate()->format('Y-m-d H:i:s T', false)}</date>\n";
+                $Order->loadItems();
+                foreach ($Order->getItems() as $OI) {
+                    $retval .= "<item>\n";
+                    $retval .= "<sku>{$OI->getSKU()}</sku>\n";
+                    $retval .= "<description>{$OI->getDscp()}</description>\n";
+                    $retval .= "<quantity>{$OI->getQuantity()}</quantity>\n";
+                    $retval .= "<price>{$OI->getPrice()}</price>\n";
+                    $retval .= "</item>\n";
+                }
+                $retval .= "</order>\n";
+            }
+        }
+        return $retval;
+    }
+
+
+    /**
      * Get the order status.
      *
      * @return  string      Order status
@@ -2017,6 +2066,18 @@ class Order
         } else {
             return $this->m_info;
         }
+    }
+
+
+    /**
+     * Load the order items into the Items array.
+     *
+     * @return  object  $this
+     */
+    public function loadItems() : self
+    {
+        $this->Items = OrderItem::getByOrder($this->order_id);
+        return $this;
     }
 
 
@@ -4418,5 +4479,51 @@ class Order
         }
         return $rows;
     }
+
+
+    /**
+     * Get a count of orders that meet the provided criteria.
+     *
+     * @param   DataArray   Parameters
+     * @return  integer     Number of carts
+     */
+    public static function count(DataArray $params) : int
+    {
+        global $_TABLES;
+
+        $retval = 0;
+        $qb = Database::getInstance()->conn->createQueryBuilder();
+        if (isset($params['order_date'])) {
+            $qb->andWhere('ord.order_date < :order_date')
+               ->setParameter('order_date', $params->getInt('order_date'), Database::INTEGER);
+        }
+        if (isset($params['last_mod'])) {
+            $last_mod = SHOP_now();
+            $last_mod->setTimestamp($ts);
+            $last_mod = $last_mod->toMySQL(false);
+            $qb->andWhere('ord.last_mod < :last_mod')
+               ->setParameter('last_mod', $last_mod, Database::STRING);
+        }
+        if (isset($params['status'])) {
+            $qb->andWhere('ord.status IN (:status)')
+               ->setParameter('status', $params->getArray('status'), Database::PARAM_STR_ARRAY);
+        }
+        try {
+            $row = $qb->select('count(*) AS cnt')
+                      ->from($_TABLES['shop.orders'], 'ord')
+                      ->leftJoin('ord', $_TABLES['shop.orderitems'], 'itm', 'ord.order_id = itm.order_id')
+                      ->having('count(itm.order_id) > 0')
+                      ->execute()
+                      ->fetchAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $row = false;
+        }
+        if (is_array($row)) {
+            $retval = (int)$row['cnt'];
+        }
+        return $retval;
+    }
+
 
 }

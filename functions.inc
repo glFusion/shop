@@ -2336,14 +2336,17 @@ function plugin_privacy_export_shop($uid, $email='', $username='', $ip='')
     $U = Shop\Customer::getInstance($uid);
     foreach ($U->getAddresses() as $Address) {
         $addr = $Address->toArray();
+        $retval .= "<address>\n";
         foreach (Shop\Customer::Fields() as $fld) {
             if ($addr[$fld] != '') {
                 $d = addSlashes(htmlentities($addr[$fld]));
                 $retval .= '<'.$fld.'>'.$d.'</'.$fld.">\n";
             }
         }
+        $retval .= "</address>\n";
     }
 
+    $retval .= Shop\Order::privacyExport($uid);
     if (!empty($retval)) {
         $retval = "<shop>\n$retval</shop>\n";
         if (function_exists('tidy_repair_string')) {
