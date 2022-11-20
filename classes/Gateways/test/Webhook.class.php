@@ -53,7 +53,7 @@ class Webhook extends \Shop\Webhook
      *
      * @return  boolean     True if valid, False if not
      */
-    public function Verify()
+    public function Verify() : bool
     {
         $this->setEvent(SHOP_getVar($this->getData(), 'status'));
         $this->setOrderID(SHOP_getVar($this->getData(), 'order_id'));
@@ -61,8 +61,8 @@ class Webhook extends \Shop\Webhook
         $this->setRefID($this->getID());
 
         if (!$this->isUniqueTxnId()) {
-            Log::write('shop_system', Log::ERROR, "Duplicate transaction ID {$this->getID()}");
-            return false;
+            // Duplicate transaction, not an error.
+            return true;
         }
 
         // Log the message here to be sure it's logged.
@@ -86,7 +86,7 @@ class Webhook extends \Shop\Webhook
      *
      * @uses    self::Verify()
      */
-    public function Dispatch()
+    public function Dispatch() : bool
     {
         global $LANG_SHOP;
 

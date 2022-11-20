@@ -52,7 +52,7 @@ class Webhook extends \Shop\Webhook
      *
      * @return  boolean     True if valid, False if not
      */
-    public function Verify()
+    public function Verify() : bool
     {
         $this->setEvent('gc_payment');
         $this->setOrderID($this->whData->order_id);
@@ -60,8 +60,8 @@ class Webhook extends \Shop\Webhook
         $retval = true;
 
         if (!$this->isUniqueTxnId()) {
-            Log::write('shop_system', Log::ERROR, "Duplicate transaction ID {$this->getID()}");
-            $retval = false;
+            // Duplicate transaction, not an error.
+            return true;
         }
 
         // Get the Shop order record and make sure it's valid.
@@ -80,10 +80,10 @@ class Webhook extends \Shop\Webhook
 
         if ($retval) {
             $this->setVerified(true);
-            return $retval;
         } else {
             echo COM_refresh(Config::get('url'));
         }
+        return $retval;
     }
 
 
@@ -94,7 +94,7 @@ class Webhook extends \Shop\Webhook
      *
      * @uses    self::Verify()
      */
-    public function Dispatch()
+    public function Dispatch() : bool
     {
         global $LANG_SHOP;
 

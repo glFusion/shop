@@ -57,7 +57,7 @@ class Webhook extends \Shop\Webhook
      *
      * @return  boolean     True on success, False on error
      */
-    public function Dispatch()
+    public function Dispatch() : bool
     {
         $retval = true;
 
@@ -324,7 +324,7 @@ class Webhook extends \Shop\Webhook
      *
      * @return  boolean     True if valid, False if not.
      */
-    public function Verify()
+    public function Verify() : bool
     {
         $status = false;        // default to invalid
 
