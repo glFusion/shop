@@ -1571,6 +1571,7 @@ class Gateway
         if (!empty($url['query'])) {
             $ipn_url .= '?' . $url['query'];
         }
+        $db = Database::getInstance();
         $whitelisted = 0;
         if (function_exists('plugin_chkversion_bad_behavior2')) {
             try {
