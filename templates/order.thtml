@@ -210,7 +210,9 @@
         <span class="orderInstructions">{$LANG_SHOP['none']}</span>
 {!endif}
         <div id="orderPaymentMethod" style="margin-top:10px;">
-            {!if 0}<span><b>{$LANG_SHOP['pmt_method']}:</b> {pmt_dscp}</span><br />{!endif}
+{!if pmt_dscp}
+            <span><b>{$LANG_SHOP['pmt_method']}:</b> {pmt_dscp}</span><br />
+{!endif}
 {!if checkout}
 {!elseif num_payments}
             <span><b>{$LANG_SHOP['pmt_status']}:</b> {pmt_status}</span>
