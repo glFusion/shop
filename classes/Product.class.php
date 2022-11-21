@@ -1783,7 +1783,7 @@ class Product
         $Cur = Currency::getInstance();
 
         // Get the related OrderItem object, if any.
-        // Used when displaying the product detail from an orde or cart view.
+        // Used when displaying the product detail from an order or cart view.
         // If none requested or the current user can't view the order, then
         // create an empty object for later use.
         // $this->sel_opts may also be set in getInstance()if an option

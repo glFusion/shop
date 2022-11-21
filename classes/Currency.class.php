@@ -99,8 +99,7 @@ class Currency
         }
         try {
             $row = Database::getInstance()->conn->executeQuery(
-                "SELECT * FROM {$_TABLES['shop.currency']}
-                WHERE code = ?",
+                "SELECT * FROM {$_TABLES['shop.currency']} WHERE code = ?",
                 array($code),
                 array(Database::STRING)
             )->fetchAssociative();
