@@ -687,6 +687,7 @@ class IPN
         $ipn = new logIPN();
         $ipn->setOrderID($order_id)
             ->setRefID($this->txn_id)   // same as TxnID for IPN messages
+            ->setTxnID($this->txn_id)
             ->setGateway($this->gw_id)
             ->setEvent($this->event)
             ->setVerified($verified)
@@ -818,6 +819,7 @@ class IPN
                 }
             }
             $this->Order->Save();
+            $this->setOrderID($order_id);
             $this->recordPayment($order_id);
 
             // Handle the purchase for each order item
@@ -1306,7 +1308,7 @@ class IPN
      *
      * @return  boolean     True if valid, False if not.
      */
-    public function Verify()
+    public function Verify() : bool
     {
         return true;
     }
@@ -1348,11 +1350,6 @@ class IPN
     {
         echo "Thanks";
         exit;
-        /*if ($status) {
-            echo COM_refresh(SHOP_URL . '/index.php?thanks=' . $this->gw_id);
-        } else {
-            echo COM_refresh(SHOP_URL . '/index.php?msg=8');
-        }*/
     }
 
 }
