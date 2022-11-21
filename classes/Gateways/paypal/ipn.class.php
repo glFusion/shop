@@ -1,7 +1,7 @@
 <?php
 /**
  * This file contains the Shop IPN class to deal with IPN transactions from Shop.
- * Based on the gl-shop Plugin for Geeklog CMS by Vincent Furia.
+ * Based on the gl-paypal Plugin for Geeklog CMS by Vincent Furia.
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2022 Lee Garner
@@ -121,13 +121,13 @@ class ipn extends \Shop\IPN
 
 
     /**
-     * Verify the transaction with Shop.
+     * Verify the transaction with Paypal.
      * Validate transaction by posting data back to the shop webserver.
      * The response from shop should include 'VERIFIED' on a line by itself.
      *
      * @return  boolean         true if successfully validated, false otherwise
      */
-    public function Verify()
+    public function Verify() : bool
     {
         // Even test transactions have to be unique
         if (!$this->isUniqueTxnId()) {

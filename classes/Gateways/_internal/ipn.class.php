@@ -78,7 +78,7 @@ class ipn extends \Shop\IPN
      *
      * @return  boolean         true if successfully validated, false otherwise
      */
-    public function Verify()
+    public function Verify() : bool
     {
         // Even test transactions have to be unique
         if (!$this->isUniqueTxnId()) {
