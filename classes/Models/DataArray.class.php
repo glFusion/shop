@@ -18,8 +18,9 @@ namespace Shop\Models;
  * User Information class.
  * @package    shop
  */
-class DataArray implements \ArrayAccess
+class DataArray implements \ArrayAccess, \Iterator
 {
+    protected $position = '';
     protected $properties = array();
 
 
@@ -342,7 +343,32 @@ class DataArray implements \ArrayAccess
         }
     }
 
+    public function rewind(): void
+    {
+        reset($this->properties);
+    }
 
+    #[ReturnTypeWillChange]
+    public function current()
+    {
+        return current($this->properties);
+    }
+
+    #[ReturnTypeWillChange]
+    public function key()
+    {
+        return key($this->position);
+    }
+
+    public function next(): void
+    {
+        next($this->properties);
+    }
+
+    public function valid(): bool
+    {
+        return key($this->properties) !== NULL;
+    }
 
 }
 
