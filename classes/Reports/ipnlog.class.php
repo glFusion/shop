@@ -237,6 +237,7 @@ class ipnlog extends \Shop\Report
                 'gateway'   => $A['gateway'],
                 'order_id'  => $A['order_id'],
                 'event'     => $A['event'],
+                'status_msg' => $A['status_msg'],
                  //'pmt_gross' => $vals['pmt_gross'],
                 //'verified'  => $vals['verified'],
                 //'pmt_status' => $vals['pmt_status'],

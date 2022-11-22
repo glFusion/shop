@@ -22,7 +22,7 @@ include_once __DIR__ . '/mysql_sample_data.php';
 $SHOP_UPGRADE = array();
 
 $_SQL = array(
-  'shop.ipnlog' => "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.ipnlog']} (
+'shop.ipnlog' => "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.ipnlog']} (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `ip_addr` varchar(15) NOT NULL,
   `ts` int(11) unsigned DEFAULT NULL,
@@ -33,6 +33,7 @@ $_SQL = array(
   `event` varchar(128) DEFAULT NULL,
   `ipn_data` text NOT NULL,
   `order_id` varchar(40) DEFAULT NULL,
+  `status_msg` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   KEY `ipnlog_ts` (`ts`),
   KEY `ipnlog_txnid` (`txn_id`),
@@ -1005,6 +1006,7 @@ $SHOP_UPGRADE['1.5.0'] = array(
     "ALTER TABLE {$_TABLES['shop.orderstatus']} ADD cust_viewable tinyint(1) unsigned not null default 0",
     "ALTER TABLE {$_TABLES['shop.orderstatus']} CHANGE notify_buyer notify_buyer tinyint(1) unsigned not null default 0",
     "ALTER TABLE {$_TABLES['shop.orderstatus']} CHANGE notify_admin notify_admin tinyint(1) unsigned not null default 0",
+    "ALTER TABLE {$_TABLES['shop.ipnlog']} ADD `status_msg` varchar(255) NOT NULL DEFAULT '' AFTER `order_id`",
 );
 
 

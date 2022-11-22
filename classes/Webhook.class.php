@@ -26,7 +26,7 @@ use glFusion\Log\Log;
  * Base webhook class.
  * @package shop
  */
-class Webhook
+abstract class Webhook
 {
     const FAILURE_UNKNOWN = 0;
     const FAILURE_VERIFY = 1;
@@ -98,6 +98,10 @@ class Webhook
     /** Payment method, comment, etc. Default is gateway name.
      * @var string */
     protected $pmt_method = '';
+
+    /** Handler status message.
+     * @var string */
+    protected $status_msg = '';
 
     /** Currency object, based on order or default.
      * @var object */
@@ -485,6 +489,7 @@ class Webhook
             ->setGateway($this->whSource)
             ->setEvent($this->whEvent)
             ->setVerified($this->isVerified())
+            ->setStatusMsg($this->status_msg)
             ->setData(json_decode($this->blob, true));
         if ($this->whTS > 0) {
             $ipn->setTimestamp($this->whTS);
@@ -587,22 +592,6 @@ class Webhook
 
 
     /**
-     * Handle what to do in the event of a purchase/IPN failure.
-     *
-     * This method does some basic failure handling.  For anything more
-     * advanced it is recommend you override this method.
-     *
-     * @param   integer $type   Type of failure that occurred
-     * @param   string  $msg    Failure message
-     */
-    protected function handleFailure(int $type = self::FAILURE_UNKNOWN, string $msg = '') : void
-    {
-        // Log the failure to glFusion's error log
-        $this->Error($this->gw_id . '-IPN: ' . $msg, 1);
-    }
-
-
-    /**
      * Handles the item purchases.
      * The purchase should already have been validated; this function simply
      * records the purchases. Purchased files will be emailed to the
@@ -699,7 +688,9 @@ class Webhook
             $count = 0;
         }
         if ($count > 0) {
-            Log::write('shop_system', Log::ERROR, __METHOD__ . ": Received duplicate IPN {$this->getID()} for {$this->GW->getName()}");
+            $this->setStatusMsg('Duplicate webhook');
+            Log::write('shop_system', Log::ERROR, __METHOD__ . ": Received duplicate webhook {$this->getID()} for {$this->GW->getName()}");
+            $this->logIPN();
             return false;
         } else {
             return true;
@@ -725,6 +716,19 @@ class Webhook
 
 
     /**
+     * Set the status message to be passed to the IPN log.
+     *
+     * @param   string  $msg    Status message
+     * @return  object  $this
+     */
+    protected function setStatusMsg(string $msg) : self
+    {
+        $this->status_msg = $msg;
+        return $this;
+    }
+
+
+    /**
      * Redirect or display output upon completion.
      * Typical webhooks only display a message and return HTTP 200, which is
      * done in webhook.php.
@@ -734,4 +738,7 @@ class Webhook
         return;
     }
 
+
+    public abstract function Dispatch() : bool;
+    public abstract function Verify() : bool;
 }

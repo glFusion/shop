@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2019-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.5.0
+ * @version     v1.6.0
  * @since       v1.3.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -57,6 +57,10 @@ class IPN extends \Shop\Logger
     /** Related order ID.
      * @var string */
     private $order_id = '';
+
+    /** Processing status message.
+     * @var string */
+    private $status_msg = '';
 
 
     /**
@@ -188,6 +192,19 @@ class IPN extends \Shop\Logger
 
 
     /**
+     * Set the processing status message.
+     *
+     * @param   string  $msg    Message to record
+     * @return  object  $this
+     */
+    public function setStatusMsg(string $msg) : self
+    {
+        $this->status_msg = $msg;
+        return $this;
+    }
+
+
+    /**
      * Write the log entry
      *
      * @return  integer     New log record ID, 0 on error
@@ -217,11 +234,13 @@ class IPN extends \Shop\Logger
                     'event' => $this->event,
                     'order_id' => $this->order_id,
                     'ipn_data' => $data,
+                    'status_msg' => $this->status_msg,
                 ),
                 array(
                     Database::STRING,
                     Database::INTEGER,
                     Database::INTEGER,
+                    Database::STRING,
                     Database::STRING,
                     Database::STRING,
                     Database::STRING,
@@ -238,4 +257,3 @@ class IPN extends \Shop\Logger
     }
 
 }
-
