@@ -66,6 +66,7 @@ function ProcessForm(form_id)
 		data: data,
 		success: function(result) {
 			try {
+				$("#sku").html(result.sku+"&nbsp;");
 				if (result.allowed) {
 					$("#onhand").text(result.onhand);
 					$("#leadtime").text(result.leadtime);
@@ -74,7 +75,6 @@ function ProcessForm(form_id)
 					$("#price").html(sale_price);
 					$("#price_was").html(orig_price);
 					$("#weight").text(result.weight);
-					$("#sku").html(result.sku+"&nbsp;");
 					$("#pricedisplay").css("visibility", "");
 					SHOP_changeImages(result.images);
 					$("button#btn_add_cart_{frm_id}").prop("disabled", false);
