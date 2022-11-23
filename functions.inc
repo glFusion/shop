@@ -1240,6 +1240,8 @@ function phpblock_shop_categories()
  */
 function phpblock_shop_popular()
 {
+    global $_TABLES;
+
     if (!SHOP_access_check()) return '';
 
     $limit = (int)Config::get('blk_popular_limit');
