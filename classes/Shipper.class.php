@@ -34,7 +34,7 @@ class Shipper
 
     /** Table key for DBO functions
      * @var string */
-    protected static $TABLE = 'shop.shipping';
+    public static $TABLE = 'shop.shipping';
 
     /** Minimum units. Used since zero indicates free.
      * @const float */

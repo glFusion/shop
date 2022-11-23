@@ -37,7 +37,7 @@ class Plugin extends \Shop\Product
 
     /** Table key. Blank value will cause no action to be taken.
      * @var string */
-    protected static $TABLE = 'shop.plugin_products';
+    public static $TABLE = 'shop.plugin_products';
 
 
     /** URL to product detail page, if any.

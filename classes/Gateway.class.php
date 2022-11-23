@@ -50,7 +50,7 @@ class Gateway
 
     /** Table name, used by DBO class.
      * @var string */
-    protected static $TABLE = 'shop.gateways';
+    public static $TABLE = 'shop.gateways';
 
     /** Items on this order.
      * @var array */

@@ -26,7 +26,7 @@ class Category
 
     /** Key field name.
      * @var string */
-    protected static $TABLE = 'shop.categories';
+    public static $TABLE = 'shop.categories';
 
     /** ID Field name.
      * @var string */

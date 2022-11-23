@@ -25,11 +25,7 @@ class Country extends RegionBase
 {
     /** Country DB table key.
      * @var string */
-    protected static $TABLE = 'shop.countries';
-
-    /** Cache tag.
-     * @var string */
-    protected static $TAG = 'countries';
+    public static $TABLE = 'shop.countries';
 
     /** Table type, used to create variable names.
      * .@var string */

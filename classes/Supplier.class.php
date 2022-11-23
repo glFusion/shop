@@ -26,7 +26,7 @@ class Supplier extends Address
 
     /** Table name, used by DBO.
      * @var string */
-    protected static $TABLE = 'shop.suppliers';
+    public static $TABLE = 'shop.suppliers';
 
     /** Key field ID, used by DBO.
      * @var string */

@@ -47,7 +47,7 @@ class Workflow
 
     /** Database table name.
      * @var string */
-    protected static $TABLE = 'shop.workflows';
+    public static $TABLE = 'shop.workflows';
 
     /** Workflow Name.
      * @var string */
@@ -121,7 +121,7 @@ class Workflow
                     $workflows[] = new self($A);
                 }
             }
-            Cache::set($cache_key, $workflows, 'workflows');
+            Cache::set($cache_key, $workflows, self::$TABLE);
         }
         return $workflows;
     }
@@ -332,7 +332,7 @@ class Workflow
             Log::write('shop_system', Log::ERROR, $e->getMessage());
             return -1;
         }
-        Cache::clear('workflows');
+        Cache::clear(self::$TABLE);
         return $newvalue;
     }
 

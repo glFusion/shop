@@ -27,7 +27,7 @@ class Feature
 
     /** Table key, used by DBO class.
      * @var string */
-    protected static $TABLE = 'shop.features';
+    public static $TABLE = 'shop.features';
 
     /** ID Field name, used by DBO class.
      * @var string */

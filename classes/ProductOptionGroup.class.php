@@ -27,7 +27,7 @@ class ProductOptionGroup
 
     /** Table key, used by DBO class.
      * @var string */
-    protected static $TABLE = 'shop.prod_opt_grps';
+    public static $TABLE = 'shop.prod_opt_grps';
 
     /** ID Field name, used by DBO class.
      * @var string */

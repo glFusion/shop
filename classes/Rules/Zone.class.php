@@ -37,7 +37,7 @@ class Zone
 
     /** Table key for DBO utilities.
      * @var string */
-    protected static $TABLE = 'shop.zone_rules';
+    public static $TABLE = 'shop.zone_rules';
 
     /** ID Field name for DBO utilities.
      * @var string */

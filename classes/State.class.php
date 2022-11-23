@@ -25,14 +25,10 @@ class State extends RegionBase
 {
     /** Table key.
      * @var string */
-    protected static $TABLE = 'shop.states';
-
-    /** Cache tag.
-     * @var string */
-    protected static $TAG = 'states';
+    public static $TABLE = 'shop.states';
 
     /** Table type, used to create variable names.
-     * .@var string */
+     * @var string */
     protected static $KEY = 'state';
 
     /** State DB record ID.

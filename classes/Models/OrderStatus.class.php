@@ -73,7 +73,7 @@ class OrderStatus
 
     /** Table name.
      * @var string */
-    protected static $TABLE = 'shop.orderstatus';
+    public static $TABLE = 'shop.orderstatus';
 
     /** Record ID.
      * @var integer */
