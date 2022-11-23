@@ -297,6 +297,7 @@ class Upgrade
                 'templates/feeds/catalog/facebook.thtml',
                 // 1.6.0
                 'classes/Catalog.class.php',
+                'templates/viewcart.thtml',
             ),
             // public_html/shop
             $_CONF['path_html'] . 'shop' => array(
