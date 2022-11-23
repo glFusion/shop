@@ -359,7 +359,7 @@ class OrderItem
         $this->id = $A->getInt('id');
         $this->order_id = $A->getString('order_id');
         $this->product_id = $A->getString('product_id');
-        $this->setSKU($A->getString('sku'));
+        $this->variant_id = $A->getInt('variant_id');
         $this->dscp = $A->getString('description');
         $this->quantity = $A->getInt('quantity');
         $this->expiration = $A->getInt('expiration');
@@ -376,8 +376,8 @@ class OrderItem
         $this->handling = $A->getFloat('handling');
         $this->tax = $A->getFloat('tax');
         $this->tax_rate = $A->getFloat('tax_rate');
-        $this->variant_id = $A->getInt('variant_id');
         $this->setQtyShipped($A->getInt('qty_shipped'));
+        $this->setSKU($A->getString('sku'));
         return $this;
     }
 

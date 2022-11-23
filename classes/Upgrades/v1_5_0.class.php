@@ -200,6 +200,36 @@ class v1_5_0 extends Upgrade
             Config::set('ena_ratings', 2, true);
         }
 
+        // Fix the SKU valuse in OrderItems. Previously did not include variants
+        try {
+            $stmt = $db->conn->executeQuery(
+                "SELECT oi.id, oi.sku, oi.variant_id, pv.sku AS pv_sku
+                FROM {$_TABLES['shop.orderitems']} oi
+                LEFT JOIN {$_TABLES['shop.product_variants']} pv ON pv.pv_id = oi.variant_id
+                WHERE oi.variant_id > 0 AND pv.pv_id IS NOT NULL"
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $stmt = false;
+        }
+        if ($stmt) {
+            while ($A = $stmt->fetchAssociative()) {
+                if (!empty($A['pv_sku'])) {
+                    try {
+                        $db->conn->update(
+                            $_TABLES['shop.orderitems'],
+                            array('sku' => $A['pv_sku']),
+                            array('id' => $A['id']),
+                            array(Database::STRING, Database::INTEGER)
+                        );
+                    } catch (\Throwable $e) {
+                        Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                        // just continue on error
+                    }
+                }
+            }
+        }
+
         return self::setVersion(self::$ver);
     }
 
