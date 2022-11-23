@@ -36,7 +36,7 @@ class Product
 
     /** Table key. Blank value will cause no action to be taken.
      * @var string */
-    protected static $TABLE = 'shop.products';
+    public static $TABLE = 'shop.products';
 
     /** Out-of-stock items can be sold and backordered.
      * @const integer */
@@ -1889,11 +1889,27 @@ class Product
         $this->_orig_price = $this->price;
         $T->set_block('product', 'OptionGroup', 'AG');
         $Sale = $this->getSale();   // Get the effective sale pricing.
+        $options_map = array();
         if ($this->hasVariant()) {
+            foreach ($this->Variants as $PV) {
+                $PV->loadOptions();
+                $opts = $PV->getOptions();
+                if (is_array($opts)) {
+                    foreach ($opts as $Opt) {
+                        $pog_id = $Opt->getGroupId();
+                        $pov_id = $Opt->getID();
+                        if (!isset($options_map[$pog_id])) {
+                            $options_map[$pog_id] = array();
+                        }
+                        $options_map[$pog_id][] = $pov_id;
+                    }
+                }
+            }
             $VarOptions = $this->Variant->getOptions();
         }
+
         foreach ($this->OptionGroups as $OG) {
-            if (count($OG->getOptions()) < 1) {
+            if (count($OG->getOptions()) < 1 || !isset($options_map[$OG->getID()])) {
                 // Could happen if options are removed leaving an empty option group.
                 continue;
             }
@@ -1922,6 +1938,9 @@ class Product
                     $sel_opt = reset($ogOpts)->getID();
                 }
                 foreach ($ogOpts as $Opt) {
+                    if (!in_array($Opt->getID(), $options_map[$OG->getID()])) {
+                        continue;
+                    }
                     $T->set_var(array(
                         'frm_id' => $frm_id,
                         'opt_id' => $Opt->getID(),
