@@ -133,6 +133,18 @@ abstract class Collection
 
 
     /**
+     * Use this to order by RAND().
+     *
+     * @return  object  $this
+     */
+    public function withRandom() : self
+    {
+        $this->_qb->addOrderBy('RAND()');
+        return $this;
+    }
+
+
+    /**
      * Return the QueryBuilder object for further query customization.
      *
      * @return  object      QueryBuilder object

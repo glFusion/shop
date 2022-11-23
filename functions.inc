@@ -1098,7 +1098,6 @@ function phpblock_shop_search()
  * Create a random product block.
  * Shows a single product selected from all enabled products.
  *
- * @uses    SHOP_phpblock_product_sql()
  * @param   string  $cat    Optional single category
  * @return  string          HTML for the block
  */
@@ -1107,15 +1106,19 @@ function phpblock_shop_random($cat='')
     if (!SHOP_access_check()) return '';
 
     $limit = (int)Config::get('blk_random_limit');
-    if ($limit < 1)
+    if ($limit < 1) {
         $limit = 1;
-
-    $sql = array('show_random = 1');
-    if ($cat != '') {
-        $sql[] = "category = '" . DB_escapeString($cat). "' ";
     }
-
-    return SHOP_phpblock_product_sql($sql, $limit);
+    $Coll = new Shop\Collections\ProductCollection;
+    $Coll->withLimit(0, $limit)
+         ->withRandom()
+         ->andWhere('show_random = 1');
+    if ($cat != '') {
+        $Coll->andWhere('category = :cat')
+             ->setParameter('cat', $cat, Database::STRING);
+    }
+    $stmt = $Coll->execute();
+    return SHOP_phpblock_product($stmt);
 }
 
 
@@ -1123,7 +1126,6 @@ function phpblock_shop_random($cat='')
  * Create a featured product block.
  * Shows a single product selected from all enabled featured products.
  *
- * @uses    SHOP_phpblock_product_sql()
  * @param   string  $cat    Optional single category
  * @return  string          HTML for the block
  */
@@ -1136,12 +1138,16 @@ function phpblock_shop_featured($cat='')
         $limit = 1;
     }
 
-    $sql = array('featured = 1');
+    $Coll = new Shop\Collections\ProductCollection;
+    $Coll->withLimit(0, $limit)
+         ->withRandom()
+         ->andWhere('featured = 1');
     if ($cat != '') {
-        $sql[] = "category = '" . DB_escapeString($cat) . "'";
+        $Coll->andWhere('category = :cat')
+             ->setParameter('cat', $cat, Database::STRING);
     }
-
-    return SHOP_phpblock_product_sql($sql, $limit);
+    $stmt = $Coll->execute();
+    return SHOP_phpblock_product($stmt);
 }
 
 
@@ -1229,8 +1235,6 @@ function phpblock_shop_categories()
  */
 function phpblock_shop_popular()
 {
-    global $_TABLES;
-
     if (!SHOP_access_check()) return '';
 
     $limit = (int)Config::get('blk_popular_limit');
@@ -1285,30 +1289,16 @@ function phpblock_shop_recent($cat='')
         $limit = 1;
     }
 
-    $db = Database::getInstance();
-    $qb = $db->conn->createQueryBuilder();
-    try {
-        $stmt = $qb->select('DISTINCT (pr.id)',
-                "(SELECT count(*) FROM {$_TABLES['shop.orderitems']} pu
-                    WHERE pu.product_id = pr.id) AS cnt"
-            )
-           ->from($_TABLES['shop.products'], 'pr')
-           ->leftJoin('pr', $_TABLES['shop.prodXcat'], 'pxc', 'pr.id = pxc.product_id')
-           ->leftJoin('pxc', $_TABLES['shop.categories'], 'c', 'pxc.cat_id = c.cat_id')
-           ->where('pr.enabled = 1')
-           ->andWhere('c.enabled=1 OR c.enabled IS NULL')
-           ->andWhere($db->getAccessSql('', 'c.grp_access'))
-           ->having('cnt > 0')
-           ->orderBy('dt_add', 'DESC')
-           ->setFirstResult(0)
-           ->setMaxResults($limit)
-           ->execute();
-    } catch (\Throwable $e) {
-        Log::write('system', Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
-        $stmt = false;
+    $Coll = new Shop\Collections\ProductCollection;
+    $Coll->withLimit(0, $limit)
+         ->andWhere('featured = 1')
+         ->orderBy('dt_add', 'DESC');
+    if ($cat != '') {
+        $Coll->andWhere('category = :cat')
+             ->setParameter('cat', $cat, Database::STRING);
     }
-    $retval = SHOP_phpblock_product($stmt);
-    return $retval;
+    $stmt = $Coll->execute();
+    return SHOP_phpblock_product($stmt);
 }
 
 
@@ -1369,56 +1359,6 @@ function SHOP_errorMessage($msg = '', $type = '', $header = '')
 
 
 /**
- * Create the SQL for a product block and return the block contents.
- *
- * @uses    SHOP_phpblock_product()
- * @param   string  $where  Search condition, starting with AND
- * @param   integer $limit  Number of items to show.
- * @return  string      HTML for the random-product block
- */
-function SHOP_phpblock_product_sql(?array $sql=NULL, ?int $limit=NULL)
-{
-    global $_TABLES, $LANG_SHOP;
-
-    $retval = '';
-    $limit = (int)$limit;
-
-    // The "c.enabled IS NULL" is to allow products which have
-    // no category record, as long as the product is enabled.
-    $db = Database::getInstance();
-    $qb = $db->conn->createQueryBuilder();
-    $qb->select('id')
-       ->from($_TABLES['shop.products'], 'p')
-       ->leftJoin('p', $_TABLES['shop.prodXcat'], 'pxc', 'pxc.product_id = p.id')
-       ->leftJoin('pxc', $_TABLES['shop.categories'], 'c', 'pxc.cat_id = c.cat_id')
-       ->where('p.enabled = 1')
-       ->andWhere('c.enabled = 1 OR c.enabled IS NULL')
-       ->andWhere($db->getAccessSql('', 'c.grp_access'))
-       ->orderBy('RAND()');
-    if ($limit > 0) {
-    $qb->setFirstResult(0)
-       ->setMaxResults($limit);
-    }
-    if (is_array($sql)) {
-        foreach ($sql AS $s) {
-            $qb->andWhere($s);
-        }
-    }
-
-    try {
-        $stmt = $qb->execute();
-    } catch (\Throwable $e) {
-        Log::write('system', Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
-        $stmt = false;
-    }
-    if ($stmt) {
-        $retval = SHOP_phpblock_product($stmt);
-    }
-    return $retval;
-}
-
-
-/**
  * Create a product block.
  * Takes the supplied SQL and executes the query, formatting the block
  * and returning the HTML.
@@ -1427,7 +1367,7 @@ function SHOP_phpblock_product_sql(?array $sql=NULL, ?int $limit=NULL)
  * @param   string  $sql    Complete SQL query to be executed.
  * @return  string          HTML for the product block.
  */
-function SHOP_phpblock_product($stmt)
+function SHOP_phpblock_product($stmt) : string
 {
     global $_TABLES, $_CONF;
 

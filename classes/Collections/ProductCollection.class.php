@@ -113,25 +113,6 @@ class ProductCollection extends Collection
 
 
     /**
-     * Add a field and direction for sorting results.
-     *
-     * @param   string  $fld    Field name
-     * @param   string  $dir    Direction
-     * @return  object  $this
-     */
-    public function withOrderBy(string $fld, string $dir='ASC') : self
-    {
-        $dir = strtoupper($dir);
-        if ($dir != 'ASC') {
-            $dir = 'DESC';
-        }
-        $fld = $tihs->_db->conn->quoteIdentifier($fld);
-        $this->qb->addOrderBy($fld, $dir);
-        return $this;
-    }
-
-
-    /**
      * Add a "having" clause to the sql.
      *
      * @param   string  $str    Full clause
