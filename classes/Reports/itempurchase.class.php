@@ -93,6 +93,11 @@ class itempurchase extends \Shop\Report
                 'sort'  => true,
             ),
             array(
+                'text'  => 'SKU',
+                'field' => 'sku',
+                'sort'  => true,
+            ),
+            array(
                 'text'  => $LANG_SHOP['order'],
                 'field' => 'order_id',
                 'sort'  => true,
@@ -203,6 +208,7 @@ class itempurchase extends \Shop\Report
                 $total_total += $order_total;
                 $items[$A['id']] = array(
                     'item_name'     => $this->remQuote($this->item_dscp),
+                    'sku'           => $this->remQuote($A['sku']),
                     'order_id'      => $this->remQuote($A['order_id']),
                     'order_date'    => $order_date->format('Y-m-d', true),
                     'customer'      => $this->remQuote($customer),
@@ -261,6 +267,7 @@ class itempurchase extends \Shop\Report
             foreach ($items as $item) {
                 $T->set_var(array(
                     'item_name'     => $item['item_name'],
+                    'sku'           => $item['sku'],
                     'order_id'      => $item['order_id'],
                     'order_date'    => $item['order_date'],
                     'customer'      => $item['customer'],
