@@ -744,6 +744,23 @@ class Category
 
 
     /**
+     * Set data into the cache. Makes sure the proper tags are set.
+     *
+     * @param   string  $key    Cache key
+     * @param   mixed   $data   Data to set
+     * @param   array   $tags   Optional extra cache tags
+     */
+    public static function setCache(string $key, $data, ?array $tags=NULL) : void
+    {
+        $tag = array(self::$TABLE);
+        if (is_array($tags)) {
+            $tag = array_merge($tag, $tags);
+        }
+        Cache::set($key, $data, $tag);
+    }
+
+
+    /**
      * Read all the categories into a static array.
      *
      * @param   integer $root_id    Root category ID

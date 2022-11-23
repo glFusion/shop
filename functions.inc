@@ -1079,11 +1079,16 @@ function phpblock_shop_search()
     $cache_key = 'cat_options_cat_id_cat_name';
     $category_options = Shop\Cache::get($cache_key);
     if ($category_options === NULL) {
-        $category_options = COM_optionList($_TABLES['shop.categories'],
-            'cat_id, cat_name', '', 1, SEC_buildAccessSql(''));
+        $category_options = COM_optionList(
+            $_TABLES['shop.categories'],
+            'cat_id, cat_name',
+            '',
+            1,
+            SEC_buildAccessSql('')
+        );
         // Configured cache age is not used since the cache will be
         // cleared when categories are changed.
-        Shop\Cache::set($cache_key, $category_options, 'categories');
+        Shop\Category::setCache($cache_key, $category_options);
     }
     $T->set_var(array(
         'category_options'  => $category_options,
