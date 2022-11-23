@@ -32,7 +32,7 @@ class ProductVariant
 
     /** Table name, for DBO operations.
      * @var string */
-    protected static $TABLE = 'shop.product_variants';
+    public static $TABLE = 'shop.product_variants';
 
     /** Key field name, for DBO operations.
      * @var string */
@@ -107,10 +107,6 @@ class ProductVariant
     /** Stock level object.
      * @var object */
     private $Stock = NULL;
-
-    /** Cache tag used for ProductOptions.
-     * @var string */
-    private const TAG = 'shop.product_variants';
 
 
     /**
@@ -303,7 +299,7 @@ class ProductVariant
 
 
     /**
-     * Load the product attributs into the options array.
+     * Load the product attributes into the options array.
      *
      * @access  public  To be called during upgrade
      * @return  object  $this
@@ -339,7 +335,7 @@ class ProductVariant
                 Cache::set(
                     $cache_key,
                     $this->Options,
-                    array('shop.products', 'options', $this->getID())
+                    array(Product::$TABLE, 'options', $this->getID())
                 );
             }
         }
@@ -988,8 +984,7 @@ class ProductVariant
                 return false;
             }
         }
-        Cache::clear('shop.products');
-        Cache::clear(self::TAG);
+        Cache::clear(Product::$TABLE);
         return true;
     }
 
@@ -1118,7 +1113,7 @@ class ProductVariant
             DB_query($sql);
         }
         self::reOrder($item_id);
-        Cache::clear(self::TAG);
+        Cache::clear(self::$TABLE);
         return true;
     }
 
@@ -1149,43 +1144,64 @@ class ProductVariant
             }
         }
 
-        if ($this->pv_id == 0) {
-           if (isset($A['pv_groups'])) {
-               return self::saveNew($A);
-           } else {
-                $sql1 = "INSERT INTO {$_TABLES['shop.product_variants']} SET ";
-                $sql3 = '';
-           }
-        } else {
-            $sql1 = "UPDATE {$_TABLES['shop.product_variants']} SET ";
-            $sql3 = " WHERE pv_id = '{$this->pv_id}'";
+        if ($A->getString('price') === '') {
+            // Empty string, not "0", to calculate price from the options.
+            $this->price = 0;
+            foreach ($this->getOptions() as $PVO) {
+                $this->price += $PVO->getPrice();
+            }
         }
-        $sql2 = "item_id = '" . (int)$this->item_id . "',
-            sku = '" . DB_escapeString($this->sku) . "',
-            supplier_ref = '" . DB_escapeString($this->supplier_ref) . "',
-            price = '" . (float)$this->price . "',
-            weight = '" . (float)$this->weight . "',
-            shipping_units = '" . (float)$this->shipping_units . "',
-            img_ids = '" . DB_escapeString(implode(',', $this->images)) . "',
-            dscp = '" . DB_escapeString(json_encode($this->dscp)) . "'";
-            //track_onhand = '{$this->getTrackOnhand()}',
-            //reorder = " . (float)$this->reorder;
-            //onhand = " . (float)$this->onhand . ",
-        $sql = $sql1 . $sql2 . $sql3;
-        //echo $sql;die;
-        Log::write('shop_system', Log::DEBUG, $sql);
-        DB_query($sql);
-        if (!DB_error()) {
+
+        $values = array(
+            'item_id' => $this->item_id,
+            'sku' => $this->sku,
+            'supplier_ref' => $this->supplier_ref,
+            'price' => $this->price,
+            'weight' => $this->weight,
+            'shipping_units' => $this->shipping_units,
+            'img_ids' => implode(',', $this->images),
+            'dscp' => JSON::encode($this->dscp),
+        );
+        $types = array(
+            Database::INTEGER,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+        );
+        $db = Database::getInstance();
+        try {
             if ($this->pv_id == 0) {
-                $this->pv_id = DB_insertID();
+               if (isset($A['pv_groups'])) {
+                    return self::saveNew($A);
+               } else {
+                    $db->conn->insert(
+                        $_TABLES['shop.product_variants'],
+                        $values,
+                        $types
+                    );
+                    $this->pv_id = $db->conn->lastInsertId();
+                }
+            } else {
+                $types[] = Database::INTEGER;
+                $db->conn->update(
+                    $_TABLES['shop.product_variants'],
+                    $values,
+                    array('pv_id' => $this->pv_id),
+                    $types
+                );
             }
             Stock::getByItem($this->item_id, $this->pv_id)
                 ->withOnhand($this->getOnhand())
                 ->withReserved($this->getReserved())
                 ->Save();
             $retval = true;
-        } else {
-            $retval = false;;
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $retval = false;
         }
 
         // Create two standardized arrays to detect new and removed option vals.
@@ -1210,16 +1226,26 @@ class ProductVariant
                 $sql_vals = implode(',', $vals);
                 $sql = "INSERT IGNORE INTO {$_TABLES['shop.variantXopt']}
                     (pv_id, pov_id) VALUES $sql_vals";
-                DB_query($sql);
+                try {
+                    $db->conn->executeStatement($sql);
+                } catch (\Throwable $e) {
+                    Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                }
             }
             if (!empty($removed)) {
-                $removed = implode(',', $removed);
-                $sql = "DELETE FROM {$_TABLES['shop.variantXopt']}
-                    WHERE pv_id = " . $this->getID() . " AND pov_id IN ($removed)";
-                DB_query($sql);
+                try {
+                    $db->conn->executeStatement(
+                        "DELETE FROM {$_TABLES['shop.variantXopt']}
+                        WHERE pv_id = ? AND pov_id IN (?)",
+                        array($this->getID(), $removed),
+                        array(Database::INTEGER, Database::PARAM_INT_ARRAY)
+                    );
+                } catch (\Throwable $e) {
+                    Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                }
             }
         }
-        Cache::clear(self::TAG);
+        Cache::clear(self::$TABLE);
         return $retval;
     }
 
@@ -1237,7 +1263,7 @@ class ProductVariant
         DB_delete($_TABLES['shop.product_variants'], 'pv_id', $id);
         DB_delete($_TABLES['shop.variantXopt'], 'pv_id', $id);
         Stock::deleteByVariant($id);
-        Cache::clear(self::TAG);
+        Cache::clear(self::$TABLE);
     }
 
 
@@ -1388,7 +1414,7 @@ class ProductVariant
             $order += $stepNumber;
         }
         if ($changed) {
-            Cache::clear(self::TAG);
+            Cache::clear(self::$TABLE);
         }
     }
 
@@ -1860,8 +1886,8 @@ class ProductVariant
     {
         $newval = self::_toggle($oldvalue, 'enabled', $id);
         if ($newval != $oldvalue) {
-            Cache::clear('shop.products');
-            Cache::clear(self::TAG);
+            Cache::clear(Product::$TABLE);
+            Cache::clear(self::$TABLE);
         }
         return $newval;
     }
@@ -1937,8 +1963,8 @@ class ProductVariant
                 SELECT $pv_id, pov_id FROM {$_TABLES['shop.variantXopt']} WHERE pv_id = {$PV->getID()}";
             DB_query($sql);
         }
-        Cache::clear('shop.products');
-        Cache::clear(self::TAG);
+        Cache::clear(Product::$TABLE);
+        Cache::clear(self::$TABLE);
     }
 
     /**
@@ -1985,6 +2011,7 @@ class ProductVariant
                 $retval[] = new DataArray($row);
             }
         }
+        var_dump($retval);die;
         return $retval;
     }
 
