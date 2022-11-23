@@ -6,7 +6,6 @@
 						<i class="uk-icon-forward"></i>
 				</button>
 			</li>
-			<li></li>
 			<li>
 				<a href="{pi_url}/index.php" class="uk-button tm-admin-save-button-width uk-button-primary" data-uk-tooltip="{pos:'left'}" title="{$LANG_SHOP['continue_shopping']}">
 					<i class="uk-icon uk-icon-backward"></i>

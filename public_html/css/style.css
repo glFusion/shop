@@ -983,7 +983,7 @@ div.cart {
 }
 div.cart-item {
     margin-bottom: 15px;
-	padding-right: 10px;
+	/*padding-right: 10px;*/
 }
 .cart-item .cart-item-product .cart-item-image {
     float:left;
