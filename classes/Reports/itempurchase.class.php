@@ -236,7 +236,11 @@ class itempurchase extends \Shop\Report
                 if (!empty($cbox_headers)) {
                     $cbox_flds = array();
                     foreach ($cbox_headers as $opt_id=>$dummy) {
-                        if (in_array($opt_id, $extras['options'])) {
+                        if (
+                            isset($extras['options']) &&
+                            is_array($extras['options']) &&
+                            in_array($opt_id, $extras['options'])
+                        ) {
                             $cbox_flds[$opt_id] = 'X';
                         } else {
                             $cbox_flds[$opt_id] = '';
