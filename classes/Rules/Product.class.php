@@ -654,6 +654,7 @@ class Product
     public static function clearCache() : void
     {
         Cache::clear(self::TAG);
+        ProductClass::clearCache();
     }
 
 }
