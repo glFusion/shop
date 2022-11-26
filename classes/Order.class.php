@@ -351,7 +351,7 @@ class Order
     {
         global $_TABLES;
 
-        $retval = '';
+        $retval = "<orders>\n";
         $db = Database::getInstance();
         try {
             $stmt = $db->conn->executeQuery(
@@ -372,8 +372,9 @@ class Order
                 $retval .= "<order>\n";
                 $retval .= "<id>{$Order->getOrderID()}</id>\n";
                 $retval .= "<invoice>{$Order->getInvoiceNumber()}</invoice>\n";
-                $retval .= "<date>{$Order->getOrderDate()->format('Y-m-d H:i:s T', false)}</date>\n";
+                $retval .= "<timestamp>{$Order->getOrderDate()->toUnix()}</timestamp>\n";
                 $Order->loadItems();
+                $retval .= "<items>\n";
                 foreach ($Order->getItems() as $OI) {
                     $retval .= "<item>\n";
                     $retval .= "<sku>{$OI->getSKU()}</sku>\n";
@@ -382,10 +383,11 @@ class Order
                     $retval .= "<price>{$OI->getPrice()}</price>\n";
                     $retval .= "</item>\n";
                 }
+                $retval .= "</items>\n";
                 $retval .= "</order>\n";
             }
         }
-        return $retval;
+        return $retval . "</orders>\n";
     }
 
 

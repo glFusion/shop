@@ -2270,6 +2270,7 @@ function plugin_getiteminfo_shop($id, $what, $uid=0, $options=array())
 /**
  * Export user data when requested.
  * - Billing and Shipping addresses.
+ * - Order information with items.
  *
  * @param   integer $uid        User ID
  * @param   string  $email      User Email Address (not used)
@@ -2281,6 +2282,7 @@ function plugin_privacy_export_shop($uid, $email='', $username='', $ip='')
 {
     $retval = '';
     $U = Shop\Customer::getInstance($uid);
+    $retval .= "<addresses>\n";
     foreach ($U->getAddresses() as $Address) {
         $addr = $Address->toArray();
         $retval .= "<address>\n";
@@ -2292,13 +2294,11 @@ function plugin_privacy_export_shop($uid, $email='', $username='', $ip='')
         }
         $retval .= "</address>\n";
     }
+    $retval .= "</addresses>\n";
 
     $retval .= Shop\Order::privacyExport($uid);
     if (!empty($retval)) {
         $retval = "<shop>\n$retval</shop>\n";
-        if (function_exists('tidy_repair_string')) {
-            $retval = tidy_repair_string($retval, array('input-xml' => 1));
-        }
     }
     return $retval;
 }
