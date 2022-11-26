@@ -3,9 +3,9 @@
  * Payment report.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2020-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.5.0
  * @since       v1.3.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -286,50 +286,46 @@ class payment extends \Shop\Report
         }
 
         // Allow all json-encoded data to be available to the template
-        $gw = Gateway::create($A['pmt_gateway']);
-        $gw->loadSDK();
-        if ($gw !== NULL) {
-            $Dt = new \Date($A['pmt_ts'], $_CONF['timezone']);
-            $T = $this->getTemplate('single');
-            $T->set_var(array(
-                'pmt_id'    => $A['pmt_id'],
-                'pmt_amount' => Currency::getInstance()->Format($A['pmt_amount']),
-                'time'      => SHOP_dateTooltip($Dt),
-                'order_link' => COM_createLink(
-                    $A['pmt_order_id'],
-                    SHOP_ADMIN_URL . '/orders.php?order=' . $A['pmt_order_id']
-                ),
-                'txn_id'    => $A['pmt_ref_id'],
-                'gateway'   => $A['pmt_gateway'],
-                'comment'   => $A['pmt_comment'],
-                'ipn_count' => $ipn_count,
-            ) );
+        $Dt = new \Date($A['pmt_ts'], $_CONF['timezone']);
+        $T = $this->getTemplate('single');
+        $T->set_var(array(
+            'pmt_id'    => $A['pmt_id'],
+            'pmt_amount' => Currency::getInstance()->Format($A['pmt_amount']),
+            'time'      => SHOP_dateTooltip($Dt),
+            'order_link' => COM_createLink(
+                $A['pmt_order_id'],
+                SHOP_ADMIN_URL . '/orders.php?order=' . $A['pmt_order_id']
+            ),
+            'txn_id'    => $A['pmt_ref_id'],
+            'gateway'   => $A['pmt_gateway'],
+            'comment'   => $A['pmt_comment'],
+            'ipn_count' => $ipn_count,
+        ) );
 
-            switch ($ipn_count) {
-            case 0:
-                // Nothing to display
-                break;
-            case 1:
-                // Set the single ipn on the page, not in a dropdown block
-                $T->set_var('single_ipn', var_export(json_decode($ipns[0]['ipn_data'], true), true));
-                break;
-            default:
-                // Show the clickable links to expand each IPN log
-                $T->set_block('report', 'ipnRows', 'ipnRow');
-                foreach ($ipns as $ipn) {
-                    $dt = new \Date($ipn['ts']);
-                    $T->set_var(array(
-                        'ipn_id' => $ipn['id'],
-                        'ipn_date' => $dt->toMySQL(true),
-                        'ipn_event' => $ipn['event'],
-                        'ipn_data' => var_export(json_decode($ipn['ipn_data'], true), true),
-                    ) );
-                    $T->parse('ipnRow', 'ipnRows', true);
-                }
-                break;
+        switch ($ipn_count) {
+        case 0:
+            // Nothing to display
+            break;
+        case 1:
+            // Set the single ipn on the page, not in a dropdown block
+            $T->set_var('single_ipn', var_export(json_decode($ipns[0]['ipn_data'], true), true));
+            break;
+        default:
+            // Show the clickable links to expand each IPN log
+            $T->set_block('report', 'ipnRows', 'ipnRow');
+            foreach ($ipns as $ipn) {
+                $dt = new \Date($ipn['ts']);
+                $T->set_var(array(
+                    'ipn_id' => $ipn['id'],
+                    'ipn_date' => $dt->toMySQL(true),
+                    'ipn_event' => $ipn['event'],
+                    'ipn_data' => var_export(json_decode($ipn['ipn_data'], true), true),
+                ) );
+                $T->parse('ipnRow', 'ipnRows', true);
             }
-            $retval = $T->parse('output', 'report');
+            break;
         }
+        $retval = $T->parse('output', 'report');
         return $retval;
     }
 
