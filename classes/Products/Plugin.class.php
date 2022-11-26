@@ -1,17 +1,20 @@
 <?php
 /**
  * Class to interface with plugins for product information.
+ * Allows configuration of default product info for plugins that may not
+ * supply their own product details.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018-2021 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.4.1
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop\Products;
+use glFusion\Database\Database;
 use Shop\Currency;
 use Shop\Models\ProductType;
 use Shop\Models\CustomInfo;
@@ -35,18 +38,17 @@ class Plugin extends \Shop\Product
 {
     use \Shop\Traits\DBO;        // Import database operations
 
-    /** Table key. Blank value will cause no action to be taken.
+    /** Table key.
      * @var string */
     public static $TABLE = 'shop.plugin_products';
 
-
     /** URL to product detail page, if any.
      * @var string */
-    public $url;
+    public $url = '';
 
     /** Plugin info with item_id and other vars.
      * @var array */
-    public $pi_info;
+    public $pi_infoi = array();
 
     /** Plugin has its own detail page service function.
      * @var boolean */
@@ -85,7 +87,7 @@ class Plugin extends \Shop\Product
      * @param   string  $id     Item ID - plugin:item_id|opt1,opt2...
      * @param   array   $mods   Array of modifiers from parent::getInstance()
      */
-    public function __construct($id, $mods=array())
+    public function __construct(string $id, array $mods=array())
     {
         global $_USER, $_TABLES;
 
@@ -96,21 +98,27 @@ class Plugin extends \Shop\Product
         $this->item_id = $item_id;  // Full item id
         $this->id = $item_id;       // TODO: convert Product class to use item_id
         $item_parts = explode(':', $item_id);   // separate the plugin name and item ID
-        $this->pi_name = DB_escapeString($item_parts[0]);
+        $this->pi_name = $item_parts[0];
         array_shift($item_parts);         // Remove plugin name
         $this->pi_info['item_id'] = $item_parts;
         $this->product_id = $item_parts[0];
         $this->aff_apply_bonus = false;     // typical for plugins
 
         // Get the admin-supplied configs for the plugin
-        $sql = "SELECT * FROM {$_TABLES[self::$TABLE]}
-            WHERE pi_name = '{$this->pi_name}' LIMIT 1";
-        $res = DB_query($sql);
-        if ($res && DB_numRows($res) == 1) {
-            $A = DB_fetchArray($res, false);
-            $def_price = (float)$A['price'];
-            $def_taxable = $A['taxable'] ? 1 : 0;
-            $def_prod_type = (int)$A['prod_type'];
+        try {
+            $row = Database::getInstance()->conn->executeQuery(
+                "SELECT * FROM {$_TABLES[self::$TABLE]} WHERE pi_name = ? LIMIT 1",
+                array($this->pi_name),
+                array(Database::STRING)
+            )->fetchAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $row = false;
+        }
+        if (is_array($row)) {
+            $def_price = (float)$row['price'];
+            $def_taxable = $row['taxable'] ? 1 : 0;
+            $def_prod_type = (int)$row['prod_type'];
         } else {
             $def_price = 0;
             $def_taxable = 0;
@@ -136,7 +144,7 @@ class Plugin extends \Shop\Product
                 3 => &$svc_msg,
             )
         );
-        if ($status == PLG_RET_OK) {
+        if ($status === PLG_RET_OK) {
             $A = new DataArray($A);
             $this->price = $A->getFloat('price', $def_price);
             $this->name = $A->getString('name');
@@ -769,7 +777,13 @@ class Plugin extends \Shop\Product
     }
 
 
-    public static function edit($id = 0)
+    /**
+     * Edit the configuration for a plugin product.
+     *
+     * @param   integer $id     DB record ID
+     * @return  string      Editing form
+     */
+    public static function edit(int $id) : string
     {
         global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_SHOP_HELP, $_TABLES;
 
@@ -777,22 +791,24 @@ class Plugin extends \Shop\Product
         $taxable = 0;
         $price = 0;
         $prod_type = ProductType::PLUGIN;
-        $id = (int)$id;
-        if ($id > 0) {
-            $sql = "SELECT * FROM {$_TABLES[self::$TABLE]}
-                WHERE id = $id LIMIT 1";
-            $res = DB_query($sql);
-            if ($res && DB_numRows($res) == 1) {
-                $A = DB_fetchArray($res, false);
-                $pi_name = $A['pi_name'];
-                $taxable = $A['taxable'] ? 1 : 0;
-                $price = $A['price'];
-                $prod_type = $A['prod_type'];
-            }
-        }
-
         if ($id > 0) {
             $retval = COM_startBlock($LANG_SHOP['edit_item'] . ': ' . $pi_name);
+            try {
+                $row = Database::getInstance()->conn->executeQuery(
+                    "SELECT * FROM {$_TABLES[self::$TABLE]} WHERE id = ?",
+                    array($id),
+                    array(Database::INTEGER)
+                )->fetchAssociative();
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $row = false;
+            }
+            if (is_array($row)) {
+                $pi_name = $row['pi_name'];
+                $taxable = $row['taxable'] ? 1 : 0;
+                $price = $row['price'];
+                $prod_type = $row['prod_type'];
+            }
         } else {
             $retval = COM_startBlock($LANG_SHOP['new_item'] . ': ' . $LANG_SHOP['pi_name']);
         }
@@ -819,39 +835,60 @@ class Plugin extends \Shop\Product
      *
      * @param   integer $id     DB record ID of plugin info
      */
-    public static function deleteConfig($id)
+    public static function deleteConfig(int $id) : void
     {
         global $_TABLES;
 
-        DB_delete($_TABLES[self::$TABLE], 'id', (int)$id);
+        try {
+            Database::getInstance()->conn->delete($_TABLES[self::$TABLE], 'id', (int)$id);
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
     }
 
 
     /**
      * Save a plugin configuration.
      *
-     * @param   array   $A      Array of values from form or DB
+     * @param   DataArray   $A  Array of values from form or DB
      * @return  boolean     True on success, False on error
      */
-    public static function saveConfig($A)
+    public static function saveConfig(DataArray $A) : bool
     {
         global $_TABLES;
 
-        $pi_name = DB_escapeString($A['pi_name']);
-        $taxable = isset($A['taxable']) && $A['taxable'] ? 1 : 0;
-        $prod_type = (int)$A['prod_type'];
-        $price = (float)$A['price'];
+        $id = $A->getInt('id');
+        $values = array(
+            'pi_name' => $A->getString('pi_name'),
+            'taxable' => $A->getInt('taxable'),
+            'prod_type' => $A->getInt('prod_type'),
+            'price' => $A->getFloat('price'),
+        );
+        $types = array(
+            Database::STRING,
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::STRING,
+        );
 
-        $sql = "INSERT INTO {$_TABLES[self::$TABLE]} SET
-            pi_name = '$pi_name',
-            price = $price,
-            prod_type = $prod_type,
-            taxable = $taxable
-            ON DUPLICATE KEY UPDATE
-            price = $price,
-            prod_type = $prod_type,
-            taxable = $taxable";
-        DB_query($sql);
+        $db = Database::getInstance();
+        try {
+            if ($id > 0) {
+                $types[] = Database::INTEGER;
+                $db->update(
+                    $_TABLES[self::$TABLE],
+                    $values,
+                    array('id' => $id),
+                    $types
+                );
+            } else {
+                $db->conn->insert($_TABLES[self::$TABLE], $values, $types);
+            }
+            return true;
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return false;
+        }
     }
 
 

@@ -207,8 +207,10 @@ class Cart extends Order
         }
         if (isset($args['variant'])) {
             $PV = ProductVariant::getInstance($args->getInt('variant'));
-        } else {
+        } elseif (!Product::isPluginItem($P->getID())) {
             $PV = ProductVariant::getByAttributes($P->getID(), $options);
+        } else {
+            $PV = new ProductVariant;
         }
         if (!is_array($this->Items)) {
             $this->Items = array();
@@ -1100,6 +1102,47 @@ class Cart extends Order
         } else {
             return true;
         }
+    }
+
+
+
+    /**
+     * Get a count of carts that have items and may be abandoned.
+     *
+     * @param   integer $ts Timestamp
+     * @return  integer     Number of carts
+     */
+    public static function countOpenCarts(?int $ts=NULL) : int
+    {
+        global $_TABLES;
+
+        if ($ts === NULL) {
+            $ts = time();
+        }
+        $last_mod = SHOP_now();
+        $last_mod->setTimestamp($ts);
+        $last_mod = $last_mod->toMySQL(false);
+        $retval = 0;
+        $qb = Database::getInstance()->conn->createQueryBuilder();
+        try {
+            $row = $qb->select('count(*) AS cnt')
+                      ->from($_TABLES['shop.orders'], 'ord')
+                      ->leftJoin('ord', $_TABLES['shop.orderitems'], 'itm', 'ord.order_id = itm.order_id')
+                      ->where('ord.status = :status')
+                      ->andWhere('last_mod < :last_mod')
+                      ->having('count(itm.order_id) > 0')
+                      ->setParameter('status', OrderStatus::CART, Database::STRING)
+                      ->setParameter('last_mod', $last_mod, Database::STRING)
+                      ->execute()
+                      ->fetchAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $row = false;
+        }
+        if (is_array($row)) {
+            $retval = (int)$row['cnt'];
+        }
+        return $retval;
     }
 
 }

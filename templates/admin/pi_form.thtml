@@ -1,9 +1,9 @@
 {# begin {templatelocation} #}
+<div class="uk-alert">{$LANG_SHOP_HELP['hlp_pi_products']}</div>
 <form action="{site_admin_url}/plugins/shop/index.php" method="post" class="uk-form uk-form-horizontal"
 	enctype="multipart/form-data">
 
-<input type="hidden" name="id" value="{pi_id}" />
-<div class="uk-alert">{$LANG_SHOP_HELP['hlp_pi_products']}</div>
+	<input type="hidden" name="id" value="{id}" />
 
 	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label" for="pi_name">{$LANG_SHOP['pi_name']}:

@@ -528,7 +528,11 @@ class Order
                 }
             }
         }
-        $PV = ProductVariant::getByAttributes($args['product_id'], $pov_ids);
+        if (!Product::isPluginItem($args['product_id'])) {
+            $PV = ProductVariant::getByAttributes($args['product_id'], $pov_ids);
+        } else {
+            $PV = new ProductVariant;
+        }
         $args['variant_id'] = $PV->getID();
         $args['order_id'] = $this->order_id;    // make sure it's set
         $args['token'] = Token::create();  // create a unique token
