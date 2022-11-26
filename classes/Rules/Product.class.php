@@ -440,7 +440,7 @@ class Product
             Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
-        Cache::clear(self::TAG);
+        self::clearCache();
         return true;
     }
 
@@ -476,7 +476,7 @@ class Product
         } catch (\Exception $e) {
             Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
-        Cache::clear(self::TAG);
+        self::clearCache();
     }
 
 
@@ -653,7 +653,7 @@ class Product
      */
     public static function clearCache() : void
     {
-        Cache::clear(array(self::TAG);
+        Cache::clear(self::TAG);
     }
 
 }
