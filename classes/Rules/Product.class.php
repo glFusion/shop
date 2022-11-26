@@ -131,7 +131,7 @@ class Product
                 }
             }
         }
-        Cache::set($cache_key, $retval, array(self::TAG, Product::$TABLE));
+        Cache::set($cache_key, $retval, array(self::TAG, ProductClass::$TABLE));
         return $retval;
     }
 
