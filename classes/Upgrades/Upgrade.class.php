@@ -12,10 +12,11 @@
  * @filesource
  */
 namespace Shop\Upgrades;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 use Shop\Cache;
 use Shop\Gateway;
 use Shop\GatewayManager;
-use glFusion\Log\Log;
 
 
 /** Include the table creation strings */
@@ -336,6 +337,18 @@ class Upgrade
         $col_name = DB_escapeString($col_name);
         $res = DB_query("SHOW COLUMNS FROM {$_TABLES[$table]} LIKE '$col_name'");
         return DB_numRows($res) == 0 ? false : true;
+    }
+
+
+    /**
+     * Check if a table exists in the schema.
+     *
+     * @param   string  $table      Table name
+     * @return  boolean     True if exists, False if not
+     */
+    public static function tableExists(string $table) : bool
+    {
+        return Database::getInstance()->conn->getSchemaManager()->tablesExist(array($table));
     }
 
 

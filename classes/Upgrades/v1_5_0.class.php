@@ -34,6 +34,9 @@ class v1_5_0 extends Upgrade
             $c->set('shop_email', $admin_mail, Config::PI_NAME);
         }
 
+        // Create invoice records only if not already done.
+        $add_invoice_table = !self::tableExists($_TABLES['shop.invoices']);
+
         // Update the payment ref_id column in the IPN log.
         $upd_ref_id = !self::tableHasColumn('shop.ipnlog', 'ref_id');
         if (!self::tableHasColumn('shop.orderstatus', 'order_valid')) {
@@ -168,29 +171,33 @@ class v1_5_0 extends Upgrade
         }
 
         // Populate the invoice table with the order sequence values.
-        try {
-            $stmt = $db->conn->executeQuery(
-                "SELECT order_id, order_seq, UNIX_TIMESTAMP(last_mod) AS last_mod
-                FROM {$_TABLES['shop.orders']} WHERE order_seq > 0 ORDER BY order_seq ASC"
-            );
-        } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
-            $stmt = false;
-        }
-        if ($stmt) {
-            while ($A = $stmt->fetchAssociative()) {
-                try {
-                    $db->conn->insert(
-                        $_TABLES['shop.invoices'],
-                        array(
-                            'invoice_id' => $A['order_seq'],
-                            'order_id' => $A['order_id'],
-                            'invoice_dt' => $A['last_mod'],
-                        ),
-                        array(Database::INTEGER, Database::STRING, Database::INTEGER)
-                    );
-                } catch (\Exception $e) {
-                    Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        // This is conditional since the order_seq field may be removed in a
+        // later version.
+        if ($add_invoice_table) {
+            try {
+                $stmt = $db->conn->executeQuery(
+                    "SELECT order_id, order_seq, UNIX_TIMESTAMP(last_mod) AS last_mod
+                    FROM {$_TABLES['shop.orders']} WHERE order_seq > 0 ORDER BY order_seq ASC"
+                );
+            } catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $stmt = false;
+            }
+            if ($stmt) {
+                while ($A = $stmt->fetchAssociative()) {
+                    try {
+                        $db->conn->insert(
+                            $_TABLES['shop.invoices'],
+                            array(
+                                'invoice_id' => $A['order_seq'],
+                                'order_id' => $A['order_id'],
+                                'invoice_dt' => $A['last_mod'],
+                            ),
+                            array(Database::INTEGER, Database::STRING, Database::INTEGER)
+                        );
+                    } catch (\Exception $e) {
+                        Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                    }
                 }
             }
         }
