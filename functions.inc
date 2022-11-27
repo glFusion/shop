@@ -326,21 +326,6 @@ function plugin_deletecomment_shop($cid, $id)
 
 
 /**
- * Handle any post-processing for an edited comment.
- * Just redirects back to the product detail page.
- * The comment is actually saved in comment.php.
- *
- * @param   integer $cid    Comment ID
- * @param   mixed   $id     Item ID
- */
-function Xplugin_editcomment_shop($cid, $id)
-{
-    echo COM_refresh(Config::get('url') . '/detail.php?id=' . $id);
-    exit;
-}
-
-
-/**
  * Returns the URL of the plugin's icon.
  *
  * @return  string      URL of the icon
@@ -1204,7 +1189,7 @@ function phpblock_shop_categories()
                 $Cats[] = $A;
             }
         }
-        Shop\Cache::set($cache_key, $Cats, array('categories','products'));
+        Shop\Cache::set($cache_key, $Cats, array('shop.categories','shop.products'));
     }
     $T = new Shop\Template;
     $T->set_file(array('blk_category' => 'blk_categories.thtml'));
@@ -1967,7 +1952,7 @@ function plugin_profilesave_shop($uid=0)
         return;
     }
 
-    $apply_gc = Request::getInstance()->getString('pp_apply_gc');
+    $apply_gc = Request::getInstance()->getString('shop_apply_gc');
     if (!empty($apply_gc)) {
         Shop\Products\Coupon::Redeem($apply_gc, $uid);
     }
@@ -2617,40 +2602,6 @@ function SHOP_getUrl($def_url = '', $keep=false)
         Shop\Models\Session::clear('ret_url');
     }
     return $url;
-}
-
-
-/**
- * Display an error message.
- * Uses glFusion's typography to display an "alert" type message.
- * The provided message may be a single message string or array of strings.
- * An array will be formatted as an unnumbered list.
- *
- * @param   array|string    $msg    Single message string or array
- * @param   string          $title  Optional title string, shown above list
- * @return  string          Complete error message
- */
-function SHOP_errMsg($msg, $title = '')
-{
-    return __FUNCTION__ . ' - deprecated';
-    if (empty($msg)) return '';
-
-    $retval = '<div class="uk-alert uk-alert-danger shopErrorMsg">' . LB;
-    if (!empty($title)) {
-        $retval .= "<p>$title</p>\n";
-    }
-
-    if (is_array($msg)) {
-        $retval .= '<ul>';
-        foreach ($msg as $m) {
-            $retval .= '<li>' . $m . '</li>' . LB;
-        }
-        $retval .= '</ul>' . LB;
-    } else {
-        $retval .= $msg;
-    }
-    $retval .= "</div>\n";
-    return $retval;
 }
 
 
