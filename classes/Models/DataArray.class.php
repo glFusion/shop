@@ -1,6 +1,6 @@
 <?php
 /**
- * Utility class to get values from an array where 
+ * Utility class to handle array data.
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2022 Lee Garner <lee@leegarner.com>
@@ -15,7 +15,7 @@ namespace Shop\Models;
 
 
 /**
- * User Information class.
+ * General array handler.
  * @package    shop
  */
 class DataArray implements \ArrayAccess, \Iterator
@@ -26,14 +26,14 @@ class DataArray implements \ArrayAccess, \Iterator
 
     /**
      * Initialize the properties from a supplied string or array.
-     * Use array_merge to preserve default properties by child classes.
+     * Use array_replace to preserve default properties by child classes.
      *
      * @param   string|array    $val    Optonal initial properties
      */
     public function __construct(?array $A=NULL)
     {
         if (is_array($A)) {
-            $this->properties = array_merge($this->properties, $A);
+            $this->properties = array_replace($this->properties, $A);
         }
     }
 
@@ -357,7 +357,7 @@ class DataArray implements \ArrayAccess, \Iterator
     #[ReturnTypeWillChange]
     public function key()
     {
-        return key($this->position);
+        return key($this->properties);
     }
 
     public function next(): void
@@ -371,4 +371,3 @@ class DataArray implements \ArrayAccess, \Iterator
     }
 
 }
-
