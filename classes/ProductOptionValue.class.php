@@ -389,7 +389,7 @@ class ProductOptionValue
             $rows = $db->conn->executeQuery(
                 "SELECT pov_id, orderby FROM {$_TABLES['shop.prod_opt_vals']}
                 WHERE pog_id = ? ORDER BY orderby ASC",
-                array($og_id),
+                array($pog_id),
                 array(Database::INTEGER)
             )->fetchAllAssociative();
         } catch (\Throwable $e) {
@@ -406,7 +406,7 @@ class ProductOptionValue
                         $db->conn->update(
                             $_TABLES['shop.prod_opt_vals'],
                             array('orderby' => $order),
-                            array('pov_id' => $A['pov_id']),
+                            array('pov_id' => $row['pov_id']),
                             array(Database::INTEGER, Database::INTEGER)
                         );
                     } catch (\Throwable $e) {
