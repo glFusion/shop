@@ -47,6 +47,7 @@ Release TBD
   * Fix setting SKU in order item object to include the variant.
   * Allow disabling individual options and hide them from the product detail.
   * Add a hidden secret value to verify order during certain operations.
+  * Fill in checkboxes and text fields when viewing an order item from an order.
 
 ## v1.4.1
 Release 2022-04-07

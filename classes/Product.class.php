@@ -1791,13 +1791,21 @@ class Product
         // create an empty object for later use.
         // $this->sel_opts may also be set in getInstance()if an option
         // string is provided in the item number.
+        $sel_cbOpts = array();
+        $sel_customStrings = array();
         $this->sel_opts = array();
         if ($this->oi_id > 0) {
             $OI = new OrderItem($this->oi_id);
             foreach ($OI->getOptions() as $OIO) {
                 if ($OIO->getOptionID() > 0) {    // not a custom text field
                     $this->sel_opts[] = $OIO->getOptionID();
-                    }
+                }
+            }
+            if (isset($OI->getExtras()['options']) && is_array($OI->getExtras()['options'])) {
+                $sel_cbOpts = $OI->getExtras()['options'];
+            }
+            if (isset($OI->getExtras()['custom']) && is_array($OI->getExtras()['custom'])) {
+                $sel_customStrings = $OI->getExtras()['custom'];
             }
         } else {
             $OI = NULL;
@@ -1871,12 +1879,10 @@ class Product
             $T->set_block('product', 'CustAttrib', 'cAttr');
             $text_field_names = explode('|', $this->custom);
             foreach ($text_field_names as $id=>$text_field_name) {
-                $val = '';
-                if ($OI) {
-                    $opt = $OI->getOptionByOG(0, $text_field_name);
-                    if ($opt) {
-                        $val = $opt->getValue();
-                    }
+                if (is_array($sel_customStrings) && isset($sel_customStrings[$id])) {
+                    $val = $sel_customStrings[$id];
+                } else {
+                    $val = '';
                 }
                 $T->set_var(array(
                     'fld_id'    => "cust_text_fld_$id",
@@ -1997,6 +2003,7 @@ class Product
                     'frm_id' => $frm_id,
                     'option_dscp' => $Opt->getOptionValue(),
                     'option_id' => $Opt->getOptionID(),
+                    'option_chk' => in_array($Opt->getOptionID(), $sel_cbOpts) ? 'checked="checked"' : '',
                 ) );
                 $T->parse('cbOptions', 'checkboxOptions', true);
                 if ($cbrk != $Opt->getGroupID()) {

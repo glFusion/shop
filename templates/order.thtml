@@ -95,7 +95,7 @@
                             </div>
                             <div class="cart-item-title">
 {!if item_link}
-                                <a href="{item_link}">{item_dscp}</a>
+                                <a href="{item_link}" title="{$LANG_SHOP['view_oi_as_ordered']}" class="tooltip">{item_dscp}</a>
 {!else}
                                 {item_dscp}
 {!endif}
