@@ -454,6 +454,9 @@ class Product
                 if (isset($item[1])) {
                     $P[$id]->setSelectedOptions($item[1]);
                 }
+                if ($P[$id]->getMinOrderQty() == $P[$id]->getMaxOrderQty()) {
+                    $P[$id]->setFixedQty($P[$id]->getMinOrderQty());
+                }
             }
             return $P[$id];
         }
@@ -1764,7 +1767,7 @@ class Product
      * @param   integer $oi_id  OrderItem ID when linked from an order view
      * @return  string      HTML for the product page.
      */
-    public function Detail()
+    public function Detail() : string
     {
         global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER;
 
@@ -1892,7 +1895,6 @@ class Product
         $options_map = array();
         if ($this->hasVariant()) {
             foreach ($this->Variants as $PV) {
-                $PV->loadOptions();
                 $opts = $PV->getOptions();
                 if (is_array($opts)) {
                     foreach ($opts as $Opt) {
@@ -2150,7 +2152,6 @@ class Product
         ) );
 
         $T->set_block('product', 'SpecialFields', 'SF');
-        //var_dump($this->special_fields);die;
         foreach ($this->special_fields as $fld) {
             $T->set_var(array(
                 'sf_name'   => $fld['name'],
@@ -3100,6 +3101,23 @@ class Product
         } else {
             return min($onhand, $max);
         }
+    }
+
+
+    /**
+     * Set the fixed-quantity amount.
+     * Normally used by plugin products, this will be set for catalog
+     * products also where minimum and maximum order quantities are equal.
+     * The fixed quantity applies to the option combination, a buyer can still
+     * buy more of the base SKU.
+     *
+     * @param   integer $qty    Fixed quantity allowed to be ordered.
+     * @return  object  $this
+     */
+    public function setFixedQty(int $qty) : self
+    {
+        $this->_fixed_q = $qty;
+        return $this;
     }
 
 
