@@ -211,13 +211,13 @@ class ProductOptionGroup
      * @param   array   $A      Array of values from $_POST
      * @return  boolean         True if no errors, False otherwise
      */
-    public function Save($A = array())
+    public function Save(?DataArray $A=NULL) : bool
     {
         global $_TABLES, $_SHOP_CONF;
 
-        if (is_array($A) && !empty($A)) {
+        if (!empty($A)) {
             // Put this field at the end of the line by default
-            $this->setVars(new DataArray($A));
+            $this->setVars($A);
         }
 
         // Make sure the necessary fields are filled in
