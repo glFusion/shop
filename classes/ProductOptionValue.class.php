@@ -22,9 +22,15 @@ use Shop\Models\DataArray;
  */
 class ProductOptionValue
 {
-    /** Indicate whether the current object is a new entry or not.
-     * @var boolean */
-    private $isNew = true;
+    use \Shop\Traits\DBO;        // Import database operations
+
+    /** Table key. Blank value will cause no action to be taken.
+     * @var string */
+    public static $TABLE = 'shop.prod_opt_vals';
+
+    /** Key field name. Can be overridden by defining `$F_ID`.
+     * @var string */
+    protected static $F_ID = 'pov_id';
 
     /** Array of error messages, to be accessible by the calling routines.
      * @var array */
@@ -46,6 +52,10 @@ class ProductOptionValue
      * @var float */
     private $pov_price = 0;
 
+    /** Flag indicating whether option value is available.
+     * @var boolean */
+    private $enabled = 1;
+
     /** Orderby option for selection.
      * @var integer */
     private $orderby = 9999;
@@ -63,30 +73,28 @@ class ProductOptionValue
      *
      * @param   integer|array   $id Option record or record ID
      */
-    public function __construct($id=0)
+    public function __construct(int $id=0)
     {
-        if (is_array($id)) {
-            // Received a full Option record already read from the DB
-            $this->setVars(new DataArray($id));
-            $this->isNew = false;
-        } else {
-            $id = (int)$id;
-            if ($id < 1) {
-                // New entry, set defaults
+        if ($id > 0) {
+            $this->pov_id =  $id;
+            if (!$this->Read()) {
                 $this->pov_id = 0;
-                $this->pog_id = 0;
-                $this->pov_value = '';
-                $this->pov_price = 0;
-                $this->item_id = 0;
-                $this->orderby = 9999;
-                $this->sku = '';
-            } else {
-                $this->pov_id =  $id;
-                if (!$this->Read()) {
-                    $this->pov_id = 0;
-                }
             }
         }
+    }
+
+
+    /**
+     * Create an optionvalue object from an array, e.g. DB row.
+     *
+     * @param   array   $A  Record array
+     * @return  object  $this
+     */
+    public static function fromArray(array $A) : self
+    {
+        $retval = new self;
+        $retval->setVars(new DataArray($A));
+        return $retval;
     }
 
 
@@ -97,12 +105,13 @@ class ProductOptionValue
      */
     public function setVars(DataArray $row) : void
     {
-        $this->pov_id = (int)$row['pov_id'];
-        $this->pog_id = (int)$row['pog_id'];
-        $this->pov_value = $row['pov_value'];
-        $this->pov_price = $row['pov_price'];
-        $this->orderby = (int)$row['orderby'];
-        $this->sku = $row['sku'];
+        $this->pov_id = $row->getInt('pov_id');
+        $this->pog_id = $row->getInt('pog_id');
+        $this->pov_value = $row->getString('pov_value');
+        $this->pov_price = $row->getFloat('pov_price');
+        $this->orderby = $row->getInt('orderby');
+        $this->sku = $row->getString('sku');
+        $this->enabled = $row->getInt('enabled');
     }
 
 
@@ -212,8 +221,8 @@ class ProductOptionValue
                 );
             }
             self::reOrder($this->pog_id);
-            Cache::clear('shop.products');
-            Cache::clear('shop.prod_opt_vals');
+            Cache::clear(Product::$TABLE);
+            Cache::clear(self::$TABLE);
             return true;
         } catch (\Throwable $e) {
             Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
@@ -242,12 +251,12 @@ class ProductOptionValue
         // Delete from the option->value reference table
         ProductVariant::deleteOptionValue($opt_id);
         Database::getInstance()->conn->delete(
-            $_TABLES['shop.prod_opt_vals'],
+            $_TABLES[self::$TABLE],
             array('pov_id' => $opt_id),
             array(Database::INTEGER)
         );
-        Cache::clear('shop.products');
-        Cache::clear('options');
+        Cache::clear(Product::$TABLE);
+        Cache::clear(self::$TABLE);
         return true;
     }
 
@@ -263,7 +272,7 @@ class ProductOptionValue
 
         try {
             $rows = Database::getInstance()->conn->executeQuery(
-                "SELECT pov_id FROM {$_TABLES['shop.prod_opt_vals']} WHERE pog_id = ?",
+                "SELECT pov_id FROM {$_TABLES[self::$TABLE]} WHERE pog_id = ?",
                 array($og_id),
                 array(Database::INTEGER)
             )->fetchAllAssociative();
@@ -293,6 +302,18 @@ class ProductOptionValue
             return false;
         }
         return true;
+    }
+
+
+    /**
+     * Check if this option is enabled.
+     * Used to exclude from purchase options.
+     *
+     * @return  boolean     True if enabled, False if not
+     */
+    public function isEnabled() : bool
+    {
+        return $this->enabled == 1;
     }
 
 
@@ -375,6 +396,24 @@ class ProductOptionValue
 
 
     /**
+     * Sets a boolean field to the opposite of the supplied value.
+     *
+     * @uses    DBO::_toggle()
+     * @param   integer $oldvalue   Old (current) value
+     * @param   integer $id         ID number of element to modify
+     * @return  integer     New value, or old value upon failure
+     */
+    public static function toggleEnabled(string $oldvalue, int $id) : int
+    {
+        $newval = self::_toggle($oldvalue, 'enabled', $id);
+        if ($newval != $oldvalue) {
+            Cache::clear(Product::$TABLE);
+        }
+        return $newval;
+    }
+
+
+    /**
      * Reorder all attribute items with the same product ID and attribute name.
      *
      * @param   integer $pog_id     Option Group ID (to allow static usage)
@@ -387,7 +426,7 @@ class ProductOptionValue
         $db = Database::getInstance();
         try {
             $rows = $db->conn->executeQuery(
-                "SELECT pov_id, orderby FROM {$_TABLES['shop.prod_opt_vals']}
+                "SELECT pov_id, orderby FROM {$_TABLES[self::$TABLE]}
                 WHERE pog_id = ? ORDER BY orderby ASC",
                 array($pog_id),
                 array(Database::INTEGER)
@@ -404,7 +443,7 @@ class ProductOptionValue
                     $changed = true;
                     try {
                         $db->conn->update(
-                            $_TABLES['shop.prod_opt_vals'],
+                            $_TABLES[self::$TABLE],
                             array('orderby' => $order),
                             array('pov_id' => $row['pov_id']),
                             array(Database::INTEGER, Database::INTEGER)
@@ -418,8 +457,8 @@ class ProductOptionValue
             }
         }
         if ($changed) {
-            Cache::clear('shop.products');
-            Cache::clear('options');
+            Cache::clear(Product::$TABLE);
+            Cache::clear(self::$TABLE);
         }
     }
 
@@ -449,7 +488,7 @@ class ProductOptionValue
         if (!empty($oper)) {
             try {
                 Database::getInstance()->conn->executeQuery(
-                    "UPDATE {$_TABLES['shop.prod_opt_vals']}
+                    "UPDATE {$_TABLES[self::$TABLE]}
                     SET orderby = orderby $oper 11 WHERE pov_id = ?",
                     array($this->pov_id),
                     array(Database::INTEGER)
@@ -472,7 +511,7 @@ class ProductOptionValue
         global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $_SYSTEM;
 
         $sql = "SELECT pog.pog_name, pov.*
-            FROM {$_TABLES['shop.prod_opt_vals']} pov
+            FROM {$_TABLES[self::$TABLE]} pov
             LEFT JOIN {$_TABLES['shop.prod_opt_grps']} pog
             ON pov.pog_id = pog.pog_id";
 
@@ -661,7 +700,7 @@ class ProductOptionValue
         $sel = (int)$sel;
         $retval = '<option value="0">--' . $LANG_SHOP['first'] . '--</option>' . LB;
         $retval .= COM_optionList(
-            $_TABLES['shop.prod_opt_vals'],
+            $_TABLES[self::$TABLE],
             'orderby,pov_value',
             $sel - 10,
             0,
@@ -683,7 +722,7 @@ class ProductOptionValue
 
         $pog_id = (int)$pog_id;
         $retval .= COM_optionList(
-            $_TABLES['shop.prod_opt_vals'],
+            $_TABLES[self::$TABLE],
             'pov_value,pov_name',
             '',
             1,
@@ -710,7 +749,7 @@ class ProductOptionValue
             $opts = array();
             try {
                 $rows = Database::getInstance()->conn->executeQuery(
-                    "SELECT pov.* FROM {$_TABLES['shop.prod_opt_vals']} pov
+                    "SELECT pov.* FROM {$_TABLES[self::$TABLE]} pov
                     WHERE pov.pog_id = ? ORDER BY pov.orderby ASC",
                     array($pog_id),
                     array(Database::INTEGER)
@@ -720,10 +759,10 @@ class ProductOptionValue
             }
             if (is_array($rows)) {
                 foreach ($rows as $row) {
-                    $opts[$row['pov_id']] = new self($row);
+                    $opts[$row['pov_id']] = self::fromArray($row);
                 }
             }
-            Cache::set($cache_key, $opts, array('shop.products', 'shop.prod_opt_vals'));
+            Cache::set($cache_key, $opts, array(Product::$TABLE, self::$TABLE));
         }
         return $opts;
     }
@@ -749,7 +788,7 @@ class ProductOptionValue
             $opts = array();
             $qb = Database::getInstance()->conn->createQueryBuilder();
             $qb->select('pov.*')
-               ->from($_TABLES['shop.prod_opt_vals'], 'pov')
+               ->from($_TABLES[self::$TABLE], 'pov')
                ->leftJoin('pov', $_TABLES['shop.variantXopt'], 'vxo', 'vxo.pov_id = pov.pov_id')
                ->leftJoin('pov', $_TABLES['shop.prod_opt_grps'], 'pog', 'pog.pog_id = pov.pog_id')
                ->leftJoin('vxo', $_TABLES['shop.product_variants'], 'pv', 'pv.pv_id = vxo.pv_id')
@@ -774,7 +813,7 @@ class ProductOptionValue
                     $opts[$A['pov_id']] = new self($A);
                 }
             }
-            Cache::set($cache_key, $opts, array('shop.products', 'shop.prod_opt_vals', $prod_id));
+            Cache::set($cache_key, $opts, array(Product::$TABLE, self::$TABLE, $prod_id));
         }
         return $opts;
     }

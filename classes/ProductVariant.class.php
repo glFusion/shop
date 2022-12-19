@@ -289,7 +289,7 @@ class ProductVariant
      *
      * @return  array   Array of ProductOptionValue objects
      */
-    public function getOptions()
+    public function getOptions() : array
     {
         if ($this->Options === NULL) {
             $this->loadOptions();
@@ -329,13 +329,13 @@ class ProductVariant
                 }
                 if ($stmt) {
                     while ($A = $stmt->fetchAssociative()) {
-                        $this->Options[$A['pog_name']] = new ProductOptionValue($A);
+                        $this->Options[$A['pog_name']] = ProductOptionValue::fromArray($A);
                     }
                 }
                 Cache::set(
                     $cache_key,
                     $this->Options,
-                    array(Product::$TABLE, 'options', $this->getID())
+                    array(Product::$TABLE, ProductOptionValue::$TABLE, $this->getID())
                 );
             }
         }
@@ -644,10 +644,9 @@ class ProductVariant
      * @param   integer $product_id     Product record ID
      * @return  array       Array of ProductVariant objects
      */
-    public static function getByProduct(int $product_id)
+    public static function getByProduct(int $product_id) : array
     {
         global $_TABLES;
-
         $retval = array();
         try {
             $stmt = Database::getInstance()->conn->executeQuery(
@@ -655,7 +654,7 @@ class ProductVariant
                 FROM {$_TABLES['shop.product_variants']} pv
                 LEFT JOIN {$_TABLES['shop.stock']} stk
                     ON stk.stk_item_id = pv.item_id AND stk.stk_pv_id = pv.pv_id
-                WHERE pv.item_id = ?",
+                WHERE pv.item_id = ? AND pv.enabled = 1",
                 array($product_id),
                 array(Database::INTEGER)
             );
@@ -1631,6 +1630,7 @@ class ProductVariant
         } else {
             $query_arr['default_filter'] = 'WHERE 1=1';
         }
+
         $filter = NULL;
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_pvlist',
@@ -1986,6 +1986,12 @@ class ProductVariant
     }
 
 
+    /**
+     * Get all the options that make up an item variant.
+     *
+     * @param   integer $item_id    Product ID
+     * @return  array       Array of option groups and values
+     */
     public static function getOptionsByProduct(int $item_id) : array
     {
         global $_TABLES;
@@ -2011,7 +2017,6 @@ class ProductVariant
                 $retval[] = new DataArray($row);
             }
         }
-        var_dump($retval);die;
         return $retval;
     }
 

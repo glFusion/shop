@@ -1898,6 +1898,9 @@ class Product
                 $opts = $PV->getOptions();
                 if (is_array($opts)) {
                     foreach ($opts as $Opt) {
+                        if (!$Opt->isEnabled()) {
+                            continue;
+                        }
                         $pog_id = $Opt->getGroupId();
                         $pov_id = $Opt->getID();
                         if (!isset($options_map[$pog_id])) {
