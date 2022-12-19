@@ -6,7 +6,7 @@
  * @copyright   Copyright (c) 2009-2022 Lee Garner
  * @package     shop
  * @version     v1.5.0
- * @since       v0.7.0
+ * @since       v1.5.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -135,17 +135,9 @@ class ProductCollection extends Collection
         $Products = array();
         $rows = $this->getRows();
         foreach ($rows as $row) {
-            $Products[$row['id']] = Product::getInstance($row);
+            $Products[$row['id']] = Product::fromArray($row);
         }
         return $Products;
-
-        /*$stmt = $this->execute();
-        if ($stmt) {
-            while ($A = $stmt->fetchAssociative()) {
-                $Products[] = Product::getInstance($A);
-            }
-        }
-        return $Products;*/
     }
 
 }
