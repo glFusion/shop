@@ -15,6 +15,7 @@
  */
 namespace Shop\Gateways\terms;
 use Shop\Models\OrderStatus;
+use Shop\Models\Token;
 use Shop\Gateway as GW;
 use Shop\GatewayManager;
 use Shop\FieldList;
@@ -93,6 +94,7 @@ class Gateway extends \Shop\Gateway
         $gatewayVars = array(
             '<input type="hidden" name="order_id" value="' . $Cart->getOrderID() . '" />',
             '<input type="hidden" name="pmt_gross" value="' . $pmt_gross . '" />',
+            '<input type="hidden" name="secret" value="' . Token::encrypt($Cart->getSecret()) . '" />',
         );
         return implode("\n", $gatewayVars);
     }

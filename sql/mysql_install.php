@@ -215,6 +215,7 @@ $_SQL = array(
   `pmt_txn_id` varchar(255) DEFAULT NULL,
   `instructions` text DEFAULT NULL,
   `token` varchar(20) DEFAULT NULL,
+  `secret` varchar(20) NOT NULL DEFAULT '',
   `tax_rate` decimal(7,5) NOT NULL DEFAULT 0.00000,
   `info` text DEFAULT NULL,
   `currency` varchar(5) NOT NULL DEFAULT 'USD',
@@ -988,6 +989,7 @@ $SHOP_UPGRADE['1.5.0'] = array(
     "ALTER TABLE {$_TABLES['shop.coupon_log']} ADD `done_by` int(11) unsigned NOT NULL DEFAULT 0 AFTER `uid`",
     "ALTER TABLE {$_TABLES['shop.orders']} CHANGE `billto_id` `billto_id` int(11) NOT NULL DEFAULT 0",
     "ALTER TABLE {$_TABLES['shop.orders']} CHANGE `shipto_id` `shipto_id` int(11) NOT NULL DEFAULT 0",
+    "ALTER TABLE {$_TABLES['shop.orders']} ADD `secret` varchar(20) AFTER `token`",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `prod_rule` int(11) unsigned NOT NULL DEFAULT 0 AFTER `zone_rule`",
     "ALTER TABLE {$_TABLES['shop.categories']} ADD `prod_rule` int(11) unsigned NOT NULL DEFAULT 0 AFTER `zone_rule`",
 

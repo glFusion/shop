@@ -87,4 +87,30 @@ class Token
         return \vsprintf('%08x-%04x-%04x-%04x-%04x%08x', $arr);
     }
 
+
+    /**
+     * Encrypt a string. Currently just a wrapper for COM_encrypt().
+     *
+     * @param   string  $val    Value to encrypt
+     * @param   string  $key    Optional encryption key
+     * @return  string      Encrypted value
+     */
+    public static function encrypt(string $val, string $key='') : string
+    {
+        return COM_encrypt($val, $key);
+    }
+
+
+    /**
+     * Decrypt a string. Currently just a wrapper for COM_encrypt().
+     *
+     * @param   string  $val    Encrypted value to decrypt
+     * @param   string  $key    Optional encryption key
+     * @return  string      Decrypted value
+     */
+    public static function decrypt(string $enc, string $key='') : string
+    {
+        return COM_decrypt($enc, $key);
+    }
+
 }

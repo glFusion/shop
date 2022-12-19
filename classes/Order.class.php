@@ -175,6 +175,10 @@ class Order
      * @var string */
     protected $token = '';
 
+    /** Secret token never shown to anyone, used for HTTP calls within Shop.
+     * @var string */
+    protected $secret = '';
+
     /** Order status string, pending, processing, shipped, etc.
      * @var string */
     protected $status = 'cart';
@@ -285,6 +289,7 @@ class Order
             }
             $this->order_date = SHOP_now();
             $this->token = Token::create();
+            $this->secret = Token::create();
             $this->shipping = 0;
             $this->handling = 0;
             $this->by_gc = 0;
@@ -740,6 +745,7 @@ class Order
         $this->instructions = $A->getString('instructions');
         $this->by_gc = $A->getFloat('by_gc');
         $this->token = $A->getString('token');
+        $this->secret = $A->getString('secret');
         $this->buyer_email = substr($A->getString('buyer_email'), 0, 255);  // user input
         $this->billto_id = $A->getInt('billto_id');
         $this->shipto_id = $A->getInt('shipto_id');
@@ -860,6 +866,8 @@ class Order
 
         if ($this->order_seq == 0) {
             $inv_num = '';
+        } elseif (function_exists('CUSTOM_shop_invoiceNumber')) {
+            $inv_num = CUSTOM_shop_invoiceNumber($this->order_seq, $this);
         } elseif (
             isset($_SHOP_CONF['inv_start_num']) &&
             !empty($_SHOP_CONF['inv_start_num'])
@@ -874,8 +882,6 @@ class Order
                 // prefix string, e.g. "INV-1"
                 $inv_num = (string)$_SHOP_CONF['inv_start_num'] . (string)$this->order_seq;
             }
-        } elseif (function_exists('CUSTOM_shop_invoiceNumber')) {
-            $inv_num = CUSTOM_shop_invoiceNumber($this->order_seq, $this);
         } else {
             $inv_num = $this->order_seq;
         }
@@ -1062,6 +1068,7 @@ class Order
                 $values['order_id'] = $this->order_id;
                 $types[] = Database::STRING;
                 $values['token'] = $this->token;
+                $values['secret'] = $this->secret;
                 $types[] = Database::STRING;
                 $db->conn->insert($_TABLES['shop.orders'], $values, $types);
             } else {
@@ -1279,7 +1286,7 @@ class Order
      *
      * @return  boolean     True if valid or not present, False if invalid
      */
-    public function verifyReferralTag()
+    public function verifyReferralTag() : bool
     {
         if ($this->referral_exp > 0 && $this->referral_exp < time()) {
             // Referral has expired, remove it and save to the DB.
@@ -1872,29 +1879,6 @@ class Order
         $this->calcTax();   // Tax calculation is slightly more complex
         $this->Save();
         return $this;
-    }
-
-
-    /**
-     * Set a new token on the order.
-     * Used after an action is performed to prevent the same action from
-     * happening again accidentally. Only available to non-final orders since
-     * the token may be used to validate payment callbacks, etc. and shoule
-     * not be changed once the order is final.
-     *
-     * @return  object  $this
-     */
-    public function setToken()
-    {
-        if (!$this->isFinal()) {
-            $this->token = Token::create();
-            return $this->updateRecord(
-                array('token' => $this->token),
-                array(Database::STRING)
-            );
-        } else {
-            return $this;
-        }
     }
 
 
@@ -3339,6 +3323,40 @@ class Order
         $T->parse('output', 'html');
         $html = $T->finish($T->get_var('output'));
         return $html;
+    }
+
+
+    /**
+     * Set a new token on the order.
+     * Used after an action is performed to prevent the same action from
+     * happening again accidentally. Only available to non-final orders since
+     * the token may be used to validate payment callbacks, etc. and should
+     * not be changed once the order is final.
+     *
+     * @return  object  $this
+     */
+    public function setToken() : self
+    {
+        if (!$this->isFinal()) {
+            $this->token = Token::create();
+            return $this->updateRecord(
+                array('token' => $this->token),
+                array(Database::STRING)
+            );
+        } else {
+            return $this;
+        }
+    }
+
+
+    /**
+     * Get the secret key for the order to be passed to other URLs.
+     *
+     * @return  string      Secret key
+     */
+    public function getSecret() : string
+    {
+        return $this->secret;
     }
 
 

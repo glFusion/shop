@@ -5,9 +5,9 @@
  * payment gateway.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2020 Lee Garner
+ * @copyright   Copyright (c) 2020-2021 Lee Garner
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.5.0
  * @since       v1.3.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -19,6 +19,7 @@ use Shop\Order;
 use Shop\Payment;
 use Shop\Gateway;
 use Shop\Log;
+use Shop\Models\Token;
 
 
 /**
@@ -71,6 +72,11 @@ class Webhook extends \Shop\Webhook
         // Get the Shop order record and make sure it's valid.
         $this->Order = Order::getInstance($this->getOrderId());
         if ($this->Order->isNew()) {
+            Log::write('shop_system', Log::ERROR, "Order {$this->getOrderId()} not found");
+            return false;
+        }
+
+        if (Token::decrypt($this->whData['secret']) != $this->Order->getSecret()) {
             Log::write('shop_system', Log::ERROR, "Order {$this->getOrderId()} not found");
             return false;
         }

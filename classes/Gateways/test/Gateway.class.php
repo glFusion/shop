@@ -92,6 +92,7 @@ class Gateway extends \Shop\Gateway
             '<input type="hidden" name="status" value="paid" />',
             '<input type="hidden" name="transtype" value="' . $this->gw_name . '" />',
             '<input type="hidden" name="uid" value="' . $_USER['uid'] . '" />',
+            '<input type="hidden" name="secret" value="' . Token::encrypt($cart->getSecret()) . '" />',
         );
         if (!COM_isAnonUser()) {
             $gateway_vars[] = '<input type="hidden" name="payer_email" value="' . $_USER['email'] . '" />';

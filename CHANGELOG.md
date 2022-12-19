@@ -45,6 +45,8 @@ Release TBD
   * Combine enable-ratings configs for logged-in and anon users.
   * Include SKU in item purchase report.
   * Fix setting SKU in order item object to include the variant.
+  * Allow disabling individual options and hide them from the product detail.
+  * Add a hidden secret value to verify order during certain operations.
 
 ## v1.4.1
 Release 2022-04-07
