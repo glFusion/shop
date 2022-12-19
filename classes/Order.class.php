@@ -1062,25 +1062,39 @@ class Order
             }
         }
         $db = Database::getInstance();
-        try {
-            if ($this->isNew) {
-                // Set field values that can only be set once and not updated
-                $values['order_id'] = $this->order_id;
-                $types[] = Database::STRING;
-                $values['token'] = $this->token;
-                $values['secret'] = $this->secret;
-                $types[] = Database::STRING;
-                $db->conn->insert($_TABLES['shop.orders'], $values, $types);
-            } else {
-                $where = array('order_id' => $this->order_id);
-                $types[] = Database::STRING;
-                $db->conn->update($_TABLES['shop.orders'], $values, $where, $types);
+        if ($this->isNew) {
+            // Set field values that can only be set once and not updated
+            $values['order_id'] = $this->order_id;
+            $values['token'] = $this->token;
+            $values['secret'] = $this->secret;
+            $types[] = Database::STRING;
+            $types[] = Database::STRING;
+            $types[] = Database::STRING;
+            while (true) {
+                try {
+                    $db->conn->insert($_TABLES['shop.orders'], $values, $types);
+                    $done = true;
+                } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $e) {
+                    $done = false;      // Try the loop again
+                } catch (\Throwable $e) {
+                    Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                    $done = true;
+                }
+                if ($done) {
+                    break;
+                }
             }
-            $this->isNew = false;
-            $this->unTaint();
-        } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        } else {
+            $where = array('order_id' => $this->order_id);
+            $types[] = Database::STRING;
+            try {
+                $db->conn->update($_TABLES['shop.orders'], $values, $where, $types);
+            } catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            }
         }
+        $this->isNew = false;
+        $this->unTaint();
         self::$OrderCache[$this->order_id] = $this;
         return $this->order_id;
     }
@@ -4295,6 +4309,7 @@ class Order
                 );
                 $this->order_seq = $db->conn->lastInsertId();
             } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $e) {
+                // only happens if re-adding an invoice, so just get the number.
                 $this->order_seq = $db->getItem(
                     $_TABLES['shop.invoices'],
                     'invoice_id',
