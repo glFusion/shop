@@ -84,10 +84,14 @@ default:
 
 switch ($view) {
 case 'order':
-    $order = \Shop\Order::getInstance($actionval);
-    $V = (new \Shop\Views\Invoice)->withOrderId($actionval)->setAdmin(true);
-    $content .= Shop\Menu::viewOrder($view, $order);
-    $content .= $V->Render();
+    $Order = \Shop\Order::getInstance($actionval);
+    if (!$Order->isNew()) {
+        $V = (new \Shop\Views\Invoice)->withOrderId($actionval)->setAdmin(true);
+        $content .= Shop\Menu::viewOrder($view, $Order);
+        $content .= $V->Render();
+    } else {
+        $content .= SHOP_errorMessage($LANG_SHOP['item_not_found'], 'error');
+    }
     break;
 
 case 'packinglist':

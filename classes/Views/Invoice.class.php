@@ -69,8 +69,6 @@ class Invoice extends OrderBaseView
     {
         $this->tplname = 'order';
         $this->is_invoice = true;
-        $this->TPL = new Template;
-        $this->TPL->set_file('order', $this->tplname . '.thtml');
     }
 
 
@@ -114,7 +112,6 @@ class Invoice extends OrderBaseView
             $this->tplname .= '.pdf';
             $this->withShopInfo(true);
         }
-        $this->TPL->set_file('order', $this->tplname . '.thtml');
         return $this;
     }
 
@@ -202,6 +199,9 @@ class Invoice extends OrderBaseView
     public function createHTML()
     {
         global $_SHOP_CONF, $_USER, $LANG_SHOP, $_CONF;
+
+        $this->TPL = new Template;
+        $this->TPL->set_file('order', $this->tplname . '.thtml');
 
         $this->_renderCommon();
         $this->_renderAddresses();

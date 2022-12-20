@@ -118,7 +118,7 @@ case 'pdforder':
         $orders = $actionval;
     }
     $View = new Shop\Views\Invoice;
-    $View->withOrderId($orders)->withOutput('pdf')->Render();
+    $View->withOrderIds($orders)->withOutput('pdf')->Render();
     break;
     \Shop\Order::printPDF($orders, $view);
     break;
