@@ -371,7 +371,7 @@ class Upgrade
         $res = DB_query($sql,1);
         if ($res) {
             $A = DB_fetchArray($res, false);
-            $retval = $A['DATA_TYPE'];
+            $retval = strtolower($A['DATA_TYPE']);
         }
         return $retval;
     }
