@@ -974,12 +974,6 @@ class Order
             return '';
         }
 
-        // Save all the order items
-        if ($save_items) {
-            foreach ($this->Items as $Item) {
-                $Item->saveIfTainted();
-            }
-        }
         $order_total = $this->calcOrderTotal();
         if ($this->isNew) {
             // Shouldn't have an empty order ID, but double-check
@@ -1062,6 +1056,7 @@ class Order
             }
         }
         $db = Database::getInstance();
+        $status = true;
         if ($this->isNew) {
             // Set field values that can only be set once and not updated
             $values['order_id'] = $this->order_id;
@@ -1075,22 +1070,41 @@ class Order
                     $db->conn->insert($_TABLES['shop.orders'], $values, $types);
                     $done = true;
                 } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $e) {
+                    // Order id already used, create another one.
+                    $this->order_id = self::_createID();
+                    $values['order_id'] = $this->order_id;
                     $done = false;      // Try the loop again
                 } catch (\Throwable $e) {
                     Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                    // DB error, mark done to break loop but set status to 
+                    // false to skip saving items.
                     $done = true;
+                    $status = false;
                 }
                 if ($done) {
+                    // Saved an order number, or had an error, now continue on
+                    // to save items.
                     break;
                 }
             }
         } else {
+            // Even if the order fails to get updated, leave the status as "true"
+            // to update the items.
             $where = array('order_id' => $this->order_id);
             $types[] = Database::STRING;
             try {
                 $db->conn->update($_TABLES['shop.orders'], $values, $where, $types);
             } catch (\Exception $e) {
                 Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            }
+        }
+
+        if ($status) {
+            // Save all the order items if the order saving was successful
+            if ($save_items) {
+                foreach ($this->Items as $Item) {
+                    $Item->setOrderID($this->order_id)->saveIfTainted();
+                }
             }
         }
         $this->isNew = false;
@@ -1952,7 +1966,7 @@ class Order
      *
      * @return  string  Order ID
      */
-    public static function _createID()
+    public static function _createID() : string
     {
         global $_TABLES;
 
