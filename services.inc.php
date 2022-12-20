@@ -502,6 +502,20 @@ function service_approvesubmission_shop($args, &$output, &$svc_msg)
 }
 
 
+/**
+ * Approve a submission. Wrapper for service_approve_submission_shop().
+ *
+ * @param   array   $args   Arguments
+ * @return      PLG return code
+ */
+function plugin_approvesubmission_shop($args)
+{
+    $output = '';
+    $svc_msg = '';
+    return service_approvesubmission_shop($args, $output, $svc_msg);
+}
+
+
 if (
     isset($_SHOP_CONF['enable_svc_funcs']) &&
     $_SHOP_CONF['enable_svc_funcs'] &&
