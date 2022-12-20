@@ -73,8 +73,6 @@ $expected = array(
     'pi_products', 'pi_edit', 'pi_save', 'pi_del',
     'products', 'ipndetail', 'pr_edit', 'pr_list',
     'editstatus',
-    // deprecated
-    'history', 'orders', 'shipments', 'ord_ship', 'ord_pmts',
 );
 list($action, $actionval) = $Request->getAction($expected);
 $mode = $Request->getString('mode');
@@ -603,21 +601,6 @@ case 'pv_bulk_save':
     echo COM_refresh(SHOP_ADMIN_URL . '/index.php?variants');
     break;
 
-case 'savepayment':
-    echo "payments deprecated in index.php";die;
-    $Pmt = Shop\Payment::getInstance($Request->getInt('pmt_id'));
-    $Pmt->setAmount($Request->getFloat('amount'))
-        ->setMethod($Request->getString('gw_id'))
-        ->setGateway($Request->getString('gw_id'))
-        ->setRefID($Request->getString('ref_id'))
-        ->setOrderID($Request->getString('order_id'))
-        ->setUID($_USER['uid'])
-        ->setIsMoney($Request->getBool('is_money'))
-        ->setComment($Request->getString('comment'));
-    $Pmt->Save();
-    echo COM_refresh(SHOP_ADMIN_URL . '/index.php?ord_pmts=' . $Request->getString('order_id'));
-    break;
-
 case 'coup_bulk_void':
 case 'coup_bulk_unvoid':
     $newval = $actionval;   // should be "void" or "valid"
@@ -643,29 +626,9 @@ default:
 }
 
 switch ($view) {
-case 'orders':
-    echo "$view deprecated";die;
-    // Kept kere since this may be the default admin view
-    $content .= Shop\Menu::adminOrders($view);
-    $R = \Shop\Report::getInstance('orderlist');
-    if ($R !== NULL) {
-        $R->setAdmin(true);
-        $R->setParams();
-        $content .= $R->Render();
-    }
-    break;
-
 case 'coupons':
     $content .= Shop\Menu::adminCatalog($view);
     $content .= Shop\Products\Coupon::adminList();
-    break;
-
-case 'order':
-    echo "$view deprecated";die;
-    $order = \Shop\Order::getInstance($actionval);
-    $V = (new \Shop\Views\Invoice)->withOrderId($actionval)->setAdmin(true);
-    $content .= Shop\Menu::viewOrder($view, $order);
-    $content .= $V->Render();
     break;
 
 case 'ipndetail':
@@ -895,36 +858,6 @@ case 'editshipment':
     }
     break;
 
-case 'payments':
-case 'ord_pmts':
-    echo "payments deprecated in index.php";die;
-    // View payments on an order
-    if ($actionval != 'x') {
-        $Order = Shop\Order::getInstance($actionval);
-        $content .= Shop\Menu::viewOrder($view, $Order);
-    } else {
-        $content .= Shop\Menu::adminOrders($view);
-    }
-    $content .= Shop\Payment::adminList($actionval);
-    break;
-
-case 'shipments':
-case 'ord_ship':
-    echo "$view deprecated";die;
-    // View admin list of shipments
-    SHOP_setUrl();
-    if ($actionval != 'x') {
-        $Order = Shop\Order::getInstance($actionval);
-        $content .= Shop\Menu::viewOrder($view, $Order);
-    } else {
-        $content .= Shop\Menu::adminOrders($view);
-    }
-    $content .= Shop\Shipment::adminList($actionval);
-    if ($view == 'shipments') {
-        $view = 'orders';       // to set the active top-level menu
-    }
-    break;
-
 case 'shiporder':
     $url = $Request->getString('ret_url');
     if (!empty($url)) {
@@ -932,30 +865,6 @@ case 'shiporder':
     }
     $V = new Shop\Views\ShipmentForm($Request->getString('order_id'));
     $content .= $V->Render();
-    break;
-
-case 'order_pl':
-    echo $view . " DEPRECATED";die;
-    // Get the packing list for an entire order.
-    // This is expected to be shown in a _blank browser window/tab.
-    $PL = new Shop\Views\OrderPL($actionval);
-    if ($PL->canView()) {
-        echo $PL->Render();
-        exit;
-    } else {
-        COM_404();
-    }
-    break;
-
-case 'shipment_pl':
-    echo "shipment_pl deprecated";die;
-    if ($actionval == 'x') {
-        $shipments = $Request->getArray('shipments');
-    } else {
-        $shipments = $actionval;
-    }
-    $PL = new Shop\Views\Shipment();
-    $PL->asPackingList()->withOutput('pdf')->withShipmentId($shipments)->Render();
     break;
 
 case 'taxrates':
@@ -1010,13 +919,6 @@ case 'prod_bulk_frm':
     // Bulk update product attributes
     $content .= Shop\Menu::adminCatalog($view);
     $content .= Shop\Product::BulkUpdateForm($Request->getArray('prod_bulk'));
-    break;
-
-case 'newpayment':
-    echo "deprecated";die;
-    $Pmt = new Shop\Payment;
-    $Pmt->setOrderID($actionval);
-    $content .= $Pmt->pmtForm();
     break;
 
 case 'products':
