@@ -413,10 +413,13 @@ class Currency
             $fldname = "{$fromCurrency}_{$toCurrency}";
             $cache_key = 'curr_conv_' . $fldname;
             $rate = Cache::get($cache_key);
+            $rate = null;
             if ($rate === NULL) {
                 $rate = 1;      // default
                 // It's faster to get the whole latest array
-                $url = "https://api.exchangerate.host/latest?base=$fromCurrency";
+                //$url = "https://api.exchangerate.host/latest?base=$fromCurrency";
+                // ... or maybe not
+                $url = "https://api.exchangerate.host/convert?from=$fromCurrency&to=$toCurrency";
                 $ch = curl_init();
                 curl_setopt ($ch, CURLOPT_URL, $url);
                 curl_setopt ($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -427,11 +430,12 @@ class Currency
                 curl_close($ch);
                 $data = json_decode($data, true);
                 if (isset($data['success']) && $data['success']) {
-                    if (isset($data['rates']) && isset($data['rates'][$toCurrency])) {
-                        $rate = $data['rates'][$toCurrency];
+                    if (isset($data['info']) && isset($data['info']['rate'])) {
+                        $rate = $data['info']['rate'];
                     }
                 }
-                /*$url = "https://free.currencyconverterapi.com/api/v6/convert?q={$fldname}&compact=ultra";
+                /*
+                $url = "https://free.currconv.com/api/v7/convert?q={$fldname}&compact=ultra&apiKey=" . Config::get('curconv_apikey');
                 $ch = curl_init();
                 curl_setopt ($ch, CURLOPT_URL, $url);
                 curl_setopt ($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -441,8 +445,8 @@ class Currency
                 $data = curl_exec($ch);
                 curl_close($ch);
                 $data = json_decode($data);
-                var_dump($data);die;
-                $rate = $data->$fldname;*/
+                $rate = $data->$fldname;
+*/
                 // Cache for an hour
                 Cache::set($cache_key, $rate, 'currency', 3600);
             }
