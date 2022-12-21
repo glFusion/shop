@@ -160,9 +160,9 @@ class Syndication extends \glFusion\Syndication\Feed
                 $dscp = self::_fixText($P->getDscp());
             }
             if ($P->isInStock()) {
-                $availability = 'in stock';
+                $availability = $LANG_SHOP['avail_in_stock'];
             } else {
-                $availability = 'available for orde';
+                $availability = $LANG_SHOP['avail_for_order'];
             }
             $img = $P->getOneImage();
             if (empty($img)) {

@@ -798,6 +798,8 @@ $LANG_SHOP = array (
 'complete' => 'Complete',
 'invoice' => 'Invoice',
 'view_oi_as_ordered' => 'View the item as it was ordered',
+'avail_for_order' => 'available for order',
+'avail_in_stock' => 'in stock',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
