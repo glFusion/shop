@@ -164,7 +164,7 @@ function plugin_upgrade_shop($dvlp = false)
  */
 function plugin_getmenuitems_shop()
 {
-    global $_CONF, $LANG_SHOP;
+    global $LANG_SHOP;
 
     $menuitems = array();
     if (Config::get('catalog_enabled') && Config::get('menuitem') && SHOP_access_check()) {
