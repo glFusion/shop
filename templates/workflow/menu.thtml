@@ -1,40 +1,45 @@
 {# begin {templatelocation} #}
-<ul class="justified uk-nav checkout_menu uk-grid uk-grid-collapse
-	uk-grid-width-1-1 uk-grid-width-medium-1-{flow_count}
-	uk-child-width-1-1@s uk-child-width-1-{flow_count}@m"
-    style="margin:auto;margin-bottom:20px;margin-top:20px;">
+<div style="margin-right:40px;">
+<nav>
+	<ul uk-grid class="justified uk-nav checkout_menu uk-grid uk-grid-collapse
+		uk-grid-width-1-1 uk-grid-width-medium-1-{flow_count}
+		uk-child-width-1-1@s uk-child-width-1-{flow_count}@m"
+		style="margin:auto;margin-bottom:20px;margin-top:20px;">
 <!-- BEGIN Flows -->
 {!if is_active}
-    <li class="uk-panel uk-panel-box shop-wf-active">
-        <a href="{site_url}/shop/cart.php?{wf_name}=x">
-            <i class="uk-icon uk-icon-chevron-right uk-icon-small"></i>
-            {wf_title}
-        </a>
+	    <li class="uk-panel uk-panel-box shop-wf-active shop-wf-panel">
+		    <a href="{site_url}/shop/cart.php?{wf_name}=x">
+			    <i class="uk-icon uk-icon-chevron-right uk-icon-small"></i>
+				{wf_title}
+	        </a>
 {!elseif is_done}
-    <li class="uk-panel uk-panel-box uk-panel-box-primary">
-        <a href="{site_url}/shop/cart.php?{wf_name}=x">
-            <i class="uk-icon uk-icon-check uk-icon-small uk-text-success"></i>
-            {wf_title}
-        </a>
+		<li class="uk-panel uk-panel-box uk-panel-box-primary shop-wf-panel">
+			<a href="{site_url}/shop/cart.php?{wf_name}=x">
+				<i class="uk-icon uk-icon-check uk-icon-small uk-text-success"></i>
+	            {wf_title}
+		    </a>
 {!else}
-    <li class="uk-panel uk-panel-box uk-panel-box-secondary">
-        <a href="{site_url}/shop/cart.php?{wf_name}=x">
-            {wf_title}
-        </a>
+	    <li class="uk-panel uk-panel-box uk-panel-box-secondary shop-wf-panel">
+		    <a href="{site_url}/shop/cart.php?{wf_name}=x">
+			    {wf_title}
+	        </a>
 {!endif}
-    </li>
+		</li>
 <!-- END Flows -->
-</ul>
+	</ul>
+</nav>
 <div style="clear:both;">
-<a href="{pi_url}/index.php" class="uk-button uk-button-primary uk-button-large" style="float:left">
-    <i class="uk-icon uk-icon-backward"></i>&nbsp;&nbsp;{$LANG_SHOP['continue_shopping']}
-</a>
+	<a href="{pi_url}/index.php" class="uk-button uk-button-primary" style="float:left">
+		<i class="uk-icon uk-icon-backward"></i>&nbsp;&nbsp;{$LANG_SHOP['continue_shopping']}
+	</a>
 {!if wrap_form}
-<form class="uk-form" action="{site_url}/shop/cart.php" method="post">
-<input type="hidden" name="save_{current_wf}" value="x" />
-<button style="float:right;" id="checkoutButtons" type="submit" class="uk-button uk-button-success uk-button-large" name="next_step" onClick="SHOP_showSpinner();">
-    {$LANG_SHOP['next_step']}&nbsp;&nbsp;<i class="uk-icon uk-icon-forward"></i>
-</button>
+	<form class="uk-form" action="{site_url}/shop/cart.php" method="post">
+		<input type="hidden" name="save_{current_wf}" value="x" />
+		<button style="float:right;" id="checkoutButtons" type="submit" class="uk-button uk-button-success" name="next_step">
+		    {$LANG_SHOP['next_step']}&nbsp;&nbsp;<i class="uk-icon uk-icon-forward"></i>
+		</button>
+{!else}
+</div>
 {!endif}
 </div>
 <div style="clear:both;margin-bottom:10px;"></div>

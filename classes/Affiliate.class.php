@@ -12,6 +12,8 @@
  * @filesource
  */
 namespace Shop;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 
 
 /**
@@ -20,6 +22,9 @@ namespace Shop;
  */
 class Affiliate
 {
+    const REJECTED = 'rejected';
+    const PENDING = 'pending';
+
     /** User ID.
      * @var integer */
     private $aff_uid = 0;
@@ -64,6 +69,17 @@ class Affiliate
     public function isActiveCustomer()
     {
         return $this->Customer->countOrders() > 0;
+    }
+
+
+    /**
+     * Wrapper to get the affiliate ID.
+     *
+     * @return  string      Affiliate ID
+     */
+    public function getAffiliateId() : ?string
+    {
+        return $this->Customer->getAffiliateId();
     }
 
 
@@ -178,16 +194,39 @@ class Affiliate
             );
             $sess_key = 'payout';
             $query_arr['group_by'] .= ' HAVING (total_payout > 0 AND sent_payout IS NULL) OR (total_payout - sent_payout) > 0';
-            $bulk_update = '<button type="submit" name="do_payout" value="x" ' .
-                'class="uk-button uk-button-primary uk-button-mini tooltip" ' .
-                'title="' . $LANG_SHOP['payout'] . '">' .
-                $LANG_SHOP['payout'] .
-                '</button>';
+            $bulk_update = FieldList::button(array(
+                'name' => 'do_payout',
+                'value' => 'x',
+                'style' => 'primary',
+                'size' => 'mini',
+                'text' => $LANG_SHOP['payout'],
+            ) );
             $chkboxes = true;
         } else {
             $sess_key = 'all';
-            $bulk_update = '';
-            $chkboxes = false;
+            $bulk_update = FieldList::button(array(
+                'name' => 'reject',
+                'value' => 'x',
+                'style' => 'danger',
+                'size' => 'mini',
+                'text' => $LANG_SHOP['reject'],
+                'class' => 'tooltip',
+                'attr' => array(
+                    'title' => $LANG_SHOP_HELP['hlp_aff_reject'],
+                ),
+            ) );
+            $bulk_update .= FieldList::button(array(
+                'name' => 'approve',
+                'value' => 'x',
+                'style' => 'success',
+                'size' => 'mini',
+                'text' => $LANG_SHOP['approve'],
+                'class' => 'tooltip',
+                'attr' => array(
+                    'title' => $LANG_SHOP_HELP['hlp_aff_approve'],
+                ),
+            ) );
+            $chkboxes = true;
         }
 
         $text_arr = array(
@@ -425,6 +464,12 @@ class Affiliate
                 Config::get('admin_url') . '/orders.php?order=' . $fieldvalue
             );
             break;
+        case 'affiliate_id':
+            if ($fieldvalue == self::REJECTED) {
+                $fieldvalue = '<span class="uk-text-danger">' . $fieldvalue . '</span>';
+            }
+            $retval = $fieldvalue;
+            break;
         default:
             $retval = $fieldvalue;
             break;
@@ -466,12 +511,13 @@ class Affiliate
             $hidden['success_msg'] = $LANG_SHOP['msg_aff_signup_created'];
         }
         $args['hidden'] = $hidden;
-        $status = LGLIB_invokeService(
-            'forms',
-            'renderForm',
-            $args,
-            $output,
-            $svc_msg
+        $status = PLG_callFunctionForOnePlugin(
+            'service_renderForm_forms',
+            array(
+                1 => $args,
+                2 => &$output,
+                3 => &$svc_msg,
+            )
         );
         return $status == PLG_RET_OK ? $output['content'] : '';
     }
@@ -492,17 +538,137 @@ class Affiliate
 
 
     /**
+     * Restore an affiliate to the program.
+     *
+     * @param   array|integer   One or an array of user IDs
+     */
+    public static function Restore($uids) : void
+    {
+        if (!is_array($uids)) {
+            $uids = array($uids);
+        }
+        foreach ($uids as $uid) {
+            Customer::getInstance($uid)
+                ->withAffiliateId(self::PENDING)
+                ->createAffiliateId()
+                ->saveUser();
+        }
+    }
+
+
+    /**
+     * Reject an affiliate from the program for misbehavior.
+     *
+     * @param   array|integer   One or an array of user IDs
+     */
+    public static function Reject($uids) : void
+    {
+        if (!is_array($uids)) {
+            $uids = array($uids);
+        }
+        foreach ($uids as $uid) {
+            Customer::getInstance($uid)->withAffiliateId(self::REJECTED)->saveUser();
+        }
+    }
+
+
+    /**
      * Check if this customer is eligible to be an affiliate.
      *
      * @return  boolean     True if eligible, False if not.
      */
-    public function isEligible()
+    public function isEligible() : bool
     {
-        if (Config::get('aff_eligible') == 'customers' && COM_isAnonUser()) {
+        if (COM_isAnonUser()) {
             return false;
-        } else {
+        } elseif (Config::get('aff_eligible') == 'customers') {
             return $this->isActiveCustomer();
+        } else {
+            // Config set to all users.
+            return true;
         }
+    }
+
+
+    /**
+     * Check if this affiliate is valid.
+     * Returns true if the affiliate ID is empty, rejected or pending.
+     *
+     * @return  boolean     True if a valid affiliate
+     */
+    public function isValid() : bool
+    {
+        return !in_array($this->Customer->getAffiliateId(), array('', self::REJECTED, self::PENDING));
+    }
+
+
+    /**
+     * Purge all affiliate referral data.
+     */
+    public static function Purge() : void
+    {
+        global $_TABLES;
+
+        $db = Database::getInstance();
+        try {
+            $db->conn->executeStatement("TRUNCATE {$_TABLES['shop.affiliate_saleitems']}");
+            $db->conn->executeStatement("TRUNCATE {$_TABLES['shop.affiliate_sales']}");
+            $db->conn->executeStatement("TRUNCATE {$_TABLES['shop.affiliate_payments']}");
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
+    }
+
+
+    /**
+     * Register all eligible users as affiliates if not already registered.
+     *
+     * @param   string  $eligible   Either `customer` or `allusers` from config
+     */
+    public static function registerAll(string $eligible='customer') : void
+    {
+        global $_TABLES;
+
+        switch ($eligible) {
+        case 'customers':
+            $sql = "SELECT ord.uid, count(ord.uid) FROM {$_TABLES['shop.orders']} ord
+                LEFT JOIN {$_TABLES['shop.userinfo']} ui ON ord.uid = ui.uid
+                WHERE ord.uid > 1 AND (ui.affiliate_id = '' OR ui.affiliate_id IS NULL)
+                GROUP BY ord.uid";
+            break;
+        case 'allusers':
+            $sql = "SELECT u.uid FROM {$_TABLES['users']} u
+                LEFT JOIN {$_TABLES['shop.userinfo']} ui ON u.uid = ui.uid
+                WHERE u.uid > 1 AND (ui.affiliate_id = '' OR ui.affiliate_id IS NULL)
+                GROUP BY u.uid";
+            break;
+        default:
+            return;
+        }
+
+        $db = Database::getInstance();
+        try {
+            $data = $db->conn->executeQuery($sql);
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
+            $data = false;
+        }
+        if (!empty($data)) {
+            foreach ($data as $A) {
+                try {
+                    $aff_id = Shop\Models\Token::create();
+                    $db->conn->executeStatement(
+                        "INSERT INTO {$_TABLES['shop.userinfo']} (uid, affiliate_id) VALUES (?, ?)
+                        ON DUPLICATE KEY UPDATE affiliate_id = ?",
+                        array($A['uid'], $aff_id, $aff_id),
+                        array(Database::INTEGER, Database::STRING, Database::STRING)
+                    );
+                } catch (\Exception $e) {
+                    Log::write('system', Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
+                }
+            }
+        }
+
     }
 
 }

@@ -13,6 +13,8 @@
  * @filesource
  */
 namespace Shop\Reports;
+use Shop\FieldList;
+
 
 /**
  * Class for Pending Shipments Report.
@@ -201,13 +203,11 @@ class pendingship extends \Shop\Report
             $retval .= '</span>';
             break;
         case 'ship':
-            $retval = COM_createLink(
-                $LANG_SHOP['ship'],
-                SHOP_ADMIN_URL . '/index.php?shiporder=x&order_id=' . $A['order_id'],
-                array(
-                    'class' => 'uk-button',
-                )
-            );
+            $retval = FieldList::buttonLink(array(
+                'text' => $LANG_SHOP['ship'],
+                'url' => SHOP_ADMIN_URL . '/index.php?shiporder=x&order_id=' . $A['order_id'],
+                'style' => 'success',
+            ) );
             break;
         }
         return $retval;

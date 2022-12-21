@@ -1,16 +1,16 @@
 {# begin {templatelocation} #}
+<div class="uk-alert">{$LANG_SHOP_HELP['hlp_pi_products']}</div>
 <form action="{site_admin_url}/plugins/shop/index.php" method="post" class="uk-form uk-form-horizontal"
 	enctype="multipart/form-data">
 
-<input type="hidden" name="id" value="{pi_id}" />
-<div class="uk-alert">{$LANG_SHOP_HELP['hlp_pi_products']}</div>
+	<input type="hidden" name="id" value="{id}" />
 
 	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label" for="pi_name">{$LANG_SHOP['pi_name']}:
 			<span id="hlp_pi_name" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls uk-form-controls-text">
-			<select class="uk-select uk-form-small uk-form-width-medium" name="pi_name">
+			<select class="uk-select uk-form-width-medium" name="pi_name">
 				{pi_options}
 			</select>
 		</div>
@@ -21,7 +21,7 @@
 			<span id="hlp_prod_type" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls uk-form-controls-text">
-			<select class="uk-select uk-form-small uk-form-width-small" name="prod_type" id="prod_type">
+			<select class="uk-select uk-form-width-small" name="prod_type" id="prod_type">
 				<option value="1" {!!if {prod_type} == "1" !!}selected="selected"{!endif}>Physical</option>
 				<option value="2" {!!if {prod_type} == "2" !!}selected="selected"{!endif}>Downloadable</option>
 				<option value="4" {!!if {prod_type} == "4" !!}selected="selected"{!endif}>Other Virtual</option>
@@ -36,7 +36,7 @@
 			<span id="hlp_price" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls uk-form-controls-text">
-			<input class="uk-input uk-form-small uk-form-width-medium" required type="text" id="price" name="price" value="{price}" />
+			<input class="uk-input uk-form-width-medium" required type="text" id="price" name="price" value="{price}" />
 		</div>
 	</div>
 

@@ -8,7 +8,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2011-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.1
+ * @version     v1.4.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -16,10 +16,14 @@
  *
  */
 namespace Shop;
-use Shop\Models\OrderState;
+use glFusion\Database\Database;
+use Shop\Models\OrderStatus;
 use Shop\Models\Session;
 use Shop\Models\Stock;
+use Shop\Models\ProductCheckbox;
+use Shop\Models\DataArray;
 use Shop\Products\Coupon;
+use Shop\Log;
 
 
 /**
@@ -38,7 +42,7 @@ class Cart extends Order
      * @param   string  $cart_id    ID of an existing cart to read
      * @param   boolean $interactive    True if this is an interactive session
      */
-    public function __construct($cart_id='', $interactive=true)
+    public function __construct(?string $cart_id='', bool $interactive=true)
     {
         global $_TABLES, $_SHOP_CONF, $_USER;
 
@@ -48,11 +52,14 @@ class Cart extends Order
 
         parent::__construct($cart_id);
         if ($this->isNew) {
-            $this->status = OrderState::CART;
+            $this->status = OrderStatus::CART;
             if (!COM_isAnonUser()) {
                 $this->buyer_email = $_USER['email'];
             }
-            $this->Save();    // Save to reserve the ID
+            //$this->Save();    // Save to reserve the ID
+        }
+        if (!$this->isCart()) {
+            $this->order_id = NULL;
         }
         self::_setCookie($this->order_id);
     }
@@ -65,7 +72,7 @@ class Cart extends Order
      * @param   string  $cart_id    Specific cart ID to read
      * @return  object  Cart object
      */
-    public static function getInstance($cart_id = '', $uid = 0)
+    public static function getInstance(string $cart_id = '', int $uid = 0) : self
     {
         global $_TABLES, $_USER;
 
@@ -75,7 +82,7 @@ class Cart extends Order
         $uid = (int)$uid;
         if ($uid < 2) {
             if ($cart_id == '') {
-                $cart_id = Session::get('cart_id');
+                $cart_id = Session::get('order_id');
             }
         } else {
             $cart_id = self::getCartID($uid);
@@ -85,7 +92,7 @@ class Cart extends Order
         // If the cart user ID doesn't match the requested one, then the
         // cookie may have gotten out of sync. This can happen when the
         // user leaves the browser and the glFusion session expires.
-        if ($Cart->getUid() != $uid || $Cart->getStatus() != OrderState::CART) {
+        if ($Cart->getUid() != $uid || $Cart->getStatus() != OrderStatus::CART) {
             self::_expireCookie();
             $Cart = new self();
         }
@@ -93,36 +100,24 @@ class Cart extends Order
     }
 
 
-    public static function exists($cart_id)
-    {
-        global $_TABLES;
-        return DB_count(
-            $_TABLES['shop.orders'],
-            'order_id',
-            DB_escapeString($cart_id)
-        );
-    }
-
-
     /**
-     * Get all active carts.
+     * Check if a cart exists in the database.
      *
-     * @return  array   Array of cart objects
+     * @param   string  $cart_id    Cart/Order ID
+     * @return  boolean     True if exists
      */
-    public static function getAll()
+    public static function exists(?string $cart_id=NULL) : bool
     {
         global $_TABLES;
-
-        $retval = array();
-        $sql = "SELECT order_id FROM {$_TABLES['shop.orders']}
-            WHERE status = '" . OrderState::CART . "'";
-        $res = DB_query($sql);
-        if ($res) {
-            while ($A = DB_fetchArray($res, false)) {
-                $retval[$A['order_id']] = new self($A['order_id']);
-            }
+        if (!empty($cart_id)) {
+            return DB_count(
+                $_TABLES['shop.orders'],
+                'order_id',
+                DB_escapeString($cart_id)
+            );
+        } else {
+            return false;
         }
-        return $retval;
     }
 
 
@@ -165,17 +160,17 @@ class Cart extends Order
 
 
     /**
-     *  Add a single item to the cart.
-     *  Formats the argument array to match the format used by the Order class
-     *  and calls that class's addItem() function to actually add the item.
+     * Add a single item to the cart.
+     * Formats the argument array to match the format used by the Order class
+     * and calls that class's addItem() function to actually add the item.
      *
-     *  Some values are straight from the item table, but may be overridden
-     *  to handle special cases or customization.
+     * Some values are straight from the item table, but may be overridden
+     * to handle special cases or customization.
      *
-     *  @param  array   $args   Array of arguments. item_number is required.
-     *  @return integer             Current item quantity
+     * @param  array   $args   Array of arguments. item_number is required.
+     * @return  integer     New item quantity, NULL on error
      */
-    public function addItem($args)
+    public function addItem(DataArray $args) : ?int
     {
         global $_SHOP_CONF, $_USER;
 
@@ -184,20 +179,24 @@ class Cart extends Order
             ||
             $this->uid != $_USER['uid']
         ) {
-            return false;
+            return NULL;
         }
 
         $need_save = false;     // assume the cart doesn't need to be re-saved
         $item_id = $args['item_number'];    // may contain options
         $P = Product::getByID($item_id);
-        $quantity   = SHOP_getVar($args, 'quantity', 'float', $P->getMinOrderQty());
+        $quantity   = $args->getFloat('quantity', $P->getMinOrderQty());
         $override   = isset($args['override']) ? $args['price'] : NULL;
-        $extras     = SHOP_getVar($args, 'extras', 'array');
-        $options    = SHOP_getVar($args, 'options', 'array');
-        $item_name  = SHOP_getVar($args, 'item_name');
-        $uid        = SHOP_getVar($args, 'uid', 'int', 1);
-        $taxable    = SHOP_getVar($args, 'taxable', 'int');
-        $options_text = SHOP_getVar($args, 'options_text', 'array');
+        $extras     = $args->getArray('extras');
+        $options    = $args->getArray('options');
+        $item_name  = $args->getString('item_name');
+        $uid        = $args->getInt('uid', 1);
+        $taxable    = $args->getInt('taxable');
+        $options_text = $args->getArray('options_text');
+        $shipping   = $args->getFloat('shipping');
+        $shipping_units = $args->getFloat('shipping_units', $P->getShippingUnits());
+        $shipping_weight= $args->getFloat('shipping_weight', $P->getWeight());
+        $options_price = 0;
 
         if (isset($args['description'])) {
             $item_dscp  = $args['description'];
@@ -207,29 +206,44 @@ class Cart extends Order
             $item_dscp = '';
         }
         if (isset($args['variant'])) {
-            $PV = ProductVariant::getInstance($args['variant']);
-        } else {
+            $PV = ProductVariant::getInstance($args->getInt('variant'));
+        } elseif (!Product::isPluginItem($P->getID())) {
             $PV = ProductVariant::getByAttributes($P->getID(), $options);
+        } else {
+            $PV = new ProductVariant;
         }
-        if (!is_array($this->items)) {
-            $this->items = array();
+        if (!is_array($this->Items)) {
+            $this->Items = array();
         }
 
         // Extract the attribute IDs from the options array to create
         // the item_id.
+        // This is for the product variant.
         // Options are an array(id1, id2, id3, ...)
         $opts = array();
         if (is_array($options) && !empty($options)) {
             foreach($options as $opt_id) {
-                $opts[] = new ProductOptionValue($opt_id);
+                $opts[$opt_id] = new ProductOptionValue($opt_id);
             }
             // Add the option numbers to the item ID to create a new ID
             // to check whether the product already exists in the cart.
             //$opt_str = implode(',', $options);
             //$item_id .= '|' . $opt_str;
-        } else {
-            $opts = array();
         }
+        if (isset($args['extras']['options']) && is_array($args['extras']['options'])) {
+            // Checkbox option IDs. Get the item options to check against
+            // for pricing.
+            $cBoxes = ProductCheckbox::getByProduct($args['item_number']);
+            foreach ($args['extras']['options'] as $opt_id) {
+                if (isset($cBoxes[$opt_id])) {
+                    $opts[$opt_id] = new ProductOptionValue($opt_id);
+                    $opt_price = $cBoxes[$opt_id]->getPrice();
+                    $opts[$opt_id]->withPrice($opt_price);
+                    $options_price += $opt_price;
+                }
+            }
+        }
+
         if ($PV->getID() > 0) {
             $P->setVariant($PV);
             $item_id .= '|' . $PV->getID();
@@ -245,14 +259,14 @@ class Cart extends Order
 
         $quantity = $P->validateOrderQty($quantity);
         if ($have_id !== false) {
-            $new_quantity = $this->items[$have_id]->getQuantity();
+            $new_quantity = $this->Items[$have_id]->getQuantity();
             $new_quantity += $quantity;
-            $this->items[$have_id]->setQuantity($new_quantity, $override);
-            $this->items[$have_id]->Save();
+            $this->Items[$have_id]->setQuantity($new_quantity, $override);
+            $this->Items[$have_id]->Save();     // to save updated order value
         } elseif ($quantity == 0) {
-            return false;
+            return NULL;
         } else {
-            $tmp = array(
+            $tmp = new DataArray(array(
                 'item_id'   => $item_id,
                 'quantity'  => $quantity,
                 'name'      => $P->getName($item_name),
@@ -261,28 +275,32 @@ class Cart extends Order
                 'options'   => $opts,
                 'options_text' => $options_text,
                 'extras'    => $extras,
-                'taxable'   => $P->isTaxable() ? 1 : 0,
                 'override'  => $override,
-            );
-            if (
-                Product::isPluginItem($item_id) &&
-                isset($args['price'])
-            ) {
-                $tmp['price'] = (float)$args['price'];
+                'options_price' => $options_price,
+                'shipping'  => $shipping,
+                'shipping_units' => $shipping_units,
+                'shipping_weight' => $shipping_weight,
+                'taxable'   => $P->isTaxable() ? 1 : 0,
+            ) );
+            if (Product::isPluginItem($item_id)) {
+                if (isset($args['price'])) {
+                    $tmp['price'] = (float)$args['price'];
+                }
+                if (isset($args['taxable'])) {
+                    $tmp['taxable'] = $args['taxable'] ? 1 : 0;
+                }
             }
             parent::addItem($tmp);
+            $this->Taint();
             $new_quantity = $quantity;
         }
         if ($this->applyQtyDiscounts($item_id)) {
             // If discount pricing was recalculated, save the new item prices
-            $need_save = true;
+            $this->Taint();
         }
         $P->reserveStock($quantity);
-
         // If an update was done that requires re-saving the cart, do it now
-        if ($need_save) {
-            $this->Save();
-        }
+        $this->saveIfTainted(true);
         return $new_quantity;
     }
 
@@ -298,7 +316,7 @@ class Cart extends Order
     public function updateItem($item_number, $updates)
     {
         // Search through the cart for the item number
-        foreach ($this->items as $id=>$OI) {
+        foreach ($this->Items as $id=>$OI) {
             if ($OI->getProductID() == $item_number) {
                 // If the item is found, loop through the updates and apply
                 $OI->updateItem($updates);
@@ -316,14 +334,14 @@ class Cart extends Order
      * Also applies a coupon code, if entered.
      *
      * @see     Cart::UpdateQty()
-     * @param   array   $A  Array if items as itemID=>newQty
-     * @return  array       Updated cart contents
+     * @param   DataArray   $A  Array if items as itemID=>newQty
+     * @return  object      $this
      */
-    public function Update($A)
+    public function Update(DataArray $A) : self
     {
         global $_SHOP_CONF;
 
-        $items = $A['quantity'];
+        $items = $A->getArray('quantity');
         if (!is_array($items)) {
             // No items in the cart?
             return $this;
@@ -333,14 +351,14 @@ class Cart extends Order
             // Make sure the item object exists. This can get out of sync if a
             // cart has been finalized and the user updates it from another
             // browser window.
-            if (array_key_exists($id, $this->items)) {
+            if (array_key_exists($id, $this->Items)) {
                 $qty = (float)$qty;
-                $item_id = $this->items[$id]->getProductId();
-                $old_qty = $this->items[$id]->getQuantity();
+                $item_id = $this->Items[$id]->getProductId();
+                $old_qty = $this->Items[$id]->getQuantity();
                 $Product = Product::getById($item_id);
                 // Check that the order hasn't exceeded the max allowed qty.
                 $max = $Product
-                    ->setVariant($this->items[$id]->getVariantID())
+                    ->setVariant($this->Items[$id]->getVariantID())
                     ->getMaxOrderQty();
                 if ($qty > $max) {
                     $qty = $max;
@@ -361,9 +379,9 @@ class Cart extends Order
                 } elseif ($old_qty != $qty) {
                     // The number field on the viewcart form should prevent this,
                     // but just in case ensure that the qty ordered is allowed.
-                    $this->items[$id]->setQuantity($qty);
+                    $this->Items[$id]->setQuantity($qty);
                     $this->applyQtyDiscounts($item_id);
-                    $this->items[$id]->Save();
+                    $this->Items[$id]->Save();
                 }
             } else {
                 $this->Taint();
@@ -383,7 +401,7 @@ class Cart extends Order
         //
         if ($_SHOP_CONF['gc_enabled'] && isset($A['gc_code'])) {
             // Redeem the supplied gift card code, if provided
-            $gc = SHOP_getVar($A, 'gc_code');
+            $gc = $A->getString('gc_code');
             if (!empty($gc)) {
                 if (Coupon::Redeem($gc) == 0) {
                     unset($this->m_info['apply_gc']);
@@ -397,7 +415,7 @@ class Cart extends Order
             $this->setGC($A['by_gc']);
         }
         if (isset($_POST['shipper_id'])) {
-            $this->setShipper($_POST['shipper_id']);
+            $this->setShipper($A->getInt('shipper_id'));
         }
         if (isset($A['buyer_email']) && COM_isEmail($A['buyer_email'])) {
             $this->buyer_email = $A['buyer_email'];
@@ -433,75 +451,24 @@ class Cart extends Order
     {
         global $_TABLES;
 
-        if (isset($this->items[$id])) {
-            $this->items[$id]->Delete();
-            unset($this->items[$id]);
+        if (isset($this->Items[$id])) {
+            $this->Items[$id]->Delete();
+            unset($this->Items[$id]);
             $this->Save();
         }
-        return $this->items;
+        return $this->Items;
     }
 
 
     /**
      * Empty and destroy the cart.
-     *
-     * @param   boolean $del_order  True to delete any related order
-     * @return  object  $this
      */
-    public function Clear($del_order = true)
+    public function Clear() : void
     {
-        global $_TABLES, $_USER;
-
         // Only clear if this is actually a cart, not a finalized order.
-        if ($this->status == OrderState::CART) {
-            foreach ($this->items as $Item) {
-                $Item->Delete();
-            }
-            $this->items = array();
-            $vals = array(
-                "gross_items = 0",
-                "net_nontax = 0",
-                "net_taxable = 0",
-                "order_total = 0",
-                "tax = 0",
-                "shipping = 0",
-                "handling = 0",
-                "by_gc = 0",
-                "tax_rate = 0",
-                "shipper_id = 0",
-                "discount_code = ''",
-                "discount_pct = 0",
-                "instructions = ''",
-                "tax_shipping = 0",
-                "tax_handling = 0",
-                "billto_id = 0",
-                "billto_name = ''",
-                "billto_company = ''",
-                "billto_address1 = ''",
-                "billto_address2 = ''",
-                "billto_city = ''",
-                "billto_state = ''",
-                "billto_country = ''",
-                "billto_zip = ''",
-                "billto_phone = ''",
-                "shipto_id = 0",
-                "shipto_name = ''",
-                "shipto_company = ''",
-                "shipto_address1 = ''",
-                "shipto_address2 = ''",
-                "shipto_city = ''",
-                "shipto_state = ''",
-                "shipto_country = ''",
-                "shipto_zip = ''",
-                "shipto_phone = ''",
-            );
-            $this->updateRecord($vals);
-            /*if ($del_order) {
-                DB_delete($_TABLES['shop.orders'], 'order_id', $this->cartID());
-                self::delAnonCart();
-            }*/
+        if ($this->status == OrderStatus::CART) {
+            Order::Delete($this->order_id);
         }
-        return $this;
     }
 
 
@@ -571,7 +538,7 @@ class Cart extends Order
     {
         global $_SHOP_CONF;
 
-        echo __CLASS__ . '::' . __FUNCTION__ . ': Deprecated';die;
+        echo __METHOD__ . '(): Deprecated';die;
 
         $retval = '';
         $total = $this->getTotal();
@@ -629,28 +596,12 @@ class Cart extends Order
 
 
     /**
-     * Get the cart ID.
-     * Returns either the native cart ID, or a version escaped for SQL
-     *
-     * @param   boolean $escape True to escape return value for DB
-     * @return  string      Cart ID string
-     */
-    public function cartID($escape=false)
-    {
-        if ($escape)
-            return DB_escapeString($this->order_id);
-        else
-            return $this->order_id;
-    }
-
-
-    /**
      * Set the address values for a single address.
      *
-     * @param   array   $A      Array of address elements
+     * @param   array   $A      Address object
      * @param   string  $type   Type of address, billing or shipping
      */
-    public function setAddress($A, $type = 'billto')
+    public function setAddress(Address $A, string $type = 'billto') : self
     {
         switch ($type) {
         case 'billto':
@@ -660,6 +611,7 @@ class Cart extends Order
             $this->setShipto($A);
             break;
         }
+        return $this;
     }
 
 
@@ -698,48 +650,63 @@ class Cart extends Order
      * @param   integer $uid    User ID
      * @return  string          Cart ID
      */
-    public static function getCartID($uid = 0)
+    public static function getCartID(int $uid=0) : ?string
     {
         global $_USER, $_TABLES, $_SHOP_CONF, $_PLUGIN_INFO;
 
         // Flag indicating the cart was read, so deleting old
         // carts happens only once.
         static $read_cart = array();
+        $cart_id = NULL;
 
         // Guard against invalid SQL if the DB hasn't been updated
         if (!SHOP_isMinVersion()) return NULL;
 
+        $db = Database::getInstance();
         $uid = $uid > 0 ? (int)$uid : (int)$_USER['uid'];
         if ($uid < 2) {
             $cart_id = self::getAnonCartID();
             if (!empty($cart_id)) {
                 // Check if the order exists but is not a cart.
-                $status = DB_getItem(
+                $status = $db->getItem(
                     $_TABLES['shop.orders'],
                     'status',
-                    "order_id = '" . DB_escapeString($cart_id) . "'"
+                    array('order_id' => $cart_id)
                 );
             } else {
                 $status = NULL;
             }
-            if ($status != NULL && $status != OrderState::CART) {
+            if ($status != NULL && $status != OrderStatus::CART) {
                 $cart_id = NULL;
             }
         } else {
-            $cart_id = DB_getItem(
-                $_TABLES['shop.orders'],
-                'order_id',
-                "uid = $uid AND status = '" . OrderState::CART .
-                "' ORDER BY last_mod DESC limit 1"
-            );
-            if (!empty($cart_id) && !isset($read_cart[$uid])) {
-                // For logged-in usrs, delete superfluous carts
-                DB_query("DELETE FROM {$_TABLES['shop.orders']}
-                    WHERE uid = $uid
-                    AND status = '" . OrderState::CART . "'
-                    AND order_id <> '" . DB_escapeString($cart_id) . "'");
+            try {
+                $row = $db->conn->executeQuery(
+                    "SELECT order_id FROM {$_TABLES['shop.orders']}
+                    WHERE uid = ? AND status = ?
+                    ORDER BY last_mod DESC limit 1",
+                    array($uid, OrderStatus::CART),
+                    array(Database::INTEGER, Database::STRING)
+                )->fetchAssociative();
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $row = false;
             }
-            $read_cart[$uid] = true;
+            if (is_array($row)) {
+                $cart_id = $row['order_id'];
+            }
+            if (!empty($cart_id)) {
+                if (!isset($read_cart[$uid])) {
+                    // For logged-in usrs, delete superfluous carts
+                    $db->conn->executeStatement(
+                        "DELETE FROM {$_TABLES['shop.orders']}
+                        WHERE uid = ? AND status = ? AND order_id <> ?",
+                        array($uid, OrderStatus::CART, $cart_id),
+                        array(Database::INTEGER, Database::STRING, Database::STRING)
+                    );
+                }
+                $read_cart[$uid] = true;
+            }
         }
         return $cart_id;
     }
@@ -762,13 +729,13 @@ class Cart extends Order
         if ($uid < 2) return;       // Don't delete anonymous carts
         $msg = "All carts for user {$uid} deleted";
         $sql = "DELETE FROM {$_TABLES['shop.orders']}
-            WHERE uid = $uid AND status = '" . OrderState::CART . "'";
+            WHERE uid = $uid AND status = '" . OrderStatus::CART . "'";
         if ($save != '') {
             $sql .= " AND order_id <> '" . DB_escapeString($save) . "'";
             $msg .= " except $save";
         }
         DB_query($sql);
-        SHOP_log($msg, SHOP_LOG_DEBUG);
+        Log::write('shop_system', Log::DEBUG, $msg);
     }
 
 
@@ -817,9 +784,9 @@ class Cart extends Order
      *
      * @return  mixed   Cart ID, or Null if not set
      */
-    public static function getAnonCartID()
+    public static function getAnonCartID() : ?string
     {
-        $cart_id = Session::get('cart_id');
+        $cart_id = Session::get('order_id');
         return $cart_id;
     }
 
@@ -850,40 +817,11 @@ class Cart extends Order
 
         switch($wf_name) {
         case 'viewcart':
-            // Initial cart view. Check here and populate the billing and
-            // shipping addresses if not already set, and only for logged-in
-            // users.
-            // This allows subsequent steps to go directly to the checkout
-            // page if all other workflows are complete.
-            /*if ($this->uid > 1) {
-                // Determine the minimum value for a workflow to be "required"
-                $wf_required = $this->requiresShipto() ? 1 : 3;
-                $U = Customer::getInstance($this->uid);
-                if (
-                    $this->billto_id == 0 &&
-                    Workflow::getInstance(2)->enabled >= $wf_required
-                ) {
-                    $A = $U->getDefaultAddress('billto');
-                    if ($A) {
-                        $this->setAddress($A->toArray(), 'billto');
-                    }
-                }
-                if (
-                    $this->shipto_id == 0 &&
-                    Workflow::getInstance(3)->enabled >= $wf_required
-                ) {
-                    $A = $U->getDefaultAddress('shipto');
-                    if ($A) {
-                        $this->setAddress($A->toArray(), 'shipto');
-                    }
-                }
-        }*/
             // Fall through to the checkout view
         case 'checkout':
             $V = new Views\Cart;
             $V->withView($wf_name)->withOrderId($this->order_id);
             return $V->Render();
-            return $this->View($wf_name, $step);
         case 'billto':
         case 'shipto':
             $U = new \Shop\Customer();
@@ -893,7 +831,6 @@ class Cart extends Order
             $V = new Views\Cart;
             $V->withView('checkout')->withOrderId($this->order_id);
             return $V->Render();
-            return $this->View('checkout');
         default:
             return $this->View();
         }
@@ -915,7 +852,7 @@ class Cart extends Order
         $canview = false;
 
         // Check that this is an existing record
-        if ($this->isNew() || $this->status != OrderState::CART) {
+        if ($this->isNew() || $this->status != OrderStatus::CART) {
             $canview  = false;
         } elseif ($this->getUid() > 1 && $_USER['uid'] == $this->getUid()) {
             // Logged-in cart owner
@@ -935,8 +872,8 @@ class Cart extends Order
     public static function Purge()
     {
         global $_TABLES;
-        DB_delete($_TABLES['shop.orders'], 'status', OrderState::CART);
-        SHOP_log("All carts for all users deleted", SHOP_LOG_DEBUG);
+        DB_delete($_TABLES['shop.orders'], 'status', OrderStatus::CART);
+        Log::write('shop_system', Log::INFO, "All carts for all users deleted");
     }
 
 
@@ -953,7 +890,7 @@ class Cart extends Order
 
         $exp = time() + ($_SHOP_CONF['days_purge_cart'] * 86400);
         SEC_setCookie(self::$session_var, $value, $exp);
-        Session::set('cart_id', $value);
+        Session::set('order_id', $value);
     }
 
 
@@ -987,13 +924,13 @@ class Cart extends Order
      *
      * @return  array   Array of invalid order item objects.
      */
-    public function updateItems()
+    public function updateItems() : array
     {
         global $LANG_SHOP;
 
         $invalid = array();     // Holder for product objects
         $msg = array();         // Message to be displayed
-        foreach ($this->items as $id=>$Item) {
+        foreach ($this->Items as $id=>$Item) {
             $P = $Item->getProduct();
             if (!$P->canOrder()) {
                 if (!isset($invalid['removed'])) {
@@ -1037,7 +974,7 @@ class Cart extends Order
 
         if ($this->requiresShipto()) {
             $Addr = new Address($this->Shipto->toArray());
-            if ($Addr->isValid(true) != '') {
+            if ($Addr->isValid($this->hasPhysical()) != '') {
                 $errors['shipto'] = $LANG_SHOP['req_shipto'];
                 if ($new_wf == '') {
                     $new_wf = 'addresses';
@@ -1047,7 +984,7 @@ class Cart extends Order
 
         if ($this->requiresBillto()) {
             $Addr = new Address($this->Billto->toArray());
-            if ($Addr->isValid(true) != '') {
+            if ($Addr->isValid($this->hasPhysical()) != '') {
                 $errors['billtoto'] = $LANG_SHOP['req_billto'];
                 if ($new_wf == '') {
                     $new_wf = 'addresses';
@@ -1165,6 +1102,47 @@ class Cart extends Order
         } else {
             return true;
         }
+    }
+
+
+
+    /**
+     * Get a count of carts that have items and may be abandoned.
+     *
+     * @param   integer $ts Timestamp
+     * @return  integer     Number of carts
+     */
+    public static function countOpenCarts(?int $ts=NULL) : int
+    {
+        global $_TABLES;
+
+        if ($ts === NULL) {
+            $ts = time();
+        }
+        $last_mod = SHOP_now();
+        $last_mod->setTimestamp($ts);
+        $last_mod = $last_mod->toMySQL(false);
+        $retval = 0;
+        $qb = Database::getInstance()->conn->createQueryBuilder();
+        try {
+            $row = $qb->select('count(*) AS cnt')
+                      ->from($_TABLES['shop.orders'], 'ord')
+                      ->leftJoin('ord', $_TABLES['shop.orderitems'], 'itm', 'ord.order_id = itm.order_id')
+                      ->where('ord.status = :status')
+                      ->andWhere('last_mod < :last_mod')
+                      ->having('count(itm.order_id) > 0')
+                      ->setParameter('status', OrderStatus::CART, Database::STRING)
+                      ->setParameter('last_mod', $last_mod, Database::STRING)
+                      ->execute()
+                      ->fetchAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $row = false;
+        }
+        if (is_array($row)) {
+            $retval = (int)$row['cnt'];
+        }
+        return $retval;
     }
 
 }

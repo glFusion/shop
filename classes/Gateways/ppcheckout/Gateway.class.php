@@ -17,13 +17,13 @@ use Shop\Address;
 use Shop\Currency;
 use Shop\Order;
 use Shop\Shipper;
-use Shop\Models\OrderState;
+use Shop\Models\OrderStatus;
 use Shop\Models\CustomInfo;
 use Shop\Template;
 use Shop\Cache;
 use Shop\Models\Token;
 use Shop\Models\Payout;
-use Shop\Models\PayoutHeader;
+use Shop\Log;
 
 
 /**
@@ -43,11 +43,6 @@ class Gateway extends \Shop\Gateway
     /** Gateway service description.
      * @var string */
     protected $gw_desc = 'Checkout with PayPal';
-
-    /** Flag this gateway as bundled with the Shop plugin.
-     * Gateway version will be set to the Shop plugin's version.
-     * @var integer */
-    protected $bundled = 1;
 
     /** Paypal API URL, sandbox or production.
      * @var string */
@@ -330,7 +325,7 @@ class Gateway extends \Shop\Gateway
 
         $access_token = $this->getBearerToken();
         if (!$access_token) {
-            SHOP_log("Could not get Paypal access token", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, "Could not get Paypal access token");
             return false;
         }
 
@@ -338,7 +333,7 @@ class Gateway extends \Shop\Gateway
         $Currency = $Order->getCurrency();
         $Billto = $Order->getBillto();
         $Shipto = $Order->getShipto();
-        $Order->updateStatus(OrderState::INVOICED);
+        $Order->updateStatus(OrderStatus::INVOICED);
         $order_num = $Order->getOrderId();
 
         $A = array(
@@ -479,7 +474,7 @@ class Gateway extends \Shop\Gateway
 
         // If the invoice was created successfully, send to the buyer
         if ($http_code == 201) {
-            $Order->updateStatus(OrderState::INVOICED);
+            $Order->updateStatus(OrderStatus::INVOICED);
             $json = json_decode($inv, true);
             if (isset($json['href'])) {
                 $ch = curl_init();
@@ -497,12 +492,12 @@ class Gateway extends \Shop\Gateway
                 $http_code = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
                 curl_close($ch);
                 if ($http_code > 299) {
-                    SHOP_log("Error sending invoice for $order_num. Code $http_code, Text: $send_response", SHOP_LOG_ERROR);
+                    Log::write('shop_system', Log::ERROR, "Error sending invoice for $order_num. Code $http_code, Text: $send_response");
                     return false;
                 }
             }
         } else {
-            SHOP_log("Error creating invoice for $order_num", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, "Error creating invoice for $order_num");
             SHOP_Log("Data: " . var_export($inv, true));
             return false;
         }
@@ -573,10 +568,10 @@ class Gateway extends \Shop\Gateway
         try {
             $response = $client->execute($request);
         } catch (\PaypalCheckoutSdk\PayPalHttp\HttpException $e) {
-            SHOP_log("Error capturing $authorizationId, response " . var_export($response,true));
+            Log::write('shop_system', Log::ERROR, "Error capturing $authorizationId, response " . var_export($response,true));
             $response = NULL;
         }
-        SHOP_log('Capture response: ' . var_export($response,true), SHOP_LOG_DEBUG);
+        Log::write('shop_system', Log::DEBUG, 'Capture response: ' . var_export($response,true));
         return $response;
     }
 
@@ -595,10 +590,10 @@ class Gateway extends \Shop\Gateway
         try {
             $response = $client->execute($request);
         } catch (\PaypalCheckoutSdk\PayPalHttp\HttpException $e) {
-            SHOP_log("Error capturing $captureId, response " . var_export($response,true));
+            Log::write('shop_system', Log::ERROR, "Error capturing $captureId, response " . var_export($response,true));
             $response = NULL;
         }
-        SHOP_log('Capture details: ' . var_export($response,true), SHOP_LOG_DEBUG);
+        Log::write('shop_system', Log::DEBUG, 'Capture details: ' . var_export($response,true));
         return $response;
     }
 
@@ -617,10 +612,10 @@ class Gateway extends \Shop\Gateway
         try {
             $response = $client->execute($request);
         } catch (\PaypalCheckoutSdk\PayPalHttp\HttpException $e) {
-            SHOP_log("Error retrieving order $orderId, response " . var_export($response,true));
+            Log::write('shop_system', Log::ERROR, "Error retrieving order $orderId, response " . var_export($response,true));
             $response = NULL;
         }
-        SHOP_log('Capture details: ' . var_export($response,true), SHOP_LOG_DEBUG);
+        Log::write('shop_system', Log::DEBUG, 'Capture details: ' . var_export($response,true));
         return $response;
     }
 
@@ -662,7 +657,13 @@ class Gateway extends \Shop\Gateway
     }
 
 
-    public function calcPayoutFee($amount)
+    /**
+     * Calculate the gateway fee for a payout amount.
+     *
+     * @param   float   $amount     Total payout amount
+     * @return  float       Amount of the vendor fee
+     */
+    public function calcPayoutFee(float $amount) : float
     {
         $fee = ((float)$amount * ($this->getConfig('fee_percent') / 100)) +
             $this->getConfig('fee_fixed');
@@ -670,7 +671,13 @@ class Gateway extends \Shop\Gateway
     }
 
 
-    public function calcPayout($amount)
+    /**
+     * Calculate the net payout amount after deducting feed.
+     *
+     * @param   float   $amount     Gross payout amount
+     * @return  float       Net payout amount
+     */
+    public function calcPayout(float $amount) : float
     {
 
         $payout = (float)$amount - $this->calcPayoutFee($amount);
@@ -678,13 +685,18 @@ class Gateway extends \Shop\Gateway
     }
 
 
-    public function sendPayouts(PayoutHeader $Header, array $Payouts)
+    /**
+     * Call the Paypal API to send payouts to affiliates.
+     *
+     * @param   array   $Payouts    Array of Payout objects
+     */
+    public function sendPayouts(array &$Payouts) : void
     {
         $A = array(
             'sender_batch_header' => array(
                 'sender_batch_id' => uniqid(),
-                'email_subject' => $Header['email_subject'],
-                'email_message' => $Header['email_message'],
+                'email_subject' => 'Your Affiliate Payment',
+                'email_message' => 'Your affiliate payment has been paid out.',
             ),
             'items' => array(),
         );

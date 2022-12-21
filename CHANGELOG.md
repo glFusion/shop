@@ -1,8 +1,57 @@
 # Shop plugin for glFusion - Changelog
 
+## v1.5.0
+Release TBD
+  * Require glFusion 2.0.0+
+  * Save shipping units and weights with orderitems to facilitate injected products from plugins.
+  * Don't calculate shipping where units = 0, use only fixed if present.
+  * Add flag to disable catalog if used only to support plugins.
+  * Move feature-enablement configs under a separate header.
+  * Ensure complete IPN data is sent to plugins for handlePurchase().
+  * Add a header and footer templates to buyer notifications, admin can customize.
+  * Allow anonymous buyers to provide addresses on orders without saving the address.
+  * Link anonymous orders to a new user's account by matching the email address.
+  * Fix #64 - saving a gateway didn't save unchecked service statuses.
+  * Fix #65 - disabled gateways were made available to plugins.
+  * Deprecate all sales tax APIs due to a lack of developer plans.
+  * Change `purge_sale_prices` from yes/no to a number of days.
+  * Fix setting sale prices in orderitem table.
+  * Add bulk void/unvoid buttons for coupons.
+  * Fix duplicate gift card payment on invoice view calculation (#66).
+  * Hide price and disable buttons if a product selection is not available.
+  * Add custom fields and variants to item purchase report.
+  * Implement product rules to limit shippers (#69).
+    * Admin menu changed from `Regions` to `Rules`, all rules and regions managed from there.
+  * Leverage glFusion 2.0.0+ Log class.
+  * Save actual IPN/Webhook payment ID with payment record for linking.
+    * Link to multiple webhook details from payment record.
+  * Control catalog block display via CSS, remove column setting.
+  * Add option to purge orders or redact PII after some years.
+  * Fix getting actual enabled zone rule for a product.
+  * Accept an empty value for ProductVariant::setImageIDs().
+  * Enable direct querying of release info for payment gateways. (#3ee2908)
+  * Use fixed array of gateway names to determind if bundled or not.
+  * Users or customers are enrolled as affiliates if the config is change to "yes".
+  * Add optional URL to logo image for invoices.
+  * Increase text length for product features.
+  * Allow multiple checkbox options with price impacts (#71).
+  * More flexible order statuses, allow admin-defined settings.
+  * Add admin-selectable order ID format options, remove custom function.
+  * Get version info from JSON file for installable gateways.
+  * Move payment gateway management functions to a separate class.
+  * Add syndication classes to support catalog feeds.
+  * Deprecate updating cart currency, just purge carts if currency is changed.
+  * Allow sites to define where each address field is required.
+  * Combine enable-ratings configs for logged-in and anon users.
+  * Include SKU in item purchase report.
+  * Fix setting SKU in order item object to include the variant.
+  * Allow disabling individual options and hide them from the product detail.
+  * Add a hidden secret value to verify order during certain operations.
+  * Fill in checkboxes and text fields when viewing an order item from an order.
+
 ## v1.4.1
 Release 2022-04-07
-  * Fix return from Gateway::getAll() when no gateways are installed.
+  * Fix return from Gateway::getAll() when no gateways are installed (#67).
 
 ## v1.4.0
 Release 2021-09-25
@@ -16,6 +65,7 @@ Release 2021-09-25
   * Move quantity tracking to Stock table, reserve items as they go into carts.
   * Fix `No Product` message showing even if plugin products are displayed.
   * Add interface for plugin products to be sold where the plugin doesn't support Shop.
+    * Added a `plugin_products` table to set defaults for plugins.
 
 ## v1.3.0
 Release 2021-04-20

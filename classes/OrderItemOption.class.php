@@ -56,6 +56,11 @@ class OrderItemOption
      * @var float */
     private $oio_price = 0;
 
+    /** Flag to indicate the object has been changed and needs saving.
+     * @var boolean */
+    private $_tainted = true;
+
+
     /**
      * Constructor.
      * Initializes the order item
@@ -103,7 +108,11 @@ class OrderItemOption
         //echo $sql;die;
         $res = DB_query($sql);
         if ($res) {
-            return $this->setVars(DB_fetchArray($res, false));
+            $status = $this->setVars(DB_fetchArray($res, false));
+            if ($status) {
+                $this->unTaint();
+            }
+            return $status;
         } else {
             return false;
         }
@@ -142,6 +151,7 @@ class OrderItemOption
         $this->oio_name = ProductOptionGroup::getInstance($POV->getGroupID())->getName();
         $this->oio_value = $POV->getValue();
         $this->oio_price = $POV->getPrice();
+        $this->Taint();
         return $this;
     }
 
@@ -154,6 +164,9 @@ class OrderItemOption
      */
     public function setOrderItemID($id)
     {
+        if ($this->oi_id != $id) {
+            $this->Taint();
+        }
         $this->oi_id = (int)$id;
         return $this;
     }
@@ -214,8 +227,7 @@ class OrderItemOption
             oio_name = '" . DB_escapeString($this->oio_name) . "',
             oio_value = '" . DB_escapeString($this->oio_value) . "',
             oio_price = '{$this->oio_price}'";
-        //echo $sql;die;
-        SHOP_log($sql, SHOP_LOG_DEBUG);
+        Log::write('shop_system', Log::DEBUG, $sql);
         DB_query($sql, 1);  // ignore dup key issues.
         if (!DB_error()) {
             if ($this->oio_id == 0) {
@@ -223,7 +235,7 @@ class OrderItemOption
             }
             return true;
         } else {
-            SHOP_log($sql);
+            Log::write('shop_system', Log::ERROR, $sql);
             return false;
         }
     }
@@ -258,6 +270,7 @@ class OrderItemOption
             $this->oio_value = $value;
             $this->oio_price = 0;
         }
+        $this->Taint();
         return $this;
     }
 
@@ -372,6 +385,133 @@ class OrderItemOption
     public function getOptionID()
     {
         return $this->pov_id;
+    }
+
+
+    /**
+     * Save this item if it has been changed.
+     *
+     * @return  object  $this
+     */
+    public function saveIfTainted() : object
+    {
+        if ($this->isTainted()) {
+            $this->Save();
+        }
+        return $this;
+    }
+
+
+    /**
+     * Check if the record is "tainted" by values being changed.
+     *
+     * @return  boolean     True if tainted and needs to be saved
+     */
+    public function isTainted() : bool
+    {
+        return $this->_tainted;
+    }
+
+
+    /**
+     * Taint this object, indicating that something has changed.
+     *
+     * @return  object  $this
+     */
+    public function Taint() : object
+    {
+        $this->_tainted = true;
+        return $this;
+    }
+
+
+    /**
+     * Remove the taint flag.
+     *
+     * @return  object  $this
+     */
+    public function unTaint() : object
+    {
+        $this->_tainted = false;
+        return $this;
+    }
+
+
+    /**
+     * Set the OrderItem record ID.
+     *
+     * @param   integer $id     OrderItem ID
+     * @return  object  $this
+     */
+    public function withOrderItemId(int $id) : self
+    {
+        $this->oi_id = $id;
+        return $this;
+    }
+
+
+    /**
+     * Set the OptionGroup record ID.
+     *
+     * @param   integer $id     OptionGroup ID
+     * @return  object  $this
+     */
+    public function withOptionGroupId(int $id) : self
+    {
+        $this->pog_id = $id;
+        return $this;
+    }
+
+
+    /**
+     * Set the OptionValue record ID.
+     *
+     * @param   integer $id     OptionValue ID
+     * @return  object  $this
+     */
+    public function withOptionValueId(int $id) : self
+    {
+        $this->pov_id = $id;
+        return $this;
+    }
+
+
+    /**
+     * Set the Option Name text.
+     *
+     * @param   string  $name   Option Name
+     * @return  object  $this
+     */
+    public function withOptionName(string $name) : self
+    {
+        $this->oio_name = $name;
+        return $this;
+    }
+
+
+    /**
+     * Set the Option Value text.
+     *
+     * @param   string  $value  Option Value
+     * @return  object  $this
+     */
+    public function withOptionValue(string $value) : self
+    {
+        $this->oio_value = $value;
+        return $this;
+    }
+
+
+    /**
+     * Set the Option Price amount.
+     *
+     * @param   float   $value  Option price impact
+     * @return  object  $this
+     */
+    public function withOptionPrice(float $value) : self
+    {
+        $this->oio_price = $value;
+        return $this;
     }
 
 }

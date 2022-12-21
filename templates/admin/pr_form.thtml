@@ -1,0 +1,58 @@
+{# begin {templatelocation} #}
+<h2>{title}</h2>
+<form uk-form class="uk-form uk-form-horizontal" action="{action_url}/rules.php" method="post">
+	<input type="hidden" name="pr_id" value="{pr_id}" />
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label">{$LANG_SHOP['name']}:
+			<span id="hlp_pr_name" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls">
+			<input class="uk-input" type="text" name="pr_name" value="{pr_name}" />
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label">{$LANG_SHOP['description']}:
+			<span id="hlp_pr_dscp" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls">
+			<textarea class="uk-textarea uk-form-width-large" name="pr_dscp">{pr_dscp}</textarea>
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label">{$LANG_SHOP['is_hazmat']}?
+			<span id="hlp_is_hazmat" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls">
+			<input class="uk-checkbox" type="checkbox" name="pr_hazmat" value="1" {hazmat_chk} />
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label">{$LANG_SHOP['allowed_shippers']}:
+			<span id="hlp_allowed_shippers" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls">
+			<select multiple class="uk-select" name="pr_shipper_ids[]">
+<!-- BEGIN shipper_opts -->
+				<option value="{shipper_id}" {shipper_sel}>{shipper_name}</option>
+<!-- END shipper_opts -->
+			</select>
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin" style="clear:both;text-align:center">
+		<button class="uk-button uk-button-success" type="submit" name="pr_save" value="{$LANG_SHOP['saveopt']}">{$LANG_SHOP['saveopt']}</button>
+		<button class="uk-button uk-button-default" type="reset" />{$LANG_SHOP['clearform']}</button>
+		<a class="uk-button uk-button-primary" href="{action_url}/rules.php?pr_list">{$LANG_ADMIN['cancel']}</a>
+{!if can_delete}
+		<button style="float:right;" class="uk-button uk-button-danger" type="submit" name="pr_del" value="{$LANG_SHOP['deleteopt']}"
+			onclick="return confirm('{$LANG_SHOP['q_del_pov']}');">{$LANG_SHOP['deleteopt']}</button>
+{!endif}
+	</div>
+
+</form>
+{tooltipster_js}
+{# end {templatelocation} #}

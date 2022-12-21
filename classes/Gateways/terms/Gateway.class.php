@@ -14,8 +14,11 @@
  * @filesource
  */
 namespace Shop\Gateways\terms;
-use Shop\Models\OrderState;
+use Shop\Models\OrderStatus;
+use Shop\Models\Token;
 use Shop\Gateway as GW;
+use Shop\GatewayManager;
+use Shop\FieldList;
 
 
 /**
@@ -31,11 +34,6 @@ class Gateway extends \Shop\Gateway
     /** Gateway provide. Company name, etc.
      * @var string */
     protected $gw_provider = 'Net Terms';
-
-    /** Flag this gateway as bundled with the Shop plugin.
-     * Gateway version will be set to the Shop plugin's version.
-     * @var integer */
-    protected $bundled = 1;
 
 
     /**
@@ -59,7 +57,7 @@ class Gateway extends \Shop\Gateway
             'global' => array(
                 'gateway'   => '',
                 'net_days'  => 30,
-                'after_inv_status' => OrderState::PROCESSING,
+                'after_inv_status' => OrderStatus::PROCESSING,
                 //'email_invoice' => 0,
             ),
         );
@@ -96,6 +94,7 @@ class Gateway extends \Shop\Gateway
         $gatewayVars = array(
             '<input type="hidden" name="order_id" value="' . $Cart->getOrderID() . '" />',
             '<input type="hidden" name="pmt_gross" value="' . $pmt_gross . '" />',
+            '<input type="hidden" name="secret" value="' . Token::encrypt($Cart->getSecret()) . '" />',
         );
         return implode("\n", $gatewayVars);
     }
@@ -108,7 +107,7 @@ class Gateway extends \Shop\Gateway
         $opts = array();
         switch ($name) {
         case 'gateway':
-            foreach (self::getAll() as $gw) {
+            foreach (GatewayManager::getAll() as $gw) {
                 if (!$gw->Supports($this->gw_name)) {
                     continue;
                 }
@@ -121,7 +120,7 @@ class Gateway extends \Shop\Gateway
             break;
         case 'after_inv_status':
             foreach (array(
-                OrderState::INVOICED, OrderState::PROCESSING
+                OrderStatus::INVOICED, OrderStatus::PROCESSING
             ) as $status) {
                 $opts[] = array(
                     'name' => $LANG_SHOP['orderstatus'][$status],
@@ -163,9 +162,12 @@ class Gateway extends \Shop\Gateway
         }
         $gw = parent::getInstance($gw_name);
         if ($gw && $gw->Supports($this->gw_name)) {
-            $status = parent::getInstance($gw_name)->createInvoice($Order, $this);
+            $status = $gw->createInvoice($Order, $this);
         } else {
             $status = false;
+        }
+        if ($status) {      // if invoice creation was successful
+            $Order->updateStatus($this->getConfig('after_inv_status'));
         }
         return $status;
     }
@@ -264,15 +266,12 @@ class Gateway extends \Shop\Gateway
         // webhook processing, if available.
         $url = $Order->getInfo('gw_pmt_url');
         if (!empty($url)) {
-            $link = COM_createLink(
-                '<button class="uk-button uk-button-success">' .
-                    $LANG_SHOP['buttons']['pay_now'] .
-                    '</button>',
-                $url,
-                array(
-                    'target' => '_blank',
-                )
-            );
+            $link = FieldList::buttonLink(array(
+                'text' => $LANG_SHOP['buttons']['pay_now'],
+                'style' => 'success',
+                'target' => '_blank',
+                'url' => $url,
+            ) );
         } else {
             $link = '';
         }

@@ -1,17 +1,24 @@
 <?php
 /**
- * Order History Report.
+ * Item purchase report.
+ * Shows each order item with pricing and option info.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop\Reports;
+use Shop\Product;
+use Shop\ProductVariant;
+use Shop\ProductOptionGroup;
+use Shop\Models\Request;
+use Shop\Models\ProductCheckbox;
+
 
 /**
  * Class for Order History Report.
@@ -52,27 +59,42 @@ class itempurchase extends \Shop\Report
      *
      * @return  string  HTML for report
      */
-    public function Render()
+    public function Render() : string
     {
         global $_TABLES, $_CONF, $LANG_SHOP;
 
-        $this->item_id = SHOP_getVar($_GET, 'item_id');
+        $Request = Request::getInstance();
+        $this->item_id = $Request->getString('item_id');
         $from_date = $this->startDate->toUnix();
         $to_date = $this->endDate->toUnix();
-        $Item = \Shop\Product::getByID($this->item_id);
-        $this->item_dscp = $Item->getShortDscp();
+        $Product = Product::getByID($this->item_id);
+        $this->item_dscp = $Product->getShortDscp();
         $this->item_id = DB_escapeString($this->item_id);
         $T = $this->getTemplate();
 
-        $sql = "SELECT purch.*, purch.quantity as qty, ord.order_date, ord.uid,
-            ord.billto_name, ord.billto_company, ord.status
-            FROM {$_TABLES['shop.orderitems']} purch
-            LEFT JOIN {$_TABLES['shop.orders']} ord ON ord.order_id = purch.order_id";
+        $text_flds = $Product->getCustom();
+        if (is_array($text_flds) && (count($text_flds) > 1 || !empty($text_flds[0]))) {
+            $has_custom = true;
+        } else {
+            $has_custom = false;
+        }
+
+        $sql = "SELECT oi.*, oi.quantity as qty, ord.order_date, ord.uid,
+            ord.billto_name, ord.billto_company, ord.status, ord.buyer_email
+            FROM {$_TABLES['shop.orderitems']} oi
+            LEFT JOIN {$_TABLES['shop.orders']} ord ON ord.order_id = oi.order_id";
+//            LEFT JOIN {$_TABLES['shop.prodXcbox']} x ON ord.product_id = x.item_id
+//            LEFT JOIN {$_TABLES['shop.product_option_vals']} pov ON x.item_id";
 
         $header_arr = array(
             array(
                 'text'  => $LANG_SHOP['purch_date'],
                 'field' => 'order_date',
+                'sort'  => true,
+            ),
+            array(
+                'text'  => 'SKU',
+                'field' => 'sku',
                 'sort'  => true,
             ),
             array(
@@ -104,7 +126,7 @@ class itempurchase extends \Shop\Report
         );
 
         $where = " WHERE ord.status <> 'cart'
-            AND purch.product_id = '{$this->item_id}'
+            AND oi.product_id = '{$this->item_id}'
             AND (ord.order_date >= '$from_date'
             AND ord.order_date <= '$to_date')";
         if ($this->uid > 0) {
@@ -145,30 +167,132 @@ class itempurchase extends \Shop\Report
         case 'csv':
             $sql .= ' ' . $query_arr['default_filter'];
             $res = DB_query($sql);
-            $T->set_block('report', 'ItemRow', 'row');
+            if (!empty($text_flds)) {
+                foreach ($text_flds as $idx=>$val) {
+                    $text_flds[$idx] = $this->remQuote($val);
+                }
+                $text_flds = ',"' . implode('","', $text_flds) . '"';
+                $T->set_var('custom_header', $text_flds);
+            }
             $order_date = clone $_CONF['_now'];   // Create an object to be updated later
+            $total_sales = 0;
+            $total_shipping = 0;
+            $total_tax = 0;
+            $total_total = 0;
+            $items = array();
+            $variant_headers = array();
+            $POGs = ProductOptionGroup::getByProduct($this->item_id);
+            foreach ($POGs as $POG) {
+                $variant_headers['pog_' . $POG->getID()] = $this->remQuote($POG->getName());
+            }
+            $cbox_headers = array();
+            $Checkboxes = ProductCheckbox::getByProduct($this->item_id);
+            foreach ($Checkboxes as $cBox) {
+                $cbox_headers[$cBox->getOptionID()] = $cBox->getOptionValue();
+            }
+
             while ($A = DB_fetchArray($res, false)) {
                 if (!empty($A['billto_company'])) {
                     $customer = $A['billto_company'];
-                } else {
+                } elseif (!empty($A['billto_name'])) {
                     $customer = $A['billto_name'];
+                } else {
+                    $customer = COM_getDisplayName($A['uid']);
                 }
                 $order_date->setTimestamp($A['order_date']);
-                $order_total = $A['sales_amt'] + $A['tax'] + $A['shipping'];
-                $T->set_var(array(
-                    'item_name'     => $this->item_dscp,
-                    'order_id'      => $A['order_id'],
-                    'order_date'    => $order_date->format('Y-m-d', true),
-                    'customer'      => $this->remQuote($customer),
-                    'qty'           => $A['qty'],
-                    'uid'           => $A['uid'],
-                    'nl'            => "\n",
-                ) );
-                $T->parse('row', 'ItemRow', true);
-                $total_sales += $A['sales_amt'];
+                $item_total = $A['net_price'] * $A['quantity'];
+                $order_total = $item_total + $A['tax'] + $A['shipping'] + $A['handling'];
+                $total_sales += $item_total;
                 $total_tax += $A['tax'];
                 $total_shipping += $A['shipping'];
                 $total_total += $order_total;
+                $items[$A['id']] = array(
+                    'item_name'     => $this->remQuote($this->item_dscp),
+                    'sku'           => $this->remQuote($A['sku']),
+                    'order_id'      => $this->remQuote($A['order_id']),
+                    'order_date'    => $order_date->format('Y-m-d', true),
+                    'customer'      => $this->remQuote($customer),
+                    'qty'           => (float)$A['qty'],
+                    'uid'           => (int)$A['uid'],
+                    'email'         => $this->remQuote($A['buyer_email']),
+                    'variants'      => array(),
+                    'custom'        => '',
+                );
+                if ($A['variant_id'] > 0) {
+                    $PV = ProductVariant::getInstance($A['variant_id']);
+                    if ($PV->getID() > 0) {     // make sure it's a good record
+                        foreach ($PV->getDscp() as $dscp) {
+                            //$variant_headers[$dscp['name']] = $this->remQuote($dscp['name']);
+                            $items[$A['id']]['variants'][$dscp['name']] = $this->remQuote($dscp['value']);
+                        }
+                    }
+                }
+                $extras = json_decode($A['extras'], true);
+                if (isset($extras[0])) {
+                    $extras = json_decode($extras[0],true);
+                }
+                if ($has_custom) {
+                    if (!empty($extras) && isset($extras['custom']) && is_array($extras['custom'])) {
+                        foreach ($extras['custom'] as $idx=>$val) {
+                            $extras['custom'][$idx] = $this->remQuote($val);
+                        }
+                        $items[$A['id']]['custom'] = ',"' . implode('","', $extras['custom']) . '"';
+                    }
+                }
+                if (!empty($cbox_headers)) {
+                    $cbox_flds = array();
+                    foreach ($cbox_headers as $opt_id=>$dummy) {
+                        if (
+                            isset($extras['options']) &&
+                            is_array($extras['options']) &&
+                            in_array($opt_id, $extras['options'])
+                        ) {
+                            $cbox_flds[$opt_id] = 'X';
+                        } else {
+                            $cbox_flds[$opt_id] = '';
+                        }
+                    }
+                    $items[$A['id']]['cbox_flds'] = ',"' . implode('","', $cbox_flds) . '"';
+                }
+            }
+            if (!empty($variant_headers)) {
+                $T->set_var('variant_header', ',"' . implode('","', $variant_headers) . '"');
+            }
+            if (!empty($cbox_headers)) {
+                $T->set_var('cbox_header', ',"' . implode('","', $cbox_headers) . '"');
+            }
+
+
+            $T->set_block('report', 'ItemRow', 'row');
+            foreach ($items as $item) {
+                $T->set_var(array(
+                    'item_name'     => $item['item_name'],
+                    'sku'           => $item['sku'],
+                    'order_id'      => $item['order_id'],
+                    'order_date'    => $item['order_date'],
+                    'customer'      => $item['customer'],
+                    'qty'           => $item['qty'],
+                    'uid'           => $item['uid'],
+                    'email'         => $item['email'],
+                    'custom_flds'   => $item['custom'],
+                    'nl'            => "\n",
+                ) );
+                $variants = array();
+                if (!empty($variant_headers)) {
+                    // Accumulate variant values, making sure every variant name
+                    // is included with a blank value if necessary.
+                    foreach ($variant_headers as $var_name) {
+                        if (!isset($item['variants'][$var_name])) {
+                            $item['variants'][$var_name] = '';
+                        }
+                        $variants[] = $item['variants'][$var_name];
+                    }
+                    $T->set_var('variants', ',"' . implode('","', $variants) . '"');
+                }
+                if (!empty($cbox_headers)) {
+                    $T->set_var('cbox_flds', $item['cbox_flds']);
+                }
+                $T->parse('row', 'ItemRow', true);
             }
             break;
         }
@@ -200,4 +324,3 @@ class itempurchase extends \Shop\Report
 
 }
 
-?>

@@ -3,16 +3,20 @@
  * Class to manage order line items.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018-2021 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.4.0
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
+use glFusion\Database\Database;
 use Shop\Models\Stock;
+use Shop\Models\ProductCheckbox;
+use Shop\Models\DataArray;
+use Shop\Util\JSON;
 
 
 /**
@@ -24,6 +28,10 @@ class OrderItem
     /** OrderItem DB record ID.
      * @var integer */
     private $id = 0;
+
+    /** Related order ID.
+     * @var string */
+    private $order_id = '';
 
     /** Product record ID or string for a plugin item.
      * @var mixed */
@@ -50,11 +58,11 @@ class OrderItem
      * @var array */
     private $options_text = array();
 
-    /** Base unit price of item.
+    /** Base unit price of item, specified in the catalog
      * @var float */
     private $base_price = 0;
 
-    /** Final price of item after sale and options.
+    /** Item sale price, if on sale.
      * @var float */
     private $price = 0;
 
@@ -62,11 +70,20 @@ class OrderItem
      * @var float */
     private $shipping = 0;
 
+    /** Number of shipping units for a unit of this item.
+     * @var float */
+    private $shipping_units = 0;
+
+    /** Shipping weight for a unit of this item.
+     * @var float */
+    private $shipping_weight = 0;
+
     /** Handling charge for the line item.
      * @var float */
     private $handling = 0;
 
-    /** Net unit price of the line item.
+    /** Final net unit price of the line item.
+     * Includes options, sales, discounts.
      * @var float */
     private $net_price = 0;
 
@@ -102,6 +119,14 @@ class OrderItem
      * @var integer */
     private $qty_shipped = 0;
 
+    /** Expiration timestamp, normally for downloadable items.
+     * @var integer */
+    private $expiration = 0;
+
+    /** Token, used to verify anonymous download access.
+     * @var string */
+    private $token = '';
+
     /** Flag indicating the item failed a zone rule.
      * Not saved to the database.
      * @var boolean;
@@ -111,6 +136,10 @@ class OrderItem
     /** ProductVariant object related to this line item.
      * @var object */
     private $Variant = NULL;
+
+    /** Flag to indicate the object has changed and needs to be saved.
+     * @var boolean */
+    private $_tainted = true;
 
 
     /**
@@ -172,15 +201,23 @@ class OrderItem
         if (isset($A['price'])) {
             $overrides['price'] = $A['price'];
         }
+        $A = DataArray::fromArray($A);  // convert to object
         $OI->setVars($A);
-        $OI->setBasePrice(
-            $OI->getProduct()
-               ->setVariant($OI->getVariantId())
-               ->getPrice(array(), 1, $overrides)
-        );
+        if (!isset($A['base_price'])) {
+            $item_price = $OI->getProduct()
+                             ->setVariant($OI->getVariantId())
+                             ->getPrice(array(), 1, $overrides);
+        } else {
+            $item_price = $A['base_price'];
+        }
+        if (isset($A['options_price'])) {
+            $item_price += $A['options_price'];
+        }
+        $OI->setBasePrice($item_price);
+
         if ($OI->getID() == 0) {
             // New item, add options from the supplied arguments.
-            $OI->setPrice($OI->getBasePrice());   // default if no variant
+            $OI->setPrice($OI->getBasePrice());
             foreach ($OI->getVariant()->getOptions() as $POV) {
                 $OIO = new OrderItemOption;
                 $OIO->fromProductOptionValue($POV);
@@ -194,20 +231,49 @@ class OrderItem
                     $OI->addOption($OIO);
                 }
             }
-            if (
-                is_array($A['extras']) &&
-                isset($A['extras']['custom']) &&
-                is_array($A['extras']['custom']) &&
-                !empty($A['extras']['custom'])
-            ) {
-                $cust = $A['extras']['custom'];
-                $P = Product::getByID($OI->product_id);
-                foreach ($P->getCustom() as $id=>$name) {
-                    if (isset($cust[$id]) && !empty($cust[$id])) {
-                        $OI->addOptionText($name, $cust[$id]);
+            if (is_array($A['extras'])) {
+                if (
+                    isset($A['extras']['custom']) &&
+                    is_array($A['extras']['custom']) &&
+                    !empty($A['extras']['custom'])
+                ) {
+                    $cust = $A['extras']['custom'];
+                    $P = Product::getByID($OI->product_id);
+                    foreach ($P->getCustom() as $id=>$name) {
+                        if (isset($cust[$id]) && !empty($cust[$id])) {
+                            $OI->addOptionText($name, $cust[$id]);
+                        }
+                    }
+                }
+                // Now get custom/checkbox options
+                if (
+                    isset($A['extras']['options']) &&
+                    is_array($A['extras']['options']) &&
+                    !empty($A['extras']['options'])
+                ) {
+                    foreach ($A['extras']['options'] as $opt_id) {
+                        $OIO = new OrderItemOption;
+                        $POV = new ProductCheckbox;
+                        if ($POV->withItemId((int)$OI->product_id)
+                            ->withOptionId((int)$opt_id)
+                            ->Read()
+                        ) {
+                            $OIO->withOptionGroupId($POV->getGroupId())
+                                ->withOptionValueId($POV->getOptionId())
+                                ->withOptionName($POV->getGroupName())
+                                ->withOptionValue($POV->getOptionValue())
+                                ->withOptionPrice($POV->getPrice());
+                            $OI->addOption($OIO);
+                        }
                     }
                 }
             }
+            if (!isset($A['shipping_weight'])) {
+                // Get the shipping weight from the product if not included.
+                $OI->setShippingWeight($OI->getProduct()->getWeight());
+            }
+            // Calculate if there's a sale price applicable.
+            $OI->setPrice($OI->getProduct()->getSalePrice($OI->getPrice()));
         } else {
             // Existing orderitem record, get the existing options
             $OI->setOptions(OrderItemOption::getOptionsForItem($OI));
@@ -228,12 +294,20 @@ class OrderItem
         global $_TABLES;
 
         $items = array();
-        $sql = "SELECT * FROM {$_TABLES['shop.orderitems']}
-                WHERE order_id = '" . DB_escapeString($order_id) . "'";
-        $res = DB_query($sql);
-        if ($res && DB_numRows($res) > 0) {
-            while ($A = DB_fetchArray($res, false)) {
+        try {
+            $stmt = Database::getInstance()->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.orderitems']} WHERE order_id = ?",
+                array($order_id),
+                array(Database::STRING)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $stmt = false;
+        }
+        if ($stmt) {
+            while ($A = $stmt->fetchAssociative()) {
                 $items[$A['id']] = self::fromArray($A);
+                $items[$A['id']]->unTaint();
             }
         }
         return $items;
@@ -246,17 +320,23 @@ class OrderItem
      * @param   integer $rec_id     DB record ID of item
      * @return  boolean     True on success, False on failure
      */
-    public function Read($rec_id)
+    public function Read(int $rec_id) : bool
     {
         global $_SHOP_CONF, $_TABLES;
 
         $rec_id = (int)$rec_id;
-        $sql = "SELECT * FROM {$_TABLES['shop.orderitems']}
-                WHERE id = $rec_id";
-        //echo $sql;die;
-        $res = DB_query($sql);
-        if ($res) {
-            $this->setVars(DB_fetchArray($res, false));
+        try {
+            $row = Database::getInstance()->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.orderitems']} WHERE id = ?",
+                array($rec_id),
+                array(Database::INTEGER)
+            )->fetchAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $row = false;
+        }
+        if (is_array($row)) {
+            $this->setVars(new DataArray($row));
             $this->options = OrderItemOption::getOptionsForItem($this);
             return true;
         } else {
@@ -271,35 +351,33 @@ class OrderItem
      * @param   array   $A      Array of values
      * @return  object  $this
      */
-    public function setVars($A)
+    public function setVars(DataArray $A) : self
     {
-        if (!is_array($A)) {
+        /*if (!is_array($A)) {
             return $this;
-        }
-        $this->id = SHOP_getVar($A, 'id', 'integer', 0);
-        $this->order_id = SHOP_getVar($A, 'order_id');
-        $this->product_id = SHOP_getVar($A, 'product_id');
-        $this->setSKU(SHOP_getVar($A, 'sku'));
-        $this->dscp = SHOP_getVar($A, 'description');
-        $this->quantity = SHOP_getVar($A, 'quantity', 'integer', 0);
-        $this->txn_id = SHOP_getVar($A, 'txn_id');
-        $this->txn_type = SHOP_getVar($A, 'txn_type');
-        $this->expiration = SHOP_getVar($A, 'expiration', 'integer', 0);
-        $this->base_price = SHOP_getVar($A, 'base_price', 'float', 0);
-        $this->price = SHOP_getVar($A, 'price', 'float', 0);
-        $this->setDiscount(SHOP_getVar($A, 'qty_discount', 'float'), 0);
-        $this->token = SHOP_getVar($A, 'token');
-        $this->net_price = SHOP_getVar($A, 'net_price', 'float', 0);
-        if (array_key_exists('extras', $A)) {
-            $this->setExtras($A['extras']);
-        }
-        $this->taxable = SHOP_getVar($A, 'taxable', 'integer') ? 1 : 0;
-        $this->shipping = SHOP_getVar($A, 'shipping', 'float', 0);
-        $this->handling = SHOP_getVar($A, 'handling', 'float', 0);
-        $this->tax = SHOP_getVar($A, 'tax', 'float', 0);
-        $this->tax_rate = SHOP_getVar($A, 'tax_rate', 'float', 0);
-        $this->variant_id = SHOP_getVar($A, 'variant_id', 'integer', 0);
-        $this->setQtyShipped(SHOP_getVar($A, 'qty_shipped', 'integer', 0));
+    }*/
+        $this->id = $A->getInt('id');
+        $this->order_id = $A->getString('order_id');
+        $this->product_id = $A->getString('product_id');
+        $this->variant_id = $A->getInt('variant_id');
+        $this->dscp = $A->getString('description');
+        $this->quantity = $A->getInt('quantity');
+        $this->expiration = $A->getInt('expiration');
+        $this->base_price = $A->getFloat('base_price');
+        $this->price = $A->getFloat('price');
+        $this->setDiscount($A->getFloat('qty_discount'));
+        $this->token = $A->getString('token');
+        $this->net_price = $A->getFloat('net_price');
+        $this->setExtras($A['extras']);
+        $this->taxable = $A->getInt('taxable');
+        $this->shipping = $A->getFloat('shipping');
+        $this->shipping_units = $A->getFloat('shipping_units');
+        $this->shipping_weight = $A->getFloat('shipping_weight');
+        $this->handling = $A->getFloat('handling');
+        $this->tax = $A->getFloat('tax');
+        $this->tax_rate = $A->getFloat('tax_rate');
+        $this->setQtyShipped($A->getInt('qty_shipped'));
+        $this->setSKU($A->getString('sku'));
         return $this;
     }
 
@@ -309,7 +387,7 @@ class OrderItem
      *
      * @return  integer     Product Variant ID
      */
-    public function getVariantId()
+    public function getVariantId() : int
     {
         return (int)$this->variant_id;
     }
@@ -320,14 +398,12 @@ class OrderItem
      *
      * return   object      ProductVariant object.
      */
-    public function getVariant()
+    public function getVariant() : object
     {
-        static $PVs = array();
-        $pov_id = $this->getVariantId();
-        if (!isset($PVs[$pov_id])) {
-            $PVs[$pov_id] = ProductVariant::getInstance($this->getVariantId());
+        if ($this->Variant === NULL) {
+            $this->Variant = ProductVariant::getInstance($this->getVariantId());
         }
-        return $PVs[$pov_id];
+        return $this->Variant;
     }
 
 
@@ -336,7 +412,7 @@ class OrderItem
      *
      * @return  object  Order Object
      */
-    public function getOrder()
+    public function getOrder() : Order
     {
         return Order::getInstance($this->order_id);
     }
@@ -472,7 +548,7 @@ class OrderItem
     {
         $this->options[] = $OIO;
         if ($this->id > 0) {
-            $OIO->Save();
+            $OIO->setOrderItemID($this->id)->saveIfTainted();
         }
         return $this;
     }
@@ -498,7 +574,7 @@ class OrderItem
         // Update the Options table now if this is an existing item,
         // othewise it might not get saved.
         if ($this->id > 0) {
-            $OIO->Save();
+            $OIO->setOrderItemID($this->id)->saveIfTainted();
         }
         return $this;
     }
@@ -513,12 +589,13 @@ class OrderItem
      * @param   string  $value  Value of element
      * @param   boolean $save   True to immediately save the item
      */
-    public function addSpecial($name, $value, $save=true)
+    public function addSpecial(string $name, string $value, bool $save=true) : self
     {
         $this->extras['special'][$name] = strip_tags($value);
         if ($save) {
             $this->Save();
         }
+        return $this;
     }
 
 
@@ -528,7 +605,7 @@ class OrderItem
      * @param   array   $A  Optional array of data to save
      * @return  boolean     True on success, False on DB error
      */
-    public function Save($A= NULL)
+    public function Save(?array $A= NULL) : bool
     {
         global $_TABLES;
 
@@ -539,55 +616,85 @@ class OrderItem
         $purchase_ts = SHOP_now()->toUnix();
         //$shipping = $this->Product->getShipping($this->quantity);
         $shipping = 0;
-        $handling = $this->Product->getHandling($this->quantity);
-
-        if ($this->id > 0) {
-            $sql1 = "UPDATE {$_TABLES['shop.orderitems']} ";
-            $sql3 = " WHERE id = '{$this->id}'";
-        } else {
-            $sql1 = "INSERT INTO {$_TABLES['shop.orderitems']} ";
-            $sql3 = '';
+        $handling = $this->getProduct()->getHandling($this->quantity);
+        $values = array(
+            'order_id' => $this->order_id,
+            'product_id' => $this->product_id,
+            'variant_id' => $this->variant_id,
+            'sku' => $this->sku,
+            'description' => $this->dscp,
+            'quantity' => $this->quantity,
+            'qty_discount' => $this->qty_discount,
+            'base_price' => $this->base_price,
+            'price' => $this->price,
+            'net_price' => $this->net_price,
+            'taxable' => $this->taxable,
+            'token' => $this->token,
+            'options_text' => JSON::encode($this->options_text),
+            'extras' => JSON::encode($this->extras),
+            'shipping' => $this->shipping,
+            'shipping_units' => $this->shipping_units,
+            'shipping_weight' => $this->shipping_weight,
+            'tax' => $this->getTax(),
+            'tax_rate' => $this->getTaxRate(),
+            //'options' => $this->options,
+            //'handling' => $handling,
+        );
+        $types = array(
+            Database::STRING,
+            Database::STRING,
+            Database::INTEGER,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::INTEGER,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+        );
+        // add an expiration date if appropriate
+        if ($this->getProduct()->getExpiration() > 0) {
+            $values['expiration'] = (string)($purchase_ts + ($this->Product->getExpiration() * 86400));
+            $types[] = Database::STRING;
         }
+
         $dc_pct = $this->getOrder()->getDiscountPct() / 100;
-        if ($dc_pct > 0 && $this->Product->canApplyDiscountCode()) {
+        if ($dc_pct > 0 && $this->getProduct()->canApplyDiscountCode()) {
             $this->applyDiscountPct($dc_pct);
         }
-        $sql2 = "SET order_id = '" . DB_escapeString($this->order_id) . "',
-                product_id = '" . DB_escapeString($this->product_id) . "',
-                variant_id = '" . (int)$this->variant_id . "',
-                sku = '" . DB_escapeString($this->sku) . "',
-                description = '" . DB_escapeString($this->dscp) . "',
-                quantity = '" . (float)$this->quantity. "',
-                txn_id = '" . DB_escapeString($this->txn_id) . "',
-                txn_type = '" . DB_escapeString($this->txn_type) . "',
-                qty_discount = '" . (float)$this->qty_discount. "',
-                base_price = '" . (float)$this->base_price. "',
-                price = '" . (float)$this->price . "',
-                net_price = '" . (float)$this->net_price . "',
-                taxable = '" . (int)$this->taxable. "',
-                token = '" . DB_escapeString($this->token) . "',
-                options_text = '" . DB_escapeString(@json_encode($this->options_text)) . "',
-                extras = '" . DB_escapeString(json_encode($this->extras)) . "',
-                tax = {$this->getTax()},
-                tax_rate = {$this->getTaxRate()}";
-                //options = '" . DB_escapeString($this->options) . "',
-                //shipping = {$shipping},
-                //handling = {$handling},
-            // add an expiration date if appropriate
-        if ($this->Product->getExpiration() > 0) {
-            $sql2 .= ", expiration = " . (string)($purchase_ts + ($this->Product->getExpiration() * 86400));
-        }
-        $sql = $sql1 . $sql2 . $sql3;
-        SHOP_log($sql, SHOP_LOG_DEBUG);
-        DB_query($sql);
-        if (!DB_error()) {
-            //Cache::deleteOrder($this->order_id);
-            if ($this->id == 0) {
-                $this->id = DB_insertID();
+
+        $db = Database::getInstance();
+        try {
+            if ($this->id > 0) {
+                $types[] = Database::INTEGER;
+                $db->conn->update(
+                    $_TABLES['shop.orderitems'],
+                    $values,
+                    array('id' => $this->id),
+                    $types
+                );
+            } else {
+                $db->conn->insert(
+                    $_TABLES['shop.orderitems'],
+                    $values,
+                    $types
+                );
+                $this->id = $db->conn->lastInsertId();
                 return $this->saveOptions();
             }
+            $this->_tainted = false;
             return true;
-        } else {
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
     }
@@ -603,6 +710,9 @@ class OrderItem
      */
     public function setOrderID(string $order_id) : object
     {
+        if ($this->order_id != $order_id) {
+            $this->Taint();
+        }
         $this->order_id = $order_id;
         return $this;
     }
@@ -621,9 +731,8 @@ class OrderItem
     {
         if ($newqty >= 0) {
             $this->quantity = (float)$newqty;
-            $this->handling = $this->Product->getHandling($newqty);
+            $this->handling = $this->getProduct()->getHandling($newqty);
             if ($price === NULL) {
-                $this->setPrice($this->getItemPrice());
                 $this->setNetPrice($this->price);
             } else {
                 $this->setPrice($price);
@@ -631,6 +740,7 @@ class OrderItem
             }
             $this->setTax($this->net_price * $this->quantity * $this->tax_rate);
         }
+        $this->Taint();
         return $this;
     }
 
@@ -643,6 +753,9 @@ class OrderItem
      */
     public function setPrice(float $newprice) : object
     {
+        if ($this->price != $newprice) {
+            $this->Taint();
+        }
         $this->price = (float)$newprice;
         return $this;
     }
@@ -657,6 +770,9 @@ class OrderItem
      */
     public function setBasePrice(float $newprice) : object
     {
+        if ($this->base_price != $newprice) {
+            $this->Taint();
+        }
         $this->base_price = (float)$newprice;
         return $this;
     }
@@ -668,8 +784,11 @@ class OrderItem
      * @param   float   $disc   Discount to set
      * @return  object  $this
      */
-    public function setDiscount($disc)
+    public function setDiscount(float $disc) : self
     {
+        if ($this->qty_discount != $disc) {
+            $this->Taint();
+        }
         $this->qty_discount = (float)$disc;
         return $this;
     }
@@ -706,7 +825,7 @@ class OrderItem
      */
     public function getWeight()
     {
-        $weight = $this->Product->getWeight();
+        $weight = $this->getProduct()->getWeight();
         if ($this->variant_id > 0) {
             $weight += ProductVariant::getInstance($this->variant_id)->getWeight();
         }
@@ -736,9 +855,53 @@ class OrderItem
     /**
      * Get the total number of shipping units for this item
      *
-     * @return  float       Total shipping units (per-product * quantity)
+     * @return  float       Shipping units for one of this item
      */
-    public function getShippingUnits()
+    public function getShippingUnits() : float
+    {
+        return (float)$this->shipping_units;
+    }
+
+
+    /**
+     * Gets the total shipping units for the item.
+     *
+     * @return  float       Number of shipping units.
+     */
+    public function getTotalShippingUnits() : float
+    {
+        return (float)$this->shipping_units * (float)$this->quantity;
+    }
+
+
+    /**
+     * Get the unit shipping weight for this line item.
+     *
+     * @return  float       Shipping units for one of this item
+     */
+    public function getShippingWeight() : float
+    {
+        return (float)$this->shipping_weight;
+    }
+
+
+    /**
+     * Gets the total shipping weight for the item.
+     *
+     * @return  float       Total shipping weight for this line item
+     */
+    public function getTotalShippingWeight() : float
+    {
+        return (float)$this->shipping_weight * (float)$this->quantity;
+    }
+
+
+    /**
+     * Get the product shipping unit amount.
+     *
+     * @return  float       Shipping units for the product/variant
+     */
+    public function productShippingUnits() : float
     {
         $units = $this->Product->getShippingUnits();
         if ($this->variant_id > 0) {
@@ -750,13 +913,54 @@ class OrderItem
 
 
     /**
+     * Set the total shipping amount for this item.
+     *
+     * @param   float   $amt    Total shipping amount
+     * @return  object  $this
+     */
+    public function setShipping(float $amt) : self
+    {
+        $this->shipping = (float)$amt;
+        return $this;
+    }
+
+
+    /**
      * Get the total of all per-item shipping costs for this item
      *
      * @return  float       Total fixed shipping cost (per-product * quantity)
      */
-    public function getShipping()
+    public function getShipping() : float
     {
         return $this->shipping;
+    }
+
+
+    /**
+     * Set the total number of shipping units related to this line item.
+     * Quantity x units_per_unit
+     *
+     * @param   float   $units      Unit shipping units
+     * @return  object  $this
+     */
+    public function setShippingUnits(float $units) : object
+    {
+        $this->shipping_units = (float)$units;
+        return $this;
+    }
+
+
+    /**
+     * Set the total number of shipping units related to this line item.
+     * Quantity x units_per_unit
+     *
+     * @param   float   $weight     Unit shipping weight
+     * @return  object  $this
+     */
+    public function setShippingWeight(float $wt) : object
+    {
+        $this->shipping_weight = (float)$wt;
+        return $this;
     }
 
 
@@ -765,7 +969,7 @@ class OrderItem
      *
      * @return  float       Total handling charge for this line item
      */
-    public function getHandling()
+    public function getHandling() : float
     {
         return (float)$this->handling;
     }
@@ -777,7 +981,7 @@ class OrderItem
      * @param   integer $qty    Item quantity
      * @return  object  $this
      */
-    public function setQtyShipped($qty)
+    public function setQtyShipped(int $qty) : self
     {
         $this->qty_shipped = (int)$qty;
         return $this;
@@ -789,7 +993,7 @@ class OrderItem
      *
      * @return  integer     Item quantity
      */
-    public function getQtyShipped()
+    public function getQtyShipped() : int
     {
         return (int)$this->qty_shipped;
     }
@@ -801,7 +1005,7 @@ class OrderItem
      * @param   boolean $flag   True to prevent ordering this item
      * @return  object  $this
      */
-    public function setInvalid($flag)
+    public function setInvalid(bool $flag=true) : self
     {
         $this->invalid = $flag ? 1: 0;
         return $this;
@@ -813,7 +1017,7 @@ class OrderItem
      *
      * @return  boolean     True if embargoed, False if not
      */
-    public function getInvalid()
+    public function getInvalid() : bool
     {
         return $this->invalid ? 1 : 0;
     }
@@ -821,12 +1025,13 @@ class OrderItem
 
     /**
      * Convert from one currency to another.
+     * Also saves the item.
      *
      * @param   string  $old    Original currency
      * @param   string  $new    New currency
      * @return  object  $this
      */
-    public function convertCurrency($old, $new)
+    public function convertCurrency(string $old, string $new) : self
     {
         if ($new != $old) {
             foreach (array('price') as $fld) {
@@ -845,7 +1050,7 @@ class OrderItem
      * @param   object  $Item2  Item object to check
      * @return  boolean     True if $Item2 matches this item, False if not
      */
-    public function Matches($Item2)
+    public function Matches(OrderItem $Item2) : bool
     {
         if ($this->product_id != $Item2->product_id) {
             return false;
@@ -860,11 +1065,12 @@ class OrderItem
      * @param   array   $updates    Array of fld_name=>new_value
      * @return  object  $this
      */
-    public function updateItem($updates)
+    public function updateItem(array $updates) : self
     {
         foreach ($updates as $fld=>$val) {
             $this->$fld = $val;
         }
+        return $this;
     }
 
 
@@ -874,7 +1080,7 @@ class OrderItem
      * @param   array   $opts   Array of ProductOptionValues
      * @return  object  $this
      */
-    public function setOptionsFromPOV(array $opts) : object
+    public function setOptionsFromPOV(array $opts) : self
     {
         if (empty($opts)) {
             return $this;
@@ -907,7 +1113,7 @@ class OrderItem
      * @param   array   $opts   Array of ProductOptionValues
      * @return  object  $this
      */
-    public function setOptions(array $opts) : object
+    public function setOptions(array $opts) : self
     {
         if (empty($opts)) {
             return $this;
@@ -934,9 +1140,9 @@ class OrderItem
     /**
      * Save all the options to the database.
      *
-     * @retun   boolean     True on success, False on failure
+     * @return   boolean     True on success, False on failure
      */
-    public function saveOptions()
+    public function saveOptions() : bool
     {
         foreach ($this->options as $Opt) {
             $Opt->setOrderItemID($this->id);
@@ -951,10 +1157,9 @@ class OrderItem
      *
      * @return  aray    Array of option objects
      */
-    public function getOptions()
+    public function getOptions() : array
     {
         return $this->options;
-        //return OrderItemOption::getOptionsForItem($this);
     }
 
 
@@ -963,7 +1168,7 @@ class OrderItem
      *
      * @return  string      Comma-separated list of option IDs
      */
-    public function getOptionIdString()
+    public function getOptionIdString() : string
     {
         $ids = array();
         foreach ($this->getOptions() as $Opt) {
@@ -979,33 +1184,31 @@ class OrderItem
      *      -- option1: option1_value
      *      -- option2: optoin2_value
      *
-     * @param  object  $item   Specific OrderItem object from the cart
      * @return string      Option display
      */
-    public function getOptionDisplay()
+    public function getOptionDisplay() : string
     {
         $retval = '';
+        $opts = array();    // local var to collect option names and values
         if (!empty($this->options_text)) {
-            $T = new Template;
-            $T->set_file('options', 'view_options.thtml');
-            $T->set_block('options', 'ItemOptions', 'ORow');
             foreach ($this->options_text as $key=>$val) {
-                $T->set_var(array(
-                    'opt_name'  => strip_tags($key),
-                    'opt_value' => strip_tags($val),
-                ) );
-                $T->parse('ORow', 'ItemOptions', true);
+                $opts[] = array('name' => $key, 'value' => $val);
             }
-            $retval .= $T->parse('output', 'options');
         }
         if (!empty($this->options)) {
+            foreach ($this->options as $Opt) {
+                $opts[] = array('name' => $Opt->getName(), 'value' => $Opt->getValue());
+            }
+        }
+        if (!empty($opts)) {
+            // This is double work, but saves instantiating the template if not needed.
             $T = new Template;
             $T->set_file('options', 'view_options.thtml');
             $T->set_block('options', 'ItemOptions', 'ORow');
-            foreach ($this->options as $Opt) {
+            foreach ($opts as $opt_arr) {
                 $T->set_var(array(
-                    'opt_name'  => $Opt->getName(),
-                    'opt_value' => strip_tags($Opt->getValue()),
+                    'opt_name'  => strip_tags($opt_arr['name']),
+                    'opt_value' => strip_tags($opt_arr['value']),
                 ) );
                 $T->parse('ORow', 'ItemOptions', true);
             }
@@ -1015,15 +1218,31 @@ class OrderItem
     }
 
 
-    public function getExtraDisplay()
+    /**
+     * Get the display for extra items like text input fields.
+     * Returns a string like so:
+     *      -- option1: option1_value
+     *      -- option2: optoin2_value
+     *
+     * @return string      Option display
+     */
+    public function getExtraDisplay() : string
     {
+        global $LANG_SHOP;
+
         $retval = '';
         if (is_array($this->extras) && isset($this->extras['special'])) {
+            $T = new Template;
+            $T->set_file('options', 'view_options.thtml');
+            $T->set_block('options', 'ItemOptions', 'ORow');
             foreach ($this->extras['special'] as $name=>$val) {
-                if (!empty($val)) {
-                    $retval = '<br />' . $name . ': ' . $val;
-                }
+                $T->set_var(array(
+                    'opt_name'  => isset($LANG_SHOP[$name]) ? $LANG_SHOP[$name] : $name,
+                    'opt_value' => strip_tags($val),
+                ) );
+                $T->parse('ORow', 'ItemOptions', true);
             }
+            $retval .= $T->parse('output', 'options');
         }
         return $retval;
     }
@@ -1035,10 +1254,10 @@ class OrderItem
      * @param   string|array    $value  Extra values array or json string
      * @return  object  $this
      */
-    public function setExtras($value)
+    public function setExtras($value) : self
     {
         if (is_string($value)) {    // convert to array
-            $value = @json_decode($value, true);
+            $value = JSON::decode($value);
         }
         if (!$value) $value = array();
         $this->extras = $value;
@@ -1052,7 +1271,7 @@ class OrderItem
      * @param   string  $key    Item name
      * @return  mixed       Value of extras[$key], NULL if not set
      */
-    public function getExtra($key)
+    public function getExtra(string $key) : ?string
     {
         if (isset($thie->extras[$key])) {
             return $this->extras[$key];
@@ -1067,7 +1286,7 @@ class OrderItem
      *
      * @return  array       Array of all extra info
      */
-    public function getExtras()
+    public function getExtras() : array
     {
         return $this->extras;
     }
@@ -1079,10 +1298,10 @@ class OrderItem
      * @param   string|array    $value  Text values array or json string
      * @return  object  $this
      */
-    public function setOptionsText($value=array())
+    public function setOptionsText($value=array()) : self
     {
         if (is_string($value)) {    // convert to array
-            $value = @json_decode($value, true);
+            $value = JSON::decode($value);
             if (!$value) $value = array();
         }
         $this->options_text  = $value;
@@ -1095,14 +1314,22 @@ class OrderItem
      *
      * @see     Cart::Remove()
      */
-    public function Delete()
+    public function Delete() : void
     {
         global $_TABLES;
 
         $P = $this->getProduct();
         $P->setVariant($this->Variant)
           ->reserveStock($this->getQuantity() * -1);
-        DB_delete($_TABLES['shop.orderitems'], 'id', $this->getID());
+        try {
+            Database::getInstance()->conn->delete(
+                $_TABLES['shop.orderitems'],
+                array('id' => $this->getID()),
+                array(Database::INTEGER)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
         OrderItemOption::deleteItem($this->getID());
     }
 
@@ -1113,7 +1340,7 @@ class OrderItem
      *
      * @return  boolean     True if view access is granted, False if not
      */
-    public function canView()
+    public function canView() : bool
     {
         if ($this->id < 1) {
             return false;
@@ -1128,7 +1355,7 @@ class OrderItem
      *
      * @return  float       Total options price
      */
-    public function getOptionsPrice()
+    public function getOptionsPrice() : float
     {
         $PV = $this->getVariant();
         if ($PV->getID() > 0) {
@@ -1147,11 +1374,12 @@ class OrderItem
      *
      * @return  float       Current item price, including discounts and options
      */
-    public function getItemPrice()
+    public function getItemPrice() : float
     {
-        if (!$this->Product->isPluginItem($this->product_id)) {
+        if (!Product::isPluginItem($this->product_id)) {
             //$retval = $this->Product->getDiscountedPrice($this->quantity, $this->getOptionsPrice());
             $retval = $this->Product->setVariant($this->getVariant())->getPrice(array(), $this->quantity);
+            $retval = $this->Product->getSalePrice($retval);
         } else {
             $retval = $this->price;
         }
@@ -1164,7 +1392,7 @@ class OrderItem
      *
      * @return  float       Item base price
      */
-    public function getBasePrice()
+    public function getBasePrice() : float
     {
         return (float)$this->base_price;
     }
@@ -1176,7 +1404,7 @@ class OrderItem
      *
      * @return  float       Item price, including all options and qty discounts.
      */
-    public function getPrice()
+    public function getPrice() : float
     {
         return (float)$this->price;
     }
@@ -1187,7 +1415,7 @@ class OrderItem
      *
      * @return  float       Item net price.
      */
-    public function getNetPrice()
+    public function getNetPrice() : float
     {
         return (float)$this->net_price;
     }
@@ -1198,7 +1426,7 @@ class OrderItem
      *
      * @return  integer     Item quantity
      */
-    public function getQuantity()
+    public function getQuantity() : int
     {
         return (float)$this->quantity;
     }
@@ -1210,7 +1438,7 @@ class OrderItem
      *
      * @return  float   Item price * quantity
      */
-    public function getGrossExtension()
+    public function getGrossExtension() : float
     {
         return (float)$this->price * (float)$this->quantity;
     }
@@ -1221,7 +1449,7 @@ class OrderItem
      *
      * @return  float   Item price * quantity
      */
-    public function getNetExtension()
+    public function getNetExtension() : float
     {
         return (float)$this->net_price * (float)$this->quantity;
     }
@@ -1232,7 +1460,7 @@ class OrderItem
      *
      * @return  string      Product ID
      */
-    public function getProductId()
+    public function getProductId() : string
     {
         return $this->product_id;
     }
@@ -1243,7 +1471,7 @@ class OrderItem
      *
      * @return  integer     DB record ID
      */
-    public function getID()
+    public function getID() : int
     {
         return (int)$this->id;
     }
@@ -1255,7 +1483,7 @@ class OrderItem
      * @param   float   $price  New net price
      * @return  object  $this
      */
-    public function setNetPrice($price)
+    public function setNetPrice(float $price) : self
     {
         $this->net_price = (float)$price;
         return $this;
@@ -1267,7 +1495,7 @@ class OrderItem
      *
      * @return  string      Token string
      */
-    public function getToken()
+    public function getToken() : string
     {
         return $this->token;
     }
@@ -1278,7 +1506,7 @@ class OrderItem
      *
      * @return  integer     1 if item is taxable, 0 if not
      */
-    public function isTaxable()
+    public function isTaxable() : bool
     {
         return $this->taxable;
     }
@@ -1290,14 +1518,14 @@ class OrderItem
      * @param   float   $pct    Discount percent, as a whole number
      * @return  object  $this
      */
-    public function applyDiscountPct($pct)
+    public function applyDiscountPct(float $pct) : self
     {
         // Normally this should be a percentage, but in case a whole number
         // is provided, convert it
         if ($pct > 1) {
             $pct = $pct / 100;
         }
-        if ($this->Product->canApplyDiscountCode()) {
+        if ($this->getProduct()->canApplyDiscountCode()) {
             $price = $this->getPrice() * (1 - $pct);
             $this->setNetPrice(Currency::getInstance()->RoundVal($price));
             $this->setTax($this->net_price * $this->quantity * $this->tax_rate);
@@ -1312,9 +1540,13 @@ class OrderItem
      * @param   float   $tax    Tax amount
      * @return  object  $this
      */
-    public function setTax($tax)
+    public function setTax(float $tax) : self
     {
-        $this->tax = (float)$this->getOrder()->getCurrency()->RoundVal($tax);
+        $newtax = (float)$this->getOrder()->getCurrency()->RoundVal($tax);
+        if ($this->tax != $newtax) {
+            $this->Taint();
+        }
+        $this->tax = $newtax;
         return $this;
     }
 
@@ -1324,7 +1556,7 @@ class OrderItem
      *
      * @return  float       Total sales tax for the item
      */
-    public function getTax()
+    public function getTax() : float
     {
         return (float)$this->tax;
     }
@@ -1336,8 +1568,11 @@ class OrderItem
      * @param   float   $rate   Sales tax rate
      * @return  object  $this
      */
-    public function setTaxRate($rate)
+    public function setTaxRate(float $rate) : self
     {
+        if ($this->tax_rate != $rate) {
+            $this->Taint();
+        }
         $this->tax_rate = (float)$rate;
         if ($this->taxable) {
             $this->setTax($this->quantity * $this->net_price * $this->tax_rate);
@@ -1353,7 +1588,7 @@ class OrderItem
      *
      * @return  float       Sales tax rate
      */
-    public function getTaxRate()
+    public function getTaxRate() : float
     {
         return (float)$this->tax_rate;
     }
@@ -1364,7 +1599,7 @@ class OrderItem
      *
      * @return  integer     1 if taxable, 0 if not
      */
-    public function getTaxable()
+    public function getTaxable() : bool
     {
         return $this->taxable ? 1 : 0;
     }
@@ -1375,7 +1610,7 @@ class OrderItem
      *
      * @return  string      Item SKU
      */
-    public function getSKU()
+    public function getSKU() : string
     {
         return $this->sku;
     }
@@ -1386,7 +1621,7 @@ class OrderItem
      *
      * @return  boolean     True if it is a plugin item, False if catalog
      */
-    public function isPluginItem()
+    public function isPluginItem() : bool
     {
         return Product::isPluginItem($this->product_id);
     }
@@ -1398,7 +1633,7 @@ class OrderItem
      * @param   string  $sku    SKU, empty if not known
      * @return  object  $this
      */
-    public function setSKU($sku='')
+    public function setSKU(?string $sku=NULL) : self
     {
         if (empty($sku) && !$this->isPluginItem()) {
             if ($this->variant_id > 0) {
@@ -1409,7 +1644,59 @@ class OrderItem
                 $sku = Product::getInstance($this->product_id)->getName();
             }
         }
-        $this->sku = $sku;
+        if ($this->sku != $sku) {
+            $this->Taint();
+        }
+        $this->sku = (string)$sku;
+        return $this;
+    }
+
+
+    /**
+     * Save this item if it has been changed.
+     *
+     * @return  object  $this
+     */
+    public function saveIfTainted() : object
+    {
+        if ($this->isTainted()) {
+            $this->Save();
+        }
+        return $this;
+    }
+
+
+    /**
+     * Check if the record is "tainted" by values being changed.
+     *
+     * @return  boolean     True if tainted and needs to be saved
+     */
+    public function isTainted() : bool
+    {
+        return $this->_tainted;
+    }
+
+
+    /**
+     * Taint this object, indicating that something has changed.
+     *
+     * @return  object  $this
+     */
+    public function Taint() : object
+    {
+        $this->_tainted = true;
+        return $this;
+    }
+
+
+    /**
+     * Remove the taint flag.
+     *
+     * @return  object  $this
+     */
+    public function unTaint() : object
+    {
+        $this->_tainted = false;
         return $this;
     }
 

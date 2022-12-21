@@ -15,6 +15,8 @@ namespace Shop\Gateways\check;
 use Shop\Config;
 use Shop\Models\ProductType;
 use Shop\Template;
+use Shop\Log;
+use glFusion\Database\Database;
 
 
 /**
@@ -30,10 +32,6 @@ class Gateway extends \Shop\Gateway
     /** Gateway provide. Company name, etc.
      * @var string */
     protected $gw_provider = 'Pay by Check';
-
-    /** Flag this gateway as bundled with the Shop plugin.
-     * @var integer */
-    protected $bundled = 1;
 
 
     /**
@@ -272,10 +270,8 @@ class Gateway extends \Shop\Gateway
         }
 
         // Create an order record to get the order ID
-        //$order_id = $this->CreateOrder($vals, $cart);
-        //$db_order_id = DB_escapeString($order_id);
         $Order = $this->CreateOrder($vals, $cart);
-        $db_order_id = DB_escapeString($Order->getOrderID());
+        $db = Database::getInstance();
 
         $prod_types = 0;
 
@@ -283,23 +279,24 @@ class Gateway extends \Shop\Gateway
         foreach ($items as $id=>$item) {
             $Order->AddItem($id, $item);
 
-            //SHOP_log("Processing item: $id", SHOP_LOG_DEBUG);
             list($item_number, $item_opts) = explode('|', $id);
 
             // If the item number is numeric, assume it's an
             // inventory item.  Otherwise, it should be a plugin-supplied
             // item with the item number like pi_name:item_number:options
             if (SHOP_is_plugin_item($item_number)) {
-                SHOP_log("handlePurchase for Plugin item " . $item_number, SHOP_LOG_DEBUG);
+                Log::write('shop_system', Log::DEBUG, "handlePurchase for Plugin item " . $item_number);
 
                 // Initialize item info array to be used later
                 $A = array();
 
-                $status = LGLIB_invokeService(
-                    $pi_info[0], 'productinfo',
-                    array($item_number, $item_opts),
-                    $product_info,
-                    $svc_msg
+                $status = PLG_callFunctionForOnePlugin(
+                    'service_getproductinfo_' . $pi_info[0],
+                    array(
+                        1 => array($item_number, $item_opts),
+                        2 => &$product_info,
+                        3 => &$svc_msg,
+                    )
                 );
                 if ($status != PLG_RET_OK) {
                     $product_info = array();
@@ -308,7 +305,7 @@ class Gateway extends \Shop\Gateway
                 if (!empty($product_info)) {
                     $items[$id]['name'] = $product_info['name'];
                 }
-                SHOP_log("Got name " . $items[$id]['name'], SHOP_LOG_DEBUG);
+                Log::write('shop_system', Log::DEBUG, "Got name " . $items[$id]['name']);
                 $vars = array(
                         'item' => $item,
                         'ipn_data' => array(),
@@ -316,11 +313,13 @@ class Gateway extends \Shop\Gateway
                 );
                 // TODO: should plugin handlePurchase be called here, or when
                 // the order is paid.
-                $status = LGLIB_invokeService(
-                    $pi_info[0], 'handlePurchase',
-                    $vars,
-                    $A,
-                    $svc_msg
+                $status = PLG_callFunctionForOnePlugin(
+                    'service_handlePurchase_' . $pi_info[0],
+                    array(
+                        1 => $vars,
+                        2 => &$A,
+                        3 => &$svc_msg,
+                    )
                 );
                 if ($status != PLG_RET_OK) {
                     $A = array();
@@ -330,7 +329,7 @@ class Gateway extends \Shop\Gateway
                 $prod_types |= ProductType::VIRTUAL;
 
             } else {
-                SHOP_log("Shop item " . $item_number, SHOP_LOG_DEBUG);
+                Log::write('shop_system', Log::DEBUG, "Shop item " . $item_number);
                 $P = new \Shop\Product($item_number);
                 $A = array('name' => $P->name,
                     'short_description' => $P->short_description,
@@ -355,7 +354,7 @@ class Gateway extends \Shop\Gateway
 
             // An invalid item number, or nothing returned for a plugin
             if (empty($A)) {
-                SHOP_log("Item {$item['item_number']} not found");
+                Log::write('shop_system', Log::DEBUG, "Item {$item['item_number']} not found");
                 continue;
             }
 
@@ -380,29 +379,48 @@ class Gateway extends \Shop\Gateway
             // Add the purchase to the shop purchase table
             $uid = isset($vals['uid']) ? (int)$vals['uid'] : $_USER['uid'];
 
-            $sql = "INSERT INTO {$_TABLES['shop.orderitems']} SET
-                        order_id = '{$db_order_id}',
-                        product_id = '{$item_number}',
-                        description = '{$items[$id]['name']}',
-                        quantity = '{$item['quantity']}',
-                        txn_type = '{$this->gw_id}',
-                        txn_id = '',
-                        status = 'pending',
-                        token = '$token',
-                        price = " . (float)$item['price'] . ",
-                        options = '" . DB_escapeString($item_opts) . "'";
-
-            //echo $sql;die;
-            SHOP_log($sql, SHOP_LOG_DEBUG);
-            DB_query($sql);
-
+            try {
+                $db->conn->insert(
+                    $_TABLES['shop.orderitems'],
+                    array(
+                        'order_id' => $order_id,
+                        'product_id' => $item_number,
+                        'description' => $items[$id]['name'],
+                        'quantity' => $item['quantity'],
+                        'txn_type' => $this->gw_id,
+                        'txn_id' => '',
+                        'status' => 'pending',
+                        'token' => $token,
+                        'price' => $item['price'],
+                        'options' => $item_opts,
+                    ),
+                    array(
+                        Database::STRING,
+                        Database::STRING,
+                        Database::STRING,
+                        Database::STRING,
+                        Database::STRING,
+                        Database::STRING,
+                        Database::STRING,
+                        Database::STRING,
+                        Database::STRING,
+                        Database::STRING,
+                    )
+                );
+            } catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            }
         }   // foreach item
 
         $Order->Save();
 
         // If this was a user's cart, then clear that also
         if (isset($vals['cart_id']) && !empty($vals['cart_id'])) {
-            DB_delete($_TABLES['shop.cart'], 'cart_id', $vals['cart_id']);
+            $db->conn->delete(
+                $_TABLES['shop.cart'],
+                array('cart_id' => $vals['cart_id']),
+                array(Database::STRING)
+            );
         }
 
         $Company = Company::getInstance();

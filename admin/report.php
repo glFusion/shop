@@ -13,6 +13,7 @@
 
 /** Import Required glFusion libraries */
 require_once('../../../lib-common.php');
+use Shop\Log;
 
 // If plugin is installed but not enabled, display an error and exit gracefully
 if (
@@ -25,18 +26,17 @@ if (
 
 require_once('../../auth.inc.php');
 USES_lib_admin();
-
+$Request = Shop\Models\Request::getInstance();
 $content = '';
 
 // Get the message to the admin, if any
 $msg = array();
-if (isset($_REQUEST['msg'])) $msg[] = $_REQUEST['msg'];
+if (isset($Request['msg'])) $msg[] = $Request->getString('msg');
 
 // Set view and action variables.  We use $action for things to do, and
 // $view for the page to show.  $mode is often set by glFusion functions,
 // so we'll check for it and see if we should use it, but by using $action
 // and $view we don't tend to conflict with glFusion's $mode.
-$action = '';
 $expected = array(
     // Actions to perform
     'updstatus',
@@ -44,37 +44,28 @@ $expected = array(
     'pdfpl', 'pdforder', 'shipment_pl',
     'configure', 'run', 'report', 'list',
 );
-foreach($expected as $provided) {
-    if (isset($_POST[$provided])) {
-        $action = $provided;
-        $actionval = $_POST[$provided];
-        break;
-    } elseif (isset($_GET[$provided])) {
-        $action = $provided;
-        $actionval = $_GET[$provided];
-        break;
-    }
-}
+list($action, $actionval) = $Request->getAction($expected);
 $view = 'list';
 
 switch ($action) {
 case 'updstatus':
-    $newstatus = SHOP_getVar($_POST, 'newstatus');
+    echo "remove reports.php updatestatus";die;
+    $newstatus = $Request->getString('newstatus');
     if ($newstatus == '') {
         break;
     }
-    $orders = SHOP_getVar($_POST, 'orders', 'array');
-    $oldstatus = SHOP_getVar($_POST, 'oldstatus', 'array');
+    $orders = $Request->getArray('orders');
+    $oldstatus = $Request->getArray('oldstatus');
     foreach ($orders as $id=>$order_id) {
         if (!isset($oldstatus[$order_id]) || $oldstatus[$order_id] != $newstatus) {
             $Order = Shop\Order::getInstance($order_id);
             if (!$Order->isNew) {
                 $Order->updateStatus($newstatus);
-                SHOP_log("Updated order $order_id from {$oldstatus[$order_id]} to $newstatus", SHOP_LOG_INFO);
+                Log::write('shop_system', Log::INFO, "Updated order $order_id from {$oldstatus[$order_id]} to $newstatus");
             }
         }
     }
-    $actionval = SHOP_getVar($_REQUEST, 'run');
+    $actionval = $Request->getString('run');
     if ($actionval != '') {
         $view = 'run';
     }
@@ -102,25 +93,14 @@ case 'run':
     $R = \Shop\Report::getInstance($actionval);
     if ($R !== NULL) {
         $R->setAdmin(true);
-        // Params usually from GET but could be POSTed time period
-        $R->setParams($_REQUEST);
+        $R->setParams();
         $content .= $R->Render();
     }
     break;
 
-case 'shipment_pl':
-    echo __LINE__ . ' deprecated';
-    if ($actionval == 'x') {
-        $shipments = SHOP_getVar($_POST, 'shipments', 'array');
-    } else {
-        $shipments = $actionval;
-    }
-    Shop\Views\ShipmentPL::printPDF($shipments, $view);
-    break;
-
 case 'pdfpl':
     if ($actionval == 'x') {
-        $orders = SHOP_getVar($_POST, 'orders', 'array');
+        $orders = $Request->getArray('orders');
     } else {
         $orders = $actionval;
     }
@@ -133,12 +113,12 @@ case 'pdfpl':
     break;
 case 'pdforder':
     if ($actionval == 'x') {
-        $orders = SHOP_getVar($_POST, 'orders', 'array');
+        $orders = $Request->getArray('orders');
     } else {
         $orders = $actionval;
     }
     $View = new Shop\Views\Invoice;
-    $View->withOrderId($orders)->withOutput('pdf')->Render();
+    $View->withOrderIds($orders)->withOutput('pdf')->Render();
     break;
     \Shop\Order::printPDF($orders, $view);
     break;

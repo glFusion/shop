@@ -1,11 +1,11 @@
 <?php
 /**
- * Class to present an view of an order
+ * Class to present an view of a cart during checkout.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -23,7 +23,10 @@ use Shop\Company;
 use Shop\Customer;
 use Shop\Address;
 use Shop\IPN;
-use Shop\OrderStatus;
+use Shop\Models\OrderStatus;
+use Shop\Models\ProductType;
+use Shop\Country;
+use Shop\State;
 
 
 /**
@@ -44,11 +47,14 @@ class Cart extends OrderBaseView
     /**
      * Set internal variables and read the existing order if an id is provided.
      */
-    public function __construct($order_id = NULL)
+    public function __construct(?string $order_id=NULL)
     {
         $this->tplname = 'viewcart';
         $this->TPL = new Template('workflow/');
-        $this->TPL->set_file($this->tplname, 'viewcart.thtml');
+        $this->TPL->set_file(array(
+            $this->tplname => 'viewcart.thtml',
+            'side_buttons' => 'side_buttons1.thtml',
+        ) );
         $this->Currency = Currency::getInstance();
         if ($order_id !== NULL) {
             $this->Order = \Shop\Cart::getInstance($order_id);
@@ -62,7 +68,7 @@ class Cart extends OrderBaseView
      * @param   string  $order_id   Order record ID
      * @return  object  $this
      */
-    public function withOrderId($order_id)
+    public function withOrderId(string $order_id) : self
     {
         $this->order_id = $order_id;
         $this->Order = \Shop\Cart::getInstance($order_id);
@@ -84,7 +90,7 @@ class Cart extends OrderBaseView
      * @param   string  $view   View type
      * @return  object  $this
      */
-    public function withView($view)
+    public function withView(string $view) : self
     {
         $this->TPL = new Template;
         switch ($view) {
@@ -110,7 +116,7 @@ class Cart extends OrderBaseView
      *
      * @return  string      HTML for cart view.
      */
-    public function Render()
+    public function Render() : string
     {
         // Make sure there's a valid address object for the Shipto address
         // instead of NULL
@@ -133,7 +139,7 @@ class Cart extends OrderBaseView
      * @param  boolean  $final      True if this is a final, non-editable fiew
      * @return string       HTML for order view
      */
-    public function createHTML2($final = false)
+    public function createHTML2(bool $final = false) : string
     {
         global $_SHOP_CONF, $_USER, $LANG_SHOP, $LANG_SHOP_HELP;
 
@@ -147,10 +153,6 @@ class Cart extends OrderBaseView
 
         if (!$this->Order->requiresShipto()) {
             $this->Order->setShipper(NULL);
-            $this->Order->setShipto(NULL);
-        }
-        if (!$this->Order->requiresBillto()) {
-            $this->Order->setBillto(NULL);
         }
 
         $this->Order->calcTotal();
@@ -225,6 +227,8 @@ class Cart extends OrderBaseView
             $T1 = new Template('workflow/');
             $T1->set_file('footer', 'footer.thtml');
             $this->TPL->set_var('footer', $T1->parse('', 'footer'));
+            $T1->set_file('side_buttons', 'side_buttons1.thtml');
+            $this->TPL->set_var('side_buttons', $T1->parse('', 'side_buttons'));
         }
         $this->TPL->parse('output', $this->tplname);
         $form = $this->TPL->finish($this->TPL->get_var('output'));
@@ -237,7 +241,7 @@ class Cart extends OrderBaseView
      *
      * @return  string      HTML for shipping info block
      */
-    public function getShipmentBlock()
+    public function getShipmentBlock() : string
     {
         global $_CONF;
 
@@ -283,7 +287,7 @@ class Cart extends OrderBaseView
      *
      * @return  string      HTML for shipping selection form
      */
-    public function shippingSelection()
+    public function shippingSelection() : string
     {
         $methods = $this->Order->getShippingOptions();
 
@@ -291,6 +295,7 @@ class Cart extends OrderBaseView
         $T->set_file(array(
             'form' => 'shipping.thtml',
             'footer' => 'footer.thtml',
+            'side_buttons' => 'side_buttons1.thtml',
         ) );
         $T->set_block('form', 'shipMethods', 'SM');
         foreach ($methods as $method_id=>$method) {
@@ -307,6 +312,7 @@ class Cart extends OrderBaseView
                 $this->Order->setShipping($s_amt);
             }
         }
+        $T->set_var('side_buttons', $T->parse('', 'side_buttons'));
         $T->set_var('form_footer', $T->parse('', 'footer'));
         $T->parse('output', 'form');
         return  $T->finish($T->get_var('output'));
@@ -318,12 +324,12 @@ class Cart extends OrderBaseView
      *
      * @return  string      HTML payment selection form
      */
-    public function paymentSelection()
+    public function paymentSelection() : string
     {
         global $_SHOP_CONF;
 
         if (!$this->Order->hasItems()) {
-            COM_refresh(Config::get('url'));
+            echo COM_refresh(Config::get('url'));
         }
 
         $retval = '';
@@ -331,6 +337,7 @@ class Cart extends OrderBaseView
         $T->set_file(array(
             'form' => 'payment.thtml',
             'footer' => 'footer.thtml',
+            'side_buttons' => 'side_buttons1.thtml',
         ) );
         $total = $this->Order->getTotal();
         if (!$_SHOP_CONF['anon_buy'] && COM_isAnonUser()) {
@@ -393,6 +400,7 @@ class Cart extends OrderBaseView
             }
         }
         $T->set_var('wrap_form', true);
+        $T->set_var('side_buttons', $T->parse('', 'side_buttons'));
         $T->set_var('form_footer', $T->parse('', 'footer'));
         $T->parse('output', 'form');
         $retval = $T->finish($T->get_var('output'));
@@ -407,48 +415,128 @@ class Cart extends OrderBaseView
      *
      * @return  string      HTML for address selection form
      */
-    public function addressSelection()
+    public function addressSelection() : string
     {
         SHOP_setUrl(SHOP_URL . '/cart.php?addresses');
         $Cust = Customer::getInstance($this->Order->getUid());
-        if (empty($Cust->getAddresses())) {
-            COM_refresh(SHOP_URL . '/account.php?mode=editaddr&id=0&return=cart_addresses');
-        }
 
         $T = new Template('workflow/');
-        $T->set_file(array(
-            'form' => 'addresses.thtml',
-            'footer' => 'footer.thtml',
-        ) );
+        if ($Cust->getUid() < 2) {
+            // Anonymous users can't maintain addresses in their accounts, so
+            // just present the address forms for shipping and billing.
+            $T->set_file(array(
+                'form' => 'addresses_anon.thtml',
+                'addr_form' => 'addressform_base.thtml',
+                'footer' => 'footer.thtml',
+                'side_buttons' => 'side_buttons1.thtml',
+            ) );
+            $Billto = $this->Order->getBillto();
+            $Shipto = $this->Order->getShipto();
+            $hasPhysical = $this->Order->hasPhysical() ? ProductType::PHYSICAL : ProductType::VIRTUAL;
+            $Shop = new Company;
+            if (empty($Billto->getCountry())) {
+                $Billto->setCountry($Shop->getCountry());
+                if (empty($Billto->getState())) {
+                    $Billto->setState($Shop->getState());
+                }
+            }
+            if (empty($Shipto->getCountry())) {
+                $Shipto->setCountry($Shop->getCountry());
+                if (empty($Shipto->getState())) {
+                    $Shipto->setState($Shop->getState());
+                }
+            }
+            $required = $Billto->getRequiredElements();
+            $T->set_var(array(
+                'uid' => $Cust->getUid(),
+                'addr_type' => 'billto',
+                'name' => $Billto->getName(),
+                'company' => $Billto->getCompany(),
+                'address1' => $Billto->getAddress1(),
+                'address2' => $Billto->getAddress2(),
+                'city' => $Billto->getCity(),
+                'state' => $Billto->getState(),
+                'zip' => $Billto->getPostal(),
+                'country_options' => Country::optionList($Billto->getCountry()),
+                'state_options' => State::optionList(
+                    $Billto->getCountry(),
+                    $Billto->getState()
+                ),
+                'phone' => $Billto->getPhone(),
+            ) );
+            foreach ($required as $key=>$prod_type) {
+                if ($prod_type & $hasPhysical) {
+                    $T->set_var('req_addr_' . $key, 'required');
+                }
+            }
+            $T->parse('billto_form', 'addr_form');
+            $T->set_var(array(
+                'uid' => $Cust->getUid(),
+                'addr_type' => 'shipto',
+                'name' => $Shipto->getName(),
+                'company' => $Shipto->getCompany(),
+                'address1' => $Shipto->getAddress1(),
+                'address2' => $Shipto->getAddress2(),
+                'city' => $Shipto->getCity(),
+                'state' => $Shipto->getState(),
+                'zip' => $Shipto->getPostal(),
+                'country_options' => Country::optionList($Shipto->getCountry()),
+                'state_options' => State::optionList(
+                    $Shipto->getCountry(),
+                    $Shipto->getState()
+                ),
+                'phone' => $Shipto->getPhone(),
+            ) );
+            $T->parse('shipto_form', 'addr_form');
+            $T->set_var('form_footer', $T->parse('', 'footer'));
+            $T->set_var('side_buttons', $T->parse('', 'side_buttons'));
+        } else {
+            // Logged-in uses select from saved addresses and can add others.
+            $T->set_file(array(
+                'form' => 'addresses.thtml',
+                'footer' => 'footer.thtml',
+                'side_buttons' => 'side_buttons1.thtml',
+            ) );
 
-        if ($this->Order->getBillto()->getID() < 1) {
-            $this->Order->setBillto($Cust->getDefaultAddress('billto'));
+            $billto_id = $this->Order->getBillto()->getID();
+            if ($billto_id < 1) {
+                $this->Order->setBillto($Cust->getDefaultAddress('billto'));
+            } else {
+                $this->Order->setBillto($Cust->getAddress($billto_id));
+            }
+            $shipto_id = $this->Order->getShipto()->getID();
+            if ($shipto_id < 1) {
+                $this->Order->setShipto($Cust->getDefaultAddress('shipto'));
+            } else {
+                $this->Order->setShipto($Cust->getAddress($shipto_id));
+            }
+
+            $billto_opts = Address::optionList(
+                $this->Order->getUid(),
+                'billto',
+                $billto_id
+            );
+            $shipto_opts = Address::optionList(
+                $this->Order->getUid(),
+                'shipto',
+                $shipto_id
+            );
+            $T->set_var(array(
+                'billto_addr'   => $this->Order->getBillto()->toHTML(),
+                'shipto_addr'   => $this->Order->getShipto()->toHTML(),
+                'billto_opts'   => $billto_opts,
+                'shipto_opts'   => $shipto_opts,
+                'order_instr'   => $this->Order->getInstructions(),
+                'buyer_email'   => $this->Order->getBuyerEmail(),
+                'billto_id'     => $billto_id,
+                'shipto_id'     => $shipto_id,
+                'wrap_form'     => true,
+                'is_anonuser'   => COM_isAnonUser(),
+            ) );
+            $T->set_var('form_footer', $T->parse('', 'footer'));
+            $T->set_var('side_buttons', $T->parse('', 'side_buttons'));
         }
-        if ($this->Order->getShipto()->getID() < 1) {
-            $this->Order->setShipto($Cust->getDefaultAddress('shipto'));
-        }
-        $billto_opts = Address::optionList(
-            $this->Order->getUid(),
-            'billto',
-            $this->Order->getBillto()->getID()
-        );
-        $shipto_opts = Address::optionList(
-            $this->Order->getUid(),
-            'shipto',
-            $this->Order->getShipto()->getID()
-        );
-        $T->set_var(array(
-            'billto_addr'   => $this->Order->getBillto()->toHTML(),
-            'shipto_addr'   => $this->Order->getShipto()->toHTML(),
-            'billto_opts'   => $billto_opts,
-            'shipto_opts'   => $shipto_opts,
-            'order_instr'   => $this->Order->getInstructions(),
-            'buyer_email'   => $this->Order->getBuyerEmail(),
-            'billto_id'     => $this->Order->getBillto()->getID(),
-            'shipto_id'     => $this->Order->getShipto()->getID(),
-            'wrap_form'     => true,
-        ) );
-        $T->set_var('form_footer', $T->parse('', 'footer'));
+
         $T->parse('output', 'form');
         $retval = $T->finish($T->get_var('output'));
         return $retval;
@@ -461,10 +549,10 @@ class Cart extends OrderBaseView
      *
      * @return  string      HTML for final checkout page
      */
-    public function confirmCheckout()
+    public function confirmCheckout() : string
     {
         if (!$this->Order->isCurrent()) {
-            COM_refresh(SHOP_URL . '/cart.php');
+            echo COM_refresh(SHOP_URL . '/cart.php');
         }
 
         $this->TPL = new Template('workflow/');
@@ -479,7 +567,7 @@ class Cart extends OrderBaseView
             'shipping_method' => $this->Order->getShipperDscp(),
             'pmt_method' => $this->Order->getPmtDscp(),
             'buyer_email'   => $this->Order->getBuyerEmail(),
-            'checkout_button' => $this->Order->checkoutButton($gw),
+            'checkout_button' => $this->Order->hasInvalid() ? '' : $this->Order->checkoutButton($gw),
         ) );
         return $this->createHTML2(true);
     }

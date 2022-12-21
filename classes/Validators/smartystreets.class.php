@@ -3,15 +3,17 @@
  * Class to validate addresses.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019-2021 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.4.1
  * @since       v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop\Validators;
+use Shop\Config;
+use Shop\Log;
 
 
 /**
@@ -45,11 +47,9 @@ class smartystreets
      */
     public function __construct($Address)
     {
-        global $_SHOP_CONF;
-
-        $this->auth_id = $_SHOP_CONF['smartystreets_id'];
-        $this->auth_token = $_SHOP_CONF['smartystreets_token'];
-        $this->license = $_SHOP_CONF['smartystreets_license'];
+        $this->auth_id = Config::get('smartystreets_id');
+        $this->auth_token = Config::get('smartystreets_token');
+        $this->license = Config::get('smartystreets_license');
         $this->Address = clone $Address;
     }
 
@@ -74,32 +74,32 @@ class smartystreets
         if ($this->Address->getCountry() == 'US') {
             $endpoint = 'https://us-street.api.smartystreets.com/street-address?';
             $url_params = array(
-                'street=' . urlencode($this->Address->getAddress1()),
-                'city=' . urlencode($this->Address->getCity()),
-                'state=' . urlencode($this->Address->getState()),
-                'zipcode=' . urlencode($this->Address->getPostal()),
+                'street' => $this->Address->getAddress1(),
+                'city' => $this->Address->getCity(),
+                'state' => $this->Address->getState(),
+                'zipcode' => $this->Address->getPostal(),
             );
             if ($this->Address->getAddress2() != '') {
-                $url_params[] = 'secondary=' . urlencode($this->Address->getAddress2());
+                $url_params['secondary'] = $this->Address->getAddress2();
             }
         } else {
             // Paid account required for international
             $endpoint = 'https://international-street.api.smartystreets.com/verify?';
             $url_params = array(
-                'address1=' . urlencode($this->Address->getAddress1()),
-                'locality=' . urlencode($this->Address->getCity()),
-                'administrative_area=' . urlencode($this->Address->getState()),
-                'postal_code=' . urlencode($this->Address->getPostal()),
+                'address1' => $this->Address->getAddress1(),
+                'locality' => $this->Address->getCity(),
+                'administrative_area' => $this->Address->getState(),
+                'postal_code' => $this->Address->getPostal(),
             );
             if ($this->Address->getAddress2() != '') {
-                $url_params[] = 'address2=' . urlencode($this->Address->getAddress2());
+                $url_params['address2'] = $this->Address->getAddress2();
             }
         }
-
-        $url_params = implode('&', $url_params);
         if (!empty($this->license)) {
-            $url_params .= '&license=' . urlencode($this->license);
+            $url_params['license'] = $this->license;
         }
+        $url_params = http_build_query($url_params);
+
         $cache_key = 'av.smarty.' . md5($url_params);
         $decoded = \Shop\Cache::get($cache_key);
         //$decoded=NULL;    // for direct testing
@@ -119,10 +119,10 @@ class smartystreets
             $resp = curl_exec($ch);
             $http_code = curl_getinfo($ch);
             if ($http_code['http_code'] != 200) {
-                SHOP_log("SmartyStreets Validator: " . $resp, SHOP_LOG_ERROR);
+                Log::write('system', Log::ERROR, "SmartyStreets Validator: " . $resp);
                 // Assume address is ok to avoid interrupting checkout flow
                 return false;
-             }
+            }
             $decoded = json_decode($resp, true);
             if (empty($decoded)) {
                 return false;

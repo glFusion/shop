@@ -31,20 +31,15 @@ if (!plugin_ismoderator_shop()) {
     exit;
 }
 
-if (isset($_POST['action'])) {
-    $action = $_POST['action'];
-} elseif (isset($_GET['action'])) {
-    $action = $_GET['action'];
-} else {
-    $action = '';
-}
+$Request = Shop\Models\Request::getInstance();
+$action = $Request->getString('action');
 $title = NULL;      // title attribute to be set
 switch ($action) {
 case 'newPXF':      // add a product->feature mapping
-    $prod_id = SHOP_getVar($_POST, 'prod_id', 'integer', 0);
-    $ft_id = SHOP_getVar($_POST, 'ft_id', 'integer', 0);
-    $fv_id = SHOP_getVar($_POST, 'fv_id', 'integer', 0);
-    $fv_text = SHOP_getVar($_POST, 'fv_text', 'string', '');
+    $prod_id = $Request->getInt('prod_id');
+    $ft_id = $Request->getInt('ft_id');
+    $fv_id = $Request->getInt('fv_id');
+    $fv_text = $Request->getString('fv_text');
     if (
         $prod_id > 0 &&
         $ft_id > 0 &&
@@ -69,8 +64,8 @@ case 'newPXF':      // add a product->feature mapping
     break;
 
 case 'getFVopts':
-    $ft_id = SHOP_getVar($_POST, 'ft_id', 'integer', 0);
-    $fv_id = SHOP_getVar($_POST, 'fv_id', 'integer', 0);
+    $ft_id = $Request->getInt('ft_id');
+    $fv_id = $Request->getInt('fv_id');
     if ($ft_id > 0) {
         $retval = array(
             'status' => true,
@@ -95,7 +90,7 @@ case 'delFV':
         'status' => false,
         'statusMessage' => 'An error occurred',
     );
-    $fv_id = SHOP_getVar($_POST, 'fv_id', 'integer', 0);
+    $fv_id = $Request->getInt('fv_id');
     if ($fv_id > 0) {
         $retval = array(
             'status' => Shop\FeatureValue::Delete($fv_id),
@@ -111,8 +106,8 @@ case 'delFV':
         'fv_id' => 0,
         'fv_text' => '',
     );
-    $ft_id = SHOP_getVar($_POST, 'ft_id', 'integer', 0);
-    $fv_text = SHOP_getVar($_POST, 'fv_text');
+    $ft_id = $Request->getInt('ft_id');
+    $fv_text = $Request->getString('fv_text');
     if (!empty($fv_text)) {
         $FV = new Shop\FeatureValue();
         $FV->setValue($fv_text)
@@ -132,18 +127,12 @@ case 'orderImages':
         'status' => false,
         'statusMessage' => 'Not implemented',
     );
-    /*$retval = array(
-        'status' => true,
-    );
-    Shop\Images\Product::updateOrder($_POST['ordering']);
-    Shop\Cache::clear('products');
-     */
     break;
 
 case 'dropupload_cat':
     // Handle a drag-and-drop image upload for categories
-    $cat_id = SHOP_getVar($_POST, 'cat_id', 'integer', 0);
-    $nonce = SHOP_getVar($_POST, 'nonce', 'string');
+    $cat_id = $Request->getInt('cat_id');
+    $nonce = $Request->getString('nonce');
     $retval = array(
         'status'    => true,    // assume OK
         'statusMessage' => '',
@@ -174,7 +163,7 @@ case 'dropupload_cat':
         $msg .= '<li>' . sprintf($LANG_SHOP['x_of_y_uploaded'], $processed, $sent) . '</li>';
         $msg .= '</ul>';
         $retval['statusMessage'] = $msg;
-        Shop\Cache::clear('categories');
+        Shop\Cache::clear('shop.categories');
     } else {
         $retval['status'] = false;
         $retval['statusMessage'] = $LANG_SHOP['no_files_uploaded'];
@@ -183,8 +172,8 @@ case 'dropupload_cat':
 
 case 'dropupload':
     // Handle a drag-and-drop image upload
-    $item_id = SHOP_getVar($_POST, 'item_id', 'integer', 0);
-    $nonce = SHOP_getVar($_POST, 'nonce', 'string');
+    $item_id = $Request->getInt('item_id');
+    $nonce = $Request->getString('nonce');
     $retval = array(
         'status'    => true,    // assume OK
         'statusMessage' => '',
@@ -214,7 +203,7 @@ case 'dropupload':
         $msg .= '<li>' . sprintf($LANG_SHOP['x_of_y_uploaded'], $processed, $sent) . '</li>';
         $msg .= '</ul>';
         $retval['statusMessage'] = $msg;
-        Shop\Cache::clear('products');
+        Shop\Cache::clear('shop.products');
     } else {
         $retval['status'] = false;
         $retval['statusMessage'] = $LANG_SHOP['no_files_uploaded'];
@@ -224,19 +213,18 @@ case 'dropupload':
 case 'opt_orderby_opts':
     // Get the attrubute "orderby" options when the attribute group or item ID
     // is changed.
-    $og_id = SHOP_getVar($_POST, 'og_id', 'integer', 0);
-    $selected = SHOP_getVar($_POST, 'selected', 'integer', 0);
+    $og_id = $Request->getInt('og_id');
+    $selected = $Request->getInt('selected');
     $retval = Shop\ProductOptionValue::getOrderbyOpts($og_id, $selected);
     // This function gets JSON from the object.
     echo $retval;
     exit;
 
 case 'updatestatus':
-    if (!empty($_POST['order_id']) &&
-        !empty($_POST['newstatus'])) {
-        $newstatus = $_POST['newstatus'];
-        $order_id = $_POST['order_id'];
-        $showlog = $_POST['showlog'] == 1 ? 1 : 0;
+    $newstatus = $Request->getString('newstatus');
+    $order_id = $Request->getString('order_id');
+    if (!empty($order_id) && !empty($newstatus)) {
+        $showlog = $Request->getInt('showlog');
         $ord = \Shop\Order::getInstance($order_id);
         if ($ord->isNew())  {     // non-existant order
             $L = array(
@@ -254,7 +242,7 @@ case 'updatestatus':
                 $L['statusMessage'] = sprintf($LANG_SHOP['status_changed'], $oldstatus, $newstatus);
                 $L['message'] = $L['statusMessage'];
             }
-            $comment = SHOP_getVar($_POST, 'comment');
+            $comment = $Request->getString('comment');
             if (!empty($comment && $ord->Log($comment))) {
                 $L['comment'] = $comment;
                 if (empty($L['statusMessage'])) {
@@ -270,8 +258,8 @@ case 'updatestatus':
 
 case 'delimage_cat':
     // Delete a product image from the product edit form.
-    $cat_id = SHOP_getVar($_POST, 'cat_id', 'integer', 0);
-    $nonce = SHOP_getVar($_POST, 'nonce');
+    $cat_id = $Request->getInt('cat_id');
+    $nonce = $Request->getString('nonce');
     $retval = array(
         'cat_id'    => $cat_id,
         'status'    => \Shop\Images\Category::DeleteImage($cat_id, $nonce),
@@ -280,7 +268,7 @@ case 'delimage_cat':
 
 case 'delimage':
     // Delete a product image from the product edit form.
-    $img_id = SHOP_getVar($_POST, 'img_id', 'integer', 0);
+    $img_id = $Request->getInt('img_id');
     $retval = array(
         'img_id'    => $img_id,
         'status'    => \Shop\Images\Product::DeleteImage($img_id),
@@ -289,8 +277,8 @@ case 'delimage':
 
 case 'setDefImg':
     // Set an image as the default.
-    $img_id = SHOP_getVar($_POST, 'img_id', 'integer', 0);
-    $prod_id = SHOP_getVar($_POST, 'prod_id', 'integer', 0);
+    $img_id = $Request->getInt('img_id');
+    $prod_id = $Request->getInt('prod_id');
     $retval = array(
         'img_id'    => $img_id,
         'status'    => \Shop\Images\Product::setAsDefault($img_id, $prod_id),
@@ -299,10 +287,10 @@ case 'setDefImg':
 
 case 'add_tracking':
     $retval = array('status' => false);
-    $shipment_id = SHOP_getVar($_POST, 'shipment_id', 'integer');
+    $shipment_id = $Request->getInt('shipment_id');
     if ($shipment_id > 0) {
         $SP = new Shop\ShipmentPackage();
-        if ($SP->Save($_POST)) {
+        if ($SP->Save($Request)) {
             if ($SP->getShipperID() > 0) {
                 $shipper_code = Shop\Shipper::getInstance($SP->getShipperID())->getCode();
                 $tracking_url = Shop\Shipper::getInstance($SP->getShipperID())->getTrackingUrl($SP->getTrackingNumber());
@@ -328,7 +316,7 @@ case 'add_tracking':
     break;
 
 case 'del_tracking':
-    $pkg_id = SHOP_getVar($_POST, 'pkg_id', 'integer');
+    $pkg_id = $Request->getInt('pkg_id');
     if ($pkg_id > 0) {
         Shop\ShipmentPackage::Delete($pkg_id);
     }
@@ -338,9 +326,9 @@ case 'del_tracking':
     break;
 
 case 'void':
-    $item_id = $_POST['item_id'];
-    $newval = $_POST['newval'];     // should be "void" or "valid"
-    switch ($_POST['component']) {
+    $item_id = $Request->getInt('item_id');
+    $newval = $Request->getString('newval');    // should be "void" or "valid"
+    switch ($Request->getString('component')) {
     case 'coupon':
         $status = Shop\Products\Coupon::Void($item_id, $newval);
         break;
@@ -360,7 +348,7 @@ case 'void':
         $retval = array(
             'status'        => $status,
             'statusMessage' => $LANG_SHOP['msg_updated'],
-            'text'          => SHOP_getVar($LANG_SHOP, $newval, 'string', 'Unknown'),
+            'text'          => isset($LANG_SHOP[$newval]) ? $LANG_SHOP[$newval] : 'Unknown',
             'newclass'      => $btn_cls,
             'onclick_val'   => $next_val,
             'confirm_txt'   => $confirm_txt,
@@ -377,7 +365,7 @@ case 'void':
 
 case 'getUnpaidOrders':
     // Get all unpaid orders for a specific user ID
-    $uid = (int)$_POST['uid'];
+    $uid = $Request->getInt('uid');
     $Orders = Shop\Order::getUnpaid($uid);
     $retval = array();
     foreach ($Orders as $Order) {
@@ -389,15 +377,19 @@ case 'getUnpaidOrders':
     break;
 
 case 'toggle':
-    switch ($_POST['component']) {
+    $oldval = $Request->getInt('oldval');
+    $id = $Request->getInt('id');
+    $type = $Request->getString('type');
+    $component = $Request->getString('component');
+    switch ($component) {
     case 'product':
-        switch ($_POST['type']) {
+        switch ($type) {
         case 'enabled':
-            $newval = \Shop\Product::toggleEnabled($_POST['oldval'], $_POST['id']);
+            $newval = \Shop\Product::toggleEnabled($oldval, $id);
             break;
 
         case 'featured':
-            $newval = \Shop\Product::toggleFeatured($_POST['oldval'], $_POST['id']);
+            $newval = \Shop\Product::toggleFeatured($oldval, $id);
             break;
          default:
             exit;
@@ -405,9 +397,9 @@ case 'toggle':
         break;
 
     case 'category':
-        switch ($_POST['type']) {
+        switch ($type) {
         case 'enabled':
-            $newval = \Shop\Category::toggleEnabled($_POST['oldval'], $_POST['id']);
+            $newval = \Shop\Category::toggleEnabled($oldval, $id);
             break;
          default:
             exit;
@@ -415,29 +407,29 @@ case 'toggle':
         break;
 
     case 'option':
-        switch ($_POST['type']) {
+        switch ($type) {
         case 'enabled':
-            $newval = \Shop\ProductOptionValue::toggleEnabled($_POST['oldval'], $_POST['id']);
+            $newval = \Shop\ProductOptionValue::toggleEnabled($oldval, $id);
             break;
          default:
             exit;
         }
-       break;
+        break;
 
     case 'variant':
-        switch ($_POST['type']) {
+        switch ($type) {
         case 'enabled':
-            $newval = \Shop\ProductVariant::toggleEnabled($_POST['oldval'], $_POST['id']);
+            $newval = \Shop\ProductVariant::toggleEnabled($oldval, $id);
             break;
          default:
             exit;
         }
-       break;
+        break;
 
     case 'shipping':
-        switch ($_POST['type']) {
+        switch ($type) {
         case 'enabled':
-            $newval = \Shop\Shipper::toggleEnabled($_POST['oldval'], $_POST['id']);
+            $newval = \Shop\Shipper::toggleEnabled($oldval, $id);
             break;
          default:
             exit;
@@ -445,9 +437,10 @@ case 'toggle':
        break;
 
     case 'gateway':
-        switch ($_POST['type']) {
+        $id = $Request->getString('id');
+        switch ($type) {
         case 'enabled':
-            $newval = \Shop\Gateway::toggleEnabled($_POST['oldval'], $_POST['id']);
+            $newval = \Shop\Gateway::toggleEnabled($oldval, $id);
             if ($newval == 1) {
                 $title = $LANG_SHOP['ck_to_disable'];
             } else {
@@ -455,10 +448,10 @@ case 'toggle':
             }
             break;
         case 'buy_now':
-            $newval = \Shop\Gateway::toggleBuyNow($_POST['oldval'], $_POST['id']);
+            $newval = \Shop\Gateway::toggleBuyNow($oldval, $id);
             break;
         case 'donation':
-            $newval = \Shop\Gateway::toggleDonation($_POST['oldval'], $_POST['id']);
+            $newval = \Shop\Gateway::toggleDonation($oldval, $id);
             break;
         default:
             exit;
@@ -466,14 +459,13 @@ case 'toggle':
         break;
 
     case 'workflow':
-        $field = $_POST['type'];
-        $wf = \Shop\Workflow::getInstance($_POST['id']);
+        $wf = \Shop\Workflow::getInstance($id);
         if (!$wf) break;
-        $newval = $_POST['oldval'];
-        $_POST['oldval'] = $wf->enabled;
-        switch ($field) {
+        $newval = $oldval;
+        $Request['oldval'] = $wf->enabled;
+        switch ($type) {
         case 'enabled':
-            $newval = \Shop\Workflow::setValue($_POST['id'], $field, $newval);
+            $newval = \Shop\Workflow::setValue($id, $type, $newval);
             break;
         default:
             exit;
@@ -481,12 +473,15 @@ case 'toggle':
         break;
 
     case 'orderstatus':
-        $field = $_POST['type'];
-        switch ($field) {
+        switch ($type) {
         case 'enabled':
         case 'notify_buyer':
         case 'notify_admin':
-            $newval = Shop\OrderStatus::Toggle($_POST['oldval'], $field, $_POST['id']);
+        case 'order_valid':
+        case 'order_closed':
+        case 'aff_eligible':
+        case 'cust_viewable':
+            $newval = Shop\Models\OrderStatus::Toggle($oldval, $type, $id);
             break;
         default:
             exit;
@@ -494,27 +489,27 @@ case 'toggle':
         break;
 
     case 'zone_rule':
-        $newval = Shop\Rules\Zone::Toggle($_POST['oldval'], $_POST['type'], $_POST['id']);
+        $newval = Shop\Rules\Zone::Toggle($oldval, $type, $id);
         break;
 
     case 'supplier':
-        $newval = Shop\Supplier::Toggle($_POST['oldval'], $_POST['type'], $_POST['id']);
+        $newval = Shop\Supplier::Toggle($oldval, $type, $id);
         break;
 
     case 'region':
-        $newval = Shop\Region::Toggle($_POST['oldval'], $_POST['type'], $_POST['id']);
+        $newval = Shop\Region::Toggle($oldval, $type, $id);
         break;
 
     case 'country':
-        $newval = \Shop\Country::Toggle($_POST['oldval'], $_POST['type'], $_POST['id']);
+        $newval = \Shop\Country::Toggle($oldval, $type, $id);
         break;
 
     case 'state':
-        $newval = \Shop\State::Toggle($_POST['oldval'], $_POST['type'], $_POST['id']);
+        $newval = \Shop\State::Toggle($oldval, $type, $id);
         break;
 
     case 'pi_product':
-        $newval = \Shop\Products\Plugin::Toggle($_POST['oldval'], $_POST['type'], $_POST['id']);
+        $newval = \Shop\Products\Plugin::Toggle($oldval, $type, $id);
         break;
 
     default:
@@ -523,11 +518,11 @@ case 'toggle':
 
     // Common output for all toggle functions.
     $retval = array(
-        'id'    => $_POST['id'],
-        'type'  => $_POST['type'],
-        'component' => $_POST['component'],
+        'id'    => $id,
+        'type'  => $type,
+        'component' => $component,
         'newval'    => $newval,
-        'statusMessage' => $newval != $_POST['oldval'] ?
+        'statusMessage' => $newval != $oldval ?
             $LANG_SHOP['msg_updated'] : $LANG_SHOP['msg_nochange'],
         'title' => $title,
     );
@@ -540,7 +535,7 @@ case 'getCarrierPkgInfo':
         'svc_codes' => array(),
         'status' => false,
     );
-    $carrier_id = $_POST['carrier_id'];
+    $carrier_id = $Request->getInt('carrier_id');
     if ($carrier_id != '') {
         $Carrier = Shop\Shipper::getByCode($carrier_id);
         if ($Carrier) {
@@ -565,4 +560,3 @@ header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
 echo json_encode($retval);
 exit;
 
-?>

@@ -3,17 +3,22 @@
  * Payment report.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2020-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.5.0
  * @since       v1.3.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop\Reports;
-use Shop\Icon;
 use Shop\Currency;
+use Shop\Gateway;
+use Shop\GatewayManager;
+use Shop\Payment as pmtClass;
+use Shop\FieldList;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 
 
 /**
@@ -65,7 +70,7 @@ class payment extends \Shop\Report
     {
         $retval = '';
         $T = $this->getTemplate('config');
-        $gws = \Shop\Gateway::getAll();
+        $gws = GatewayManager::getAll();
         $gateway = self::_getSessVar('gateway');
         $T->set_block('config', 'gw_opts', 'opt');
         foreach ($gws as $GW) {
@@ -131,6 +136,12 @@ class payment extends \Shop\Report
                 'align' => 'right',
             ),
             array(
+                'text'  => $LANG_SHOP['complete'],
+                'field' => 'is_complete',
+                'sort'  => true,
+                'align' => 'center',
+            ),
+            array(
                 'text'  => $LANG_ADMIN['delete'],
                 'field' => 'delete',
                 'sort'  => 'false',
@@ -173,7 +184,7 @@ class payment extends \Shop\Report
         $query_arr = array(
             'table' => 'shop.payments',
             'sql' => $sql,
-            'query_fields' => array(),
+            'query_fields' => array('pmt_gateway', 'pmt_method', 'pmt_ref_id', 'pmt_comment'),
             'default_filter' => $filter,
         );
         $text_arr = array(
@@ -189,7 +200,7 @@ class payment extends \Shop\Report
             $T->set_var(array(
                 'output' => \ADMIN_list(
                     $_SHOP_CONF['pi_name'] . '_payments',
-                    array('\Shop\Report', 'getReportField'),
+                    array(get_parent_class(), 'getReportField'),
                     $header_arr, $text_arr, $query_arr, $defsort_arr,
                     '', $this->extra, '', ''
                 ),
@@ -240,59 +251,81 @@ class payment extends \Shop\Report
         global $_TABLES, $_CONF, $LANG_SHOP;
 
         $pmt_id = (int)$pmt_id;
-        $sql = "SELECT * FROM {$_TABLES['shop.payments']} pmts
-            LEFT JOIN {$_TABLES['shop.ipnlog']} ipn
-            ON ipn.txn_id = pmts.pmt_ref_id
-            WHERE pmts.pmt_id = '$pmt_id'";
-        $res = DB_query($sql);
-        $A = DB_fetchArray($res, false);
+        $db = Database::getInstance();
+        try {
+            $A = $db->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.payments']} pmts
+                WHERE pmts.pmt_id = ?",
+                array($pmt_id),
+                array(Database::INTEGER)
+            )->fetchAssociative();
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $A = false;
+        }
         if (empty($A)) {
             return "Nothing Found";
         }
 
-        // Allow all json-encoded data to be available to the template
-        $gw = \Shop\Gateway::create($A['pmt_gateway']);
-        $gw->loadSDK();
-        $ipn = @json_decode($A['ipn_data'],true);
-        if ($gw !== NULL) {
-            if ($ipn) {
-                $vals = $gw->ipnlogVars($ipn);
-            } else {
-                $vals = array();
-                $A['id'] = $LANG_SHOP['manual_entry'];
-                $A['ip_addr'] = 'n/a';
-            }
-            // Create ipnlog template
-            $T = $this->getTemplate('single');
-
-            // Display the specified ipnlog row
-            $Dt = new \Date($A['ts'], $_CONF['timezone']);
-            $T->set_var(array(
-                'pmt_id'    => $A['pmt_id'],
-                'pmt_amount' => Currency::getInstance()->Format($A['pmt_amount']),
-                'id'        => $A['id'],
-                'ip_addr'   => $A['ip_addr'],
-                'time'      => SHOP_dateTooltip($Dt),
-                'txn_id'    => $A['pmt_ref_id'],
-                'gateway'   => $A['pmt_gateway'],
-                'comment'   => $A['pmt_comment'],
-            ) );
-
-            if (!empty($vals)) {
-                $T->set_block('report', 'DataBlock', 'Data');
-                foreach ($vals as $key=>$value) {
-                    $T->set_var(array(
-                        'prompt'    => isset($LANG_SHOP[$key]) ? $LANG_SHOP[$key] : $key,
-                        'value'     => htmlspecialchars($value, ENT_QUOTES, COM_getEncodingt()),
-                    ) );
-                    $T->parse('Data', 'DataBlock', true);
-                }
-            }
-            if ($ipn) {
-                $T->set_var('ipn_data', print_r($ipn, true));
-            }
-            $retval = $T->parse('output', 'report');
+        try {
+            $ipns = $db->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.ipnlog']}
+                WHERE gateway = ? AND ref_id = ?
+                ORDER BY ts ASC",
+                array($A['pmt_gateway'], $A['pmt_ref_id']),
+                array(Database::STRING, Database::STRING)
+            )->fetchAllAssociative();
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $ipns = false;
         }
+        if (is_array($ipns)) {
+            $ipn_count = count($ipns);
+        } else {
+            $ipn_count = 0;
+        }
+
+        // Allow all json-encoded data to be available to the template
+        $Dt = new \Date($A['pmt_ts'], $_CONF['timezone']);
+        $T = $this->getTemplate('single');
+        $T->set_var(array(
+            'pmt_id'    => $A['pmt_id'],
+            'pmt_amount' => Currency::getInstance()->Format($A['pmt_amount']),
+            'time'      => SHOP_dateTooltip($Dt),
+            'order_link' => COM_createLink(
+                $A['pmt_order_id'],
+                SHOP_ADMIN_URL . '/orders.php?order=' . $A['pmt_order_id']
+            ),
+            'txn_id'    => $A['pmt_ref_id'],
+            'gateway'   => $A['pmt_gateway'],
+            'comment'   => $A['pmt_comment'],
+            'ipn_count' => $ipn_count,
+        ) );
+
+        switch ($ipn_count) {
+        case 0:
+            // Nothing to display
+            break;
+        case 1:
+            // Set the single ipn on the page, not in a dropdown block
+            $T->set_var('single_ipn', var_export(json_decode($ipns[0]['ipn_data'], true), true));
+            break;
+        default:
+            // Show the clickable links to expand each IPN log
+            $T->set_block('report', 'ipnRows', 'ipnRow');
+            foreach ($ipns as $ipn) {
+                $dt = new \Date($ipn['ts']);
+                $T->set_var(array(
+                    'ipn_id' => $ipn['id'],
+                    'ipn_date' => $dt->toMySQL(true),
+                    'ipn_event' => $ipn['event'],
+                    'ipn_data' => var_export(json_decode($ipn['ipn_data'], true), true),
+                ) );
+                $T->parse('ipnRow', 'ipnRows', true);
+            }
+            break;
+        }
+        $retval = $T->parse('output', 'report');
         return $retval;
     }
 
@@ -325,7 +358,7 @@ class payment extends \Shop\Report
         case 'pmt_ref_id':
             $retval = COM_createLink(
                 $fieldvalue,
-                \Shop\Payment::getDetailUrl($A['pmt_id']),
+                pmtClass::getDetailUrl($A['pmt_id']),
                 array(
                     'class' => 'tooltip',
                     'title' => $LANG_SHOP['see_details'],
@@ -342,14 +375,21 @@ class payment extends \Shop\Report
             $retval = $D->toMySQL(true);
             break;
 
+        case 'is_complete':
+            if ((int)$fieldvalue > 0) {
+                $retval = FieldList::checkmark(array(
+                    'active' => true,
+                ) );
+            }
+            break;
+
         case 'delete':
-            $retval = COM_createLink(
-                Icon::getHTML('delete'),
-                SHOP_ADMIN_URL . '/payments.php?delpayment=' . $A['pmt_id'] . '&order_id=' . $extra['order_id'],
-                array(
+            $retval = FieldList::delete(array(
+                'delete_url' => SHOP_ADMIN_URL . '/payments.php?delpayment=' . $A['pmt_id'] . '&order_id=' . $extra['order_id'],
+                'attr' => array(
                     'onclick' => "return confirm('{$LANG_SHOP['q_del_item']}');",
-                )
-            );
+                ),
+            ) );
             break;
         }
 

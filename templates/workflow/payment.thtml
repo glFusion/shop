@@ -25,6 +25,7 @@
 <!-- END Radios -->
 </div>
 {form_footer}
+{side_buttons}
 <script>
 function SHOP_setGateway(gw_id)
 {

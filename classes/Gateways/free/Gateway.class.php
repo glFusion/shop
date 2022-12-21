@@ -16,6 +16,7 @@ use Shop\Cart;
 use Shop\Coupon;
 use Shop\Currency;
 use Shop\Template;
+use Shop\Product;
 
 
 /**
@@ -34,10 +35,6 @@ class Gateway extends \Shop\Gateway
     /** Gateway service description.
      * @var string */
     protected $gw_desc = 'Free Order';
-
-    /** Flag this gateway as bundled with the Shop plugin.
-     * @var integer */
-    protected $bundled = 1;
 
 
     /**
@@ -84,7 +81,7 @@ class Gateway extends \Shop\Gateway
         }
         $gatewayVars = array(
             '<input type="hidden" name="processorder" value="free" />',
-            '<input type="hidden" name="order_id" value="' . $cart->CartID() . '" />',
+            '<input type="hidden" name="order_id" value="' . $cart->getOrderID() . '" />',
             '<input type="hidden" name="payment_status" value="Completed" />',
             '<input type="hidden" name="pmt_gross" value="' . $pmt_gross . '" />',
             '<input type="hidden" name="txn_id" value="' . uniqid() . '" />',
@@ -102,12 +99,11 @@ class Gateway extends \Shop\Gateway
      * Checks the button table to see if a button exists, and if not
      * a new button will be created.
      *
-     * @uses    Gateway::_ReadButton()
-     * @uses    Gateway::_SaveButton()
      * @param   object  $P      Product Item object
+     * @param   float   $price  Optional override price
      * @return  string          HTML code for the button.
      */
-    public function ProductButton($P)
+    public function ProductButton(Product $P, ?float $price=NULL) : string
     {
         global $_USER, $LANG_SHOP;
 

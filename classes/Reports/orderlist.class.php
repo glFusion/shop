@@ -12,7 +12,8 @@
  * @filesource
  */
 namespace Shop\Reports;
-use Shop\Models\OrderState;
+use Shop\Models\OrderStatus;
+use Shop\FieldList;
 
 
 /**
@@ -29,12 +30,12 @@ class orderlist extends \Shop\Report
      * Excludes cart.
      * @var array */
     private $default_statuses = array(
-        OrderState::INVOICED,
-        OrderState::PENDING,
-        OrderState::PROCESSING,
-        OrderState::SHIPPED,
-        OrderState::CLOSED,
-        OrderState::REFUNDED,
+        OrderStatus::INVOICED,
+        OrderStatus::PENDING,
+        OrderStatus::PROCESSING,
+        OrderStatus::SHIPPED,
+        OrderStatus::CLOSED,
+        OrderStatus::REFUNDED,
     );
 
     /**
@@ -126,8 +127,8 @@ class orderlist extends \Shop\Report
                         'sort'  => true,
                     ),
                     array(
-                        'text'  => $LANG_SHOP['order_seq'],
-                        'field' => 'order_seq',
+                        'text'  => $LANG_SHOP['invoice'],
+                        'field' => 'invoice_id',
                         'sort'  => true,
                         'align' => 'right',
                     ),
@@ -139,14 +140,9 @@ class orderlist extends \Shop\Report
                 array(
                     array(
                         'text'  => $LANG_SHOP['item_total'] . '&nbsp;' .
-                        \Shop\Icon::getHTML(
-                            'question',
-                            'tooltip',
-                            array(
-                                'title' => $LANG_SHOP_HELP['orderlist_total']
-                            )
-                        ),
-                        //<i class="uk-icon uk-icon-question-circle tooltip" title="' .
+                        FieldList::info(array(
+                            'title' => $LANG_SHOP_HELP['orderlist_total'],
+                        ) ),
                         'field' => 'sales_amt',
                         'sort'  => true,
                         'align' => 'right',
@@ -183,15 +179,13 @@ class orderlist extends \Shop\Report
             'direction' => 'DESC',
         );
 
-//                SELECT sum(itm.price * itm.quantity)
-//                FROM {$_TABLES['shop.orderitems']} itm
-//                WHERE itm.order_id = ord.order_id
-//            ) as sales_amt,
         $sql = "SELECT ord.*, ord.net_nontax + ord.net_taxable AS sales_amt,
             ( SELECT sum(pmt_amount) FROM {$_TABLES['shop.payments']} pmt
                 WHERE pmt.pmt_order_id = ord.order_id
-            ) as paid
-            FROM {$_TABLES['shop.orders']} ord ";
+            ) as paid, inv.invoice_id
+            FROM {$_TABLES['shop.orders']} ord
+            LEFT JOIN {$_TABLES['shop.invoices']} inv ON ord.order_id = inv.order_id ";
+
         $orderstatus = $this->allowed_statuses;
         if (empty($orderstatus)) {
             $orderstatus = self::_getSessVar('orderstatus');
@@ -259,14 +253,16 @@ class orderlist extends \Shop\Report
             $res = DB_query($sql);
             if ($res) {
                 $A = DB_fetchArray($res, false);
-                $total_sales = $A['total_sales'];
-                $total_tax = $A['total_tax'];
-                $total_shipping = $A['total_shipping'];
+                $total_sales = (float)$A['total_sales'];
+                $total_tax = (float)$A['total_tax'];
+                $total_shipping = (float)$A['total_shipping'];
                 $total_total = $total_sales + $total_tax + $total_shipping;
             }
-            $filter = '<select class="uk-form-small" name="period">' .
-                $this->getPeriodSelection($this->period, false) .
-                '</select>';
+            //var_dump($_POST);die;
+            $filter = FieldList::select(array(
+                'name' => 'period',
+                'option_list' => $this->getPeriodSelection($this->period, false),
+            ) );
             $T->set_var(
                 'output',
                 ADMIN_list(
@@ -278,10 +274,6 @@ class orderlist extends \Shop\Report
             );
             break;
         case 'csv':
-            $total_sales = 0;
-            $total_tax = 0;
-            $total_shipping = 0;
-            $total_total = 0;
             // Assemble the SQL manually from the Admin list components
             $sql .= ' ' . $query_arr['default_filter'];
             $sql .= ' ORDER BY ' . $defsort_arr['field'] . ' ' . $defsort_arr['direction'];
@@ -299,14 +291,14 @@ class orderlist extends \Shop\Report
                 $order_total = $A['sales_amt'] + $A['tax'] + $A['shipping'];
                 $T->set_var(array(
                     'order_id'      => $A['order_id'],
-                    'invoice'       => $A['order_seq'],
+                    'invoice'       => $A['invoice_id'],
                     'order_date'    => $order_date->format('Y-m-d', true),
                     'customer'      => $this->remQuote($customer),
-                    'sales_amt'     => self::formatMoney($A['sales_amt']),
-                    'tax'           => self::formatMoney($A['tax']),
-                    'shipping'      => self::formatMoney($A['shipping']),
+                    'sales_amt'     => self::formatMoney((float)$A['sales_amt']),
+                    'tax'           => self::formatMoney((float)$A['tax']),
+                    'shipping'      => self::formatMoney((float)$A['shipping']),
                     'total'         => self::formatMoney($order_total),
-                    'paid'          => self::formatMoney($A['paid']),
+                    'paid'          => self::formatMoney((float)$A['paid']),
                     'nl'            => "\n",
                 ) );
                 $T->parse('row', 'ItemRow', true);
@@ -387,6 +379,5 @@ class orderlist extends \Shop\Report
         return $retval;
     }
 
-}   // class orderlist
+}
 
-?>

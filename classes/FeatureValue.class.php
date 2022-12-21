@@ -5,15 +5,17 @@
  * overriden by product-specific custom text.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2020-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     vTBD
- * @since       vTBD
+ * @version     v1.4.2
+ * @since       v1.2.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 
 
 /**
@@ -104,27 +106,33 @@ class FeatureValue
      * @param   integer $id Option ID.  Current ID is used if zero.
      * @return  boolean     True if a record was read, False on failure
      */
-    public function Read($id = 0)
+    public function Read(?int $id = NULL) : bool
     {
         global $_TABLES;
 
-        $id = (int)$id;
-        if ($id == 0) $id = $this->fv_id;
+        if (empty($id)) {
+            $id = $this->fv_id;
+        }
         if ($id == 0) {
             $this->error = 'Invalid ID in Read()';
-            return;
+            return false;
         }
 
-        $result = DB_query(
-            "SELECT * FROM {$_TABLES['shop.features_values']}
-            WHERE fv_id='$id'"
-        );
-        if (!$result || DB_numRows($result) != 1) {
-            return false;
-        } else {
-            $row = DB_fetchArray($result, false);
+        try {
+            $row = Database::getInstance()->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.features_values']} WHERE fv_id = ?",
+                array($id),
+                array(Database::INTEGER)
+            )->fetchAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $row = false;
+        }
+        if (is_array($row)) {
             $this->setVars($row);
             return true;
+        } else {
+            return false;
         }
     }
 
@@ -154,26 +162,31 @@ class FeatureValue
         if (!$this->isValidRecord()) {
             return false;
         }
-        $fv_id = (int)$this->fv_id;
-        $fv_value = DB_escapeString($this->fv_value);
-        if ($this->fv_id == 0) {
-            $sql1 = "INSERT INTO {$_TABLES['shop.features_values']} SET ";
-            $sql3 = '';
-        } else {
-            $sql1 = "UPDATE {$_TABLES['shop.features_values']} SET ";
-            $sql3 = " WHERE fv_id = $fv_id";
-        }
-        $sql2 = "ft_id = {$this->getFeatureID()}, fv_value = '$fv_value'";
-        $sql = $sql1 . $sql2 . $sql3;
-        SHOP_log($sql, SHOP_LOG_DEBUG);
-        DB_query($sql, 1);
-        $err = DB_error();
-        if ($err == '') {
+        $db = Database::getInstance();
+        $values = array(
+            'ft_id' => $this->getFeatureID(),
+            'fv_value' => $fv_value,
+        );
+        $types = array(
+            Database::INTEGER,
+            Database::STRING,
+        );
+        try {
             if ($this->fv_id == 0) {
-                $this->fv_id = DB_insertID();
+                $db->conn->insert($_TABLES['shop.features_values'], $values, $types);
+            } else {
+                $types[] = Database::INTEGER;   // for fv_id
+                $db->conn->update(
+                    $_TABLES['shop.features_values'],
+                    $values,
+                    array('fv_id' => $fv_id),
+                    $types
+                );
             }
+            $this->fv_id = $db->conn->lastInsertId();
             return true;
-        } else {
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
     }
@@ -186,16 +199,24 @@ class FeatureValue
      * @param   integer $fv_id    Option ID, empty for current object
      * @return  boolean     True on success, False on invalid ID
      */
-    public static function Delete($fv_id)
+    public static function Delete(int $fv_id) : bool
     {
         global $_TABLES;
 
-        $fv_id = (int)$fv_id;
         if ($fv_id <= 0) {
             return false;
         }
 
-        DB_delete($_TABLES['shop.features_values'], 'fv_id', $fv_id);
+        try {
+            Database::getInstance()->conn->delete(
+                $_TABLES['shop.features_values'],
+                array('fv_id' => $fv_id),
+                array(Database::INTEGER)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return false;
+        }
         return true;
     }
 
@@ -238,20 +259,28 @@ class FeatureValue
      * @param   integer $ft_id     ProductOptionGroup ID
      * @return  array       Array of ProductOptionValue objects
      */
-    public static function getByFeature($ft_id)
+    public static function getByFeature(int $ft_id) : array
     {
         global $_TABLES;
 
-        $ft_id = (int)$ft_id;
         //$cache_key = 'options_' . $ft_id;
         //$opts = Cache::get($cache_key);
         //if ($opts === NULL) {
             $opts = array();
-            $sql = "SELECT * FROM {$_TABLES['shop.features_values']}
-                WHERE ft_id = $ft_id";
-            $res = DB_query($sql);
-            while ($A = DB_fetchArray($res, false)) {
-                $opts[$A['fv_id']] = new self($A);
+            try {
+                $stmt = Database::getInstance()->conn->executeQuery(
+                    "SELECT * FROM {$_TABLES['shop.features_values']} WHERE ft_id = ?",
+                    array($ft_id),
+                    array(Database::INTEGER)
+                );
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $stmt = false;
+            }
+            if ($stmt) {
+                while ($A = $stmt->fetchAssociative()) {
+                    $opts[$A['fv_id']] = new self($A);
+                }
             }
             //Cache::set($cache_key, $opts, array('products', 'options'));
         //}
@@ -346,4 +375,3 @@ class FeatureValue
 
 }
 
-?>

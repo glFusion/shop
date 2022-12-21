@@ -1,22 +1,35 @@
 {# begin {templatelocation} #}
 <h1 style="text-align:center;">{$LANG_SHOP['pmt_detail']}</h1>
 <table class="uk-table" border="0">
-    <tr><td><b>{$LANG_SHOP['trans_id']}:</b></td><td>{pmt_id}</td></tr>
-    <tr><td><b>{$LANG_SHOP['datetime']}:</b></td><td>{time}<br /></td></tr>
-    <tr><td><b>{$LANG_SHOP['amount']}:</b></td><td>{pmt_amount}<br /></td></tr>
-  <tr><td><b>{$LANG_SHOP['ipnlog_id']}:</b></td><td>{id}</td></tr>
-  <tr><td><b>{$LANG_SHOP['ip_addr']}:</b></td><td>{ip_addr}<br/ ></td></tr>
-  <tr><td><b>{$LANG_SHOP['trans_id']}:</b></td><td>{txn_id}<br /></td></tr>
-  <tr><td><b>{$LANG_SHOP['gateway']}:</b></td><td>{gateway}<br /></td></tr>
-    <tr><td><b>{$LANG_SHOP['comment']}:</b></td><td>{comment}<br /></td></tr>
-<!-- BEGIN DataBlock -->
-  <tr><td><b>{prompt}:</b></td><td>{value}</td></tr>
-<!-- END DataBlock -->
+	<tr><td><b>{$LANG_SHOP['ipnlog_id']}:</b></td><td>{pmt_id}</td></tr>
+	<tr><td><b>{$LANG_SHOP['datetime']}:</b></td><td>{time}</td></tr>
+	<tr><td><b>{$LANG_SHOP['amount']}:</b></td><td>{pmt_amount}</td></tr>
+	<tr><td><b>{$LANG_SHOP['trans_id']}:</b></td><td>{txn_id}</td></tr>
+	<tr><td><b>{$LANG_SHOP['gateway']}:</b></td><td>{gateway}</td></tr>
+	<tr><td><b>{$LANG_SHOP['order_number']}:</b></td><td>{order_link}</td></tr>
+	<tr><td><b>{$LANG_SHOP['comment']}:</b></td><td>{comment}</td></tr>
 </table>
 
-<hr />
-{!if ipn_data}
+{!if ipn_count}
 <b>{$LANG_SHOP['ipn_data']}:</b>
-<pre>{ipn_data}</pre>
+<div class="shopIpnLog">
+<!-- BEGIN ipnRows -->
+	<a data-uk-toggle="{target:'.toggle_ipn{ipn_id}'}">
+		<div class="uk-alert">
+			<div class="uk-margin-right tooltip" title="Click to view" style="display:inline;">
+				<i class="uk-icon uk-icon-chevron-right toggle_ipn{ipn_id} uk-hidden"></i>
+				<i class="uk-icon uk-icon-chevron-down toggle_ipn{ipn_id}"></i>
+			</div>
+			{ipn_date} {ipn_event}
+		</div>
+	</a>
+	<div class="toggle_ipn{ipn_id} uk-hidden">
+		<pre>{ipn_data}</pre>
+	</div>
+<!-- END ipnRows -->
+{!if single_ipn}
+<pre>{single_ipn}</pre>
 {!endif}
+{!endif}
+</div>
 {# end {templatelocation} #}

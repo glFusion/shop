@@ -4,9 +4,9 @@
  * This is used to supply Shop functions to other plugins.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2011-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2011-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.4.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -16,6 +16,10 @@
 if (!defined ('GVERSION')) {
     die ('This file can not be used on its own!');
 }
+use glFusion\Database\Database;
+use glFusion\Log\Log;
+use Shop\Models\DataArray;
+use Shop\Config;
 
 
 /**
@@ -41,11 +45,20 @@ if (!defined ('GVERSION')) {
  * @param   array   $svc_msg    Unused
  * @return  integer             Status code
  */
-function service_genButton_shop($args, &$output, &$svc_msg)
+function service_genButton_shop(array $args, &$output, &$svc_msg) : int
 {
     global $_CONF, $_SHOP_CONF;
 
-    $btn_type = isset($args['btn_type']) ? $args['btn_type'] : 'buy_now';
+    $args = new DataArray($args);
+    $price = $args->getFloat('amount', NULL);
+    /*if (isset($args['amount'])) {
+        $price = $args['amount'];
+    } else {
+        $price = NULL;
+    }*/
+
+    $btn_type = $args->getString('btn_type', 'buy_now');
+    //$btn_type = isset($args['btn_type']) ? $args['btn_type'] : 'buy_now';
     $output = array();
 
     if (!SHOP_access_check()) {
@@ -56,25 +69,27 @@ function service_genButton_shop($args, &$output, &$svc_msg)
     // Create the immediate purchase button, if requested.  As soon as a
     // gateway supplies the requested button type, break from the loop.
     if (!empty($btn_type)) {
-        foreach (Shop\Gateway::getall() as $gw) {
+        foreach (Shop\GatewayManager::getAll(true) as $gw) {
             if ($gw->Supports('external') && $gw->Supports($btn_type)) {
                 $P = Shop\Product::getByID($args['item_number']);
-                $output[] = $gw->ProductButton($P);
+                $output['buy_now'] = $gw->ProductButton($P, $price);
+                break;
             }
         }
     }
     // Now create an add-to-cart button, if requested.
-    if (
-        isset($args['add_cart']) &&
+    if ($args->getInt('add_cart') && Config::get('ena_cart')) {
+/*        isset($args['add_cart']) &&
         $args['add_cart'] &&
         $_SHOP_CONF['ena_cart'] == 1
-    ) {
+    ) {*/
         if (!isset($args['item_type'])) {
             $args['item_type'] = Shop\Models\ProductType::VIRTUAL;
         }
         $btn_cls = 'orange';
         $btn_disabled = '';
-        $unique = isset($args['unique']) ? 1 : 0;
+        //$unique = isset($args['unique']) ? 1 : 0;
+        $unique = $args->getInt('unique');
         $Cart = Shop\Cart::getInstance();
         if ($unique) {
             // If items may only be added to the cart once, check that
@@ -93,15 +108,19 @@ function service_genButton_shop($args, &$output, &$svc_msg)
             'amount'        => $args['amount'],
             'pi_url'        => SHOP_URL,
             'item_type'     => $args['item_type'],
-            'have_tax'      => isset($args['tax']) ? 'true' : '',
+            /*'have_tax'      => isset($args['tax']) ? 'true' : '',
             'tax'           => isset($args['tax']) ? $args['tax'] : 0,
             'quantity'      => isset($args['quantity']) ? $args['quantity'] : '',
-            '_ret_url'      => isset($args['_ret_url']) ? $args['_ret_url'] : '',
+            '_ret_url'      => isset($args['_ret_url']) ? $args['_ret_url'] : '',*/
+            'have_tax'      => $args->getBool('tax'),
+            'tax'           => $args->getFloat('tax'),
+            'quantity'      => $args->getInt('quantity'),
+            '_ret_url'      => $args->getString('_ret_url'),
             '_unique'       => $unique,
             'frm_id'        => md5($args['item_name'] . rand()),
             'btn_cls'       => $btn_cls,
             'btn_disabled'  => $btn_disabled,
-            'nonce'         => $Cart->makeNonce($args['item_number'] . $args['item_name']),
+            //'nonce'         => $Cart->makeNonce($args['item_number'] . $args['item_name']),
         ) );
         $output['add_cart'] = $T->parse('', 'cart');
     }
@@ -201,12 +220,13 @@ function service_getUrl_shop($args, &$output, &$svc_msg)
  * @param   mixed   &$svc_msg   Service message
  * @return  integer     Status code
  */
-function service_addCartItem_shop($args, &$output, &$svc_msg)
+function service_addCartItem_shop(array $args, &$output, &$svc_msg)
 {
     if (!is_array($args) || !isset($args['item_number']) || empty($args['item_number'])) {
         return PLG_RET_ERROR;
     }
 
+    $args = new DataArray($args);
     $Cart = Shop\Cart::getInstance();
     $price = 0;
     foreach (array('amount', 'price') as $s) {
@@ -238,24 +258,24 @@ function service_addCartItem_shop($args, &$output, &$svc_msg)
     $override = isset($args['override']) && $args['override'] ? true : false;
     $cart_args = array(
         'item_number'   => $item_number,
-        'quantity'      => SHOP_getVar($args, 'quantity', 'float', 1),
-        'item_name'     => SHOP_getVar($args, 'item_name', 'string'),
+        'quantity'      => $args->getFloat('quantity', 1),
+        'item_name'     => $args->getString('item_name'),
         'price'         => $price,
         'short_description' => $dscp,
-        'options'       => SHOP_getVar($args, 'options', 'array'),
-        'extras'        => SHOP_getVar($args, 'extras', 'array'),
+        'options'       => $args->getArray('options'),
+        'extras'        => $args->getArray('extras'),
         'override'      => $override,
-        'uid'           => SHOP_getVar($args, 'uid', 'int', 1),
+        'uid'           => $args->getInt('uid', 1),
     );
     if (isset($args['tax'])) {      // tax element not set at all if not present
-        $cart_args['tax'] = $args['tax'];
+        $cart_args['tax'] = $args->getFloat('tax');
     }
 
     // If the "unique" flag is present, then only update specific elements
     // included in the "updates" array. If there are no specific updates, then
     // do nothing.
     if (
-        SHOP_getVar($args, 'unique', 'boolean', false) &&
+        $args->getInt('unique') &&
         $Cart->Contains($item_number) !== false
     ) {
         // If the item exists, don't add it, but check if there's an update
@@ -311,8 +331,9 @@ function service_formatAmount_shop($args, &$output, &$svc_msg)
     global $_SHOP_CONF;
 
     if (is_array($args)) {
-        $amount = SHOP_getVar($args, 'amount', 'float');
-        $symbol = SHOP_getVar($args, 'symbol', 'boolean', true);
+        $args = new DataArray($args);
+        $amount = $args->getFloat('amount');
+        $symbol = $args->getBool('symbol', true);
     } else {
         $amount = (float)$args;
         $symbol = true;
@@ -349,12 +370,13 @@ function service_sendcards_shop($args, &$output, &$svc_msg)
         return PLG_RET_PERMISSION_DENIED;
     }
 
-    $amt = SHOP_getVar($args, 'amount', 'float');
-    $uids = SHOP_getVar($args, 'members', 'mixed');
-    $gid = SHOP_getVar($args, 'group_id', 'int');
-    $exp = SHOP_getVar($args, 'expires', 'string');
-    $msg = SHOP_getVar($args, 'message', 'string');
-    $notify = SHOP_getVar($args, 'notify', 'boolean', false);
+    $args = new DataArray($args);
+    $amt = $args->getFloat('amount');
+    $uids = $args->get('members');
+    $gid = $args->getInt('group_id');
+    $exp = $args->getString('expires');
+    $msg = $args->getString('message');
+    $notify = $args->getBool('notify', false);
     if (is_string($uids)) {
         $uids = explode('|', $uids);
     }
@@ -364,11 +386,22 @@ function service_sendcards_shop($args, &$output, &$svc_msg)
         $exp = $dt->format('Y-m-d', true);
     }
     if ($gid > 0) {
-        $sql = "SELECT ug_uid FROM {$_TABLES['group_assignments']}
-                WHERE ug_main_grp_id = $gid AND ug_uid > 1";
-        $res = DB_query($sql);
-        while ($A = DB_fetchArray($res, false)) {
-            $uids[] = $A['ug_uid'];
+        $db = Database::getInstance();
+        try {
+            $data = $db->conn->executeQuery(
+                "SELECT ug_uid FROM {$_TABLES['group_assignments']}
+                WHERE ug_main_grp_id = ? AND ug_uid > 1",
+                array($gid),
+                array(Database::INTEGER)
+            )->fetchAllAssociative();
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
+            $data = false;
+        }
+        if (is_array($data)) {
+            foreach ($data as $A) {
+                $uids[] = $A['ug_uid'];
+            }
         }
     }
     if (empty($uids)) {
@@ -380,8 +413,9 @@ function service_sendcards_shop($args, &$output, &$svc_msg)
     if (empty($svc_msg)) {
         $uids = array_filter(array_unique($uids));
         foreach ($uids as $uid) {
+            $db = Database::getInstance();
             $code = Shop\Products\Coupon::Purchase($amt, $uid, $exp);
-            $email = DB_getItem($_TABLES['users'], 'email', "uid = $uid");
+            $email = $db->getItem($_TABLES['users'], 'email', array('uid' => $uid));
             $name = COM_getDisplayName($uid);
             $output[$uid] = array(
                 'code' => $code,
@@ -437,7 +471,7 @@ function service_approvesubmission_shop($args, &$output, &$svc_msg)
                 // Verify that the correct form is being used.
                 if (
                     !isset($args['source_id']) ||
-                    $args['source_id'] != Shop\Config::get('aff_form_id')
+                    $args['source_id'] != Config::get('aff_form_id')
                 ) {
                     return false;
                 }
@@ -465,6 +499,20 @@ function service_approvesubmission_shop($args, &$output, &$svc_msg)
         }
     }
     return true;
+}
+
+
+/**
+ * Approve a submission. Wrapper for service_approve_submission_shop().
+ *
+ * @param   array   $args   Arguments
+ * @return      PLG return code
+ */
+function plugin_approvesubmission_shop($args)
+{
+    $output = '';
+    $svc_msg = '';
+    return service_approvesubmission_shop($args, $output, $svc_msg);
 }
 
 
@@ -522,7 +570,7 @@ if (
      */
     function service_addCartItem_paypal($args, &$output, &$svc_msg)
     {
-        return service_AddCartItem_shop($args, $output, $svc_msg);
+        return service_addCartItem_shop($args, $output, $svc_msg);
     }
 
     /**

@@ -1,0 +1,28 @@
+{#
+Customize this template which appears at the top of each notification.
+Add things like your shop name, address, logo, etc.
+Supports these variables, in addition to standard glFusion variables like site_url:
+	store_name, shop_addr, shop_addr1, shop_addr2, shop_city, shop_state, shop_postal,
+	shop_phone, shop_email, logo_url, logo_width, logo_height
+#}
+<table style="width:90%;padding-bottom:30px;">
+<tr>
+    <td style="width:30%">
+{!if logo_url}
+        <img src="{logo_url}" style="width:{logo_width}px;height:{logo_width}px;">
+{!endif}
+    </td>
+    <td style="width:70%;text-align:right;">
+		<span style="font-size:24px;">{shop_name}</span>
+{!if shop_addr}
+	    <br />{shop_addr}
+{!endif}
+{!if shop_phone}
+		<br />{shop_phone}
+{!endif}
+{!if shop_email}
+	    <br />{shop_email}
+{!endif}
+    </td>
+</tr>
+</table>

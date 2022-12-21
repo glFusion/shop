@@ -1,25 +1,33 @@
 <?php
 /**
  * Class to interface with plugins for product information.
+ * Allows configuration of default product info for plugins that may not
+ * supply their own product details.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop\Products;
+use glFusion\Database\Database;
 use Shop\Currency;
 use Shop\Models\ProductType;
 use Shop\Models\CustomInfo;
+use Shop\Models\DataArray;
+use Shop\Models\Request;
 use Shop\Config;
-use Shop\Icon;
 use Shop\Field;
 use Shop\Template;
 use Shop\Tooltipster;
+use Shop\OrderItem;
+use Shop\Models\IPN;
+use Shop\FieldList;
+use Shop\Log;
 
 
 /**
@@ -30,18 +38,17 @@ class Plugin extends \Shop\Product
 {
     use \Shop\Traits\DBO;        // Import database operations
 
-    /** Table key. Blank value will cause no action to be taken.
+    /** Table key.
      * @var string */
-    protected static $TABLE = 'shop.plugin_products';
-
+    public static $TABLE = 'shop.plugin_products';
 
     /** URL to product detail page, if any.
      * @var string */
-    public $url;
+    public $url = '';
 
     /** Plugin info with item_id and other vars.
      * @var array */
-    public $pi_info;
+    public $pi_infoi = array();
 
     /** Plugin has its own detail page service function.
      * @var boolean */
@@ -80,7 +87,7 @@ class Plugin extends \Shop\Product
      * @param   string  $id     Item ID - plugin:item_id|opt1,opt2...
      * @param   array   $mods   Array of modifiers from parent::getInstance()
      */
-    public function __construct($id, $mods=array())
+    public function __construct(string $id, array $mods=array())
     {
         global $_USER, $_TABLES;
 
@@ -91,21 +98,27 @@ class Plugin extends \Shop\Product
         $this->item_id = $item_id;  // Full item id
         $this->id = $item_id;       // TODO: convert Product class to use item_id
         $item_parts = explode(':', $item_id);   // separate the plugin name and item ID
-        $this->pi_name = DB_escapeString($item_parts[0]);
+        $this->pi_name = $item_parts[0];
         array_shift($item_parts);         // Remove plugin name
         $this->pi_info['item_id'] = $item_parts;
         $this->product_id = $item_parts[0];
         $this->aff_apply_bonus = false;     // typical for plugins
 
         // Get the admin-supplied configs for the plugin
-        $sql = "SELECT * FROM {$_TABLES[self::$TABLE]}
-            WHERE pi_name = '{$this->pi_name}' LIMIT 1";
-        $res = DB_query($sql);
-        if ($res && DB_numRows($res) == 1) {
-            $A = DB_fetchArray($res, false);
-            $def_price = (float)$A['price'];
-            $def_taxable = $A['taxable'] ? 1 : 0;
-            $def_prod_type = (int)$A['prod_type'];
+        try {
+            $row = Database::getInstance()->conn->executeQuery(
+                "SELECT * FROM {$_TABLES[self::$TABLE]} WHERE pi_name = ? LIMIT 1",
+                array($this->pi_name),
+                array(Database::STRING)
+            )->fetchAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $row = false;
+        }
+        if (is_array($row)) {
+            $def_price = (float)$row['price'];
+            $def_taxable = $row['taxable'] ? 1 : 0;
+            $def_prod_type = (int)$row['prod_type'];
         } else {
             $def_price = 0;
             $def_taxable = 0;
@@ -123,47 +136,49 @@ class Plugin extends \Shop\Product
         // Try to call the plugin's function to get product info.
         // TODO - Deprecate, this is legacy. Plugins should return product info
         // from plugin_iteminfo functions.
-        $status = LGLIB_invokeService(
-            $this->pi_name,
-            'productinfo',
-            $this->pi_info,
-            $A,
-            $svc_msg
+        $status = PLG_callFunctionForOnePlugin(
+            'service_productinfo_' . $this->pi_name,
+            array(
+                1 => $this->pi_info,
+                2 => &$A,
+                3 => &$svc_msg,
+            )
         );
-        if ($status == PLG_RET_OK) {
-            $this->price = SHOP_getVar($A, 'price', 'float', $def_price);
-            $this->name = SHOP_getVar($A, 'name');
-            $this->item_name = SHOP_getVar($A, 'name');
-            $this->short_description = SHOP_getVar($A, 'short_description');
-            $this->description = SHOP_getVar($A, 'description', 'string', $this->short_description);
-            $this->taxable = SHOP_getVar($A, 'taxable', 'integer', $def_taxable);
-            $this->url = SHOP_getVar($A, 'url');
-            $this->override_price = SHOP_getVar($A, 'override_price', 'integer', $def_price);
-            $this->btn_type = SHOP_getVar($A, 'btn_type', 'string', 'buy_now');
-            $this->btn_text = SHOP_getVar($A, 'btn_text');
-            $this->_have_detail_svc = SHOP_getVar($A, 'have_detail_svc', 'boolean', false);
-            $this->_fixed_q = SHOP_getVar($A, 'fixed_q', 'integer', 0);
-            $this->img_url = SHOP_getVar($A, 'img_url');
+        if ($status === PLG_RET_OK) {
+            $A = new DataArray($A);
+            $this->price = $A->getFloat('price', $def_price);
+            $this->name = $A->getString('name');
+            $this->item_name = $A->getString('name');
+            $this->short_description = $A->getString('short_description');
+            $this->description = $A->getString('description', $this->short_description);
+            $this->taxable = $A->getInt('taxable', $def_taxable);
+            $this->url = $A->getString('url');
+            $this->override_price = $A->getInt('override_price', $def_price);
+            $this->btn_type = $A->getString('btn_type', 'buy_now');
+            $this->btn_text = $A->getString('btn_text');
+            $this->_have_detail_svc = $A->getBool('have_detail_svc');
+            $this->_fixed_q = $A->getInt('fixed_q');
+            $this->img_url = $A->getString('img_url');
             $this->isNew = false;
             // Plugins normally can't allow more than one purchase,
             // so default to "true"
-            $this->isUnique = SHOP_getVar($A, 'isUnique', 'boolean', true);
-            $this->rating_enabled = SHOP_getVar($A, 'supportsRatings', 'boolean', false);
+            $this->isUnique = $A->getBool('isUnique', true);
+            $this->rating_enabled = $A->getBool('supportsRatings');
             //$this->rating_enabled = true;   // TODO testing
-            $this->votes = SHOP_getVar($A, 'votes', 'integer');
-            $this->rating = SHOP_getVar($A, 'rating', 'float');
+            $this->votes = $A->getInt('votes');
+            $this->rating = $A->getFloat('rating');
             // Set enabled flag, assume true unless set
-            $this->enabled = SHOP_getVar($A, 'enabled', 'boolean', true);
-            $this->cancel_url = SHOP_getVar($A, 'cancel_url', 'string', SHOP_URL . '/index.php');
+            $this->enabled = $A->getBool('enabled', true);
+            $this->cancel_url = $A->getString('cancel_url', SHOP_URL . '/index.php');
             if (isset($A['canApplyDC']) && !$A['canApplyDC']) {
                 $this->canApplyDC = false;
             }
             if (isset($A['custom_price']) && $A['custom_price']) {
                 $this->custom_price = true;
             }
-            $this->aff_percent = SHOP_getVar($A, 'aff_percent', 'float', 0);
+            $this->aff_percent = $A->getFloat('aff_percent');
             if ($this->aff_percent > 0) {
-                $this->aff_apply_bonus = SHOP_getVar($A, 'aff_apply_bonus', 'boolean', false);
+                $this->aff_apply_bonus = $A->getBool('aff_apply_bonus');
             } else {
                 $this->aff_apply_bonus = false;
             }
@@ -183,44 +198,43 @@ class Plugin extends \Shop\Product
                 )
             );
             if (is_array($A) && !empty($A)) {
-                $this->price = SHOP_getVar($A, 'price', 'float', $def_price);
-                $this->name = SHOP_getVar($A, 'title');
-                $this->item_name = SHOP_getVar($A, 'title');
-                $this->short_description = SHOP_getVar($A, 'excerpt', 'string', '');
-                if (empty($this->short_description)) {
-                    $this->short_description = SHOP_getVar($A, 'title', 'string', '');
-                }
-                $this->description = SHOP_getVar($A, 'description', 'string', $this->short_description);
-                if (isset($A['taxable']) && is_integer($A['taxable'])) {
-                    $this->taxable = $A['taxable'] ? 1 : 0;
-                }
-                $this->url = SHOP_getVar($A, 'url');
-                $this->override_price = SHOP_getVar($A, 'override_price', 'integer', $def_price);
-                $this->btn_type = SHOP_getVar($A, 'btn_type', 'string', 'buy_now');
-                $this->btn_text = SHOP_getVar($A, 'btn_text');
-                $this->_have_detail_svc = SHOP_getVar($A, 'have_detail_svc', 'boolean', false);
-                $this->_fixed_q = SHOP_getVar($A, 'fixed_q', 'integer', 0);
-                $this->img_url = SHOP_getVar($A, 'img_url');
+                $A = new DataArray($A);
+                $this->price = $A->getFloat('price', $def_price);
+                $this->name = $A->getString('title');
+                $this->item_name = $this->name;
+                $this->short_description = $this->name;
+                /*if (empty($this->short_description)) {
+                    $this->short_description = $A->getString('title');
+                }*/
+                $this->description = $A->getString('description', $this->short_description);
+                $this->taxable = $A->getInt($A['taxable']);
+                $this->url = $A->getString('url');
+                $this->override_price = $A->getInt('override_price', $def_price);
+                $this->btn_type = $A->getString('btn_type', 'buy_now');
+                $this->btn_text = $A->getString('btn_text');
+                $this->_have_detail_svc = $A->getBool('have_detail_svc', false);
+                $this->_fixed_q = $A->getInt('fixed_q');
+                $this->img_url = $A->getString('img_url');
                 $this->isNew = false;
                 // Plugins normally can't allow more than one purchase,
                 // so default to "true"
-                $this->isUnique = SHOP_getVar($A, 'isUnique', 'boolean', true);
-                $this->rating_enabled = SHOP_getVar($A, 'supportsRatings', 'boolean', false);
+                $this->isUnique = $A->getBool('isUnique', true);
+                $this->rating_enabled = $A->getBool('supportsRatings');
                 //$this->rating_enabled = true;   // TODO testing
-                $this->votes = SHOP_getVar($A, 'votes', 'integer');
-                $this->rating = SHOP_getVar($A, 'rating', 'float');
+                $this->votes = $A->getInt('votes');
+                $this->rating = $A->getFloat('rating');
                 // Set enabled flag, assume true unless set
-                $this->enabled = SHOP_getVar($A, 'enabled', 'boolean', true);
-                $this->cancel_url = SHOP_getVar($A, 'cancel_url', 'string', SHOP_URL . '/index.php');
+                $this->enabled = $A->getBool('enabled', true);
+                $this->cancel_url = $A->getString('cancel_url', SHOP_URL . '/index.php');
                 if (isset($A['canApplyDC']) && !$A['canApplyDC']) {
                     $this->canApplyDC = false;
                 }
                 if (isset($A['custom_price']) && $A['custom_price']) {
                     $this->custom_price = true;
                 }
-                $this->aff_percent = SHOP_getVar($A, 'aff_percent', 'float', 0);
+                $this->aff_percent = $A->getFloat('aff_percent');
                 if ($this->aff_percent > 0) {
-                    $this->aff_apply_bonus = SHOP_getVar($A, 'aff_apply_bonus', 'boolean', false);
+                    $this->aff_apply_bonus = $A->getBool('aff_apply_bonus');
                 } else {
                     $this->aff_apply_bonus = false;
                 }
@@ -241,17 +255,16 @@ class Plugin extends \Shop\Product
                 $this->enabled = false;
             }
         }
-        //var_dump($this);die;
     }
 
 
     /**
      * Dummy function since plugin items don't support saving.
      *
-     * @param   array   $A      Optional record array to save
+     * @param   DataArray   $A  Optional record array to save
      * @return  boolean         True, always
      */
-    public function Save($A = '')
+    public function Save(?DataArray $A=NULL) : bool
     {
         return true;
     }
@@ -262,7 +275,7 @@ class Plugin extends \Shop\Product
      *
      * @return  boolean     True, always
      */
-    public function Delete()
+    public function Delete() : bool
     {
         return true;
     }
@@ -272,18 +285,18 @@ class Plugin extends \Shop\Product
      * Handle the purchase of this item.
      * - Update qty on hand if track_onhand is set (min. value 0).
      *
-     * @param   object  $Item       OrderItem object, to get options, etc.
-     * @param   array   $ipn_data   IPN data
+     * @param   object  $Item   OrderItem object, to get options, etc.
+     * @param   object  $IPN    IPN data object
      * @return  integer     Zero or error value
      */
-    public function handlePurchase(&$Item, $ipn_data = array())
+    public function handlePurchase(OrderItem &$Item, IPN $IPN) : int
     {
-        SHOP_log('handlePurchase pi_info: ' . $this->pi_name, SHOP_LOG_DEBUG);
+        Log::write('shop_system', Log::DEBUG, 'handlePurchase pi_info: ' . $this->pi_name);
         $status = PLG_RET_OK;       // Assume OK in case the plugin does nothing
-
-        if (!isset($ipn_data['uid'])) {
-            $ipn_data['uid'] = $Item->getOrder()->getUid();
+        if ($IPN['uid'] < 1) {
+            $IPN->setUid($Item->getOrder()->getUid());
         }
+
         $args = array(
             'item'  => array(
                 'item_id' => $Item->getProductID(),
@@ -293,18 +306,19 @@ class Plugin extends \Shop\Product
                 'paid' => $Item->getPrice(),
                 'order_id' => $Item->getOrder()->getOrderID(),
             ),
-            'ipn_data' => $ipn_data,
+            'ipn_data' => $IPN,
             'referrer' => array(
                 'ref_uid' => $Item->getOrder()->getReferrerId(),
                 'ref_token' => $Item->getOrder()->getReferralToken(),
             ),
         );
-        $status = LGLIB_invokeService(
-            $this->pi_name,
-            'handlePurchase',
-            $args,
-            $output,
-            $svc_msg
+        $status = PLG_callFunctionForOnePlugin(
+            'service_handlePurchase_' . $this->pi_name,
+            array(
+                1 => $args,
+                2 => &$output,
+                3 => &$svc_msg,
+            )
         );
         return $status == PLG_RET_OK ? true : false;
     }
@@ -313,23 +327,28 @@ class Plugin extends \Shop\Product
     /**
      * Handle a refund for this product.
      *
-     * @param   object  $Order      Order being refunded
-     * @param   array   $pp_data    Shop IPN data
-     * @return  integer         Status from plugin's handleRefund function
+     * @param   object  $OI     OrderItem being refunded
+     * @param   object  $IPN    Shop IPN data
+     * @return  boolean     True on success, False on error
      */
-    public function handleRefund($Order, $pp_data = array())
+    public function handleRefund(OrderItem $OI, IPN $IPN) :bool
     {
-        if (empty($pp_data)) return false;
+        if ($IPN['pmt_gross'] > 0) {
+            // Should be negative.
+            return false;
+        }
+
         $args = array(
             'item_id'   => explode(':', $this->item_id),
-            'ipn_data'  => $pp_data,
+            'ipn_data'  => $IPN,
         );
-        $status = LGLIB_invokeService(
-            $this->pi_name,
-            'handleRefund',
-            $args,
-            $output,
-            $svc_msg
+        $status = PLG_callFunctionForOnePlugin(
+            'service_handleRefund_' . $this->pi_name,
+            array(
+                1 => $args,
+                2 => &$output,
+                3 => &$svc_msg,
+            )
         );
         return $status == PLG_RET_OK ? true : false;
     }
@@ -365,12 +384,13 @@ class Plugin extends \Shop\Product
             if (isset($override['uid'])) {
                 $this->pi_info['mods']['uid'] = $override['uid'];
             }
-            $status = LGLIB_invokeService(
-                $this->pi_name,
-                'productinfo',
-                $this->pi_info,
-                $A,
-                $svc_msg
+            $status = PLG_callFunctionForOnePlugin(
+                'service_productinfo_' . $this->pi_name,
+                array(
+                    1 => $this->pi_info,
+                    2 => &$output,
+                    3 => &$svc_msg,
+                )
             );
             if ($status == PLG_RET_OK && isset($A['price'])) {
                 $this->price = (float)$A['price'];
@@ -410,7 +430,7 @@ class Plugin extends \Shop\Product
      * @param   mixed   $item_number    Item Number to check
      * @return  boolean     Always true for this class
      */
-    public static function isPluginItem($item_number)
+    public static function isPluginItem(string $item_number) : bool
     {
         return true;
     }
@@ -447,19 +467,20 @@ class Plugin extends \Shop\Product
     /**
      * Get additional text to add to the buyer's recipt for a product.
      *
-     * @param   object  $item   Order Item object (not used)
+     * @param   object  $OI     Order Item object (not used)
      * @return  string          Additional message to include in email
      */
-    public function EmailExtra($item)
+    public function EmailExtra(OrderItem $OI) : string
     {
         $text = '';
         // status from the service function isn't used.
-        LGLIB_invokeService(
-            $this->pi_name,
-            'emailReceiptInfo',
-            $this->pi_info,
-            $text,
-            $svc_msg
+        PLG_callFunctionForOnePlugin(
+            'service_emailreceiptInfo_' . $this->pi_name,
+            array(
+                1 => $this->pi_info,
+                2 => &$text,
+                3 => &$svc_msg,
+            )
         );
         return $text;
     }
@@ -469,10 +490,10 @@ class Plugin extends \Shop\Product
      * Determine if a product can be shown in the catalog.
      * For plugin items, just return true for now.
      *
-     * @param   boolean $isadmin    True if this is an admin, can view all
+     * @param   integer $uid    User ID, current user if null
      * @return  boolean True if on sale, false if not
      */
-    public function canDisplay($isadmin = false)
+    public function canDisplay(?int $uid = NULL) : bool
     {
         return true;
     }
@@ -557,7 +578,6 @@ class Plugin extends \Shop\Product
     public function getDiscountedPrice($qty=1, $opts_price=0, $override=NULL)
     {
         if ($override === NULL) {
-            COM_errorLog("returning price {$this->price}");
             return (float)$this->price;
         } else {
             return (float)$override;
@@ -583,7 +603,7 @@ class Plugin extends \Shop\Product
      * @param   integer $cat_id     Optional category ID to limit listing (not used)
      * @return  string      HTML for the product list.
      */
-    public static function adminList($cat_id=0)
+    public static function adminList(?int $cat_id=NULL) : string
     {
         global $_SHOP_CONF, $_TABLES, $LANG_SHOP,
             $LANG_ADMIN, $LANG_SHOP_HELP;
@@ -643,18 +663,17 @@ class Plugin extends \Shop\Product
             '', '',
             COM_getBlockTemplate('_admin_block', 'header')
         );
-        $display .= COM_createLink($LANG_SHOP['new_item'],
-            SHOP_ADMIN_URL . '/index.php?pi_edit=0',
-            array(
-                'class' => 'uk-button uk-button-success',
-                'style' => 'float:left',
-            )
-        );
+        $display .= FieldList::buttonLink(array(
+            'text' => $LANG_SHOP['new_item'],
+            'url' => SHOP_ADMIN_URL . '/index.php?pi_edit=0',
+            'style' => 'success',
+        ) );
 
         // Filter on category, brand and supplier
-        $cat_id = SHOP_getVar($_GET, 'cat_id', 'integer', 0);
-        $brand_id = SHOP_getVar($_GET, 'brand_id', 'integer', 0);
-        $supplier_id = SHOP_getVar($_GET, 'supplier_id', 'integer', 0);
+        $Request = Request::getInstance();
+        $cat_id = $Request->getInt('cat_id');
+        $brand_id = $Request->getInt('brand_id');
+        $supplier_id = $Request->getInstance('supplier_id');
         $def_filter = 'WHERE 1=1';
 
         $query_arr = array(
@@ -709,30 +728,27 @@ class Plugin extends \Shop\Product
 
         switch($fieldname) {
         case 'copy':
-            $retval .= COM_createLink(
-                Icon::getHTML('copy', 'tooltip', array('title' => $LANG_SHOP['copy_product'])),
-                SHOP_ADMIN_URL . "/index.php?prod_clone=x&amp;id={$A['id']}"
-            );
+            $retval .= FieldList::copy(array(
+                'url' => SHOP_ADMIN_URL . "/index.php?prod_clone=x&amp;id={$A['id']}",
+            ) );
             break;
 
         case 'edit':
-            $retval .= COM_createLink(
-                Icon::getHTML('edit', 'tooltip', array('title' => $LANG_ADMIN['edit'])),
-                SHOP_ADMIN_URL . "/index.php?return=products&pi_edit={$A['id']}"
-            );
+            $retval .= FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . "/index.php?return=products&pi_edit={$A['id']}",
+            ) );
             break;
         case 'prod_type':
             $retval = $LANG_SHOP['prod_types'][$fieldvalue];
             break;
         case 'taxable':
-            $retval .= Field::checkbox(array(
+            $retval .= FieldList::checkbox(array(
                 'name' => 'taxable',
                 'id' => "togenabled{$A['id']}",
                 'checked' => $fieldvalue == 1,
                 'onclick' => "SHOP_toggle(this,'{$A['id']}','taxable','pi_product');",
                 'value' => 1,
             ) );
-//            $retval = $fieldvalue ? 'Yes' : 'No';
             break;
 
         case 'price':
@@ -743,15 +759,14 @@ class Plugin extends \Shop\Product
             }
             break;
         case 'delete':
-            $retval .= COM_createLink(
-                Icon::getHTML('delete'),
-                SHOP_ADMIN_URL. '/index.php?pi_del=' . $A['id'],
-                array(
+            $retval .= FieldList::delete(array(
+                'delete_url' => SHOP_ADMIN_URL. '/index.php?pi_del=' . $A['id'],
+                'attr' => array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                     'title' => $LANG_SHOP['del_item'],
                     'class' => 'tooltip',
-                )
-            );
+                ),
+            ) );
             break;
         default:
             $retval = $fieldvalue;
@@ -762,7 +777,13 @@ class Plugin extends \Shop\Product
     }
 
 
-    public static function edit($id = 0)
+    /**
+     * Edit the configuration for a plugin product.
+     *
+     * @param   integer $id     DB record ID
+     * @return  string      Editing form
+     */
+    public static function edit(int $id) : string
     {
         global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_SHOP_HELP, $_TABLES;
 
@@ -770,22 +791,24 @@ class Plugin extends \Shop\Product
         $taxable = 0;
         $price = 0;
         $prod_type = ProductType::PLUGIN;
-        $id = (int)$id;
-        if ($id > 0) {
-            $sql = "SELECT * FROM {$_TABLES[self::$TABLE]}
-                WHERE id = $id LIMIT 1";
-            $res = DB_query($sql);
-            if ($res && DB_numRows($res) == 1) {
-                $A = DB_fetchArray($res, false);
-                $pi_name = $A['pi_name'];
-                $taxable = $A['taxable'] ? 1 : 0;
-                $price = $A['price'];
-                $prod_type = $A['prod_type'];
-            }
-        }
-
         if ($id > 0) {
             $retval = COM_startBlock($LANG_SHOP['edit_item'] . ': ' . $pi_name);
+            try {
+                $row = Database::getInstance()->conn->executeQuery(
+                    "SELECT * FROM {$_TABLES[self::$TABLE]} WHERE id = ?",
+                    array($id),
+                    array(Database::INTEGER)
+                )->fetchAssociative();
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $row = false;
+            }
+            if (is_array($row)) {
+                $pi_name = $row['pi_name'];
+                $taxable = $row['taxable'] ? 1 : 0;
+                $price = $row['price'];
+                $prod_type = $row['prod_type'];
+            }
         } else {
             $retval = COM_startBlock($LANG_SHOP['new_item'] . ': ' . $LANG_SHOP['pi_name']);
         }
@@ -812,39 +835,60 @@ class Plugin extends \Shop\Product
      *
      * @param   integer $id     DB record ID of plugin info
      */
-    public static function deleteConfig($id)
+    public static function deleteConfig(int $id) : void
     {
         global $_TABLES;
 
-        DB_delete($_TABLES[self::$TABLE], 'id', (int)$id);
+        try {
+            Database::getInstance()->conn->delete($_TABLES[self::$TABLE], 'id', (int)$id);
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
     }
 
 
     /**
      * Save a plugin configuration.
      *
-     * @param   array   $A      Array of values from form or DB
+     * @param   DataArray   $A  Array of values from form or DB
      * @return  boolean     True on success, False on error
      */
-    public static function saveConfig($A)
+    public static function saveConfig(DataArray $A) : bool
     {
         global $_TABLES;
 
-        $pi_name = DB_escapeString($A['pi_name']);
-        $taxable = isset($A['taxable']) && $A['taxable'] ? 1 : 0;
-        $prod_type = (int)$A['prod_type'];
-        $price = (float)$A['price'];
+        $id = $A->getInt('id');
+        $values = array(
+            'pi_name' => $A->getString('pi_name'),
+            'taxable' => $A->getInt('taxable'),
+            'prod_type' => $A->getInt('prod_type'),
+            'price' => $A->getFloat('price'),
+        );
+        $types = array(
+            Database::STRING,
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::STRING,
+        );
 
-        $sql = "INSERT INTO {$_TABLES[self::$TABLE]} SET
-            pi_name = '$pi_name',
-            price = $price,
-            prod_type = $prod_type,
-            taxable = $taxable
-            ON DUPLICATE KEY UPDATE
-            price = $price,
-            prod_type = $prod_type,
-            taxable = $taxable";
-        DB_query($sql);
+        $db = Database::getInstance();
+        try {
+            if ($id > 0) {
+                $types[] = Database::INTEGER;
+                $db->update(
+                    $_TABLES[self::$TABLE],
+                    $values,
+                    array('id' => $id),
+                    $types
+                );
+            } else {
+                $db->conn->insert($_TABLES[self::$TABLE], $values, $types);
+            }
+            return true;
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return false;
+        }
     }
 
 

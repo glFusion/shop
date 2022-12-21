@@ -15,6 +15,7 @@ namespace Shop\Views;
 use Shop\Shipper;
 use Shop\Shipment;
 use Shop\Template;
+use Shop\Log;
 
 
 /**
@@ -132,13 +133,13 @@ class ShipmentPL
      */
     public static function printPDF($ids, $type='pdfpl')
     {
-        USES_lglib_class_html2pdf();
         try {
+            USES_lglib_class_html2pdf();
             $html2pdf = new \Spipu\Html2Pdf\Html2Pdf('P', 'A4', 'en');
             //$html2pdf->setModeDebug();
             $html2pdf->setDefaultFont('Arial');
         } catch(HTML2PDF_exception $e) {
-            SHOP_log($e);
+            Log::write('shop_system', Log::ERROR, $e);
             return false;
         }
 
@@ -155,7 +156,7 @@ class ShipmentPL
             try {
                 $html2pdf->writeHTML($content);
             } catch(HTML2PDF_exception $e) {
-                SHOP_log($e);
+                Log::write('shop_system', Log::ERROR, $e);
                 return false;
             }
         }
@@ -177,4 +178,3 @@ class ShipmentPL
 
 }
 
-?>

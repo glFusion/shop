@@ -3,17 +3,20 @@
  * Upgrade routines for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop\Upgrades;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 use Shop\Cache;
 use Shop\Gateway;
+use Shop\GatewayManager;
 
 
 /** Include the table creation strings */
@@ -33,11 +36,11 @@ class Upgrade
 
     /** Deployed code version, or target upgrade version.
      * @var string */
-    protected static $code_ver;
+    protected static $code_ver = '';
 
     /** Currently-installed version.
      * @var string */
-    protected static $current_ver;
+    protected static $current_ver = '';
 
     /** Flag to indicate a development upgrade.
      * Causes SQL errors to be ignored.
@@ -51,7 +54,7 @@ class Upgrade
      * @param   boolean $dvlp   True for a development upgrade
      * @return  boolean     True on success, False on first error
      */
-    public static function doUpgrade($dvlp = false)
+    public static function doUpgrade(bool $dvlp = false) : bool
     {
         global $_PLUGIN_INFO;
 
@@ -79,6 +82,14 @@ class Upgrade
             if (!v1_3_1::upgrade()) return false;
         }
 
+        if (!COM_checkVersion(self::$current_ver, '1.4.1')) {
+            if (!v1_4_1::upgrade()) return false;
+        }
+
+        if (!COM_checkVersion(self::$current_ver, '1.5.0')) {
+            if (!v1_5_0::upgrade()) return false;
+        }
+
         // Make sure paths and images are created.
         require_once __DIR__ . '/../../autoinstall.php';
         plugin_postinstall_shop(true);
@@ -93,10 +104,10 @@ class Upgrade
         // Clear caches, update the configuration options, delete old files.
         Cache::clear();
         self::updateConfig();
-        Gateway::UpgradeAll(self::$current_ver);
+        GatewayManager::upgradeAll(self::$current_ver);
         self::removeOldFiles();
         CTL_clearCache();   // clear cache to ensure CSS updates come through
-        SHOP_log("Successfully updated the {$_SHOP_CONF['pi_display_name']} Plugin", SHOP_LOG_INFO);
+        Log::write('system', Log::INFO, "Successfully updated the {$_SHOP_CONF['pi_display_name']} Plugin");
         // Set a message in the session to replace the "has not been upgraded" message
         SHOP_setMsg("Shop Plugin has been updated to " . self::$current_ver, 'info', 1);
         return true;
@@ -112,7 +123,7 @@ class Upgrade
      * @param   boolean $ignore_error   True to ignore SQL errors.
      * @return  boolean     True on success, False on failure
      */
-    public static function doUpgradeSql($version, $ignore_error = false)
+    public static function doUpgradeSql(string $version, bool $ignore_error = false) : bool
     {
         global $_TABLES, $_SHOP_CONF, $SHOP_UPGRADE, $_DB_dbms, $_VARS;
 
@@ -136,27 +147,27 @@ class Upgrade
         }
 
         // Execute SQL now to perform the upgrade
-        SHOP_log("--- Updating Shop to version $version", SHOP_LOG_INFO);
+        Log::write('system', Log::INFO, "--- Updating Shop to version $version");
         foreach($SHOP_UPGRADE[$version] as $sql) {
             if ($use_innodb) {
                 // If using InnoDB, change the Engine in the statement.
                 $sql = str_replace('MyISAM', 'InnoDB', $sql);
             }
 
-            SHOP_log("Shop Plugin $version update: Executing SQL => $sql", SHOP_LOG_INFO);
+            Log::write('system', Log::INFO, "Shop Plugin $version update: Executing SQL => $sql");
             try {
                 DB_query($sql, '1');
                 if (DB_error()) {
                     // check for error here for glFusion < 2.0.0
-                    SHOP_log('SQL Error during update', SHOP_LOG_INFO);
+                    Log::write('system', Log::INFO, 'SQL Error during update');
                     //if (!$ignore_error) return false;
                 }
             } catch (Exception $e) {
-                SHOP_log('SQL Error ' . $e->getMessage(), SHOP_LOG_INFO);
+                Log::write('system', Log::INFO, 'SQL Error ' . $e->getMessage());
                 //if (!$ignore_error) return false;
             }
         }
-        SHOP_log("--- Shop plugin SQL update to version $version done", SHOP_LOG_INFO);
+        Log::write('system', Log::INFO, "--- Shop plugin SQL update to version $version done");
         return true;
     }
 
@@ -169,7 +180,7 @@ class Upgrade
      * @param   string  $ver    New version to set
      * @return  boolean         True on success, False on failure
      */
-    public static function setVersion($ver)
+    public static function setVersion(string $ver) : bool
     {
         global $_TABLES, $_SHOP_CONF, $_PLUGIN_INFO;
 
@@ -182,10 +193,10 @@ class Upgrade
 
         $res = DB_query($sql, 1);
         if (DB_error()) {
-            SHOP_log("Error updating the {$_SHOP_CONF['pi_display_name']} Plugin version", SHOP_LOG_INFO);
+            Log::write('system', Log::INFO, "Error updating the {$_SHOP_CONF['pi_display_name']} Plugin version");
             return false;
         } else {
-            SHOP_log("{$_SHOP_CONF['pi_display_name']} version set to $ver", SHOP_LOG_INFO);
+            Log::write('system', Log::INFO, "{$_SHOP_CONF['pi_display_name']} version set to $ver");
             // Set in-memory config vars to avoid tripping SHOP_isMinVersion();
             $_SHOP_CONF['pi_version'] = $ver;
             $_PLUGIN_INFO[self::$pi_name]['pi_version'] = $ver;
@@ -197,7 +208,7 @@ class Upgrade
     /**
      * Update the plugin configuration
      */
-    public static function updateConfig()
+    public static function updateConfig() : void
     {
         global $shopConfigData;
         USES_lib_install();
@@ -212,7 +223,7 @@ class Upgrade
      *
      * @param   string  $dir    Directory name
      */
-    public static function delPath($dir)
+    public static function delPath(string $dir) : void
     {
         if (is_dir($dir)) {
             $objects = scandir($dir);
@@ -238,7 +249,7 @@ class Upgrade
      * Errors in unlink() and rmdir() are ignored.
      * @todo: the arrays should probably be moved to version classes.
      */
-    public static function removeOldFiles()
+    public static function removeOldFiles() : void
     {
         global $_CONF;
 
@@ -273,8 +284,21 @@ class Upgrade
                 'templates/sales_form.thtml',
                 'templates/option_grp_form.thtml',
                 'templates/option_val_form.thtml',
-                // 1.3.x    Future, these may be needed for a bit
-                //'classes/ipn',
+                // 1.4.1
+                'classes/Validators/taxcloud.class.php',
+                'classes/Tax/taxcloud.class.php',
+                'classes/Tax/taxjar.class.php',
+                'classes/Tax/avatax.class.php',
+                'upgrade.inc.php',
+                // 1.5.0
+                'classes/ipn',
+                'classes/Logger',   // renamed to "Loggers"
+                'classes/Gateways/paypal/gateway.json',
+                'classes/Gateways/ppcheckout/gateway.json',
+                'templates/feeds/catalog/facebook.thtml',
+                // 1.6.0
+                'classes/Catalog.class.php',
+                'templates/viewcart.thtml',
             ),
             // public_html/shop
             $_CONF['path_html'] . 'shop' => array(
@@ -290,8 +314,10 @@ class Upgrade
 
         foreach ($paths as $path=>$files) {
             foreach ($files as $file) {
-                SHOP_log("removing $path/$file");
-                self::delPath("$path/$file");
+                if (file_exists("$path/$file")) {
+                    Log::write('system', Log::ERROR, "removing $path/$file");
+                    self::delPath("$path/$file");
+                }
             }
         }
     }
@@ -304,7 +330,7 @@ class Upgrade
      * @param   string  $col_name   Column name to check
      * @return  boolean     True if the column exists, False if not
      */
-    public static function tableHasColumn($table, $col_name)
+    public static function tableHasColumn(string $table, string $col_name) : bool
     {
         global $_TABLES;
 
@@ -315,13 +341,25 @@ class Upgrade
 
 
     /**
+     * Check if a table exists in the schema.
+     *
+     * @param   string  $table      Table name
+     * @return  boolean     True if exists, False if not
+     */
+    public static function tableExists(string $table) : bool
+    {
+        return Database::getInstance()->conn->getSchemaManager()->tablesExist(array($table));
+    }
+
+
+    /**
      * Get the datatype for a specific column.
      *
      * @param   string  $table      Table Key, defined in shop.php
      * @param   string  $col_name   Column name to check
      * @return  string      Column datatype
      */
-    public static function columnType($table, $col_name)
+    public static function columnType(string $table, string $col_name) : string
     {
         global $_TABLES, $_DB_name;
 
@@ -333,7 +371,7 @@ class Upgrade
         $res = DB_query($sql,1);
         if ($res) {
             $A = DB_fetchArray($res, false);
-            $retval = $A['DATA_TYPE'];
+            $retval = strtolower($A['DATA_TYPE']);
         }
         return $retval;
     }
@@ -346,7 +384,7 @@ class Upgrade
      * @param   string  $idx_name   Index name
      * @return  integer     Number of rows (fields) in the index
      */
-    public static function tableHasIndex($table, $idx_name)
+    public static function tableHasIndex(string $table, string $idx_name) : bool
     {
         global $_TABLES;
 

@@ -1,0 +1,7 @@
+{#
+Customize this template which appears at the bottom of each notification.
+Supports these variables, in addition to standard glFusion variables like site_url:
+	store_name, shop_addr1, shop_addr2, shop_city, shop_state, shop_postal, shop_phone, shop_email
+#}
+{site_name}<br />
+{site_url}

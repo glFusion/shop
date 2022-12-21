@@ -34,6 +34,11 @@ if (COM_isAnonUser()) {
 }
 $content = '';
 
+$Aff = new Shop\Customer($_USER['uid']);
+if ($Aff->getAffiliateId() == Shop\Affiliate::REJECTED) {
+    COM_404();
+}
+
 // Retrieve and sanitize input variables.  Typically _GET, but may be _POSTed.
 COM_setArgNames(array('mode', 'id', 'register'));
 foreach (array('mode', 'id') as $varname) {
@@ -44,9 +49,18 @@ foreach (array('mode', 'id') as $varname) {
     }
 }
 if (empty($mode)) {
-    $mode = 'redeem';
+    // Figure out what the user can do here.
+    $Aff = new Shop\Affiliate();
+    if ($Aff->isEligible()) {
+        if (empty($Aff->getAffiliateId())) {
+            $mode = 'register';
+        } else {
+            $mode = 'sales';
+        }
+    } else {
+        COM_404();
+    }
 }
-
 switch ($mode) {
 case 'register':
     if (COM_isAnonUser()) {

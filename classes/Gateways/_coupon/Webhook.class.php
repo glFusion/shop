@@ -16,8 +16,8 @@ namespace Shop\Gateways\_coupon;
 use Shop\Config;
 use Shop\Order;
 use Shop\Payment;
-use Shop\Models\OrderState;
 use Shop\Products\Coupon;
+use Shop\Log;
 
 
 /**
@@ -52,7 +52,7 @@ class Webhook extends \Shop\Webhook
      *
      * @return  boolean     True if valid, False if not
      */
-    public function Verify()
+    public function Verify() : bool
     {
         $this->setEvent('gc_payment');
         $this->setOrderID($this->whData->order_id);
@@ -60,30 +60,30 @@ class Webhook extends \Shop\Webhook
         $retval = true;
 
         if (!$this->isUniqueTxnId()) {
-            SHOP_log("Duplicate transaction ID {$this->getID()}");
-            $retval = false;
+            // Duplicate transaction, not an error.
+            return true;
         }
 
         // Get the Shop order record and make sure it's valid.
         $this->Order = Order::getInstance($this->getOrderId());
         if ($this->Order->isNew()) {
-            SHOP_log("Order {$this->getOrderId()} not found");
+            Log::write('shop_system', Log::ERROR, "Order {$this->getOrderId()} not found");
             $retval = false;
         }
 
         // Verify that the user has a sufficient coupon balance,
         $bal_due = $this->Order->getBalanceDue();
         if (!Coupon::verifyBalance($bal_due, $this->Order->getUid())) {
-            SHOP_log("Insufficient coupon balance for order {$this->getOrderId()}");
+            Log::write('shop_system', Log::ERROR, "Insufficient coupon balance for order {$this->getOrderId()}");
             $retval = false;
         }
 
         if ($retval) {
             $this->setVerified(true);
-            return $retval;
         } else {
-            COM_refresh(Config::get('url'));
+            echo COM_refresh(Config::get('url'));
         }
+        return $retval;
     }
 
 
@@ -94,7 +94,7 @@ class Webhook extends \Shop\Webhook
      *
      * @uses    self::Verify()
      */
-    public function Dispatch()
+    public function Dispatch() : bool
     {
         global $LANG_SHOP;
 
@@ -109,7 +109,7 @@ class Webhook extends \Shop\Webhook
             $bal_due = $this->Order->getBalanceDue();
             $this->Order->setGC($bal_due);
             if ($this->Order->getGC() < $bal_due) {
-                SHOP_log("Error, order {$this->getOrderId()} cannot be fully paid by coupon.");
+                Log::write('shop_system', Log::ERROR, "Error, order {$this->getOrderId()} cannot be fully paid by coupon.");
                 $this->Order->setGC(0);
                 return false;
             }
@@ -145,7 +145,7 @@ class Webhook extends \Shop\Webhook
                 SHOP_setMsg($LANG_SHOP['pmt_error']);
                 return false;
             }
-            COM_refresh(SHOP_URL . '/index.php');
+            echo COM_refresh(SHOP_URL . '/index.php');
             break;
         }
         return true;
@@ -157,9 +157,9 @@ class Webhook extends \Shop\Webhook
      * This webhook is called directly by the buyer, so redirect back to
      * the Shop homepage.
      */
-    public function redirectAfterCompletion()
+    public function redirectAfterCompletion() : void
     {
-        COM_refresh(SHOP_URL . '/index.php');
+        echo COM_refresh(SHOP_URL . '/index.php');
     }
 
 }

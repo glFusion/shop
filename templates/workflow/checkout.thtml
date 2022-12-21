@@ -48,9 +48,7 @@
 								{item_dscp}
 {!endif}
 								{item_options}
-{!if item_extras}
-                                <br />{item_extras}
-{!endif}
+                                {item_extras}
 							</div>
 						</div>
 						<div class="uk-width-1-2@s uk-width-1-10@m uk-width-medium-1-10 uk-width-1-2 cart-item-price">
@@ -105,7 +103,7 @@
 {!if shipping}
 				<div uk-grid class="uk-grid" style="margin-top:5px;">
 					<div class="uk-width-1-2@s uk-width-2-5@m uk-width-1-2 uk-width-medium-4-10 cart-total-info">{$LANG_SHOP['shipping']} ({shipping_method})</div>
-					<div class="uk-width-1-2@s uk-width-2-5@m uk-width-1-2 uk-width-medium-2-5 cart-item-total money">{shipping}</div>
+					<div class="uk-width-1-2@s uk-width-2-5@m uk-width-1-2 uk-width-medium-2-5 cart-item-total money">{shipping_fmt}</div>
 				</div>
 {!endif}
 
@@ -146,6 +144,11 @@
 					<div style="margin-top:10px;">
 						{$LANG_SHOP['pmt_method']}: {pmt_method}
 					</div>
+{!if ship_method}
+					<div style="margin-top:10px;">
+						{$LANG_SHOP['ship_via']}: {ship_method}
+					</div>
+{!endif}
 					<div style="margin-top:10px;">
 						{$LANG_SHOP['notify_email']}: {buyer_email}
 					</div>

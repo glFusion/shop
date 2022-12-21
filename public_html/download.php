@@ -6,10 +6,10 @@
 *
 * @author       Lee Garner <lee@leegarner.com>
 * @author       Vincent Furia <vinny01 AT users DOT sourceforge DOT net>
-* @copyright    Copyright (c) 2009-2019 Lee Garner
+* @copyright    Copyright (c) 2009-2022 Lee Garner
 * @copyright    Copyright (c) 2005-2006 Vincent Furia
 * @package      shop
-* @version      v1.0.0
+* @version      v1.5.0
 * @since        v0.7.0
 * @license      http://opensource.org/licenses/gpl-2.0.php
 *               GNU Public License v2 or later
@@ -18,18 +18,21 @@
 
 /** Import core glFusion libraries */
 require_once('../lib-common.php');
+use glFusion\Database\Database;
+use glFusion\Log\Log;
+use Shop\Config;
+use Shop\Models\Request;
+
 // Make sure the plugin is available
-if (
-    !function_exists('SHOP_access_check') ||
-    !SHOP_access_check()
-) {
+if (!function_exists('SHOP_access_check') || !Config::get('shop_enabled')) {
     COM_404();
     exit;
 }
 
 // Sanitize the product ID and token
-$id = SHOP_getVar($_GET, 'id', 'int');
-$token = SHOP_getVar($_GET, 'token');
+$Request = Request::getInstance();
+$id = $Request->getInt('id');
+$token = $Request->getString('token');
 
 // Need to have one or the other, prefer token
 if (
@@ -42,66 +45,55 @@ if (
 
 // Get product by token
 // Also check for a product ID
-$id = SHOP_getVar($_REQUEST, 'id', 'int');
+$db = Database::getInstance();
+$qb = $db->conn->createQueryBuilder();
+$qb->select('prod.id', 'prod.file', 'prod.prod_type')
+   ->from($_TABLES['shop.orderitems'], 'item')
+   ->leftjoin('item', $_TABLES['shop.products'], 'prod', 'prod.id = item.product_id')
+   ->where('item.token = :token')
+   ->andWhere('(item.expiration = 0 OR item.expiration > :timestamp)')
+   ->setParameter('token', $token, Database::STRING)
+   ->setParameter('timestamp', time(), Database::INTEGER);
 if ($id > 0) {
-    $id_sql = "item.product_id = '$id' AND ";
-} else {
-    $id_sql = '';
+    $qb->andWhere('item.product_id = :item_id')
+       ->setParameter('item_id', $id, Database::INTEGER);
 }
-$sql = "SELECT prod.id, prod.file, prod.prod_type
-        FROM {$_TABLES['shop.orderitems']} AS item
-        LEFT JOIN {$_TABLES['shop.products']} AS prod
-            ON prod.id = item.product_id
-        WHERE $id_sql item.token = '$token'
-        AND (item.expiration = 0 OR item.expiration > '" . SHOP_now()->toUnix() . "')";
-//echo $sql;die;
-$res = DB_query($sql);
-$A = DB_fetchArray($res, false);
+try {
+    $A = $qb->execute()->fetchAssociative();
+} catch (\Exception $e) {
+    Log::write('system', Log::ERROR, __FILE__.'/'.__LINE__. ': ' . $e->getMessage());
+    $A = false;
+}
 //  If a file was found, do the download.
 //  Otherwise refresh to the home page and log it.
 if (is_array($A) && !empty($A['file'])) {
     $filespec = $_SHOP_CONF['download_path'] . '/' . $A['file'];
     $DL = new Shop\UploadDownload();
     $DL->setAllowAnyMimeType(true);
-    //$DL->setAllowedMimeTypes();
-    $logfile = $_SHOP_CONF['logfile'];
-    if (!file_exists($logfile)) {
-        $fp = fopen($logfile, "w+");
-        if (!$fp) {
-            SHOP_log("Failed to create $logfile", SHOP_LOG_ERROR);
-        } else {
-            fwrite($fp, "**** Created Logfile ***\n");
-        }
-    }
-    if (file_exists($logfile)) {
-        $DL->setLogFile($_CONF['path'] . 'logs/error.log');
-        $DL->setLogging(true);
-    } else {
-        $DL->setLogging(false);
-    }
-    //$DL->setAllowedExtensions($_SHOP_CONF['allowedextensions']);
     $DL->setPath($_SHOP_CONF['download_path']);
     $DL->downloadFile($A['file']);
 
     // Check for errors
     if ($DL->areErrors()) {
         $errs = $DL->printErrors(false);
-        SHOP_log("SHOP-DWNLD: {$_USER['username']} tried to download " .
-            "the file with id {$id} but for some reason could not",
-            SHOP_LOG_ERROR
+        Log::write(
+            'shop_downloads', Log::ERROR,
+            "{$_USER['username']} tried to download " .
+            "the file with id {$id} but for some reason could not"
         );
-        SHOP_log("SHOP-DWNLD: $errs", SHOP_LOG_ERROR);
+        Log::write('shop_downloads', Log::ERROR, "SHOP-DWNLD: $errs");
         echo COM_refresh($_CONF['site_url']);
-    }
-
-    $DL->logItem('Download Success',
+    } else {
+        Log::write(
+            'shop_downloads', Log::ERROR,
             "{$_USER['username']} successfully downloaded "
-            . "the file with id {$id}.");
+            . "the file with id {$id}."
+        );
+    }
 } else {
-    SHOP_log("SHOP-DWNLD: {$_USER['username']}/{$_USER['uid']} " .
+    Log::write('shop_downloads', Log::ERROR, "{$_USER['username']}/{$_USER['uid']} " .
             "tried to download the file with id {$id} " .
-            "but this is not a downloadable file", SHOP_LOG_ERROR);
+            "but this is not a downloadable file");
     echo COM_refresh($_CONF['site_url']. '/index.php?msg=07&plugin=shop');
 }
 
-?>

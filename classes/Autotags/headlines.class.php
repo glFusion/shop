@@ -99,6 +99,9 @@ class headlines
             case 'category':
                 $$key = (int)$val;
                 break;
+            case 'template':
+                $$key = 'headlines-' . $val . '.thtml';
+                break;
             default:
                 $$key = $val;
                 break;

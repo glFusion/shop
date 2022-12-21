@@ -12,7 +12,12 @@
  * @filesource
  */
 namespace Shop;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 use Shop\Models\Stock;
+use Shop\Models\ProductVariantInfo;
+use Shop\Models\DataArray;
+use Shop\Util\JSON;
 
 
 /**
@@ -27,7 +32,7 @@ class ProductVariant
 
     /** Table name, for DBO operations.
      * @var string */
-    protected static $TABLE = 'shop.product_variants';
+    public static $TABLE = 'shop.product_variants';
 
     /** Key field name, for DBO operations.
      * @var string */
@@ -72,19 +77,19 @@ class ProductVariant
 
     /** Quantity on hand.
      * @var integer */
-    private $onhand = 0;
+    //private $onhand = 0;
 
     /** Quantity on hand (from Stock table).
      * @var integer */
-    private $qty_onhand = 0;
+    //private $qty_onhand = 0;
 
     /** Quantity reserved in carts (from Stock table).
      * @var integer */
-    private $qty_reserved = 0;
+    //private $qty_reserved = 0;
 
     /** Reorder quantity. Overrides the product reorder setting.
      * @var integer */
-    private $reorder = 0;
+    //private $reorder = 0;
 
     /** Flag to incidate that orders can be accepted for this variant.
      * @var integer */
@@ -102,10 +107,6 @@ class ProductVariant
     /** Stock level object.
      * @var object */
     private $Stock = NULL;
-
-    /** Cache tag used for ProductOptions.
-     * @var string */
-    private const TAG = 'variants';
 
 
     /**
@@ -125,12 +126,12 @@ class ProductVariant
             }
         } elseif (is_array($pv_id) && isset($pv_id['pv_id'])) {
             // Got an item record, just set the variables
-            $this->setVars($pv_id);
             if (isset($pv_id['stk_id'])) {
-                $this->Stock = new Stock($pv_id);
+                $this->Stock = Stock::createFromArray($pv_id);
             } else {
                 $this->Stock = new Stock($this->item_id, $this->pv_id);
             }
+            $this->setVars(new DataArray($pv_id));
         }
         if (!is_object($this->Stock)) {
             // Create a Stock object for later use, if not created above
@@ -141,22 +142,30 @@ class ProductVariant
 
 
     /**
+     * Create a ProductVariant object from an array, e.g. database record.
+     *
+     * @param   array   $A      Array of properties
+     * @return  object      New ProductVariant object
+     */
+    public static function createFromArray(array $A) : self
+    {
+        $retval = new self;
+        $retval->setVars(new DataArray($A));
+        return $retval;
+    }
+
+
+    /**
      * Get an instance of a specific variant record.
      *
-     * @param   integer $pv Record ID to retrieve
+     * @param   integer $pv_id  Record ID to retrieve
      * @return  object      ProductVariant object
      */
-    public static function getInstance($pv)
+    public static function getInstance(int $pv_id) : self
     {
         static $items = array();
-        if (is_array($pv)) {
-            $pv_id = $pv['pv_id'];
-        } else {
-            $pv_id = $pv;
-        }
-
         if (!array_key_exists($pv_id, $items)) {
-            $items[$pv_id] = new self($pv);
+            $items[$pv_id] = new self($pv_id);
         }
         return $items[$pv_id];
     }
@@ -168,25 +177,29 @@ class ProductVariant
     * @param    integer $rec_id     DB record ID of item
     * @return   boolean     True on success, False on failure
     */
-    public function Read($rec_id)
+    public function Read(int $rec_id) : bool
     {
         global $_SHOP_CONF, $_TABLES;
 
-        $rec_id = (int)$rec_id;
-        $sql = "SELECT pv.*, stk.*, p.track_onhand
-            FROM {$_TABLES['shop.product_variants']} pv
-            LEFT JOIN {$_TABLES['shop.stock']} stk
-                ON stk.stk_item_id = pv.item_id AND stk.stk_pv_id = pv.pv_id
-            LEFT JOIN {$_TABLES['shop.products']} p
-                ON p.id = pv.item_id
-            WHERE pv.pv_id = $rec_id";
-        $res = DB_query($sql);
-        if ($res) {
-            $A = DB_fetchArray($res, false);
-            $this->setVars($A);
+        $qb = Database::getInstance()->conn->createQueryBuilder();
+        try {
+            $row = $qb->select('pv.*', 'stk.*', 'p.track_onhand')
+               ->from($_TABLES['shop.product_variants'], 'pv')
+               ->leftJoin('pv', $_TABLES['shop.stock'], 'stk', 'stk.stk_item_id = pv.item_id AND stk.stk_pv_id = pv.pv_id')
+               ->leftJoin('pv', $_TABLES['shop.products'], 'p', 'p.id = pv.item_id')
+               ->where('pv.pv_id = :pv_id')
+               ->setParameter('pv_id', $rec_id, Database::INTEGER)
+               ->execute()
+               ->fetchAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $row = false;
+        }
+        if (is_array($row)) {
+            $this->setVars(new DataArray($row));
             $this->loadOptions();
             $this->makeDscp();
-            $this->Stock = new Stock($A);
+            $this->Stock = Stock::createFromArray($row);
             return true;
         } else {
             // Create a dummy Stock object to avoid errors with NULL.
@@ -199,31 +212,29 @@ class ProductVariant
     /**
      * Set the object variables from an array.
      *
-     * @param   array   $A      Array of values
+     * @param   DataArray   $A  Array of values
      * @param   boolean $fromDB True if reading from DB, false if from form
      * @return  boolean     True on success, False if $A is not an array
      */
-    public function setVars($A, $fromDB=true)
+    public function setVars(DataArray $A, $fromDB=true)
     {
-        if (is_array($A)) {
-            $pfx = $fromDB ? '' : 'pv_';
-            $this
-                ->setId(SHOP_getVar($A, 'pv_id', 'integer'))
-                ->setItemId(SHOP_getVar($A, $pfx.'item_id'))
-                ->setPrice(SHOP_getVar($A, $pfx.'price', 'float'))
-                ->setWeight(SHOP_getVar($A, $pfx.'weight', 'float'))
-                ->setShippingUnits(SHOP_getVar($A, $pfx.'shipping_units', 'float'))
-                ->setSku(SHOP_getVar($A, $pfx.'sku'))
-                ->setSupplierRef(SHOP_getVar($A, $pfx.'supplier_ref'))
-                ->setTrackOnhand(SHOP_getVar($A, $pfx.'track_onhand', 'integer'))
-                ->setOnhand(SHOP_getVar($A, $pfx.'qty_onhand', 'float'))
-                ->setReserved(SHOP_getVar($A, $pfx.'qty_reserved', 'float'))
-                ->setReorder(SHOP_getVar($A, $pfx.'qty_reorder', 'float'))
-                ->setImageIDs(SHOP_getVar($A, $pfx.'img_ids', 'mixed'))
-                ->setEnabled(SHOP_getVar($A, $pfx.'enabled', 'integer', 1));
-            if (isset($A['dscp'])) {        // won't be set from the edit form
-                $this->setDscp($A['dscp']);
-            }
+        $pfx = $fromDB ? '' : 'pv_';
+        $this
+            ->setId($A->getInt('pv_id'))
+            ->setItemId($A->getString($pfx.'item_id'))
+            ->setPrice($A->getFloat($pfx.'price'))
+            ->setWeight($A->getFloat($pfx.'weight'))
+            ->setShippingUnits($A->getFloat($pfx.'shipping_units'))
+            ->setSku($A->getString($pfx.'sku'))
+            ->setSupplierRef($A->getString($pfx.'supplier_ref'))
+            ->setTrackOnhand($A->getInt($pfx.'track_onhand'))
+            ->setImageIDs($A->get($pfx.'img_ids'))
+            ->setEnabled($A->getInt($pfx.'enabled', 1));
+        if (isset($A['dscp'])) {        // won't be set from the edit form
+            $this->setDscp($A->getString('dscp'));
+        }
+        if (isset($A['stk_id'])) {
+            $this->Stock = Stock::createFromArray($A->toArray());
         }
         return $this;
     }
@@ -236,7 +247,7 @@ class ProductVariant
      * @param   array   $attribs    Array of OptionValue IDs
      * @return  object  Matching ProductVariant object
      */
-    public static function getByAttributes($item_id, $attribs)
+    public static function getByAttributes(int $item_id, array $attribs) : self
     {
         global $_TABLES;
 
@@ -245,22 +256,29 @@ class ProductVariant
             return new self;
         }
         $count = count($attribs);
-        $attr_sql = implode(',', $attribs);
-        $sql = "SELECT pv.*
-            FROM {$_TABLES['shop.variantXopt']} vxo
-            INNER JOIN {$_TABLES['shop.product_variants']} pv
-                ON vxo.pv_id = pv.pv_id
-            WHERE vxo.pov_id IN ($attr_sql) AND pv.item_id = $item_id
-            GROUP BY vxo.pv_id
-            HAVING COUNT(pv.item_id) = $count";
-            //LIMIT 1";
-        //echo $sql;die;
-        $res = DB_query($sql);
-        if ($res) {
-            $A = DB_fetchArray($res, false);
-            $retval = self::getInstance($A);
+        $qb = Database::getInstance()->conn->createQueryBuilder();
+        $qb->select('pv.*', 'stk.*')
+           ->from($_TABLES['shop.variantXopt'], 'vxo')
+           ->innerJoin('vxo', $_TABLES['shop.product_variants'], 'pv', 'vxo.pv_id = pv.pv_id')
+           ->leftJoin('pv', $_TABLES['shop.stock'], 'stk', 'stk.stk_pv_id = pv.pv_id')
+           ->where('vxo.pov_id IN (:attribs)')
+           ->andWhere('pv.item_id = :item_id')
+           ->groupBy('vxo.pv_id')
+           ->having('COUNT(pv.item_id) = :count')
+           ->setParameter('attribs', $attribs, Database::PARAM_INT_ARRAY)
+           ->setParameter('item_id', $item_id, Database::INTEGER)
+           ->setParameter('count', count($attribs), Database::INTEGER);
+        try {
+            $row = $qb->execute()->fetchAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $row = false;
+        }
+        if (is_array($row)) {
+            $retval = self::createFromArray($row);
         } else {
-            $retval = new Self;
+            // Make sure a valid object is returned.
+            $retval = new self;
         }
         return $retval;
     }
@@ -271,7 +289,7 @@ class ProductVariant
      *
      * @return  array   Array of ProductOptionValue objects
      */
-    public function getOptions()
+    public function getOptions() : array
     {
         if ($this->Options === NULL) {
             $this->loadOptions();
@@ -281,12 +299,12 @@ class ProductVariant
 
 
     /**
-     * Load the product attributs into the options array.
+     * Load the product attributes into the options array.
      *
      * @access  public  To be called during upgrade
      * @return  object  $this
      */
-    public function loadOptions()
+    public function loadOptions() : self
     {
         global $_TABLES;
 
@@ -295,22 +313,29 @@ class ProductVariant
             $this->Options = Cache::get($cache_key);
             if ($this->Options === NULL) {
                 $this->Options = array();
-                $sql = "SELECT pov.*, pog.pog_name FROM {$_TABLES['shop.prod_opt_vals']} pov
-                INNER JOIN {$_TABLES['shop.variantXopt']} vxo
-                    ON vxo.pov_id = pov.pov_id
-                INNER JOIN {$_TABLES['shop.prod_opt_grps']} pog
-                    ON pog.pog_id = pov.pog_id
-                WHERE vxo.pv_id = {$this->getID()}
-                ORDER BY pog.pog_orderby ASC";
-                //echo $sql;die;
-                $res = DB_query($sql);
-                while ($A = DB_fetchArray($res, false)) {
-                    $this->Options[$A['pog_name']] = new ProductOptionValue($A);
+                try {
+                    $qb = Database::getInstance()->conn->createQueryBuilder();
+                    $stmt = $qb->select('pov.*', 'pog.pog_name')
+                               ->from($_TABLES['shop.prod_opt_vals'], 'pov')
+                               ->innerJoin('pov', $_TABLES['shop.variantXopt'], 'vxo', 'vxo.pov_id = pov.pov_id')
+                               ->innerJoin('pov', $_TABLES['shop.prod_opt_grps'], 'pog', 'pog.pog_id = pov.pog_id')
+                               ->where('vxo.pv_id = :pv_id')
+                               ->orderBy('pog.pog_orderby', 'ASC')
+                               ->setParameter('pv_id', $this->getID(), Database::INTEGER)
+                               ->execute();
+                } catch (\Throwable $e) {
+                    Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                    $stmt = false;
+                }
+                if ($stmt) {
+                    while ($A = $stmt->fetchAssociative()) {
+                        $this->Options[$A['pog_name']] = ProductOptionValue::fromArray($A);
+                    }
                 }
                 Cache::set(
                     $cache_key,
                     $this->Options,
-                    array(self::TAG, 'products', 'options', $this->getID())
+                    array(Product::$TABLE, ProductOptionValue::$TABLE, $this->getID())
                 );
             }
         }
@@ -448,7 +473,7 @@ class ProductVariant
      * @param   float   $qty    Number of units on hand
      * @return  object  $this
      */
-    public function setOnhand($qty)
+    public function XsetOnhand($qty)
     {
         if (is_object($this->Stock)) {
             $this->Stock->withOnhand($qty);
@@ -480,7 +505,7 @@ class ProductVariant
      * @param   float   $qty    Quantity reserved.
      * @return  object  $this
      */
-    public function setReserved($qty)
+    public function XsetReserved($qty)
     {
         if (is_object($this->Stock)) {
             $this->Stock->withReserved($qty);
@@ -511,7 +536,7 @@ class ProductVariant
      * @param   float   $reorder    Reorder quantity
      * @return  object  $this
      */
-    public function setReorder($reorder)
+    public function XsetReorder($reorder)
     {
         if (is_object($this->Stock)) {
             $this->Stock->withReorder($reorder);
@@ -619,20 +644,28 @@ class ProductVariant
      * @param   integer $product_id     Product record ID
      * @return  array       Array of ProductVariant objects
      */
-    public static function getByProduct($product_id)
+    public static function getByProduct(int $product_id) : array
     {
         global $_TABLES;
-
         $retval = array();
-        $product_id = (int)$product_id;
-        $sql = "SELECT pv.*, stk.*
-            FROM {$_TABLES['shop.product_variants']} pv
-            LEFT JOIN {$_TABLES['shop.stock']} stk
-                ON stk.stk_item_id = pv.item_id AND stk.stk_pv_id = pv.pv_id
-            WHERE pv.item_id = '$product_id'";
-        $res = DB_query($sql);
-        while ($A = DB_fetchArray($res, false)) {
-            $retval[] = self::getInstance($A);
+        try {
+            $stmt = Database::getInstance()->conn->executeQuery(
+                "SELECT pv.*, stk.*
+                FROM {$_TABLES['shop.product_variants']} pv
+                LEFT JOIN {$_TABLES['shop.stock']} stk
+                    ON stk.stk_item_id = pv.item_id AND stk.stk_pv_id = pv.pv_id
+                WHERE pv.item_id = ? AND pv.enabled = 1",
+                array($product_id),
+                array(Database::INTEGER)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $stmt = false;
+        }
+        if ($stmt) {
+            while ($A = $stmt->fetchAssociative()) {
+                $retval[] = self::createFromArray($A);
+            }
         }
         return $retval;
     }
@@ -727,6 +760,9 @@ class ProductVariant
         $Groups = ProductOptionGroup::getAll();
         $T->set_block('form', 'OptionGroups', 'Grps');
         foreach ($Groups as $gid=>$Grp) {
+            if ($Grp->getType() == 'checkbox') {
+                continue;
+            }
             $T->set_var(array(
                 'pog_id'    => $gid,
                 'pog_name'  => $Grp->getName(),
@@ -766,11 +802,11 @@ class ProductVariant
             'tips' => 'tooltipster.thtml',
         ) );
 
-        if ($this->pv_id == 0) {
+        /*if ($this->pv_id == 0) {
             $this->setReorder(Product::getInstance($this->getItemId())->getReorder());
             $this->setOnhand(Product::getInstance($this->getItemId())->getOnhand());
             $this->setTrackOnhand(Product::getInstance($this->getItemId())->getTrackOnhand());
-        }
+        }*/
         $Product = Product::getByID($this->item_id);
         $T->set_var(array(
             'action_url'    => SHOP_ADMIN_URL,
@@ -798,6 +834,9 @@ class ProductVariant
         $optsInUse = $this->_optsInUse();
         $T->set_block('form', 'OptionGroups', 'Grps');
         foreach ($Groups as $gid=>$Grp) {
+            if ($Grp->getType() == 'checkbox') {
+                continue;
+            }
             $T->set_var(array(
                 'pog_id'    => $gid,
                 'pog_name'  => $Grp->getName(),
@@ -849,6 +888,9 @@ class ProductVariant
             'pv_ids'    => implode(',', $pv_ids),
         ) );
         $T->set_block('form', 'skuList', 'sk');
+
+        // Get the product ID from the first variant, needed to get the
+        // available images.
         $Var = self::getInstance($pv_ids[0]);
         $Product = Product::getByID($Var->getItemId());
         foreach ($pv_ids as $pv_id) {
@@ -876,53 +918,72 @@ class ProductVariant
      * @param   array   $A      Values from $_POST
      * @return  boolean     True on success, False on failure
      */
-    public static function BulkUpdateDo($A)
+    public static function BulkUpdateDo(DataArray $A) : bool
     {
         global $_TABLES;
 
         $sql_vals  = array();
+        $params = array();
+        $values = array();
+        $types = array();
 
         if (isset($A['price']) && $A['price'] !== '') {
-            $sql_vals[] = "price = " . (float)$A['price'];
+            $params[] = 'price = ?';
+            $values[] = (float)$A['price'];
+            $types[] = Database::STRING;
         }
         if (isset($A['weight']) && $A['weight'] !== '') {
-            $sql_vals[] = "weight = " . (float)$A['weight'];
+            $params[] = 'weight = ?';
+            $values[] = (float)$A['weight'];
+            $types[] = Database::STRING;
         }
         if (isset($A['shipping_units']) && $A['shipping_units'] !== '') {
-            $sql_vals[] = "shipping_units = " . (float)$A['shipping_units'];
+            $params[] = 'shipping_units = ?';
+            $values[] = (float)$A['shipping_units'];
+            $types[] = Database::STRING;
         }
         if (isset($A['onhand']) && $A['onhand'] !== '') {
-            $sql_vals[] = 'onhand = ' . (float)$A['onhand'];
+            $params[] = 'onhand = ?';
+            $values[] = (float)$A['onhand'];
+            $types[] = Database::STRING;
         }
         if (isset($A['reorder']) && $A['reorder'] !== '') {
-            $sql_vals[] = 'reorder = ' . (float)$A['reorder'];
+            $params[] = 'reorder = ?';
+            $values[] = (float)$A['reorder'];
+            $types[] = Database::STRING;
         }
         if (isset($A['enabled']) && $A['enabled'] > -1) {
-            $sql_vals[] = "enabled = " . ($A['enabled'] == 1 ? 1 : 0);
+            $params[] = 'enabled = ?';
+            $values[] = $A['enabled'] ? 1 : 0;
+            $types[] = Database::INTEGER;
         }
         if (!isset($A['img_noupdate'])) {
             // no-update checkbox is unchecked for images
             if (isset($A['pv_img_ids'])) {
-                $sql_vals[] = "img_ids = '" . implode(',', $A['pv_img_ids']) . "'";
+                $params[] = 'img_ids = ?';
+                $values[] = implode(',', $A['pv_img_ids']);
+                $types[] = Database::STRING;
             } else {
                 // No images selected, implies all images
-                $sql_vals[] = "img_ids = ''";
+                $params[] = "img_ids = ''";
             }
         }
-        if (!empty($sql_vals)) {
-            $sql_vals = implode(', ', $sql_vals);
-            $ids = DB_escapeString($A['pv_ids']);
-            $sql = "UPDATE {$_TABLES['shop.product_variants']} SET
-                $sql_vals
-                WHERE pv_id IN ($ids)";
-            //echo $sql;die;
-            DB_query($sql);
-            if (DB_error()) {
+        if (!empty($params)) {
+            $sql_vals = implode(', ', $params);
+            $types[] = Database::STRING;    // for pv_ids
+            try {
+                Database::getInstance()->conn->executeStatement(
+                    "UPDATE {$_TABLES['shop.product_variants']} SET $sql_vals WHERE pv_id IN (?)",
+                    array($params),
+                    array($A['pv_ids']),
+                    array($types)
+                );
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 return false;
             }
         }
-        Cache::clear('products');
-        Cache::clear(self::TAG);
+        Cache::clear(Product::$TABLE);
         return true;
     }
 
@@ -931,15 +992,15 @@ class ProductVariant
      * Save a new product variant.
      * The `item_id` field needs to be set in the array parameter.
      *
-     * @param   array   $A      Form values
+     * @param   DataArray   $A  Form values
      * @return  boolean     True on success, False on failure
      */
-    public static function saveNew($A)
+    public static function saveNew(DataArray $A) : bool
     {
         global $_TABLES;
 
         // Clean out any zero (not selected) options for groups
-        foreach ($A['pv_groups'] as $id=>&$grp) {
+        foreach ($A->getArray('pv_groups') as $id=>&$grp) {
             foreach ($grp as $gid=>$val) {
                 if ($val == 0) {
                     unset($grp[$gid]);
@@ -949,9 +1010,10 @@ class ProductVariant
                 unset($A['pv_groups'][$id]);
             }
         }
+        $pv_groups = $A->getArray('pv_groups');
 
-        $item_id = (int)$A['pv_item_id'];
-        if ($item_id < 1 || empty($A['pv_groups'])) {
+        $item_id = $A->getInt('pv_item_id');
+        if ($item_id < 1 || empty($pv_groups)) {
             return false;
         }
         $P = Product::getById($item_id);
@@ -960,15 +1022,11 @@ class ProductVariant
         }
 
         $price = 0;
-        $weight = SHOP_getVar($A, 'weight', 'float', 0);
-        $shipping_units = SHOP_getVar($A, 'shipping_units', 'float', 0);
-        $matrix = self::_cartesian($A['pv_groups']);
+        $weight = $A->getFloat('weight');
+        $shipping_units = $A->getFloat('shipping_units');
+        $matrix = self::_cartesian($pv_groups);
         foreach ($matrix as $groups) {
-            if ($A['pv_price'] !== '') {
-                $price = (float)$A['pv_price'];
-            } else  {
-                $price = 0;
-            }
+            $pv_price = $A->getFloat('pv_price', NULL);
             $opt_ids = array();
             $sku_parts = array();
             $dscp = array();
@@ -978,7 +1036,7 @@ class ProductVariant
                 }
                 $opt_ids[] = $pov_id;   // save for the variant->opt table
                 $Opt = new ProductOptionValue($pov_id);
-                if (!isset($A['pv_price']) || $A['pv_price'] === '') {   // Zero is valid
+                if (is_null($pv_price)) {   // Zero is valid
                     $price += $Opt->getPrice();
                 }
                 if (empty($A['pv_sku'])) {
@@ -991,6 +1049,8 @@ class ProductVariant
                     'value' => $Opt->getValue(),
                 );
             }
+
+            $sku = '';
             if (empty($A['pv_sku'])) {
                 if (!empty($sku_parts) && !empty($P->getName())) {
                     $sku = $P->getName() . '-' . implode('-', $sku_parts);
@@ -1009,19 +1069,30 @@ class ProductVariant
                 $sup_ref = $A['pv_supplier_ref'];
             }
 
-            $sql = "INSERT INTO {$_TABLES['shop.product_variants']} SET
-                item_id = $item_id,
-                sku = '" . DB_escapeString($sku) . "',
-                supplier_ref = '" . DB_escapeString($sup_ref) . "',
-                price = " . (float)$price . ",
-                weight = $weight,
-                shipping_units = $shipping_units,
-                dscp = '" . DB_escapeString(json_encode($dscp)) . "'";
-            //echo $sql;die;
-            SHOP_log($sql, SHOP_LOG_DEBUG);
-            DB_query($sql);
-            if (!DB_error()) {
-                $pv_id = DB_insertID();
+            $db = Database::getInstance();
+            try {
+                $db->conn->insert(
+                    $_TABLES['shop.product_variants'],
+                    array(
+                        'item_id' => $item_id,
+                        'sku' => $sku,
+                        'supplier_ref' => $sup_ref,
+                        'price' => (float)$price,
+                        'weight' => (float)$weight,
+                        'shipping_units' => (float)$shipping_units,
+                        'dscp' => JSON::encode($dscp),
+                    ),
+                    array(
+                        Database::INTEGER,
+                        Database::STRING,
+                        Database::STRING,
+                        Database::STRING,
+                        Database::STRING,
+                        Database::STRING,
+                        Database::STRING,
+                    )
+                );
+                $pv_id = $db->conn->lastInsertId();
                 foreach ($opt_ids as $opt_id) {
                     $vals[] = '(' . $pv_id . ',' . $opt_id . ')';
                 }
@@ -1030,6 +1101,8 @@ class ProductVariant
                     ->withReorder($reorder)
                     ->withReserved(0)
                     ->Save();
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             }
         }
         if (!empty($vals)) {
@@ -1038,27 +1111,29 @@ class ProductVariant
                 (pv_id, pov_id) VALUES $sql_vals";
             DB_query($sql);
         }
-        Cache::clear(self::TAG);
+        self::reOrder($item_id);
+        Cache::clear(self::$TABLE);
+        return true;
     }
 
 
     /**
      * Save a variant to the database.
      *
-     * @param   array   $A  Optional array of data to save
+     * @param   DataArray   $A  Optional array of data to save
      * @return  boolean     True on success, False on DB error
      */
-    public function Save($A= NULL)
+    public function Save(?DataArray $A= NULL) : bool
     {
         global $_TABLES;
 
-        if (is_array($A)) {
+        if (!empty($A)) {
             $this->setVars($A, false);
         }
 
         // Create the variant SKU from product & options if empty.
-        if (empty($this->sku) && !empty($A['pv_item_id'])) {
-            $P = Product::getInstance($A['pv_item_id']);
+        if (empty($this->sku) && !empty($A->getInt('pv_item_id'))) {
+            $P = Product::getInstance($A->getInt('pv_item_id'));
             $this->sku = $P->getName();
             foreach ($this->getOptions() as $PVO) {
                 $pvo_sku = $PVO->getSku();
@@ -1068,54 +1143,75 @@ class ProductVariant
             }
         }
 
-        if ($this->pv_id == 0) {
-           if (isset($A['pv_groups'])) {
-               return self::saveNew($A);
-           } else {
-                $sql1 = "INSERT INTO {$_TABLES['shop.product_variants']} SET ";
-                $sql3 = '';
-           }
-        } else {
-            $sql1 = "UPDATE {$_TABLES['shop.product_variants']} SET ";
-            $sql3 = " WHERE pv_id = '{$this->pv_id}'";
+        if ($A->getString('price') === '') {
+            // Empty string, not "0", to calculate price from the options.
+            $this->price = 0;
+            foreach ($this->getOptions() as $PVO) {
+                $this->price += $PVO->getPrice();
+            }
         }
-        $sql2 = "item_id = '" . (int)$this->item_id . "',
-            sku = '" . DB_escapeString($this->sku) . "',
-            supplier_ref = '" . DB_escapeString($this->supplier_ref) . "',
-            price = '" . (float)$this->price . "',
-            weight = '" . (float)$this->weight . "',
-            shipping_units = '" . (float)$this->shipping_units . "',
-            img_ids = '" . DB_escapeString(implode(',', $this->images)) . "',
-            dscp = '" . DB_escapeString(json_encode($this->dscp)) . "'";
-            //track_onhand = '{$this->getTrackOnhand()}',
-            //reorder = " . (float)$this->reorder;
-            //onhand = " . (float)$this->onhand . ",
-        $sql = $sql1 . $sql2 . $sql3;
-        //echo $sql;die;
-        SHOP_log($sql, SHOP_LOG_DEBUG);
-        DB_query($sql);
-        if (!DB_error()) {
+
+        $values = array(
+            'item_id' => $this->item_id,
+            'sku' => $this->sku,
+            'supplier_ref' => $this->supplier_ref,
+            'price' => $this->price,
+            'weight' => $this->weight,
+            'shipping_units' => $this->shipping_units,
+            'img_ids' => implode(',', $this->images),
+            'dscp' => JSON::encode($this->dscp),
+        );
+        $types = array(
+            Database::INTEGER,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+        );
+        $db = Database::getInstance();
+        try {
             if ($this->pv_id == 0) {
-                $this->pv_id = DB_insertID();
+               if (isset($A['pv_groups'])) {
+                    return self::saveNew($A);
+               } else {
+                    $db->conn->insert(
+                        $_TABLES['shop.product_variants'],
+                        $values,
+                        $types
+                    );
+                    $this->pv_id = $db->conn->lastInsertId();
+                }
+            } else {
+                $types[] = Database::INTEGER;
+                $db->conn->update(
+                    $_TABLES['shop.product_variants'],
+                    $values,
+                    array('pv_id' => $this->pv_id),
+                    $types
+                );
             }
             Stock::getByItem($this->item_id, $this->pv_id)
                 ->withOnhand($this->getOnhand())
                 ->withReserved($this->getReserved())
                 ->Save();
             $retval = true;
-        } else {
-            $retval = false;;
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $retval = false;
         }
 
         // Create two standardized arrays to detect new and removed option vals.
         // Only if submitted from a form, where the groups variable is present.
-        if (isset($A['groups'])) {
+        if (isset($A['pv_groups'])) {
             $old_opts = array();
             $new_opts = array();
             foreach ($this->getOptions() as $Opt) {
                 $old_opts[] = $Opt->getID();
             }
-            foreach ($A['groups'] as $opt) {
+            foreach ($A['pv_groups'] as $opt) {
                 if ($opt > 0) {
                     $new_opts[] = (int)$opt;
                 }
@@ -1129,16 +1225,26 @@ class ProductVariant
                 $sql_vals = implode(',', $vals);
                 $sql = "INSERT IGNORE INTO {$_TABLES['shop.variantXopt']}
                     (pv_id, pov_id) VALUES $sql_vals";
-                DB_query($sql);
+                try {
+                    $db->conn->executeStatement($sql);
+                } catch (\Throwable $e) {
+                    Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                }
             }
             if (!empty($removed)) {
-                $removed = implode(',', $removed);
-                $sql = "DELETE FROM {$_TABLES['shop.variantXopt']}
-                    WHERE pv_id = " . $this->getID() . " AND pov_id IN ($removed)";
-                DB_query($sql);
+                try {
+                    $db->conn->executeStatement(
+                        "DELETE FROM {$_TABLES['shop.variantXopt']}
+                        WHERE pv_id = ? AND pov_id IN (?)",
+                        array($this->getID(), $removed),
+                        array(Database::INTEGER, Database::PARAM_INT_ARRAY)
+                    );
+                } catch (\Throwable $e) {
+                    Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                }
             }
         }
-        Cache::clear(self::TAG);
+        Cache::clear(self::$TABLE);
         return $retval;
     }
 
@@ -1156,7 +1262,7 @@ class ProductVariant
         DB_delete($_TABLES['shop.product_variants'], 'pv_id', $id);
         DB_delete($_TABLES['shop.variantXopt'], 'pv_id', $id);
         Stock::deleteByVariant($id);
-        Cache::clear(self::TAG);
+        Cache::clear(self::$TABLE);
     }
 
 
@@ -1234,12 +1340,11 @@ class ProductVariant
      * @param   array   $ids    Array of image record IDs
      * @return  object  $this
      */
-    public function setImageIDs($ids)
+    public function setImageIDs($ids=NULL) : self
     {
         if ($ids === NULL) {
-            return $this;
-        }
-        if (is_string($ids)) {
+            $ids = array();
+        } elseif (is_string($ids)) {
             $ids = explode(',', $ids);
         }
         $this->images = array_filter($ids, 'intval');
@@ -1284,13 +1389,13 @@ class ProductVariant
     /**
      * Reorder all attribute items with the same product ID and attribute name.
      */
-    private function reOrder()
+    public static function reOrder(int $item_id) : void
     {
         global $_TABLES;
 
         $sql = "SELECT pv_id, orderby
                 FROM {$_TABLES['shop.product_variants']}
-                WHERE item_id= '{$this->item_id}'
+                WHERE item_id= '{$item_id}'
                 ORDER BY orderby ASC;";
         $result = DB_query($sql);
 
@@ -1308,7 +1413,7 @@ class ProductVariant
             $order += $stepNumber;
         }
         if ($changed) {
-            Cache::clear(self::TAG);
+            Cache::clear(self::$TABLE);
         }
     }
 
@@ -1340,7 +1445,7 @@ class ProductVariant
                     WHERE pv_id = '{$this->pv_id}'";
             //echo $sql;die;
             DB_query($sql);
-            $this->reOrder();
+            self::reOrder($this->item_id);
         }
     }
 
@@ -1351,11 +1456,9 @@ class ProductVariant
      * @param   integer $prod_id    Optional product ID to limit listing
      * @return  string      HTML for the attribute list.
      */
-    public static function adminList($prod_id)
+    public static function adminList(?int $prod_id=NULL) : string
     {
         global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $_SYSTEM, $LANG01;
-
-        $prod_id = (int)$prod_id;
 
         $header_arr = array(
             array(
@@ -1458,14 +1561,11 @@ class ProductVariant
         $view = SESS_getVar('shop.pv_view');
         switch ($view) {
         case 'pv_bulk':
-            $display .= COM_createLink(
-                Icon::getHTML('arrow-left') . '&nbsp;Back to Product',
-                SHOP_ADMIN_URL . '/index.php?editproduct&tab=variants&id=' . $prod_id,
-                array(
-                    'style' => 'float:left;margin-right:10px;',
-                    'class' => 'uk-button',
-                )
-            );
+            $display .= FieldList::buttonLink(array(
+                'text' => FieldList::left(),
+                'style' => 'primary',
+                'url' => SHOP_ADMIN_URL . '/index.php?editproduct&tab=variants&id=' . $prod_id,
+            ) );
         case 'variants':
             $defsort_arr['field'] = 'sku';
             unset($header_arr[3]);
@@ -1476,14 +1576,18 @@ class ProductVariant
                 'chkall' => true,
                 'chkfield' => 'pv_id',
                 'chkname' => 'pv_bulk_id',
-                'chkactions' => '<button name="pv_del_bulk" ' .
-                    'style="vertical-align:text-bottom;" ' .
-                    'class="uk-button uk-button-mini uk-button-danger" ' .
-                    'onclick="return confirm(\'' . $LANG01[125] . '\');">' . $LANG_ADMIN['delete'] . '</button>'.
-                    '&nbsp;&nbsp;<button name="pv_edit_bulk" ' .
-                    'style="vertical-align:text-bottom;" ' .
-                    'class="uk-button uk-button-mini uk-button-primary">' .
-                    $LANG_SHOP['update'] . '</button>',
+                'chkactions' => FieldList::button(array(
+                    'name' => 'pv_del_bulk',
+                    'style' => 'danger',
+                    'size' => 'mini',
+                    'onclick' => "return confirm('{$LANG01[125]}');",
+                    'text' => $LANG_ADMIN['delete'],
+                ) ) . FieldList::button(array(
+                    'name' => 'pv_edit_bulk',
+                    'style' => 'primary',
+                    'size' => 'mini',
+                    'text' => $LANG_SHOP['update'],
+                ) ),
             );
             $text_arr = array(
                 'has_limit' => true,
@@ -1498,21 +1602,17 @@ class ProductVariant
             break;
         }
         if ($prod_id > 0) {
-            $display .= COM_createLink($LANG_SHOP['new_variant'],
-                SHOP_ADMIN_URL . '/index.php?pv_edit=0&item_id=' . $prod_id,
-                array(
-                    'style' => 'float:left;',
-                    'class' => 'uk-button uk-button-success',
-                )
-            );
+            $display .= FieldList::buttonLink(array(
+                'text' => $LANG_SHOP['new_variant'],
+                'url' => SHOP_ADMIN_URL . '/index.php?pv_edit=0&item_id=' . $prod_id,
+                'style' => 'success',
+            ) );
             if ($view !== 'pv_bulk') {
-                $display .= COM_createLink('Bulk Admin',
-                    SHOP_ADMIN_URL . '/index.php?pv_bulk=0&item_id=' . $prod_id,
-                    array(
-                        'style' => 'float:left;margin-left:10px;',
-                        'class' => 'uk-button uk-button-primary',
-                    )
-                );
+                $display .= FieldList::buttonLink(array(
+                    'text' => 'Bulk Admin',
+                    'url' => SHOP_ADMIN_URL . '/index.php?pv_bulk=0&item_id=' . $prod_id,
+                    'style' => 'primary',
+                ) );
             }
         }
         $sql = "SELECT pv.*, stk.qty_onhand, stk.qty_reserved, stk.qty_reorder
@@ -1524,11 +1624,13 @@ class ProductVariant
             'query_fields' => array('sku'),
             'sql' => $sql,
         );
+
         if ($prod_id > 0) {
             $query_arr['default_filter'] = "WHERE pv.item_id = '$prod_id'";
         } else {
             $query_arr['default_filter'] = 'WHERE 1=1';
         }
+
         $filter = NULL;
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_pvlist',
@@ -1576,16 +1678,13 @@ class ProductVariant
 
         switch($fieldname) {
         case 'edit':
-            $retval .= COM_createLink(
-                Icon::getHTML('edit', 'tooltip', array(
-                    'title' => $LANG_ADMIN['edit'],
-                ) ),
-                SHOP_ADMIN_URL . "/index.php?pv_edit=x&amp;pv_id={$A['pv_id']}"
-            );
+            $retval .= FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . "/index.php?pv_edit=x&amp;pv_id={$A['pv_id']}",
+            ) );
             break;
 
         case 'enabled':
-            $retval = Field::checkbox(array(
+            $retval = FieldList::checkbox(array(
                 'name' => 'ena_check',
                 'id' => "togenabled{$A['pv_id']}",
                 'checked' => $fieldvalue == 1,
@@ -1595,20 +1694,18 @@ class ProductVariant
 
         case 'orderby':
             if ($fieldvalue > 10) {
-                $retval = COM_createLink(
-                    Icon::getHTML('arrow-up'),
-                    SHOP_ADMIN_URL . '/index.php?pv_move=up&id=' . $A['pv_id']
-                );
+                $retval = FieldList::up(array(
+                    'url' => SHOP_ADMIN_URL . '/index.php?pv_move=up&id=' . $A['pv_id'],
+                ) );
             } else {
-                $retval = '<i class="uk-icon uk-icon-justify">&nbsp;</i>';
+                $retval = FieldList::space();
             }
             if ($fieldvalue < $extra['max_orderby']) {
-                $retval .= COM_createLink(
-                    Icon::getHTML('arrow-down'),
-                    SHOP_ADMIN_URL . '/index.php?pv_move=down&id=' . $A['pv_id']
-                );
+                $retval .= FieldList::down(array(
+                    'url' => SHOP_ADMIN_URL . '/index.php?pv_move=down&id=' . $A['pv_id'],
+                ) );
             } else {
-                $retval .= '<i class="uk-icon uk-icon-justify">&nbsp;</i>';
+                $retval .= FieldList::space() . '&nbsp;';
             }
             break;
 
@@ -1622,15 +1719,14 @@ class ProductVariant
             break;
 
         case 'delete':
-            $retval .= COM_createLink(
-                Icon::getHTML('delete'),
-                SHOP_ADMIN_URL. '/index.php?pv_del=x&amp;pv_id=' . $A['pv_id'] . '&item_id=' . $A['item_id'],
-                array(
+            $retval .= FieldList::delete(array(
+                'delete_url' => SHOP_ADMIN_URL. '/index.php?pv_del=x&amp;pv_id=' . $A['pv_id'] . '&item_id=' . $A['item_id'],
+                'attr' => array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                     'title' => $LANG_SHOP['del_item'],
                     'class' => 'tooltip',
-                )
-            );
+                ),
+            ) );
             break;
 
         case 'price':
@@ -1649,11 +1745,10 @@ class ProductVariant
         case 'qty_reserved':
             if ($extra['prod_id'] > 0) {
                 // For a specific product, values may be saved with the product.
-                $retval = Field::text(array(
+                $retval = FieldList::text(array(
                     'name' => 'quantities[' . $A['pv_id'] . '][' . $fieldname . ']',
                     'value' => (float)$fieldvalue,
-                    'size' => 4,
-                    'style' => 'text-align:right',
+                    'style' => 'text-align:right;width:50px;',
                 ) );
             } else {
                 // Showing all product variants, no editing from the list.
@@ -1663,7 +1758,7 @@ class ProductVariant
 
         case 'def_pv_id':
             $sel = $A['pv_id'] == $extra['def_pv_id'] ? 'checked="checked"' : '';
-            $retval = Field::radio(array(
+            $retval = FieldList::radio(array(
                 'name' => 'def_pv_id',
                 'value' => $A['pv_id'],
                 'checked' => $A['pv_id'] == $extra['def_pv_id'],
@@ -1685,7 +1780,7 @@ class ProductVariant
      * @param   array   $opts   Array of option value record IDs
      * @return  array       Array of status and message elements.
      */
-    public function Validate($opts)
+    public function Validate(ProductVariantInfo &$PVI, array $opts) : void
     {
         global $LANG_SHOP;
 
@@ -1695,10 +1790,15 @@ class ProductVariant
         if (!isset($opts['quantity'])) {
             $opts['quantity'] = 1;
         }
+        if (isset($opts['checkbox'])) {
+            $incr_price = ProductCheckbox::getPriceImpact($this->id, $opts['checkbox']);
+        } else {
+            $incr_price = 0;
+        }
 
         $P = Product::getByID($this->item_id);
         if ($P->getID() < 1 || $this->getID() < 1) {
-            $retval = array(
+            /*$retval = array(
                 'status'    => 0,
                 'msg'       => $LANG_SHOP['opts_not_avail'],
                 'allowed'   =>  false,
@@ -1709,44 +1809,41 @@ class ProductVariant
                 'sku'       => '',
                 'leadtime'  => '',
                 'images'    => array(),
-            );
+            );*/
         } else {
-            $price = ($P->getBasePrice() + $this->getPrice());
+            $price = ($P->getBasePrice() + $this->getPrice() + $incr_price);
             $price = $price * (100 - $P->getDiscount($opts['quantity'])) / 100;
             if ($this->Stock->getOnhand() == 0) {
                 $lt_msg = $P->getLeadTimeMessage();
             } else {
                 $lt_msg = '';
             }
-            $retval = array(
-                'status'    => 0,
-                'msg'       => $this->Stock->getOnhand() . ' ' . $LANG_SHOP['available'],
-                'allowed'   => true,
-                'is_oos'    => false,
-                'orig_price' => Currency::getInstance()->RoundVal($price),
-                'sale_price' => Currency::getInstance()->RoundVal($P->getSalePrice($price)),
-                'onhand'    => $this->Stock->getOnhand(),
-                'weight'    => $P->getWeight() + $this->weight,
-                'sku'       => empty($this->getSku()) ? $P->getName() : $this->getSku(),
-                'leadtime'  => $lt_msg,
-                'images'    => $this->images,
-            );
+            $PVI['status'] = 0;
+            $PVI['msg'] = $this->Stock->getOnhand() . ' ' . $LANG_SHOP['available'];
+            $PVI['allowed'] = true;
+            $PVI['is_oos'] = false;
+            $PVI['orig_price'] = Currency::getInstance()->RoundVal($price);
+            $PVI['sale_price'] = Currency::getInstance()->RoundVal($P->getSalePrice($price));
+            $PVI['onhand'] = $this->Stock->getOnhand();
+            $PVI['weight'] = $P->getWeight() + $this->weight;
+            $PVI['sku'] = empty($this->getSku()) ? $P->getName() : $this->getSku();
+            $PVI['leadtime'] = $lt_msg;
+            $PVI['images'] = $this->images;
         }
         if ($P->getTrackOnhand()) {
             if ($this->Stock->getOnhand() < $opts['quantity']) {
-                $retval['is_oos'] = true;
+                $PVI['is_oos'] = true;
                 if ($P->getOversell() > Product::OVERSELL_ALLOW) {
                     // Can't be sold
-                    $retval['status'] = 2;
-                    $retval['msg'] = 'Not Available';
-                    $retval['allowed'] = false;
+                    $PVI['status'] = 2;
+                    $PVI['msg'] = 'Not Available';
+                    $PVI['allowed'] = false;
                 } else {
-                    $retval['status'] = 1;
-                    $retval['msg'] = 'Backordered';
+                    $PVI['status'] = 1;
+                    $PVI['msg'] = 'Backordered';
                 }
             }
         }
-        return $retval;
     }
 
 
@@ -1789,8 +1886,8 @@ class ProductVariant
     {
         $newval = self::_toggle($oldvalue, 'enabled', $id);
         if ($newval != $oldvalue) {
-            Cache::clear('products');
-            Cache::clear(self::TAGS);
+            Cache::clear(Product::$TABLE);
+            Cache::clear(self::$TABLE);
         }
         return $newval;
     }
@@ -1840,7 +1937,7 @@ class ProductVariant
             self::deleteByProduct($dst);
         }
         $PVs = self::getByProduct($src);
-        foreach ($PVs as $PV) { 
+        foreach ($PVs as $PV) {
             $PV->loadOptions();
             $sku_parts = array();
             foreach($PV->getOptions() as $pog=>$Opt) {
@@ -1866,8 +1963,8 @@ class ProductVariant
                 SELECT $pv_id, pov_id FROM {$_TABLES['shop.variantXopt']} WHERE pv_id = {$PV->getID()}";
             DB_query($sql);
         }
-        Cache::clear('products');
-        Cache::clear('options');
+        Cache::clear(Product::$TABLE);
+        Cache::clear(self::$TABLE);
     }
 
     /**
@@ -1886,6 +1983,41 @@ class ProductVariant
             $this->setSku($new_sku . $var_sku)
                 ->Save();
         }
+    }
+
+
+    /**
+     * Get all the options that make up an item variant.
+     *
+     * @param   integer $item_id    Product ID
+     * @return  array       Array of option groups and values
+     */
+    public static function getOptionsByProduct(int $item_id) : array
+    {
+        global $_TABLES;
+
+        $retval = array();
+        $qb = Database::getInstance()->conn->createQueryBuilder();
+        $qb->select('pog.pog_id', 'pog.pog_name', 'pog.pog_type')
+           ->distinct()
+           ->from($_TABLES['shop.product_variants'], 'pv')
+           ->leftJoin('pv', $_TABLES['shop.variantXopt'], 'vxo', 'pv.pv_id = vxo.pv_id')
+           ->leftJoin('vxo', $_TABLES['shop.prod_opt_vals'], 'pov', 'vxo.pov_id = pov.pov_id')
+           ->leftJoin('pov', $_TABLES['shop.prod_opt_grps'], 'pog', 'pov.pog_id = pog.pog_id')
+           ->where('pv.item_id = :item_id')
+           ->setParameter('item_id', $item_id, Database::INTEGER);
+        try {
+            $stmt = $qb->execute();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $stmt = false;
+        }
+        if ($stmt) {
+            while ($row = $stmt->fetchAssociative()) {
+                $retval[] = new DataArray($row);
+            }
+        }
+        return $retval;
     }
 
 }

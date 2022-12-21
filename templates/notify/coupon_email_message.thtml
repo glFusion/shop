@@ -1,0 +1,16 @@
+{header}
+<p>{$LANG_SHOP_EMAIL['coupon_1']}</p>
+{!if sender_name}
+<p>{$LANG_SHOP['from']}: {sender_name}</p>
+{!endif}
+<p>
+{$LANG_SHOP_EMAIL['coupon_id']}: <a href="{submit_url}">{gc_code}</a>
+</p>
+{!if message}
+<p>{message}</p>
+{!endif}
+{!if expires}
+<p>
+{$LANG_SHOP_EMAIL['coupon_2']} {expires}.
+</p>
+{!endif}

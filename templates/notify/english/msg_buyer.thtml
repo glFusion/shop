@@ -1,4 +1,5 @@
-<p>Thank you for your purchase from {site_name}. Details of your purchase follow:</p> 
+{header}
+<p>Thank you for your order from {site_name}. Details of your purchase follow:</p> 
 <p>
 {purchase_details}
 </p>
@@ -47,6 +48,5 @@ You have a remaining gift card balance of {gc_bal_fmt}.
 {!endif}
 <p>
 Thanks,<br />
-{site_name}<br />
-{site_url}
+{footer}
 </p>

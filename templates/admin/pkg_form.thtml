@@ -9,7 +9,7 @@
 			<span id="pkg_name" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls uk-form-controls-text">
-			<input class="uk-input uk-form-small uk-form-width-large" type="text" name="dscp" value="{dscp}" />
+			<input class="uk-input uk-form-width-large" type="text" name="dscp" value="{dscp}" />
 		</div>
 	</div>
 
@@ -18,7 +18,7 @@
 			<span id="pkg_width" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls uk-form-controls-text">
-			<input class="uk-input uk-form-small uk-form-width-small" type="text" name="width" value="{width}" />&nbsp;{uom_size}
+			<input class="uk-input uk-form-width-small" type="text" name="width" value="{width}" />&nbsp;{uom_size}
 		</div>
 	</div>
 
@@ -27,7 +27,7 @@
 			<span id="pkg_height" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls uk-form-controls-text">
-			<input class="uk-input uk-form-small uk-form-width-small" type="text" name="height" value="{height}" />&nbsp;{uom_size}
+			<input class="uk-input uk-form-width-small" type="text" name="height" value="{height}" />&nbsp;{uom_size}
 		</div>
 	</div>
 
@@ -36,7 +36,7 @@
 			<span id="pkg_length" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls uk-form-controls-text">
-			<input class="uk-input uk-form-small uk-form-width-small" type="text" name="length" value="{length}" />&nbsp;{uom_size}
+			<input class="uk-input uk-form-width-small" type="text" name="length" value="{length}" />&nbsp;{uom_size}
 		</div>
 	</div>
 
@@ -45,7 +45,7 @@
 			<span id="pkg_max_weight" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls uk-form-controls-text">
-			<input class="uk-input uk-form-small uk-form-width-small" type="text" name="max_weight" value="{max_weight}" />&nbsp;{uom_weight}
+			<input class="uk-input uk-form-width-small" type="text" name="max_weight" value="{max_weight}" />&nbsp;{uom_weight}
 		</div>
 	</div>
 
@@ -54,7 +54,7 @@
 			<span id="pkg_max_units" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls uk-form-controls-text">
-			<input class="uk-input uk-form-small uk-form-width-small" type="text" name="units" value="{units}" />
+			<input class="uk-input uk-form-width-small" type="text" name="units" value="{units}" />
 		</div>
 	</div>
 
@@ -76,25 +76,25 @@
 					<td>{carrier_name}</td>
 					<td>
 {!if has_pkgcode_select}
-						<select class="uk-select uk-form-small uk-form-width-medium" name="containers[{carrier_id}][container]">
+						<select class="uk-select uk-form-width-medium" name="containers[{carrier_id}][container]">
 							<option value="" {sel_none}>-- {$LANG_SHOP['not_avail']} -- </option>
 <!-- BEGIN PkgCodes -->
 							<option value="{pkg_code}" {sel}>{pkg_dscp}</option>
 <!-- END PkgCodes -->
 						</select>
 {!else}
-						<input class="uk-input uk-form-small uk-form-width-medium" type="text" name="containers[{carrier_id}][container]" value="{container}" />
+						<input class="uk-input uk-form-width-medium" type="text" name="containers[{carrier_id}][container]" value="{container}" />
 {!endif}
 					</td>
 					<td>
-						<select class="uk-select uk-form-small uk-form-width-medium" name="containers[{carrier_id}][service]">
+						<select class="uk-select uk-form-width-medium" name="containers[{carrier_id}][service]">
 <!-- BEGIN SvcCodes -->
 							<option value="{svc_code}" {sel}>{svc_dscp}</option>
 <!-- END SvcCodes -->
 						</select>
 					</td>
 					<td>
-						<input class="uk-input uk-form-small uk-form-width-small" type="text" name="containers[{carrier_id}][rate]" value="{rate}" />
+						<input class="uk-input uk-form-width-small" type="text" name="containers[{carrier_id}][rate]" value="{rate}" />
 					</td>
 				</tr>
 <!-- END CarrierInfo -->

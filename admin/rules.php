@@ -25,94 +25,119 @@ if (
 }
 require_once('../../auth.inc.php');
 USES_lib_admin();
-
+$Request = Shop\Models\Request::getInstance();
 $content = '';
 
 // Get the message to the admin, if any
 $msg = array();
-if (isset($_REQUEST['msg'])) $msg[] = $_REQUEST['msg'];
+if (isset($Request['msg'])) $msg[] = $Request->getString('msg');
 
-$action = 'rules';     // Default if no correct view specified
 $expected = array(
     // Actions to perform
     'rule_del', 'rule_add', 'rule_save', 'delbutton_x',
+    'pr_save', 'pr_del',
     // Views to display
-    'rules', 'rule_edit',
+    'zr_list', 'rule_edit', 'pr_list', 'pr_edit',
 );
-foreach($expected as $provided) {
-    if (isset($_POST[$provided])) {
-        $action = $provided;
-        $actionval = $_POST[$provided];
-        break;
-    } elseif (isset($_GET[$provided])) {
-        $action = $provided;
-        $actionval = $_GET[$provided];
-        break;
-    }
-}
+list($action, $actionval) = $Request->getAction($expected, 'pr_list');
 
 switch ($action) {
 case 'rule_add':
-    $rule_id = SHOP_getVar($_POST, 'rule_id', 'integer', 0);
+    $rule_id = $Request->getInt('rule_id');
     if ($actionval > 0) {
         switch ($actionval) {
         case 'region':
         case 'country':
         case 'state':
             Shop\Rules\Zone::getInstance($rule_id)
-                ->add($actionval, SHOP_getVar($_POST, $actionval . '_id', 'array', array()))
+                ->add($actionval, $Request->getArray($actionval . '_id'))
                 ->Save();
             break;
         }
     }
-    COM_refresh(SHOP_ADMIN_URL . '/rules.php');
+    echo COM_refresh(SHOP_ADMIN_URL . '/rules.php');
     break;
 
 case 'rule_del':
     if ($actionval) {
         Shop\Rules\Zone::deleteRule($actionval);
     }
-    COM_refresh(SHOP_ADMIN_URL . '/rules.php');
+    echo COM_refresh(SHOP_ADMIN_URL . '/rules.php?zr_list');
     break;
 
 case 'delbutton_x':
-    if (is_array($_POST['delitem'])) {
+    $items = $Request->getArray('delitem');
+    if (!empty($items)) {
         // Delete some checked options
-        foreach ($_POST['delitem'] as $opt_id) {
+        foreach ($items as $opt_id) {
             Shop\Rules\Zone::deleteRule($opt_id);
         }
     }
-    COM_refresh(SHOP_ADMIN_URL . '/rules.php');
+    echo COM_refresh(SHOP_ADMIN_URL . '/rules.php');
     break;
 
 case 'rule_save':
-    $rule_id = SHOP_getVar($_POST, 'rule_id', 'integer', 0);
+    $rule_id = $Request->getInt('rule_id');
     $Rule = Shop\Rules\Zone::getInstance($rule_id);
     if ($Rule->getID() > 0) {
-        if (isset($_POST['region_del'])) {
-            $Rule->del('region', $_POST['region_del']);
+        if (isset($Request['region_del'])) {
+            $Rule->del('region', $Request->getArray('region_del'));
         }
-        if (isset($_POST['country_del'])) {
-            $Rule->del('country', $_POST['country_del']);
+        if (isset($Request['country_del'])) {
+            $Rule->del('country', $Request->getArray('country_del'));
         }
-        if (isset($_POST['state_del'])) {
-            $Rule->del('state', $_POST['state_del']);
+        if (isset($Request['state_del'])) {
+            $Rule->del('state', $Request->getArray('state_del'));
         }
     }
-    $Rule->Save($_POST);
-    COM_refresh(SHOP_ADMIN_URL . '/rules.php');
+    $Rule->Save($Request);
+    echo COM_refresh(SHOP_ADMIN_URL . '/rules.php?zr_list');
     break;
 
 case 'rule_edit':
-    $content .= Shop\Menu::adminRegions('rules');
+    $content .= Shop\Menu::adminRules('zr_list');
     $content .= Shop\Rules\Zone::getInstance($actionval)->Edit();
     break;
 
-case 'rules':
-default:
+case 'pr_edit':
+    $actionval = (int)$actionval;
+    $PC = new Shop\Rules\Product($actionval);
+    $content .= Shop\Menu::adminRules('pr_list');
+    $content .= $PC->Edit();
+    break;
+
+case 'pr_save':
+    $PC = new Shop\Rules\Product($Request->getInt('pr_id'));
+    if ($PC->Save($Request)) {
+        COM_setMsg($LANG_SHOP['item_updated']);
+    } else {
+        COM_setMsg($LANG_SHOP['item_upd_err']);
+    }
+    echo COM_refresh(SHOP_ADMIN_URL . '/rules.php?pr_list');
+    break;
+
+case 'pr_del':
+    if (isset($Request['delbutton_x']) && is_array($actionval)) {
+        foreach ($actionval as $val) {
+        Shop\Rules\Product::Delete((int)$val);
+        }
+    } elseif ($actionval > 0) {
+        Shop\Rules\Product::Delete((int)$actionval);
+    }
+    echo COM_refresh(SHOP_ADMIN_URL . '/rules.php?pr_list');
+    exit;
+    break;
+
+case 'zr_list':
     // Display the list of zone rules
-    $content .= Shop\Menu::adminRegions($action);
+    $content .= Shop\Menu::adminRules($action);
     $content .= Shop\Rules\Zone::adminList();
+    break;
+
+case 'pr_list':
+default:
+    $content .= Shop\Menu::adminRules($action);
+    $content .= Shop\Rules\Product::adminList();
     break;
 }
 
@@ -127,4 +152,3 @@ $display .= COM_siteFooter();
 echo $display;
 exit;
 
-?>

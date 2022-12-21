@@ -20,6 +20,8 @@ use Shop\Cart;
 use Shop\Coupon;
 use Shop\Currency;
 use Shop\Template;
+use Shop\Product;
+use Shop\Models\Token;      // to create unique transaction IDs
 
 
 /**
@@ -38,11 +40,6 @@ class Gateway extends \Shop\Gateway
     /** Gateway service description.
      * @var string */
     protected $gw_desc = 'Internal Testing Gateway';
-
-    /** Flag this gateway as bundled with the Shop plugin.
-     * Gateway version will be set to the Shop plugin's version.
-     * @var integer */
-    protected $bundled = 1;
 
 
     /**
@@ -67,7 +64,7 @@ class Gateway extends \Shop\Gateway
         );
 
         parent::__construct($A);
-        $this->gw_url = SHOP_URL . '/ipn/ipn.php?_gw=_internal';
+        $this->gw_url = SHOP_URL . '/hooks/webhook.php?_gw=test';
     }
 
 
@@ -88,13 +85,14 @@ class Gateway extends \Shop\Gateway
         }
         $gatewayVars = array(
             '<input type="hidden" name="processorder" value="by_gc" />',
-            '<input type="hidden" name="order_id" value="' . $cart->CartID() . '" />',
+            '<input type="hidden" name="order_id" value="' . $cart->getOrderID() . '" />',
             '<input type="hidden" name="payment_status" value="Completed" />',
             '<input type="hidden" name="pmt_gross" value="' . $pmt_gross . '" />',
-            '<input type="hidden" name="txn_id" value="' . uniqid() . '" />',
+            '<input type="hidden" name="txn_id" value="' . Token::create(NULL, 16) . '" />',
             '<input type="hidden" name="status" value="paid" />',
             '<input type="hidden" name="transtype" value="' . $this->gw_name . '" />',
             '<input type="hidden" name="uid" value="' . $_USER['uid'] . '" />',
+            '<input type="hidden" name="secret" value="' . Token::encrypt($cart->getSecret()) . '" />',
         );
         if (!COM_isAnonUser()) {
             $gateway_vars[] = '<input type="hidden" name="payer_email" value="' . $_USER['email'] . '" />';
@@ -109,12 +107,11 @@ class Gateway extends \Shop\Gateway
      * Checks the button table to see if a button exists, and if not
      * a new button will be created.
      *
-     * @uses    Gateway::_ReadButton()
-     * @uses    Gateway::_SaveButton()
      * @param   object  $P      Product Item object
+     * @param   float   $price  Optional override price
      * @return  string          HTML code for the button.
      */
-    public function ProductButton($P)
+    public function ProductButton(Product $P, ?float $price=NULL) : string
     {
         global $LANG_SHOP, $_CONF;
 
@@ -141,7 +138,7 @@ class Gateway extends \Shop\Gateway
             $vars['ipn_type'] = 'buy_now';  // force type for IPN processor.
             $vars['txn_id'] = uniqid();     // Bogus transaction ID.
             $vars['quantity'] = 1;
-            $vars['notify_url'] = $this->ipn_url;
+            $vars['notify_url'] = $this->getIpnUrl();
 
             if ($P->getWeight() > 0) {
                 $vars['weight'] = $P->getWeight();
@@ -208,7 +205,7 @@ class Gateway extends \Shop\Gateway
         $T = new Template('buttons/generic');
         $T->set_file('btn', 'btn_' . $btn_type . '.thtml');
         $T->set_var(array(
-            'action_url'    => $this->getActionUrl(),
+            'action_url'    => $this->getIpnUrl(),
             'btn_text'      => $btn_text,
             'gateway_vars'  => $gateway_vars,
             'gw_name'       => $this->gw_name,
@@ -244,6 +241,20 @@ class Gateway extends \Shop\Gateway
         return $this->isEnabled() && SEC_inGroup($this->grp_access);
     }
 
-}
 
-?>
+    /**
+     * Get the form action URL.
+     * This function may be overridden by the child class.
+     * The default is to simply return the configured URL
+     *
+     * This is public so that if it is not declared by the child class,
+     * it can be called during IPN processing.
+     *
+     * @return  string      URL to payment processor
+     */
+    public function getActionUrl()
+    {
+        return $this->getWebhookUrl();
+    }
+
+}

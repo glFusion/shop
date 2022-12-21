@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Shop\Traits;
+use Shop\Log;
 
 
 /**
@@ -24,8 +25,8 @@ trait PDF
 
     public function initPDF()
     {
-        USES_lglib_class_html2pdf();
         try {
+            USES_lglib_class_html2pdf();
             if (class_exists('\\Spipu\\Html2Pdf\\Html2Pdf')) {
                 $this->html2pdf = new \Spipu\Html2Pdf\Html2Pdf('P', 'A4', 'en');
             } else {
@@ -34,19 +35,19 @@ trait PDF
             //$html2pdf->setModeDebug();
             $this->html2pdf->setDefaultFont('Arial');
         } catch(HTML2PDF_exception $e) {
-            SHOP_log($e);
+            Log::write('shop_system', Log::ERROR, $e);
             return false;
         }
-
         return true;
     }
+
 
     public function writePDF($content)
     {
         try {
             $this->html2pdf->writeHTML($content);
         } catch(HTML2PDF_exception $e) {
-            SHOP_log($e);
+            Log::write('shop_system', Log::ERROR, $e);
             return false;
         }
     }

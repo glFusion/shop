@@ -13,7 +13,7 @@
  */
 namespace Shop\Gateways\_internal;
 use Shop\Cart;
-use Shop\Models\OrderState;
+use Shop\Log;
 
 
 // this file can't be used on its own
@@ -78,7 +78,7 @@ class ipn extends \Shop\IPN
      *
      * @return  boolean         true if successfully validated, false otherwise
      */
-    public function Verify()
+    public function Verify() : bool
     {
         // Even test transactions have to be unique
         if (!$this->isUniqueTxnId()) {
@@ -115,7 +115,7 @@ class ipn extends \Shop\IPN
         if (!$this->Verify()) {
             $logId = $this->Log(false);
             $this->handleFailure(
-                SHOP_FAILURE_VERIFY,
+                self::FAILURE_VERIFY,
                 "($logId) Verification failed"
             );
             return false;
@@ -123,9 +123,9 @@ class ipn extends \Shop\IPN
 
         // Set the custom data field to the exploded value.  This has to
         // be done after Verify() or the Shop verification will fail.
-        $tax = LGLIB_getVar($this->ipn_data, 'tax', 'float');
-        $shipping = LGLIB_getVar($this->ipn_data, 'shipping', 'float');
-        $handling = LGLIB_getVar($this->ipn_data, 'handling', 'float');
+        $tax = SHOP_getVar($this->ipn_data, 'tax', 'float');
+        $shipping = SHOP_getVar($this->ipn_data, 'shipping', 'float');
+        $handling = SHOP_getVar($this->ipn_data, 'handling', 'float');
         $price = (float)$this->ipn_data['pmt_gross'] - $tax - $shipping - $handling;
         if (isset($this->ipn_data['item_number'])) {
             $this->addItem(array(
@@ -138,11 +138,11 @@ class ipn extends \Shop\IPN
                 'handling'  => $handling,
             ));
         }
-        SHOP_log("Net Settled: {$this->getPmtGross()} {$this->getCurrency()->getCode()}", SHOP_LOG_DEBUG);
+        Log::write('shop_system', Log::DEBUG, "Net Settled: {$this->getPmtGross()} {$this->getCurrency()->getCode()}");
         $this->handlePurchase();
         $this->Log(true);
         SHOP_setMsg('Thank youi for your order.');
-        COM_refresh(SHOP_URL . '/index.php');
+        echo COM_refresh(SHOP_URL . '/index.php');
         return true;
     }
 

@@ -3,9 +3,9 @@
  * Base class for IP Geolocation.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2020-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.4.1
  * @since       v1.3.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -15,7 +15,7 @@ namespace Shop;
 
 
 /**
- * Use ipgeolocation.io.
+ * Geolocation base class.
  * @package shop
  */
 class GeoLocator
@@ -60,6 +60,8 @@ class GeoLocator
 
         $this->withIP();
         $this->default_data['timezone'] = $_CONF['timezone'];
+        $this->default_data['state_code'] = Config::get('state');
+        $this->default_data['country_code'] = Config::get('country');
     }
 
 
@@ -69,7 +71,7 @@ class GeoLocator
      * @param   string  $cls    Optional Provider class name override
      * @return  object      Geolocation provider object
      */
-    public static function getProvider($cls='')
+    public static function getProvider(string $cls='') : object
     {
         global $_SHOP_CONF;
 
@@ -91,7 +93,7 @@ class GeoLocator
      * @param   string  $ip     IP address
      * @return  object  $this
      */
-    public function withIP($ip = NULL)
+    public function withIP(?string $ip = NULL) : self
     {
         if (empty($ip)) {
             $spoof = Config::get('spoof_address');
@@ -112,7 +114,7 @@ class GeoLocator
      *
      * @return  array   Array of location data
      */
-    protected function _geoLocate()
+    protected function _geoLocate() : array
     {
         return $this->default_data;
     }
@@ -152,7 +154,7 @@ class GeoLocator
      * @param   string  $ip     IP address
      * @return  string      Cache key
      */
-    private function _makeCacheKey($ip)
+    private function _makeCacheKey(string $ip) : string
     {
         return DB_escapeString('shop.geo.' . $this->key . '.' . $ip);
     }
@@ -164,7 +166,7 @@ class GeoLocator
      * @param   string  $key    Additional cache key for data type
      * @return  object|null     Tracking object, NULL if not found
      */
-    protected function getCache($key='')
+    protected function getCache(string $key='') : ?string
     {
         global $_TABLES;
 
@@ -180,7 +182,7 @@ class GeoLocator
      * @param   string  $key        Additional cache key for data type
      * @param   integer $exp        Minutes for cache timeout
      */
-    protected function setCache($data, $key, $exp=0)
+    protected function setCache(string $data, string $key, int $exp=0) : void
     {
         global $_TABLES;
         if ($exp <= 0) {
@@ -196,7 +198,7 @@ class GeoLocator
      *
      * @return  string      Name of provider
      */
-    public function getProviderName()
+    public function getProviderName() : string
     {
         return $this->provider;
     }
@@ -208,7 +210,7 @@ class GeoLocator
      * @param   string  $ip     IP address
      * @return  boolean     True if RFC1918
      */
-    public static function isRFC1918($ip)
+    public static function isRFC1918(string $ip) : bool
     {
         $parts = explode('.', $ip);
         if ($parts[0] == '10') {

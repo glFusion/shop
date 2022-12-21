@@ -26,19 +26,17 @@ if (
 
 require_once('../../auth.inc.php');
 USES_lib_admin();
-
+$Request = Shop\Models\Request::getInstance();
 $content = '';
 
 // Get the message to the admin, if any
 $msg = array();
-if (isset($_REQUEST['msg'])) $msg[] = $_REQUEST['msg'];
+if (isset($Request['msg'])) $msg[] = $Request->getString('msg');
 
 // Set view and action variables.  We use $action for things to do, and
 // $view for the page to show.  $mode is often set by glFusion functions,
 // so we'll check for it and see if we should use it, but by using $action
 // and $view we don't tend to conflict with glFusion's $mode.
-$action = 'payments';
-$actionval = 'x';
 $expected = array(
     // Actions to perform
     'delete', 'savepayment', 'delpayment',
@@ -46,17 +44,7 @@ $expected = array(
     'edit', 'payments', 'list', 'newpayment', 'pmtdetail', 'ipndetail',
     'webhooks',
 );
-foreach($expected as $provided) {
-    if (isset($_POST[$provided])) {
-        $action = $provided;
-        $actionval = $_POST[$provided];
-        break;
-    } elseif (isset($_GET[$provided])) {
-        $action = $provided;
-        $actionval = $_GET[$provided];
-        break;
-    }
-}
+list($action, $actionval) = $Request->getAction($expected, 'payments');
 $view = $action;
 $mainview = '';   // default main menu selection
 
@@ -72,13 +60,13 @@ case 'savepayment':
         ->setIsMoney(isset($_POST['is_money']) ? 1 : 0)
         ->setComment($_POST['comment']);
     $Pmt->Save();
-    COM_refresh(SHOP_ADMIN_URL . '/payments.php?payments=' . $_POST['order_id']);
+    echo COM_refresh(SHOP_ADMIN_URL . '/payments.php?payments=' . $_POST['order_id']);
     break;
 
 case 'delete':
 case 'delpayment':
     Shop\Payment::delete($actionval);
-    COM_refresh(SHOP_ADMIN_URL . '/payments.php?payments=' . $_GET['order_id']);
+    echo COM_refresh(SHOP_ADMIN_URL . '/payments.php?payments=' . $_GET['order_id']);
     break;
 
 default:
@@ -108,7 +96,7 @@ case 'ipndetail':
     break;
 
 case 'pmtdetail':
-    $val = SHOP_getVar($_GET, 'pmt_id', 'integer');
+    $val = $Request->getInt('pmt_id');
     if ($val > 0) {
         $content .= \Shop\Report::getInstance('payment')->RenderDetail($val);
         break;

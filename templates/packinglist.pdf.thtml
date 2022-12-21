@@ -6,7 +6,14 @@
 </head>
 <body>
 <h1>{$LANG_SHOP['packinglist']}</h1>
-<p style="text-align:right;padding-bottom:30px;">
+<table style="width:100%;padding-bottom:15px;">
+<tr>
+<td style="width:30%">
+{!if logo_url}
+    <img src="{logo_url}" style="width:{logo_width}px;height:{logo_height}px;">
+{!endif}
+</td>
+<td style="width:70%;text-align:right;">
     <span style="font-size:24px;">{shop_name}</span>
     <br />{shop_addr}
 {!if shop_phone}
@@ -15,7 +22,9 @@
 {!if shop_email}
     <br />{shop_email}
 {!endif}
-</p>
+</td>
+</tr>
+</table>
 
 <table style="width:100%;padding-bottom:15px;">
 <tr>

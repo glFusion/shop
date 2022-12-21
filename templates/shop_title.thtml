@@ -2,45 +2,48 @@
 {!if is_admin}
 <script src="{site_url}/shop/js/admin.js"></script>
 {!endif}
-<div style="float:right;">
-{!if link_admin}
-	<a href="{site_admin_url}/plugins/shop/index.php"
-		class="uk-button uk-button-danger uk-button-mini">{$LANG_SHOP['mnu_admin']}</a>
-{!endif}
-{!if link_catalog}
-	<a href="{site_url}/shop/index.php" class="uk-button uk-button-primary uk-button-small">{$LANG_SHOP['storefront']}</a>
-{!endif}
-{!if link_account}
-	<a href="{site_url}/shop/account.php" class="uk-button uk-button-primary uk-button-small">{$LANG01[47]}</a>
-{!endif}
-
-	<a class="uk-button uk-button-success uk-button-small shop_cart_vis"
-		id="link_cart" href="{site_url}/shop/cart.php"
-{!if link_cart}
-{!else}
-		style="display:none;"
-{!endif}
-		><i class="uk-icon uk-icon-shopping-cart"></i>&nbsp;{$LANG_SHOP['viewcart']}
-	</a>
-</div>
+<div class="uk-grid uk-margin-small" uk-grid>
+	<div class="uk-width-3-4 uk-hidden-small uk-visible@m">
 {!if icon}
-<div style="float:left;margin-right:10px;">
-	<img src="{icon}" />
-</div>
+		<div style="float:left;margin-right:10px;">
+			<img src="{icon}" />
+		</div>
 {!endif}
-<div style="float:left;">
+		<div style="float:left;">
 {!if title}
-	<h2 style="float:left">{title}</h2>
+			<h2 style="float:left">{title}</h2>
 {!endif}
 {!if subtitle}
-	<h2 style="float:right">{subtitle}</h2>
+			<h2 style="float:right">{subtitle}</h2>
 {!endif}
+		</div>
+	</div>
+	<div class="uk-width-1-4 uk-width-small-1-1 uk-width-1-1@s" style="text-align:right;">
+{!if link_admin}
+		<a href="{site_admin_url}/plugins/shop/index.php"
+			class="uk-button uk-button-danger uk-button-mini">{$LANG_SHOP['mnu_admin']}</a>
+{!endif}
+{!if link_catalog}
+		<a href="{site_url}/shop/index.php" class="uk-button uk-button-primary uk-button-small">{$LANG_SHOP['storefront']}</a>
+{!endif}
+{!if link_account}
+		<a href="{site_url}/shop/account.php" class="uk-button uk-button-primary uk-button-small">{$LANG01[47]}</a>
+{!endif}
+
+		<a class="uk-button uk-button-success uk-button-small shop_cart_vis"
+			id="link_cart" href="{site_url}/shop/cart.php"
+{!if link_cart}
+{!else}
+			style="display:none;"
+{!endif}
+			><i class="uk-icon uk-icon-shopping-cart"></i>&nbsp;{$LANG_SHOP['viewcart']}
+		</a>
+	</div>
+</div>
 {!if breadcrumbs}
-	{breadcrumbs}
+{breadcrumbs}
 {!endif}
 {!if todo}
-	<div style="clear:both" class="uk-alert uk-alert-danger">{todo}</div>
+<div class="uk-alert uk-alert-danger">{todo}</div>
 {!endif}
-</div>
-<div style="margin-top: 10px;clear:both;"></div>
 {# end {templatelocation} #}

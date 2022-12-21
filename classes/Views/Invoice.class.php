@@ -20,9 +20,8 @@ use Shop\Template;
 use Shop\Gateway;
 use Shop\Company;
 use Shop\Payment;
-use Shop\OrderStatus;
+use Shop\Models\OrderStatus;
 use Shop\ShipmentPackage;
-use Shop\Models\OrderState;
 
 
 /**
@@ -70,8 +69,6 @@ class Invoice extends OrderBaseView
     {
         $this->tplname = 'order';
         $this->is_invoice = true;
-        $this->TPL = new Template;
-        $this->TPL->set_file('order', $this->tplname . '.thtml');
     }
 
 
@@ -115,42 +112,6 @@ class Invoice extends OrderBaseView
             $this->tplname .= '.pdf';
             $this->withShopInfo(true);
         }
-        $this->TPL->set_file('order', $this->tplname . '.thtml');
-        return $this;
-    }
-
-
-    /**
-     * View the invoice as a packing list.
-     * Suppresses prices and other charges.
-     *
-     * @return  object  $this
-     */
-    public function asPackingList()
-    {
-        $this->type = 'packinglist';
-        $this->is_invoice = false;
-        return $this;
-    }
-
-
-    /**
-     * View the invoice normally.
-     * Includes prices and other charges.
-     *
-     * @return  object  $this
-     */
-    public function asInvoice()
-    {
-        $this->type = 'order';
-        $this->is_invoice = true;
-        return $this;
-    }
-
-
-    public function withType($type)
-    {
-        $this->type = $type;
         return $this;
     }
 
@@ -206,19 +167,15 @@ class Invoice extends OrderBaseView
      *
      * @return  mixed   HTML or PDF output
      */
-    public function Render()
+    public function Render() : ?string
     {
         if (empty($this->order_ids)) {
             $this->order_ids = array($this->order_id);
         }
         if ($this->output_type == 'pdf') {
-            //$this->tplname .= '.pdf';
             $this->initPDF();
         }
         foreach ($this->order_ids as $order_id) {
-            /*if (!$this->Order->canView($this->token)) {
-                continue;
-        }*/
             $output = $this->withOrderId($order_id)->createHTML();
             if ($this->output_type == 'html') {
                 // HTML is only available for single orders, so return here.
@@ -230,17 +187,7 @@ class Invoice extends OrderBaseView
         if ($this->output_type == 'pdf') {
             $this->finishPDF();
         }
-        /*if (!$this->Order->canView($this->token)) {
-            return '';
-        }
-        if ($this->output_type == 'html') {
-            $output = $this->createHTML();
-            return $output;
-        } elseif ($this->output_type == 'pdf') {
-            $this->tplname .= '.pdf';
-            $output = $this->createHTML();
-            return $this->createPDF($output);
-        }*/
+        return NULL;
     }
 
 
@@ -252,6 +199,9 @@ class Invoice extends OrderBaseView
     public function createHTML()
     {
         global $_SHOP_CONF, $_USER, $LANG_SHOP, $_CONF;
+
+        $this->TPL = new Template;
+        $this->TPL->set_file('order', $this->tplname . '.thtml');
 
         $this->_renderCommon();
         $this->_renderAddresses();
@@ -308,6 +258,9 @@ class Invoice extends OrderBaseView
             'shipment_block' => $this->getShipmentBlock(),
             'shipper_id' => $this->Order->getShipperID(),
             'ship_method' => $this->Order->getShipperDscp(),
+            'logo_url' => $_SHOP_CONF['logo_url'],
+            'logo_width' => $_SHOP_CONF['logo_width'],
+            'logo_height' => $_SHOP_CONF['logo_height'],
         ) );
         if ($this->Order->getPmtMethod() != '') {
             $gw = Gateway::getInstance($this->Order->getPmtMethod());
@@ -341,11 +294,12 @@ class Invoice extends OrderBaseView
             //'stat_update'   => OrderStatus::Selection($this->order_id, 1, $this->Order->getStatus()),
             'amt_paid_fmt' => $this->Currency->Format($this->Order->getAmountPaid()),
         ) );
-        if ($this->Order->getAmountPaid() > 0) {
-            $paid = $this->Order->getAmountPaid();
+
+        $paid = $this->Order->getAmountPaid();
+        if ($paid > 0) {
             $this->TPL->set_var(array(
                 'amt_paid_num' => $this->Currency->formatValue($paid),
-                'due_amount' => $this->Currency->formatValue($this->Order->getBalanceDue()),
+                'due_amount' => $this->Currency->format($this->Order->getBalanceDue()),
             ) );
         }
         $this->TPL->parse('output', 'order');

@@ -13,6 +13,7 @@
 namespace Shop\Upgrades;
 use Shop\OrderItem;
 use Shop\OrderItemOption;
+use Shop\Log;
 
 
 class v1_0_0 extends Upgrade
@@ -66,7 +67,7 @@ class v1_0_0 extends Upgrade
         // oi_opts table is created. Any time after this update the required
         // source fields may be removed.
         if ($populate_oi_opts) {
-            COM_errorLog("Transferring orderitem options to orderitem_options table");
+            Log::write('system', Log::INFO, "Transferring orderitem options to orderitem_options table");
             $sql = "SELECT * FROM {$_TABLES['shop.orderitems']}";
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {

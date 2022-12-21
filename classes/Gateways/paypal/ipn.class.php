@@ -1,12 +1,12 @@
 <?php
 /**
  * This file contains the Shop IPN class to deal with IPN transactions from Shop.
- * Based on the gl-shop Plugin for Geeklog CMS by Vincent Furia.
+ * Based on the gl-paypal Plugin for Geeklog CMS by Vincent Furia.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2020 Lee Garner
+ * @copyright   Copyright (c) 2009-2022 Lee Garner
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -14,7 +14,10 @@
  */
 namespace Shop\Gateways\paypal;
 use Shop\Cart;
-use Shop\Models\OrderState;
+use Shop\Address;
+use Shop\Models\OrderStatus;
+use Shop\Models\DataArray;
+use Shop\Log;
 
 
 // this file can't be used on its own
@@ -44,30 +47,30 @@ class ipn extends \Shop\IPN
     function __construct($A=array())
     {
         $this->gw_id = 'paypal';
-        $A = $_POST;
+        $A = new DataArray($_POST);
         parent::__construct($A);
 
         $this
-            ->setTxnId(SHOP_getVar($A, 'txn_id'))
-            ->setEmail(SHOP_getVar($A, 'payer_email'))
-            ->setPayerName(SHOP_getVar($A, 'first_name') .' '. SHOP_getVar($A, 'last_name'))
-            ->setPmtGross(SHOP_getVar($A, 'mc_gross', 'float'))
-            ->setPmtTax(SHOP_getVar($A, 'tax', 'float'))
-            ->setCurrency(SHOP_getVar($A, 'mc_currency', 'string', 'Unk'))
-            ->addCredit('discount', SHOP_getVar($A, 'discount', 'float', 0))
-            ->setOrderId(SHOP_getVar($A, 'invoice'))
-            ->setParentTxnId(SHOP_getVar($A, 'parent_txn_id'));
+            ->setTxnId($A->getString('txn_id'))
+            ->setEmail($A->getString('payer_email'))
+            ->setPayerName(trim($A->getString('first_name') . ' ' . $A->getString('last_name')))
+            ->setPmtGross($A->getFloat('mc_gross'))
+            ->setPmtTax($A->getFloat('tax'))
+            ->setCurrency($A->getString('mc_currency', 'Unk'))
+            ->addCredit('discount', $A->getFloat('discount'))
+            ->setOrderId($A->getString('invoice'))
+            ->setParentTxnId($A->getString('parent_txn_id'));
 
         // Check a couple of vars to see if a shipping address was supplied
         if (isset($A['address_street']) || isset($A['address_city'])) {
             $this->shipto = array(
-                'name'      => SHOP_getVar($A, 'address_name'),
-                'address1'  => SHOP_getVar($A, 'address_street'),
+                'name'      => $A->getString('address_name'),
+                'address1'  => $A->getString('address_street'),
                 'address2'  => '',
-                'city'      => SHOP_getVar($A, 'address_city'),
-                'state'     => SHOP_getVar($A, 'address_state'),
-                'country'   => SHOP_getVar($A, 'address_country'),
-                'zip'       => SHOP_getVar($A, 'address_zip'),
+                'city'      => $A->getString('address_city'),
+                'state'     => $A->getString('address_state'),
+                'country'   => $A->getString('address_country'),
+                'zip'       => $A->getString('address_zip'),
             );
         }
 
@@ -86,42 +89,45 @@ class ipn extends \Shop\IPN
         $this->setUid($this->custom['uid']);
 
         // Set the IPN status to one of the standard values
-        switch ($this->ipn_data['payment_status']) {
+        switch ($this->ipn_data->getString('payment_status')) {
         case 'Pending':
-            $this->setStatus(OrderState::PENDING);
+            $this->setStatus(OrderStatus::PENDING);
             break;
         case 'Completed':
-            $this->setStatus(OrderState::PAID);
+            $this->setStatus(OrderStatus::PAID);
             break;
         case 'Refunded':
-            $this->setSTatus(OrderState::REFUNDED);
+            $this->setStatus(OrderStatus::REFUNDED);
+            $this->ipn_data['txn_type'] = 'refund';
+            $this->setEvent('refund');
             break;
         }
 
-        switch (SHOP_getVar($A, 'txn_type')) {
+        switch ($A->getString('txn_type')) {
         case 'web_accept':
         case 'send_money':
-            $this
-                ->setPmtShipping(SHOP_getVar($A, 'shipping', 'float'))
-                ->setPmtHandling(SHOP_getVar($A, 'handling', 'float'));
+            $this->setPmtShipping($A->getFloat('shipping'))
+                 ->setPmtHandling($A->getFloat('handling'));
             break;
         case 'cart':
-            $this
-                ->setPmtShipping(SHOP_getVar($A, 'mc_shipping', 'float'))
-                ->setPmtHandling(SHOP_getVar($A, 'mc_handling', 'float'));
+            $this->setPmtShipping($A->getFloat('mc_shipping'))
+                 ->setPmtHandling($A->getFloat('mc_handling'));
+            break;
+        default:
+            $this->setParentTxnId($A['parent_txn_id']);
             break;
         }
     }
 
 
     /**
-     * Verify the transaction with Shop.
+     * Verify the transaction with Paypal.
      * Validate transaction by posting data back to the shop webserver.
      * The response from shop should include 'VERIFIED' on a line by itself.
      *
      * @return  boolean         true if successfully validated, false otherwise
      */
-    public function Verify()
+    public function Verify() : bool
     {
         // Even test transactions have to be unique
         if (!$this->isUniqueTxnId()) {
@@ -163,9 +169,9 @@ class ipn extends \Shop\IPN
         $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
         if ($http_code != 200) {
-            SHOP_log("IPN Verification returned $http_code", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, "IPN Verification returned $http_code");
         } elseif (strcmp($response, 'VERIFIED') != 0) {
-            SHOP_log("IPN Verification reponse $response", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, "IPN Verification reponse $response");
         } else {
             $verified = true;
         }
@@ -231,15 +237,16 @@ class ipn extends \Shop\IPN
             );
             return false;
         }
+        $this->Log(true);
 
         // Set the custom data field to the exploded value.  This has to
         // be done after Verify() or the Shop verification will fail.
-        switch ($this->ipn_data['txn_type']) {
+        switch ($this->ipn_data->getString('txn_type')) {
         case 'web_accept':  //usually buy now
         case 'send_money':  //usually donation/send money
-            $tax = LGLIB_getVar($this->ipn_data, 'tax', 'float');
-            $shipping = LGLIB_getVar($this->ipn_data, 'shipping', 'float');
-            $handling = LGLIB_getVar($this->ipn_data, 'handling', 'float');
+            $tax = $this->ipn_data->getFloat('tax');
+            $shipping = $this->ipn_data->getFloat('shipping');
+            $handling = $this->ipn_data->getFloat('handling');
             $price = (float)$this->ipn_data['mc_gross'] - $tax - $shipping - $handling;
             if (isset($this->ipn_data['item_number'])) {
                 $this->addItem(array(
@@ -252,8 +259,23 @@ class ipn extends \Shop\IPN
                     'handling'  => $handling,
                 ));
             }
-            SHOP_log("Net Settled: {$this->getPmtGross()} {$this->getCurrency()->getCode()}", SHOP_LOG_DEBUG);
-            $this->handlePurchase();
+            Log::write('shop_system', Log::DEBUG, "Net Settled: {$this->getPmtGross()} {$this->getCurrency()->getCode()}");
+            $this->handlePurchase();    // Order gets created here.
+
+            // Set the billing and shipping address to at least get the name,
+            // if not already set.
+            $Address = new Address;
+            $Address->fromArray(array(
+                'id' => -1,
+                'name' => trim($this->ipn_data->getString('first_name') . ' ' . $this->ipn_data->getString('last_name')),
+                'country' => $this->ipn_data->getString('residence_country'),
+            ) );
+            if ($this->Order->getBillto()->getID() == 0) {
+                $this->Order->setBillto($Address);
+            }
+            if ($this->Order->getShipto()->getID() == 0) {
+                $this->Order->setBillto($Address);
+            }
             break;
 
         case 'cart':
@@ -270,18 +292,37 @@ class ipn extends \Shop\IPN
                 ->setPmtHandling($this->Order->getHandling());
             $Cart = $this->Order->getItems();
             if (empty($Cart)) {
-                SHOP_log("Empty Cart for id {$this->Order->getOrderID()}", SHOP_LOG_ERROR);
+                Log::write('shop_system', Log::ERROR, "Empty Cart for id {$this->Order->getOrderID()}");
                 return false;
             }
 
+            // Set the billing and shipping address to at least get the name,
+            // if not already set.
+            $Address = new Address;
+            $Address->fromArray(array(
+                'id' => -1,
+                'name' => trim($this->ipn_data->getString('first_name') . ' ' . $this->ipn_data->getString('last_name')),
+                'address1' => $this->ipn_data->getString('address_street'),
+                'city' => $this->ipn_data->getString('address_city'),
+                'state' => $this->ipn_data->getString('address_state'),
+                'zip' => $this->ipn_data->getString('address_zip'),
+                'country' => $this->ipn_data->getString('residence_country'),
+            ) );
+            if ($this->Order->getBillto()->getID() == 0) {
+                $this->Order->setBillto($Address);
+            }
+            if ($this->Order->getShipto()->getID() == 0) {
+                $this->Order->setBillto($Address);
+            }
+
             $payment_gross = $this->getPmtGross();
-            SHOP_log("Received $payment_gross gross payment", SHOP_LOG_DEBUG);
+            Log::write('shop_system', Log::DEBUG, "Received $payment_gross gross payment");
             $this->handlePurchase();
             break;
 
         // other, unknown, unsupported
         default:
-            switch (SHOP_getVar($this->ipn_data, 'reason_code')) {
+            switch ($this->ipn_data->getString('reason_code')) {
             case 'refund':
                 $this->handleRefund();
                 break;
@@ -296,10 +337,8 @@ class ipn extends \Shop\IPN
             break;
         }
 
-        $this->Log(true);
         return true;
-    }   // function Process
+    }
 
 }
 
-?>

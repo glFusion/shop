@@ -107,10 +107,11 @@ function removeAddress(addr_id)
   <input type="hidden" name="addr_id" id="addr_id" value="{addr_id}" />
 
   <div class="uk-form-row uk-margin">
-    <label class="uk-form-label" for="name">{$LANG_SHOP['fullname']}</label>
+    <label class="uk-form-label" for="name">{$LANG_SHOP['fullname']}
+      <i class="uk-icon uk-icon-warning uk-text-warning" data-uk-tooltip title="{$LANG_SHOP['required']}"></i>
+	</label>
     <div class="uk-form-controls">
       <input required type="text" id="name" name="name" value="{name}" size="60" maxlength="255" />
-      <i class="uk-icon uk-icon-warning uk-text-warning" data-uk-tooltip title="{$LANG_SHOP['required']}"></i>
     </div>
   </div>
 

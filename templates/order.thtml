@@ -13,13 +13,15 @@
   {!endif}
     <h1 class="aligncenter">{$LANG_SHOP['order_summary']}</h1>
 {!endif}
+       <div uk-grid class="uk-grid uk-width-1-1 uk-grid-width-1-2 uk-child-width-1-2">
+			<h3>{$LANG_SHOP['order']}: {order_number}</h3>
 
 {!if not_final}
     <div class="shopOrderButtons">
         {gateway_vars}
     </div>
 {!else}
-    <div class="floatright">
+    <div style="text-align:right;">
         {linkPrint}
   {!if is_admin}
         {linkPackingList}
@@ -31,6 +33,7 @@
   {!endif}
     </div>
 {!endif}
+	</div>
 
     <div class="shopOrder">
 
@@ -41,6 +44,7 @@
             <div class="orderAddress">
                 <span class="header">{$LANG_SHOP['bill_to']}:</span>&nbsp;
                 <br />{billto_addr}
+				<br /><br />{payer_email}
             </div>
 
             <div class="orderAddress">
@@ -51,22 +55,22 @@
 
 {!if checkout}
 {!else}
-        <div id="shopOrderNumber">
+        <div uk-grid class="uk-grid uk-width-1-1@s uk-width-1-2@m uk-width-small-1-1 uk-width-medium-1-2 uk-child-width-1-1@s uk-child-width-1-2@m uk-grid-width-1-2 uk-grid-small" id="shopOrderNumber" style="margin-top:0px">
   {!if invoice_number}
-            {$LANG_SHOP['invoice_number']}:&nbsp;&nbsp;{invoice_number}<br />
+            <div>{$LANG_SHOP['invoice_number']}:</div><div>{invoice_number}</div>
   {!endif}
-            {$LANG_SHOP['order_number']}:&nbsp;&nbsp;{order_number}<br />
-            {$LANG_SHOP['order_date']}:&nbsp;&nbsp;<span class="tooltip" title="{order_date_tip}">{order_date}</span>
+            <div>{$LANG_SHOP['order_number']}</div><div>{order_number}</div>
+            <div>{$LANG_SHOP['order_date']}:</div><div class="tooltip" title="{order_date_tip}">{order_date}</div>
         </div>
 {!endif}
 
         <div class="cart">
             <div class="cart-items">
-                <div class="uk-grid uk-margin uk-hidden-small">
-                    <div class="uk-width-medium-3-6 aligncenter">{$LANG_SHOP['description']}</div>
-                    <div class="uk-width-medium-1-6 cart-item-price">{$LANG_SHOP['price']}</div>
-                    <div class="uk-width-medium-1-6 cart-item-quantity">{$LANG_SHOP['quantity']}</div>
-                    <div class="uk-width-medium-1-6 cart-item-total">{$LANG_SHOP['total']}</div>
+                <div uk-grid class="uk-grid uk-margin uk-hidden-small">
+                    <div class="uk-width-1-2@m uk-width-medium-3-6 aligncenter">{$LANG_SHOP['description']}</div>
+                    <div class="uk-width-1-6@m uk-width-medium-1-6 cart-item-price">{$LANG_SHOP['price']}</div>
+                    <div class="uk-width-1-6@m uk-width-medium-1-6 cart-item-quantity">{$LANG_SHOP['quantity']}</div>
+                    <div class="uk-width-1-6@m uk-width-medium-1-6 cart-item-total">{$LANG_SHOP['total']}</div>
                 </div>
 
 <!-- BEGIN ItemRow -->
@@ -76,7 +80,7 @@
                 <div class="cart-item">
 {!endif}
                     <div class="uk-grid">
-                        <div class="uk-width-1-1 uk-width-medium-1-2 cart-item-product">
+                        <div class="uk-width-1-1 uk-width-medium-1-2 uk-width-1-2@m cart-item-product">
                             <div class="cart-item-image">
 {!if embargoed}
                                 <a href="{del_item_url}">
@@ -91,7 +95,7 @@
                             </div>
                             <div class="cart-item-title">
 {!if item_link}
-                                <a href="{item_link}">{item_dscp}</a>
+                                <a href="{item_link}" title="{$LANG_SHOP['view_oi_as_ordered']}" class="tooltip">{item_dscp}</a>
 {!else}
                                 {item_dscp}
 {!endif}
@@ -103,17 +107,15 @@
                                 <br />{sku}
 {!endif}
                                 {item_options}
-{!if item_extras}
-                                <br />{item_extras}
-{!endif}
+                                {item_extras}
                             </div>
                         </div>
-                        <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-price">
+                        <div class="uk-width-1-2 uk-width-medium-1-6 uk-width-1-6@m cart-item-price">
                             {item_price}
                         </div>
-                        <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-quantity">{item_quantity}</div>
+                        <div class="uk-width-1-2 uk-width-medium-1-6 uk-width-1-6@m cart-item-quantity">{item_quantity}</div>
 
-                        <div class="uk-width-1-1 uk-width-medium-1-6 cart-item-total money">
+                        <div class="uk-width-1-1 uk-width-medium-1-6 uk-width-1-6@m cart-item-total money">
                             <div class="mobile-label">{$LANG_SHOP['total']}</div>{item_total}
                         </div>
                     </div>
@@ -148,7 +150,7 @@
                         ({ship_method})
   {!endif}
                     </div>
-                    <div id="shipping_cell" class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">{shipping}</div>
+                    <div id="shipping_cell" class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">{shipping_fmt}</div>
                 </div>
 {!endif}
 
@@ -208,10 +210,14 @@
         <span class="orderInstructions">{$LANG_SHOP['none']}</span>
 {!endif}
         <div id="orderPaymentMethod" style="margin-top:10px;">
+{!if pmt_dscp}
             <span><b>{$LANG_SHOP['pmt_method']}:</b> {pmt_dscp}</span><br />
+{!endif}
 {!if checkout}
-{!else}
+{!elseif num_payments}
             <span><b>{$LANG_SHOP['pmt_status']}:</b> {pmt_status}</span>
+{!else}
+            <span><b>{$LANG_SHOP['pmt_status']}:</b> <span class="uk-text-bold uk-text-danger">{pmt_status}</span></span>
 {!if pmt_btn}
             {pmt_btn}
 {!endif}
@@ -241,7 +247,6 @@
             <b>{$LANG_SHOP['notify_email']}:</b> {payer_email}
             </p>
         </div>
-        <hr />
         <div style="clear:both;">
 {!if checkout}
             <div id="orderPmtMethod">{pmt_logo}</div>
@@ -256,15 +261,17 @@
             <div style="clear:both;"></div>
 {!else}
   {!if ship_method}
-            <p>{$LANG_SHOP['ship_via']}: {ship_method}</p>
+            <p><b>{$LANG_SHOP['ship_via']}:</b> {ship_method}</p>
   {!endif}
   {!if is_admin}
             <p id="orderPurchaser">{$LANG_SHOP['purchaser']}: <a href="{site_url}/users.php?mode=profile&uid={purch_uid}">{purch_name} ({purch_uid})</a></p>
             <p>
+{!if 0}
             {$LANG_SHOP['pmt_total']}: {amt_paid_fmt}
     {!if is_paid}
             <i class="uk-icon uk-icon-check uk-icon-medium uk-text-success"></i>
     {!endif}
+{!endif}
             <form class="uk-form" action="{site_admin_url}/plugins/shop/index.php" method="post">
                 <input type="hidden" name="order_id" value="{order_number}" />
                 <input type="hidden" name="oldstatus" value="{oldstatus}" />
@@ -273,7 +280,7 @@
                     <option value="{stat_key}" {selected}>{stat_descr}</option>
 <!-- END StatusSelect -->
                 </select>
-                <input type="checkbox" name="notify" value="1" />Send update to buyer
+                <input type="checkbox" name="notify" value="1" />&nbsp;{$LANG_SHOP['notify_buyer']}
                 <br />
                 <textarea id="order_comment" name="comment" rows="3" cols="5" style="width:50%" placeholder="{$LANG_SHOP['comment']}"></textarea>
                 <br />

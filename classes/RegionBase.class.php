@@ -3,15 +3,16 @@
  * Base class for Regions, Countries and States.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2020-2021 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2020-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.4.2
  * @since       v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
+use glFusion\Database\Database;
 
 
 /**
@@ -44,14 +45,14 @@ class RegionBase
      * @param   integer $id         ID number of element to modify
      * @return  integer     New value, or old value upon failure
      */
-    public static function Toggle($oldvalue, $varname, $id)
+    public static function Toggle(int $oldvalue, string $varname, $id) : int
     {
         global $_TABLES;
 
-        if (is_array($id)) {
-            $id = implode(',', $id);
+        if (!is_array($id)) {
+            $id = array($id);
         }
-        $id = DB_escapeString($id);
+        $db = Database::getInstance();
         switch ($varname) {     // allow only valid field names
         case static::$KEY . '_enabled':
         case 'tax_shipping':
@@ -59,22 +60,24 @@ class RegionBase
             // Determing the new value (opposite the old)
             $oldvalue = $oldvalue == 1 ? 1 : 0;
             $newvalue = $oldvalue == 1 ? 0 : 1;
-
-            $sql = "UPDATE {$_TABLES[static::$TABLE]}
-                SET $varname = $newvalue
-                WHERE " . static::$KEY . "_id IN ($id)";
-            // Ignore SQL errors since varname is indeterminate
-            //echo $sql;die;
-            //COM_errorLog($sql);
-            DB_query($sql, 1);
-            if (DB_error()) {
-                SHOP_log("SQL error: $sql", SHOP_LOG_ERROR);
-                return $oldvalue;
-            } else {
+            $esc_varname = $db->conn->quoteIdentifier($varname);
+            $esc_keyname = $db->conn->quoteIdentifier(static::$KEY . '_id');
+            try {
+                $db->conn->executeStatement(
+                    "UPDATE {$_TABLES[static::$TABLE]}
+                    SET $esc_varname = ?
+                    WHERE $esc_keyname IN (?)",
+                    array($newvalue, $id),
+                    array(Database::INTEGER, Database::PARAM_INT_ARRAY)
+                );
                 Cache::clear('regions');
                 return $newvalue;
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                return $oldvalue;
             }
         }
+        return $oldvalue;
     }
 
 

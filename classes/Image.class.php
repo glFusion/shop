@@ -117,29 +117,33 @@ class Image extends UploadDownload
 
     /**
     * Seed the image cache with the product image thumbnails.
-    *
-    * @uses     LGLIB_ImageUrl()
-    * @return   string      Blank, error messages are now in parent::_errors
     */
-    protected function MakeThumbs()
+    protected function MakeThumbs() : void
     {
         $thumbsize = (int)Config::get('max_thumb_size');
         if ($thumbsize < 50) $thumbsize = 100;
 
         $filenames = $this->getFilenames();
         if (!is_array($filenames) || empty($filenames)) {
-            return '';
+            return;
         }
 
         foreach ($filenames as $filename) {
             $src = "{$this->pathImage}/{$filename}";
-            $url = LGLIB_ImageUrl($src, $thumbsize, $thumbsize, true);
+            $url = PLG_callFunctionForOnePlugin(
+                'LGLIB_ImageUrl',
+                array(
+                    1 => $src,
+                    2 => $thumbsize,
+                    3 => $thumbsize,
+                    4 => true,
+                )
+            );
             if (!empty($url)) {
                 $this->goodfiles[] = $filename;
             }
         }
-        return '';
-    }   // function MakeThumbs()
+    }
 
 
     /**
@@ -239,7 +243,14 @@ class Image extends UploadDownload
             'width'     => $width,
             'height'    => $height,
         );
-        $status = LGLIB_invokeService('lglib', 'imageurl', $args, $output, $svc_msg);
+        $status = PLG_callFunctionForOnePlugin(
+            'service_imageurl_lglib',
+            array(
+                1 => $args,
+                2 => &$output,
+                3 => &$svc_msg,
+            )
+        );
         if ($status == PLG_RET_OK) {
             return $output;
         } else {
@@ -249,4 +260,3 @@ class Image extends UploadDownload
 
 }
 
-?>

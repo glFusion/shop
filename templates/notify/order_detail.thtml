@@ -58,6 +58,12 @@
 </table>
 
 <p>
+  {$LANG_SHOP['buyer_email']}: {payer_email}
+</p>
+<p>
+{!if invoice_number}
+  {$LANG_SHOP['invoice_number']}:&nbsp;&nbsp;{invoice_number}<br />
+{!endif}
   {$LANG_SHOP['order_number']}:&nbsp;&nbsp;{order_id}<br />
   {$LANG_SHOP['order_date']}:&nbsp;&nbsp;{order_date}</span>
 </p>

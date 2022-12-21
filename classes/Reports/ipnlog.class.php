@@ -3,15 +3,17 @@
  * Order History Report.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.6.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop\Reports;
+use Shop\Models\Request;
+
 
 /**
  * Class for Order History Report.
@@ -48,7 +50,7 @@ class ipnlog extends \Shop\Report
     {
         $retval = '';
         $T = $this->getTemplate('config');
-        $gws = \Shop\Gateway::getAll();
+        $gws = \Shop\GatewayManager::getAll();
         $gateway = self::_getSessVar('gateway');
         $T->set_block('config', 'gw_opts', 'opt');
         foreach ($gws as $GW) {
@@ -73,7 +75,7 @@ class ipnlog extends \Shop\Report
     {
         global $_TABLES, $_CONF, $LANG_SHOP, $_SHOP_CONF;
 
-        $this->setParam('gateway', SHOP_getVar($_GET, 'gateway'));
+        $this->setParam('gateway', Request::getInstance()->getString('gateway'));
 
         $sql = "SELECT * FROM {$_TABLES['shop.ipnlog']} ";
 
@@ -235,6 +237,7 @@ class ipnlog extends \Shop\Report
                 'gateway'   => $A['gateway'],
                 'order_id'  => $A['order_id'],
                 'event'     => $A['event'],
+                'status_msg' => $A['status_msg'],
                  //'pmt_gross' => $vals['pmt_gross'],
                 //'verified'  => $vals['verified'],
                 //'pmt_status' => $vals['pmt_status'],

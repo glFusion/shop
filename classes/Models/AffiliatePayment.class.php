@@ -12,6 +12,8 @@
  * @filesource
  */
 namespace Shop\Models;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 use Shop\Currency;
 use Shop\Config;
 use Shop\Customer;
@@ -51,13 +53,23 @@ class AffiliatePayment
      */
     public function __construct($id = 0)
     {
+        global $_TABLES;
+
         if ($id > 0) {
             $this->aff_pmt_id = (int)$id;
-            $sql = "SELECT * FROM {$_TABLES['shop.affiliate_payments']}
-                WHERE aff_pmt_id = {$this->aff_pmt_id}";
-            $res = DB_query($sql);
-            if (DB_numRows($res) == 1) {
-                $A = DB_fetchArray($res, false);
+            $db = Database::getInstance();
+            try {
+                $A = $db->conn->executeQuery(
+                    "SELECT * FROM {$_TABLES['shop.affiliate_payments']}
+                    WHERE aff_pmt_id = ?",
+                    array($this->aff_pmt_id),
+                    array(Database::INTEGER)
+                )->fetchAssociative();
+            } catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $A = false;
+            }
+            if (is_array($A)) {
                 $this->setVars($A);
             }
         }
@@ -185,52 +197,52 @@ class AffiliatePayment
      *
      * @param   array   $uids   Array of user IDs to process
      */
-    public static function generate($uids=array())
+    public static function generate($uids=array()) : bool
     {
         global $_TABLES;
 
-        // Collect outstanding affiliate sales grouped by affiliate ID
+        $db = Database::getInstance();
+        $qb = $db->conn->createQueryBuilder();
 
         $max_date = new \Date('now');
         $max_date->sub(new \DateInterval('P' . Config::get('aff_delay_days') . 'D'));
 
         $min_pmt = (float)Config::get('aff_min_payment');
-        $statuses = OrderState::allAtLeast(Config::get('aff_min_ordstatus'));
-        if (!empty($statuses)) {
-            $statuses = "'" . implode("','", array_keys($statuses)) . "'";
-            $status_where = " AND o.status IN ($statuses)";
-        } else {
-            $status_where = '';
+        $statuses = OrderStatus::getAffiliateEligible();
+        if (empty($statuses)) {
+            Log::write('shop_system', Log::INFO, 'No order statuses are eligible for affiliate payments');
+            return false;
         }
+
         if (!empty($uids)) {
-            if (is_array($uids)) {
-                $uids = implode(',', $uids);
-                $uid_where = " AND aff_sale_uid IN ($uids) ";
-            } else {
-                $uid_where = " AND aff_sale_uid = $uids ";
-            }
-        } else {
-            $uid_where = '';
+            $qb->andWhere('s.aff_sale_uid IN (:uids)')
+               ->setParameter('uids', $uids, Database::PARAM_INT_ARRAY);
         }
-        $sql = "SELECT s.aff_sale_id, s.aff_sale_uid,
-            sum(si.aff_item_pmt) as pmt_total
-            FROM {$_TABLES['shop.affiliate_sales']} s
-            LEFT JOIN {$_TABLES['shop.affiliate_saleitems']} si
-                ON si.aff_sale_id = s.aff_sale_id
-            LEFT JOIN {$_TABLES['shop.orders']} o
-                ON o.order_id = s.aff_order_id
-            WHERE s.aff_pmt_id = 0
-            $uid_where
-            $status_where
-            AND s.aff_sale_date <= '$max_date'
-            GROUP BY s.aff_sale_id
-            ORDER BY s.aff_sale_uid ASC";
-        //echo $sql;die;
-        $res = DB_query($sql);
+        try {
+            $stmt = $qb->select('s.aff_sale_id', 's.aff_sale_uid', 'sum(si.aff_item_pmt) as pmt_total')
+                       ->from($_TABLES['shop.affiliate_sales'], 's')
+                       ->leftJoin('s', $_TABLES['shop.affiliate_saleitems'], 'si', 'si.aff_sale_id = s.aff_sale_id')
+                       ->leftJoin('s', $_TABLES['shop.orders'], 'o', 'o.order_id = s.aff_order_id')
+                       ->where('s.aff_pmt_id = 0')
+                       ->andWhere('s.aff_sale_date <= :max_date')
+                       ->andWhere('o.status IN (:statuses)')
+                       ->groupBy('s.aff_sale_id')
+                       ->orderBy('s.aff_sale_uid', 'ASC')
+                       ->setParameter('max_date', $max_date->toMySQL(), Database::STRING)
+                       ->setParameter('statuses', array_keys($statuses), Database::PARAM_STR_ARRAY)
+                       ->execute();
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $stmt = false;
+        }
+        if (!$stmt) {
+            return false;
+        }
+
         $cbrk = -1;
         $pmt_total = 0;
         $sale_ids = array();
-        while ($A = DB_fetchArray($res, false)) {
+        while ($A = $stmt->fetchAssociative()) {
             if ($A['aff_sale_uid'] != $cbrk) {
                 // Control-break reached. If this is not the first time through
                 // the loop, create the payment for the current affiliate
@@ -268,6 +280,7 @@ class AffiliatePayment
             }
 
         }
+        return true;
     }
 
 
@@ -280,24 +293,55 @@ class AffiliatePayment
     {
         global $_TABLES;
 
+        $db = Database::getInstance();
+
         if ($this->aff_pmt_id == 0) {
-            $sql1 = "INSERT INTO {$_TABLES['shop.affiliate_payments']} SET ";
-            $sql3 = '';
+            try {
+                $db->conn->insert(
+                    $_TABLES['shop.affiliate_payments'],
+                    array(
+                        'aff_pmt_uid' => $this->aff_pmt_uid,
+                        'aff_pmt_amount' => $this->aff_pmt_amount,
+                        'aff_pmt_date' => $this->PmtDate->toMySQL(),
+                        'aff_pmt_method' => $this->aff_pmt_method,
+                    ),
+                    array(
+                        Database::INTEGER,
+                        Database::STRING,
+                        Database::STRING,
+                        Database::STRING,
+                    )
+                );
+                $this->withPmtId($db->conn->lastInsertId());
+            } catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                return false;
+            }
         } else {
-            $sql1 = "UPDATE {$_TABLES['shop.affiliate_payments']} SET ";
-            $sql3 = " WHERE aff_pmt_id = {$this->aff_pmt_id}";
+            try {
+                $db->conn->update(
+                    $_TABLES['shop.affiliate_payments'],
+                    array(
+                        'aff_pmt_uid' => $this->aff_pmt_uid,
+                        'aff_pmt_amount' => $this->aff_pmt_amount,
+                        'aff_pmt_date' => $this->PmtDate->toMySQL(),
+                        'aff_pmt_method' => $this->aff_pmt_method,
+                    ),
+                    array('aff_pmt_id' => $this->aff_pmt_id),
+                    array(
+                        Database::INTEGER,
+                        Database::STRING,
+                        Database::STRING,
+                        Database::STRING,
+                        Database::INTEGER,
+                    )
+                );
+            } catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                return false;
+            }
         }
-        $sql2 = "aff_pmt_uid = {$this->aff_pmt_uid},
-            aff_pmt_amount = {$this->aff_pmt_amount},
-            aff_pmt_date = '" . $this->PmtDate->toMySQL() . "',
-            aff_pmt_method = '" . DB_escapeString($this->aff_pmt_method) . "'";
-        $sql = $sql1 . $sql2 . $sql3;
-        //echo $sql;die;
-        $res = DB_query($sql, 1);
-        if ($this->aff_pmt_id == 0) {
-            $this->withPmtId(DB_insertID());
-        }
-        return DB_error() ? false : true;
+        return true;
     }
 
 
@@ -308,17 +352,28 @@ class AffiliatePayment
     {
         global $_TABLES;
 
-        $sql = "SELECT p.*, u.fullname, u.email
-            FROM {$_TABLES['shop.affiliate_payments']} p
-            LEFT JOIN {$_TABLES['users']} u
-                ON u.uid = p.aff_pmt_uid
-            WHERE aff_pmt_txn_id = ''
-            ORDER BY aff_pmt_method ASC";
-        //echo $sql;die;
+        $db = Database::getInstance();
+        try {
+            $stmt = $db->conn->executeQuery(
+                "SELECT p.*, u.fullname, u.email
+                FROM {$_TABLES['shop.affiliate_payments']} p
+                LEFT JOIN {$_TABLES['users']} u
+                    ON u.uid = p.aff_pmt_uid
+                WHERE aff_pmt_txn_id = ''
+                ORDER BY aff_pmt_method ASC"
+            );
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $stmt = false;
+        }
+        if ($stmt) {
+            return;
+        }
+
         $res = DB_query($sql);
-        $cbrk = '';
+        $cbrk = 0;
         $Payouts = array();
-        while ($A = DB_fetchArray($res, false)) {
+        while ($A = $stmt->fetchAssociative()) {
             if ($A['aff_pmt_method'] != $cbrk) {
                 // Control-break reached. If this is not the first time through
                 // the loop, create the payment for the current affiliate
@@ -345,25 +400,26 @@ class AffiliatePayment
             ));
             $Payouts[$A['aff_pmt_id']] = $Payout;
         }
-        if (!empty($Payouts)) {
-            $amount_str = Currency::getInstance(Config::get('currency'))
-                ->Format($Payout['amount'], true);
-            $PayoutHeader = new PayoutHeader(array(
-                'email_subject' => 'Your Affiliate Payment',
-                'email_message' => 'Your affiliate payment of ' . $amount_str . ' has been paid out.',
-            ) );
+        if (!empty($Payouts) && $cbrk > 0) {
             // Dropped out of the loop, ensure that the final payout batch is sent.
-            if ($cbrk != '') {
-                $GW = \Shop\Gateway::getInstance($cbrk);
-                if ($GW->getName() != '') {     // gateway is valid
-                    $GW->sendPayouts($PayoutHeader, $Payouts);
-                }
+            $GW = \Shop\Gateway::getInstance($cbrk);
+            if ($GW->getName() != '') {     // gateway is valid
+                $GW->sendPayouts($Payouts);
             }
-            foreach ($Payouts as $id=>$Payout) {
-                if ($Payout['txn_id'] != '') {
-                    DB_query("UPDATE {$_TABLES['shop.affiliate_payments']}
-                        SET aff_pmt_txn_id = '" . DB_escapeString($Payout['txn_id']) . "'
-                        WHERE aff_pmt_id = $id");
+        }
+
+        // Now update the affiliate payment table to note the transaction ID.
+        foreach ($Payouts as $id=>$Payout) {
+            if ($Payout['txn_id'] != '') {
+                try {
+                    $db->conn->update(
+                        $_TABLES['shop.affiliate_payments'],
+                        array('aff_pmt_txn_id' => $Payout['txn_id']),
+                        array('aff_pmt_id' => $id),
+                        array(Database::STRING, Database::INTEGER)
+                    );
+                } catch (\Exception $e) {
+                    Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 }
             }
         }

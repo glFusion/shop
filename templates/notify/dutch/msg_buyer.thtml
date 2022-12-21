@@ -1,3 +1,4 @@
+{header}
 <p>Bedankt voor uw aankoop bij {site_name}. Details van uw aankoop volgen:</p>
 <p>
 {purchase_details}
@@ -36,6 +37,5 @@ Je hebt een resterend saldo van de cadeaubon van {gc_bal_fmt}.
 {!endif}
 <p>
 Bedankt,<br />
-{site_name}<br />
-{site_url}
+{footer}
 </p>

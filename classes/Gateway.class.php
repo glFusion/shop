@@ -14,11 +14,17 @@
  */
 namespace Shop;
 use Shop\Config;
-use Shop\Models\OrderState;
+use Shop\Models\OrderStatus;
 use Shop\Models\ProductType;
-use Shop\Models\CustomInfo;;
-use Shop\Models\ButtonKey;;
+use Shop\Models\CustomInfo;
+use Shop\Models\ButtonKey;
 use Shop\Models\PayoutHeader;
+use Shop\Models\GatewayInfo;
+use Shop\Models\DataArray;
+use Shop\Cache;
+use glFusion\FileSystem;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 
 
 /**
@@ -30,10 +36,6 @@ class Gateway
 {
     use \Shop\Traits\DBO;        // Import database operations
 
-    /** Gateway version.
-     * @const string */
-    public const VERSION = '1.3.0';
-
     /** Gateway logo width, in pixels.
      * @const integer */
     protected const LOGO_WIDTH = 240;
@@ -42,9 +44,13 @@ class Gateway
      * @const integer */
     protected const LOGO_HEIGHT = 40;
 
+    /** Gateway information from the JSON file.
+     * @var GatewayInfo */
+    protected $GatetwayInfo = NULL;
+
     /** Table name, used by DBO class.
      * @var string */
-    protected static $TABLE = 'shop.gateways';
+    public static $TABLE = 'shop.gateways';
 
     /** Items on this order.
      * @var array */
@@ -96,10 +102,6 @@ class Gateway
      * Other installable gateways will have their own versions.
      * @var string */
     protected $version = '';
-
-    /** Indicator of a bundled gateway, vs an installable one.
-     * @var integer */
-    protected $bundled = 0;
 
     /** Environment configuration for prod or test.
      * Also contains global settings. This is a subset of `$config`.
@@ -179,13 +181,16 @@ class Gateway
      */
     function __construct($A = array())
     {
-        global $_SHOP_CONF, $_TABLES, $_USER;
+        global $_TABLES, $_USER;
 
+        $this->GatewayInfo = $this->readJSON();
         $this->custom = new CustomInfo;
         $this->properties = array();
         $this->getIpnUrl();     // construct the IPN processor URL
-        $this->currency_code = empty($_SHOP_CONF['currency']) ? 'USD' :
-            $_SHOP_CONF['currency'];
+        $this->currency_code = Config::get('currency');
+        if (empty($this->currency_code)) {
+            $this->currency_code = 'USD';
+        }
 
         // Set the provider name if not supplied by the gateway
         if (empty($this->gw_provider)) {
@@ -205,19 +210,27 @@ class Gateway
         }
 
         if (empty($A)) {
-            $sql = "SELECT *
-                FROM {$_TABLES['shop.gateways']}
-                WHERE id = '" . DB_escapeString($this->gw_name) . "'";
-            $res = DB_query($sql);
-            if ($res) $A = DB_fetchArray($res, false);
+            $db = Database::getInstance();
+            try {
+                $A = $db->conn->executeQuery(
+                    "SELECT * FROM {$_TABLES['shop.gateways']}
+                    WHERE id = ?",
+                    array($this->gw_name),
+                    array(Database::STRING)
+                )->fetchAssociative();
+            } catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $A = false;
+            }
         }
 
         if (!empty($A)) {
-            $this->orderby = (int)$A['orderby'];
-            $this->enabled = (int)$A['enabled'];
-            $this->grp_access = SHOP_getVar($A, 'grp_access', 'integer', 2);
-            $this->version = SHOP_getVar($A, 'version');
-            $services = @unserialize($A['services']);
+            $A = new DataArray($A);
+            $this->orderby = $A->getInt('orderby');
+            $this->enabled = $A->getInt('enabled');
+            $this->grp_access = $A->getInt('grp_access', 2);
+            $this->version = $A->getString('version');
+            $services = @unserialize($A->getString('services'));
             if ($services) {
                 foreach ($services as $name=>$status) {
                     if (isset($this->services[$name])) {
@@ -225,7 +238,7 @@ class Gateway
                     }
                 }
             }
-            $cfg_arr = @unserialize($A['config']);
+            $cfg_arr = @unserialize($A->getString('config'));
             if (!empty($cfg_arr)) {
                 foreach ($cfg_arr as $env=>$props) {
                     if (!is_array($props)) {
@@ -265,7 +278,7 @@ class Gateway
 
     /**
      * Magic getter function.
-     * Returns the requeste value if set, otherwise returns NULL.
+     * Returns the requested value if set, otherwise returns NULL.
      * Note that derived classes must define their own __set() function.
      *
      * @param   string  $key    Name of property to return
@@ -278,11 +291,12 @@ class Gateway
         case 'pay_now':
         case 'donation':
         case 'subscribe':
-            if (isset($this->services[$key])) {
+            return $this->services->getInt($key, NULL);
+            /*if (isset($this->services[$key])) {
                 return $this->services[$key];
             } else {
                 return NULL;
-            }
+            }*/
             break;
         default:
             if (isset($this->properties[$key])) {
@@ -363,20 +377,25 @@ class Gateway
      * @param   string  $btn_key    Button Key, btn_type + price
      * @return  string      Button code, or empty if not available
      */
-    protected function _ReadButton($P, $btn_key)
+    protected function _ReadButton(object $P, string $btn_key) : string
     {
         global $_TABLES;
 
-        $pi_name = DB_escapeString($P->getPluginName());
-        $item_id = DB_escapeString($P->getItemID());
         $BtnKey = new ButtonKey(array(
             'btn_type' => $btn_key,
             'price' => $P->getPrice(),
         ) );
         $btn_key = DB_escapeString((string)$BtnKey);
-        $btn  = DB_getItem($_TABLES['shop.buttons'], 'button',
-                "pi_name = '{$pi_name}' AND item_id = '{$item_id}' AND
-                gw_name = '{$this->gw_name}' AND btn_key = '{$btn_key}'"
+        $db = Database::getInstance();
+        $btn = $db->getItem(
+            $_TABLES['shop.buttons'],
+            'button',
+            array(
+                'pi_name' => $pi_name,
+                'item_id' => $item_id,
+                'gw_name' => $this->gw_name,
+                'btn_key' => $btn_key,
+            )
         );
         return $btn;
     }
@@ -410,7 +429,7 @@ class Gateway
             ON DUPLICATE KEY UPDATE
                 button = '{$btn_value}'";
         //echo $sql;die;
-        //SHOP_log($sql, SHOP_LOG_DEBUG);
+        //Log::write('shop_system', Log::DEBUG, $sql);
         DB_query($sql);
     }
 
@@ -419,18 +438,26 @@ class Gateway
      * Save the gateway config variables.
      *
      * @uses    ReOrder()
-     * @param   array   $A      Array of config items, e.g. $_POST
+     * @param   DataArray   $A  Array of config items, e.g. $_POST
      * @return  boolean         True if saved successfully, False if not
      */
-    public function saveConfig($A = NULL)
+    public function saveConfig(?DataArray $A = NULL) : bool
     {
         global $_TABLES;
 
-        if (is_array($A)) {
-            $this->enabled = isset($A['enabled']) ? 1 : 0;
-            $this->orderby = (int)$A['orderby'];
-            $this->grp_access = SHOP_getVar($A, 'grp_access', 'integer', 2);
-            $services = SHOP_getVar($A, 'service', 'array');
+        if (!empty($A)) {
+            $this->enabled = $A->getInt('enabled');
+            $this->orderby = $A->getInt('orderby');
+            $this->grp_access = $A->getInt('grp_access', 2);
+            $services = $A->getArray('service');
+            foreach ($this->services as $name=>$enabled) {
+                if (array_key_exists($name, $services)) {
+                    $this->services[$name] = (int)$services[$name];
+                } else {
+                    $this->services[$name] = 0;
+                }
+            }
+
             // Only update config if provided from form
             foreach ($this->cfgFields as $env=>$flds) {
                 foreach ($flds as $name=>$type) {
@@ -451,30 +478,40 @@ class Gateway
         }
 
         $config = @serialize($this->config);
-        if (!$config) return false;
-
-        $config = DB_escapeString($config);
-        $services = DB_escapeString(@serialize($services));
-        $id = DB_escapeString($this->gw_name);
-
-        $sql = "UPDATE {$_TABLES['shop.gateways']} SET
-                config = '$config',
-                services = '$services',
-                orderby = '{$this->orderby}',
-                enabled = '{$this->enabled}',
-                grp_access = '{$this->grp_access}'
-                WHERE id='$id'";
-        //echo $sql;die;
-        //SHOP_log($sql, SHOP_LOG_DEBUG);
-        DB_query($sql);
-        $this->clearButtonCache();   // delete all buttons for this gateway
-        if (DB_error()) {
+        $services = @serialize($this->services);
+        if (!$config || !$services) {
             return false;
-        } else {
+        }
+
+        $this->clearButtonCache();   // delete all buttons for this gateway
+        $db = Database::getInstance();
+        try {
+            $db->conn->update(
+                $_TABLES['shop.gateways'],
+                array(
+                    'config' => $config,
+                    'services' => $services,
+                    'orderby' => $this->orderby,
+                    'enabled' => $this->enabled,
+                    'grp_access' => $this->grp_access,
+                ),
+                array('id' => $this->gw_name),
+                array(
+                    Database::STRING,
+                    Database::STRING,
+                    Database::INTEGER,
+                    Database::INTEGER,
+                    Database::INTEGER,
+                    Database::STRING,
+                )
+            );
             $this->_postConfigSave();   // Run function for further setup
-            Cache::clear('gateways');
+            Cache::clear(self::$TABLE);
             self::ReOrder();
             return true;
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return false;
         }
     }
 
@@ -491,7 +528,7 @@ class Gateway
     {
         $newval = self::_toggle($oldvalue, $varname, $id);
         if ($newval != $oldvalue) {
-            Cache::clear('gateways');
+            Cache::clear(self::$TABLE);
         }
         return $newval;
     }
@@ -546,7 +583,16 @@ class Gateway
     {
         global $_TABLES;
 
-        DB_delete($_TABLES['shop.buttons'], 'gw_name', $this->gw_name);
+        $db = Database::getInstance();
+        try {
+            $db->conn->delete(
+                $_TABLES['shop.buttons'],
+                array('gw_name' => $this->gw_name),
+                array(Database::STRING)
+            );
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
     }
 
 
@@ -557,12 +603,12 @@ class Gateway
      *
      * @return  boolean     True on success, False on failure
      */
-    public function Install()
+    public function Install() : bool
     {
         global $_TABLES;
 
         // Only install the gateway if it isn't already installed
-        $installed = self::getAll(false);
+        $installed = GatewayManager::getAll(false);
         if (!array_key_exists($this->gw_name, $installed)) {
             if (is_array($this->config)) {
                 $config = @serialize($this->config);
@@ -574,20 +620,39 @@ class Gateway
             } else {
                 $services = '';
             }
-            $sql = "INSERT INTO {$_TABLES['shop.gateways']} SET
-                    id = '" . DB_escapeString($this->gw_name) . "',
-                    orderby = 990,
-                    enabled = {$this->isEnabled()},
-                    description = '" . DB_escapeString($this->gw_desc) . "',
-                    config = '" . DB_escapeString($config) . "',
-                    services = '" . DB_escapeString($services) . "',
-                    version = '" . DB_escapeString($this->getCodeVersion()) . "',
-                    grp_access = {$this->grp_access}";
-            DB_query($sql);
-            Cache::clear('gateways');
-            return DB_error() ? false : true;
+            $db = Database::getInstance();
+            try {
+                $db->conn->insert(
+                    $_TABLES['shop.gateways'],
+                    array(
+                        'id' => $this->gw_name,
+                        'orderby' => 990,
+                        'enabled' => $this->isEnabled(),
+                        'description' => $this->gw_desc,
+                        'config' => $config,
+                        'services' => $services,
+                        'version' => $this->getCodeVersion(),
+                        'grp_access' => $this->grp_access,
+                    ),
+                    array(
+                        Database::STRING,
+                        Database::INTEGER,
+                        Database::INTEGER,
+                        Database::STRING,
+                        Database::STRING,
+                        Database::STRING,
+                        Database::STRING,
+                        Database::INTEGER,
+                    )
+                );
+                self::ReOrder();
+                Cache::clear(self::$TABLE);
+                return true;
+            } catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                return false;
+            }
         }
-        return false;
     }
 
 
@@ -595,12 +660,21 @@ class Gateway
      * Remove the current gateway.
      * This removes all of the configuration for the gateway, but not files.
      */
-    public static function Remove($gw_name)
+    public static function Remove(string $gw_name) : void
     {
         global $_TABLES;
 
-        DB_delete($_TABLES['shop.gateways'], 'id', $gw_name);
-        Cache::clear('gateways');
+        $db = Database::getInstance();
+        try {
+            $db->conn->delete(
+                $_TABLES[self::$TABLE],
+                array('id' => $gw_name),
+                array(Database::STRING)
+            );
+            Cache::clear(self::$TABLE);
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
     }
 
 
@@ -640,9 +714,9 @@ class Gateway
      * @param   string  $btn_type   Button type to check
      * @return  boolean             True if the button is supported
      */
-    public function Supports($btn_type)
+    public function Supports(string $btn_type) : bool
     {
-        $supports = SHOP_getVar($this->services, $btn_type, 'integer', 0);
+        $supports = isset($this->services[$btn_type]) && $this->services[$btn_type];
         return $supports && $this->hasValidConfig();
     }
 
@@ -705,161 +779,11 @@ class Gateway
     public function getPaidStatus($Order)
     {
         if ($Order->hasPhysical()) {
-            $retval = OrderState::PROCESSING;
+            $retval = OrderStatus::PROCESSING;
         } else {
-            $retval = OrderState::CLOSED;
+            $retval = OrderStatus::CLOSED;
         }
         return $retval;
-    }
-
-
-    /**
-     * Processes the purchase, for purchases made without an IPN message.
-     *
-     * @param  array   $vals   Submitted values, e.g. $_POST
-     */
-    public function handlePurchase($vals = array())
-    {
-        global $_TABLES, $_CONF, $_SHOP_CONF;
-
-        COM_errorLog('Gateway::handlePurchase deprecated');
-        return;
-
-        if (!empty($vals['cart_id'])) {
-            $cart = Cart::getInstance($vals['cart_id']);
-            if (!$cart->hasItems()) return; // shouldn't be empty
-            $items = $cart->getItems();
-        } else {
-            $cart = new Cart();
-        }
-
-        // Create an order record to get the order ID
-        $Order = $this->createOrder($vals, $cart);
-        $db_order_id = DB_escapeString($Order->getOrderID());
-
-        $prod_types = 0;
-
-        // For each item purchased, record purchase in purchase table
-        foreach ($items as $id=>$item) {
-            list($item_number, $item_opts) = SHOP_explode_opts($id, true);
-
-            // If the item number is numeric, assume it's an
-            // inventory item.  Otherwise, it should be a plugin-supplied
-            // item with the item number like pi_name:item_number:options
-            if (SHOP_is_plugin_item($item_number)) {
-                SHOP_log("Plugin item " . $item_number, SHOP_LOG_DEBUG);
-
-                // Initialize item info array to be used later
-                $A = array();
-
-                // Split the item number into component parts.  It could
-                // be just a single string, depending on the plugin's needs.
-                $pi_info = explode(':', $item['item_number']);
-                SHOP_log('Paymentgw::handlePurchase() pi_info: ' . print_r($pi_info,true), SHOP_LOG_DEBUG);
-
-                $status = LGLIB_invokeService($pi_info[0], 'productinfo',
-                        array($item_number, $item_opts),
-                        $product_info, $svc_msg);
-                if ($status != PLG_RET_OK) {
-                    $product_info = array();
-                }
-
-                if (!empty($product_info)) {
-                    $items[$id]['name'] = $product_info['name'];
-                }
-                SHOP_log("Paymentgw::handlePurchase() Got name " . $items[$id]['name'], SHOP_LOG_DEBUG);
-                $vars = array(
-                        'item' => $item,
-                        'ipn_data' => array(),
-                );
-                $status = LGLIB_invokeService(
-                    $pi_info[0],
-                    'handlePurchase',
-                    $vars,
-                    $A,
-                    $svc_msg
-                );
-                if ($status != PLG_RET_OK) {
-                    $A = array();
-                }
-
-                // Mark what type of product this is
-                $prod_types |= ProductType::VIRTUAL;
-
-            } else {
-                SHOP_log("Shop item " . $item_number, SHOP_LOG_DEBUG);
-                $P = Product::getByID($item_number);
-                $A = array(
-                    'name' => $P->getName(),
-                    'short_description' => $P->getDscp(),
-                    'expiration' => $P->getExpiration(),
-                    'prod_type' => $P->getProductType(),
-                    'file' => $P->getFilename(),
-                    'price' => $item['price'],
-                );
-
-                if (!empty($item_opts)) {
-                    $opts = explode(',', $itemopts);
-                    $opt_str = $P->getOptionDesc($opts);
-                    if (!empty($opt_str)) {
-                        $A['short_description'] .= " ($opt_str)";
-                    }
-                    $item_number .= '|' . $item_opts;
-                }
-
-                // Mark what type of product this is
-                $prod_types |= $P->getProductType();
-            }
-
-            // An invalid item number, or nothing returned for a plugin
-            if (empty($A)) {
-                continue;
-            }
-
-            // If it's a downloadable item, then get the full path to the file.
-            // TODO: pp_data isn't available here, should be from $vals?
-            if (!empty($A['file'])) {
-                $this->items[$id]['file'] = $_SHOP_CONF['download_path'] . $A['file'];
-                $token_base = $this->pp_data['txn_id'] . time() . rand(0,99);
-                $token = md5($token_base);
-                $this->items[$id]['token'] = $token;
-            } else {
-                $token = '';
-            }
-            $items[$id]['prod_type'] = $A['prod_type'];
-
-            // If a custom name was supplied by the gateway's IPN processor,
-            // then use that.  Otherwise, plug in the name from inventory or
-            // the plugin, for the notification email.
-            if (empty($item['name'])) {
-                $items[$id]['name'] = $A['short_description'];
-            }
-
-            // Add the purchase to the shop purchase table
-            $uid = isset($vals['uid']) ? (int)$vals['uid'] : $_USER['uid'];
-
-            $sql = "INSERT INTO {$_TABLES['shop.orderitems']} SET
-                        order_id = '{$db_order_id}',
-                        product_id = '{$item_number}',
-                        description = '{$items[$id]['name']}',
-                        quantity = '{$item['quantity']}',
-                        txn_type = '{$this->gw_name}',
-                        txn_id = '',
-                        status = 'complete',
-                        token = '$token',
-                        price = " . (float)$item['price'] . ",
-                        options = '" . DB_escapeString($item_opts) . "'";
-
-            // add an expiration date if appropriate
-            if (is_numeric($A['expiration']) && $A['expiration'] > 0) {
-                $sql .= ", expiration = DATE_ADD('" . SHOP_now()->toMySQL() .
-                        "', INTERVAL {$A['expiration']} DAY)";
-            }
-            //echo $sql;die;
-            SHOP_log($sql, SHOP_LOG_DEBUG);
-            DB_query($sql);
-
-        }   // foreach item
     }
 
 
@@ -930,7 +854,7 @@ class Gateway
      * @param   object  $P      Instance of a Product object for the product
      * @return  string          Complete HTML for the "Buy Now"-type button
      */
-    public function ProductButton($P)
+    public function ProductButton(Product $P, ?float $price=NULL) : string
     {
         return '';
     }
@@ -944,7 +868,7 @@ class Gateway
      */
     public function checkoutButton($cart, $text='')
     {
-        global $_SHOP_CONF, $_USER, $LANG_SHOP;
+        global $_USER, $LANG_SHOP;
 
         if (!$this->Supports('checkout')) return '';
 
@@ -1158,7 +1082,7 @@ class Gateway
      */
     public function Configure()
     {
-        global $_CONF, $LANG_SHOP, $_SHOP_CONF, $_TABLES;
+        global $_CONF, $LANG_SHOP, $_TABLES;
 
         $T = new Template;
         $T->set_file(array(
@@ -1187,8 +1111,8 @@ class Gateway
                 $this->grp_access
             ),
             'inst_version'  => $this->version,
-            'code_version'  => static::VERSION,
-            'need_upgrade'  => !COM_checkVersion($this->version, static::VERSION),
+            'code_version'  => $this->getCodeVersion(),
+            'need_upgrade'  => !COM_checkVersion($this->version, $this->getCodeVersion()),
         ), false, false);
 
         foreach ($this->cfgFields as $env=>$flds) {
@@ -1240,7 +1164,7 @@ class Gateway
             $fld_name = "{$name}[{$env}]";
             switch ($type) {
             case 'checkbox':
-                $field = Field::checkbox(array(
+                $field = FieldList::checkbox(array(
                     'name' => $fld_name,
                     'checked' => (isset($this->config[$env][$name]) &&
                         $this->config[$env][$name] == 1),
@@ -1255,21 +1179,36 @@ class Gateway
                         'selected' => $opt['selected'],
                     );
                 }
-                $field = Field::select(array(
+                $field = FieldList::select(array(
                     'name' => $fld_name,
                     'options' => $options,
                 ) );
                 break;
             default:
-                if (isset($this->config[$env][$name])) {
-                    $val = $this->config[$env][$name];
+                if (is_array($type)) {
+                    // Create a selection of the options available
+                    $options = array();
+                    foreach ($type as $value) {
+                        $options[$value] = array(
+                            'value' => $value,
+                            'selected' => $this->config[$env][$name] == $value,
+                        );
+                    }
+                    $field = FieldList::select(array(
+                        'name' => $fld_name,
+                        'options' => $options,
+                    ) );
                 } else {
-                    $val = '';
+                    if (isset($this->config[$env][$name])) {
+                        $val = $this->config[$env][$name];
+                    } else {
+                        $val = '';
+                    }
+                    $field = FieldList::text(array(
+                        'name' => $fld_name,
+                        'value' => $val,
+                    ) );
                 }
-                $field = Field::text(array(
-                    'name' => $fld_name,
-                    'value' => $val,
-                ) );
                 break;
             }
             $fields[$name] = array(
@@ -1311,12 +1250,12 @@ class Gateway
      */
     public static function getInstance($gw_name, $A=array())
     {
-        global $_TABLES, $_SHOP_CONF;
+        global $_TABLES;
 
         static $gateways = NULL;
         if ($gateways === NULL) {
-            // Load the gateeways once
-            $gateways = self::getAll(false);
+            // Load the gateways once
+            $gateways = GatewayManager::getAll(false);
         }
         if (!array_key_exists($gw_name, $gateways)) {
             $gateways[$gw_name] = new self;
@@ -1332,7 +1271,7 @@ class Gateway
      */
     public static function getEnabled()
     {
-        return self::getAll(true);
+        return GatewayManager::getAll(true);
     }
 
 
@@ -1342,9 +1281,9 @@ class Gateway
      * @param   boolean $enabled    True to get only enabled gateways
      * @return  array       Array of gateways, enabled or all
      */
-    public static function getAll($enabled = false)
+    public static function XXgetAll($enabled = false)
     {
-        global $_TABLES, $_SHOP_CONF;
+        global $_TABLES;
 
         $gateways = array();
         $key = $enabled ? 1 : 0;
@@ -1354,15 +1293,23 @@ class Gateway
         if ($tmp === NULL) {
             $tmp = array();
             // Load the gateways
+            $db = Database::getInstance();
             $sql = "SELECT * FROM {$_TABLES['shop.gateways']}";
             // If not loading all gateways, get just then enabled ones
             if ($enabled) $sql .= ' WHERE enabled=1';
             $sql .= ' ORDER BY orderby';
-            $res = DB_query($sql);
-            while ($A = DB_fetchArray($res, false)) {
-                $tmp[] = $A;
+            try {
+                $data = $db->conn->executeQuery($sql)->fetchAllAssociative();
+            } catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $data = false;
             }
-            Cache::set($cache_key, $tmp, 'gateways');
+            if (is_array($data)) {
+                foreach ($data as $A) {
+                    $tmp[] = $A;
+                }
+            }
+            Cache::set($cache_key, $tmp, self::$TABLE);
         }
         // For each available gateway, load its class file and add it
         // to the static array. Check that a valid object is
@@ -1525,64 +1472,6 @@ class Gateway
 
 
     /**
-     * Get an array of uninstalled gateways for the admin list.
-     *
-     * @param   array   $data_arr   Reference to data array
-     */
-    private static function getUninstalled(&$data_arr)
-    {
-        global $LANG32;
-
-        $installed = self::getAll(false);
-        $base_path = __DIR__ . '/Gateways';
-        $dirs = scandir($base_path);
-        if (is_array($dirs)) {
-            foreach ($dirs as $dir) {
-                if (
-                    $dir !== '.' && $dir !== '..' &&
-                    $dir[0] != '_' &&       // skip internal utility gateways
-                    is_dir("{$base_path}/{$dir}") &&
-                    is_file("{$base_path}/{$dir}/Gateway.class.php") &&
-                    !array_key_exists($dir, $installed)
-                ) {
-                    $clsfile = 'Shop\\Gateways\\' . $dir . '\\Gateway';
-                    $gw = new $clsfile;
-                    if (is_object($gw)) {
-                        $data_arr[] = array(
-                            'id'    => $gw->getName(),
-                            'description' => $gw->getDscp(),
-                            'enabled' => 'na',
-                            'orderby' => 999,
-                        );
-                    }
-                }
-            }
-        }
-        /*$files = glob(__DIR__ . '/Gateways/*');
-        if (is_array($files)) {
-            foreach ($files as $fullpath) {
-                $parts = explode('/', $fullpath);
-                list($class,$x1,$x2) = explode('.', $parts[count($parts)-1]);
-                //if ($class[0] == '_') continue;     // special internal gateway
-                if (array_key_exists($class, $installed)) {
-                    continue; // already installed
-                }
-                $clsfile = 'Shop\\Gateways\\' . $class;
-                $gw = new $clsfile;
-                if (is_object($gw)) {
-                    $data_arr[] = array(
-                        'id'    => $gw->getName(),
-                        'description' => $gw->getDscp(),
-                        'enabled' => 'na',
-                        'orderby' => 999,
-                    );
-                }
-            }
-        }*/
-    }
-
-
-    /**
      * Get the form method to use with the final checkout button.
      * Return POST by default.
      *
@@ -1682,13 +1571,15 @@ class Gateway
         if (!empty($url['query'])) {
             $ipn_url .= '?' . $url['query'];
         }
+        $db = Database::getInstance();
         $whitelisted = 0;
         if (function_exists('plugin_chkversion_bad_behavior2')) {
             try {
-                $whitelisted = DB_count(
+                $whitelisted = $db->getCount(
                     $_TABLES['bad_behavior2_whitelist'],
                     array('type', 'item'),
-                    array('url', $url['path'])
+                    array('url', $url['path']),
+                    array(Database::STRING, Database::STRING)
                 );
             } catch (\Exception $e) {
                 // Do nothing, $whitelisted is already zero
@@ -1702,253 +1593,7 @@ class Gateway
             $cls = 'danger';
             $retval .= '<br />' . sprintf($LANG_SHOP_HELP['gw_bb2_wl_needed'], $url['path']);
         }
-        return '<span class="uk-text-' . $cls . '">' . $retval . '</span>';
-    }
-
-
-    /**
-     * Get all the installed gateways for the admin list.
-     *
-     * @param   array   $data_arr   Reference to data array
-     */
-    private static function getInstalled(&$data_arr)
-    {
-        global $_TABLES;
-
-        $sql = "SELECT *, g.grp_name
-            FROM {$_TABLES['shop.gateways']} gw
-            LEFT JOIN {$_TABLES['groups']} g
-                ON g.grp_id = gw.grp_access";
-        $res = DB_query($sql);
-        while ($A = DB_fetchArray($res, false)) {
-            $gw = self::create($A['id']);
-            if ($gw) {
-                $data_arr[] = array(
-                    'id'    => $A['id'],
-                    'orderby' => $A['orderby'],
-                    'enabled' => $A['enabled'],
-                    'description' => $A['description'],
-                    'grp_name' => $A['grp_name'],
-                    'version' => $A['version'],
-                    'code_version' => $gw->getCodeVersion(),
-                );
-            }
-        }
-    }
-
-
-    /**
-     * Payment Gateway Admin View.
-     *
-     * @return  string      HTML for the gateway listing
-     */
-    public static function adminList()
-    {
-        global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN,
-            $LANG32;
-
-        $data_arr = array();
-        self::getInstalled($data_arr);
-        self::getUninstalled($data_arr);
-        // Future - check versions of pluggable gateways
-        //self::_checkAvailableVersions($data_arr);
-
-        $header_arr = array(
-            array(
-                'text'  => $LANG_SHOP['edit'],
-                'field' => 'edit',
-                'sort'  => false,
-                'align' => 'center',
-            ),
-            array(
-                'text'  => $LANG_SHOP['orderby'],
-                'field' => 'orderby',
-                'sort'  => false,
-                'align' => 'center',
-            ),
-            array(
-                'text'  => 'ID',
-                'field' => 'id',
-                'sort'  => true,
-            ),
-            array(
-                'text'  => $LANG_SHOP['description'],
-                'field' => 'description',
-                'sort'  => true,
-            ),
-            array(
-                'text'  => $LANG_SHOP['grp_access'],
-                'field' => 'grp_name',
-                'sort'  => false,
-            ),
-            array(
-                'text'  => $LANG_SHOP['version'],
-                'field' => 'version',
-            ),
-            array(
-                'text'  => $LANG_SHOP['control'],
-                'field' => 'enabled',
-                'sort'  => false,
-                'align' => 'center',
-            ),
-            array(
-                'text'  => $LANG_ADMIN['delete'],
-                'field' => 'delete',
-                'sort'  => 'false',
-                'align' => 'center',
-            ),
-        );
-
-        $extra = array(
-            'gw_count' => DB_count($_TABLES['shop.gateways']),
-        );
-
-        $defsort_arr = array(
-            'field' => 'orderby',
-            'direction' => 'ASC',
-        );
-
-        $display = COM_startBlock(
-            '', '',
-            COM_getBlockTemplate('_admin_block', 'header')
-        );
-
-        $text_arr = array(
-            'has_extras' => false,
-            'form_url' => SHOP_ADMIN_URL . '/gateways.php?gwadmin',
-        );
-        $T = new Template('admin');
-        $T->set_file('form', 'gw_adminlist_form.thtml');
-        $T->set_var('lang_select_file', $LANG_SHOP['select_file']);
-        $T->set_var('lang_upload', $LANG_SHOP['upload']);
-        $T->parse('output', 'form');
-        $display .= $T->finish($T->get_var('output'));
-        $display .= ADMIN_listArray(
-            $_SHOP_CONF['pi_name'] . '_gwlist',
-            array(__CLASS__,  'getAdminField'),
-            $header_arr, $text_arr, $data_arr, $defsort_arr,
-            '', $extra, '', ''
-        );
-        $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
-        return $display;
-    }
-
-
-    /**
-     * Get an individual field for the options admin list.
-     *
-     * @param   string  $fieldname  Name of field (from the array, not the db)
-     * @param   mixed   $fieldvalue Value of the field
-     * @param   array   $A          Array of all fields from the database
-     * @param   array   $icon_arr   System icon array (not used)
-     * @param   array   $extra      Extra information passed in verbatim
-     * @return  string              HTML for field display in the table
-     */
-    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr, $extra)
-    {
-        global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_ADMIN;
-
-        $retval = '';
-
-        switch($fieldname) {
-        case 'edit':
-            if ($A['enabled'] !== 'na') {
-                $retval .= COM_createLink(
-                    Icon::getHTML('edit', 'tooltip', array('title'=> $LANG_ADMIN['edit'])),
-                    SHOP_ADMIN_URL . "/gateways.php?gwedit&amp;gw_id={$A['id']}"
-                );
-            }
-            break;
-
-        case 'enabled':
-            if ($fieldvalue == 'na') {
-                return COM_createLink(
-                    Icon::getHTML('add'),
-                    SHOP_ADMIN_URL. '/gateways.php?gwinstall&gwname=' . urlencode($A['id']),
-                    array(
-                        'data-uk-tooltip' => '',
-                        'title' => $LANG_SHOP['ck_to_install'],
-                    )
-                );
-            } elseif ($fieldvalue == '1') {
-                $switch = ' checked="checked"';
-                $enabled = 1;
-                $tip = $LANG_SHOP['ck_to_disable'];
-            } else {
-                $switch = '';
-                $enabled = 0;
-                $tip = $LANG_SHOP['ck_to_enable'];
-            }
-            $retval .= Field::checkbox(array(
-                'name' => 'ena_check',
-                'id' => "togenabled{$A['id']}",
-                'checked' => $fieldvalue == 1,
-                'data-uk-tooltip' => '',
-                'title' => $tip,
-                'onclick' => "SHOP_toggle(this,'{$A['id']}','{$fieldname}','gateway');",
-            ) );
-            break;
-
-        case 'version':
-            // Show the upgrade link if needed. Only display this for
-            // installed gateways.
-            if (isset($A['version'])) {
-                $retval = $fieldvalue;
-                if (!COM_checkVersion($fieldvalue, $A['code_version'])) {
-                    $retval .= COM_createLink(
-                        '&nbsp;<i class="uk-icon uk-icon-arrow-up"></i>&nbsp;',
-                        Config::get('admin_url') . '/gateways.php?gwupgrade=' . $A['id'],
-                        array(
-                            'class' => 'tooltip uk-text-success',
-                            'title' => $LANG_SHOP['upgrade'],
-                        )
-                    );
-                    $retval .= $A['code_version'];
-                }
-            }
-            break;
-
-        case 'orderby':
-            $fieldvalue = (int)$fieldvalue;
-            if ($fieldvalue == 999) {
-                return '';
-            } elseif ($fieldvalue > 10) {
-                $retval = COM_createLink(
-                    Icon::getHTML('arrow-up', 'uk-icon-justify'),
-                    SHOP_ADMIN_URL . '/gateways.php?gwmove=up&id=' . $A['id']
-                );
-            } else {
-                $retval = '<i class="uk-icon uk-icon-justify">&nbsp;</i>';
-            }
-            if ($fieldvalue < $extra['gw_count'] * 10) {
-                $retval .= COM_createLink(
-                    Icon::getHTML('arrow-down', 'uk-icon-justify'),
-                    SHOP_ADMIN_URL . '/gateways.php?gwmove=down&id=' . $A['id']
-                );
-            } else {
-                $retval .= '<i class="uk-icon uk-icon-justify">&nbsp;</i>';
-            }
-            break;
-
-        case 'delete':
-            if ($A['enabled'] != 'na') {
-                $retval = COM_createLink(
-                    Icon::getHTML('delete'),
-                    SHOP_ADMIN_URL. '/gateways.php?gwdelete&amp;id=' . $A['id'],
-                    array(
-                        'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
-                        'title' => $LANG_SHOP['del_item'],
-                        'class' => 'tooltip',
-                    )
-                );
-            }
-            break;
-
-        default:
-            $retval = htmlspecialchars($fieldvalue, ENT_QUOTES, COM_getEncodingt());
-            break;
-        }
-        return $retval;
+        return SHOP_errorMessage($retval, $cls);
     }
 
 
@@ -2039,8 +1684,8 @@ class Gateway
      */
     public function getWebhookUrl($args=array())
     {
-        static $url = NULL;
-        if ($url === NULL) {
+        static $urls = array();
+        if (!array_key_exists($this->gw_name, $urls)) {
             $url = Config::get('ipn_url');
             if (empty($url)) {
                 // Use the default IPN url
@@ -2050,14 +1695,15 @@ class Gateway
                 $url .= '/';
             }
             $url .= 'webhook.php?_gw=' . $this->gw_name;
+            $urls[$this->gw_name] = $url;
         }
         if (!empty($args)) {
             $params = '&' . http_build_query($args);
         } else {
             $params = '';
         }
-        return $url . $params;
-     }
+        return $urls[$this->gw_name] . $params;
+    }
 
 
     /**
@@ -2129,112 +1775,6 @@ class Gateway
 
 
     /**
-     * Upload and install the files for a gateway package.
-     */
-    public static function upload()
-    {
-        global $_CONF;
-
-        $retval = '';
-
-        if (
-            count($_FILES) > 0 &&
-            $_FILES['gw_file']['error'] != UPLOAD_ERR_NO_FILE
-        ) {
-            $upload = new UploadDownload();
-            $upload->setMaxFileUploads(1);
-            $upload->setMaxFileSize(25165824);
-            $upload->setAllowedMimeTypes(array (
-                'application/x-gzip'=> array('.gz', '.gzip,tgz'),
-                'application/gzip'=> array('.gz', '.gzip,tgz'),
-                'application/zip'   => array('.zip'),
-                'application/octet-stream' => array(
-                    '.gz' ,'.gzip', '.tgz', '.zip', '.tar', '.tar.gz',
-                ),
-                'application/x-tar' => array('.tar', '.tar.gz', '.gz'),
-                'application/x-gzip-compressed' => array('.tar.gz', '.tgz', '.gz'),
-            ) );
-            $upload->setFieldName('gw_file');
-            if (!$upload->setPath($_CONF['path_data'] . 'temp')) {
-                SHOP_log("Error setting temp path: " . $upload->printErrors(false));
-            }
-
-            $filename = $_FILES['gw_file']['name'];
-            $upload->setFileNames($filename);
-            $upload->uploadFiles();
-
-            if ($upload->areErrors()) {
-                SHOP_log("Errors during upload: " . $upload->printErrors());
-                return false;
-            }
-            $Finalfilename = $_CONF['path_data'] . 'temp/' . $filename;
-        } else {
-            SHOP_log("No file found to upload");
-            return false;
-        }
-
-        // decompress into temp directory
-        if (function_exists('set_time_limit')) {
-            @set_time_limit( 60 );
-        }
-        $tmp = FileSystem::mkTmpDir();
-        if ($tmp === false) {
-            SHOP_log("Failed to create temp directory");
-            return false;
-        }
-        $tmp_path = $_CONF['path_data'] . $tmp;
-        if (!COM_decompress($Finalfilename, $tmp_path)) {
-            SHOP_log("Failed to decompress $Finalfilename into $tmp_path");
-            FileSystem::deleteDir($tmp_path);
-            return false;
-        }
-        @unlink($Finalfilename);
-
-        if (!$dh = @opendir($tmp_path)) {
-            SHOP_log("Failed to open $tmp_path");
-            return false;
-        }
-        $upl_path = $tmp_path;
-        while (false !== ($file = readdir($dh))) {
-            if ($file == '..' || $file == '.') {
-                continue;
-            }
-            if (@is_dir($tmp_path . '/' . $file)) {
-                $upl_path = $tmp_path . '/' . $file;
-                break;
-            }
-        }
-        closedir($dh);
-
-        if (empty($upl_path)) {
-            SHOP_log("Could not find upload path under $tmp_path");
-            return false;
-        }
-
-        // Copy the extracted upload into the Gateways class directory.
-        $fs = new FileSystem;
-        if (is_file($upl_path . '/gateway.json')) {
-            $json = @file_get_contents($upl_path . '/gateway.json');
-            if ($json) {
-                $json = @json_decode($json, true);
-                if ($json) {
-                    $gw_name = $json['name'];
-                    $gw_path = SHOP_PI_PATH . __DIR__ . '/Gateways/' . $gw_name;
-                    $fs->dirCopy($upl_path, $gw_path);
-                    // Got the files copied, delete the path.
-                    FileSystem::deleteDir($tmp_path);
-                    if (@is_dir($gw_path . '/public_html')) {
-                        $fs->dirCopy($gw_path . '/public_html', $_CONF['path_html'] . '/shop');
-                        FileSystem::deleteDir($gw_path . '/public_html');
-                    }
-                }
-            }
-        }
-        return empty($fs->getErrors()) ? true : false;
-    }
-
-
-    /**
      * Check if the order can be processed.
      * For most payment methods the order can only be processed after
      * it is paid.
@@ -2247,35 +1787,31 @@ class Gateway
     }
 
 
-
-    /**
-     * Perform actions required during plugin upgrades.
-     *
-     * @param   string  $to     Target version
-     */
-    public static function UpgradeAll($to)
-    {
-        foreach (self::getAll() as $gw) {
-            $gw->doUpgrade($to);
-        }
-    }
-
-
     /**
      * Default gateway upgrade function.
      * Just sets the current version for bundled gateways,
      * ignores others.
      */
-    public function doUpgrade()
+    public function doUpgrade() : bool
     {
         global $_TABLES;
 
         if ($this->_doUpgrade()) {
-            $sql = "UPDATE {$_TABLES['shop.gateways']}
-                SET version = '{$this->version}'
-                WHERE id = '{$this->gw_name}'";
-            DB_query($sql);
-            return true;
+            $this->version = $this->getCodeVersion();
+            $db = Database::getInstance();
+            try {
+                $db->conn->update(
+                    $_TABLES['shop.gateways'],
+                    array('version' => $this->version),
+                    array('id' => $this->gw_name),
+                    array(Database::STRING, Database::STRING)
+                );
+                Cache::clear(self::$TABLE);
+                return true;
+            } catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                return false;
+            }
         } else {
             return false;
         }
@@ -2290,7 +1826,7 @@ class Gateway
     protected function _doUpgrade()
     {
         // nothing to do by default, just update the version.
-        $this->version = static::VERSION;
+        $this->version = $this->getCodeVersion();
         return true;
     }
 
@@ -2300,9 +1836,21 @@ class Gateway
      *
      * @return  string      Current version
      */
-    public function getCodeVersion()
+    public function getCodeVersion() : string
     {
-        return static::VERSION;
+        // Some backwards compatibility
+        if (isset($this->GatewayInfo['version']) && $this->GatewayInfo['version'] != 'unset') {
+            return $this->GatewayInfo['version'];
+        } elseif (isset($this->VERSION)) {
+            // legacy
+            return (string)$this->VERSION;
+        } else {
+            // Bundled plugins that still have a gateway.json file
+            // may get here. v1.5.0 upgrade removes those files so this
+            // should happen only once.
+            Log::write('system', Log::ERROR, var_export($this->readJSON(),true));
+            return 'unknown';
+        }
     }
 
 
@@ -2322,9 +1870,9 @@ class Gateway
      *
      * return   integer     1 if bundled, 0 if not.
      */
-    public function isBundled()
+    public function isBundled() : bool
     {
-        return $this->bundled ? 1 : 0;
+        return in_array($this->gw_name, GatewayManager::$_bundledGateways);
     }
 
 
@@ -2370,9 +1918,9 @@ class Gateway
      *
      * @param   array   $Payouts    Array of Payout objects
      */
-    public function sendPayouts(PayoutHeader $Header, array $Payouts)
+    public function sendPayouts(array &$Payouts) : void
     {
-        SHOP_LOG("Payouts not implemented for gateway {$this->gw_name}", SHOP_LOG_ERROR);
+        Log::write('shop_system', Log::ERROR, "Payouts not implemented for gateway {$this->gw_name}");
         foreach ($Payouts as $Payout) {
             $Payout['txn_id'] = 'n/a';
         }
@@ -2387,38 +1935,135 @@ class Gateway
      *
      * @param   array   $data_arr   Reference to data array
      */
-    private static function _checkAvailableVersions(&$data_arr)
+    private static function XX_checkAvailableVersions(&$data_arr) : void
     {
         global $_VARS;
 
         // Only check in sync with other update checks.
-        $last_check = SHOP_getVar($_VARS, 'updatecheck', 'integer');
-        $versions = NULL;
-        if ($last_check < time() - 7200) {
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, 'https://raw.githubusercontent.com/leegarner-glfusion/versions/master/shop_gateways.json');
-            curl_setopt($ch, CURLOPT_HEADER, 0);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-            $result = curl_exec($ch);
-            curl_close($ch);
-            if ($result) {
-                $versions = json_decode($result, true);
-            }
-        }
-        if (!$versions) {
-            // In case of a curl error
+        $versions = Cache::get('shop_gw_versions');
+        if ($versions === NULL) {
             $versions = array();
+            foreach ($data_arr as $idx=>$gw) {
+                $key = $gw['id'];
+                $versions[$key] = self::_checkAvailableVersion($key);
+            }
+            Cache::set('shop_gw_versions', $versions, self::$TABLE);
         }
 
-        $retval = array();
         foreach ($data_arr as $key=>$gw) {
             if (array_key_exists($gw['id'], $versions)) {
-                $data_arr[$key]['available'] = $versions[$gw['id']]['version'];
+                $data_arr[$key]['available'] = $versions[$gw['id']]['available'];
+                $data_arr[$key]['upgrade_url'] = $versions[$gw['id']]['upgrade_url'];
             } else {
                 // Bundled or no version available
-                $data_arr[$key]['available'] = '0.0.0';
+                $data_arr[$key]['available'] = $gw['version'];
+                $data_arr[$key]['upgrade_url'] = '';
             }
         }
+    }
+
+
+    /**
+     * Get the latest release and download URL for a single gateway.
+     * Queries Github or Gitlab based on gateway.json.
+     *
+     * @param   string  $gwname     Gateway name
+     * @return  array       Array of (available, download_link)
+     */
+    private static function XX_checkAvailableVersion(string $gwname) : array
+    {
+        $default = array(
+            'available' => '0.0.0',
+            'upgrade_url' => '',
+        );
+
+        $filename = __DIR__ . '/Gateways/' . $gwname . '/gateway.json';
+        if (is_file($filename)) {
+            $json = @file_get_contents($filename);
+            $json = @json_decode($json, true);
+            if (!$json || !isset($json['repo']['type'])) {
+                return $default;
+            }
+        } else {
+            return $default;
+        }
+
+        switch ($json['repo']['type']) {
+        case 'gitlab':
+            $releases_url = 'https://gitlab.com/api/v4/projects/' . $json['repo']['project_id'] . '/releases/';
+            break;
+        case 'github':
+            $releases_url = 'https://api.github.com/repos/glshop-gateways/' . $json['repo']['project_id'] . '/releases/latest';
+            break;
+        default:
+            $releases_url = '';
+            break;
+        }
+        if (empty($releases_url)) {
+            return $default;
+        }
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $releases_url);
+        curl_setopt($ch, CURLOPT_HEADER, 0);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array("Accept: application/vnd.github.v3+json"));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'glFusion Shop');
+        $result = curl_exec($ch);
+        curl_close($ch);
+        if ($result) {
+            $data = @json_decode($result, true);
+        }
+        if (!$data) {
+            return $default;
+        }
+
+        switch ($json['repo']['type']) {
+        case 'gitlab':
+            $data = $data[0];
+            $releases_link = $data['_links']['self'];
+            break;
+        case 'github':
+            $releases_link = $data['html_url'];
+            break;
+        default:
+            $releases_link = '';
+            break;
+        }
+        if (empty($releases_link)) {
+            return $default;
+        }
+
+        $latest = $data['tag_name'];
+        if ($latest[0] == 'v') {
+            $latest = substr($latest, 1);
+        }
+        return array(
+            'available' => $latest,
+            'upgrade_url' => $releases_link,
+        );
+    }
+
+
+    /**
+     * Get information about the gateway from the JSON config file.
+     *
+     * @return  object      GatewayInfo object
+     */
+    protected function readJSON() : GatewayInfo
+    {
+        $retval = new GatewayInfo;
+        $filespec = __DIR__ . '/Gateways/' . $this->gw_name . '/gateway.json';
+        if (is_file($filespec)) {
+            $json = @file_get_contents($filespec);
+            $arr = @json_decode($json, true);
+            if (is_array($arr)) {
+                $retval->merge($arr);
+            }
+        } else {
+            $retval['version'] = Config::get('pi_version');
+        }
+        return $retval;
     }
 
 }

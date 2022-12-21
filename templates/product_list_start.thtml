@@ -33,15 +33,15 @@
 			<div class="shopProductSort uk-form">
 {!if have_sortby}
 				{$LANG_SHOP['sortby']}:&nbsp;
-				<select class="uk-select uk-form-small uk-form-width-small" name="sortby" onchange="$(this).closest('form').submit();">
+				<select class="uk-select uk-form-width-small" name="sortby" onchange="$(this).closest('form').submit();">
 					{sortby_options}
 				</select>
 {!endif}
 			</div>
 			<div class="shopProductSearch">
-				<input class="uk-input uk-form-small uk-form-width-small" type="search" id="query" name="query" value="{search_text}" placeholder="{$LANG_SHOP['search_catalog']}" />
-				<button type="submit" class="uk-button uk-button-success uk-button-small" name="dosearch">{$LANG09[10]}</button>
-				<button type="submit" class="uk-button uk-button-default uk-button-small" name="clearsearch"><i class="uk-icon-remove"></i></button>
+				<input class="uk-input uk-form-width-medium" type="search" id="query" name="query" value="{search_text}" placeholder="{$LANG_SHOP['search_catalog']}" />
+				<button type="submit" class="uk-button uk-button-success" name="dosearch">{$LANG09[10]}</button>
+				<button type="submit" class="uk-button uk-button-default" name="clearsearch"><i class="uk-icon-remove"></i></button>
 			</div>
 		</div>
 	</form>

@@ -35,5 +35,3 @@ if (isset($_GET['type'])) {
 $Feed = new Shop\Feeds\Catalog($type);
 echo $Feed->Render();
 exit;
-
-?>

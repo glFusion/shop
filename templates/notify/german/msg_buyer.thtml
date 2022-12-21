@@ -1,3 +1,4 @@
+{header}
 <p>Vielen Dank für Ihren Kauf bei {site_name}. Details zu Ihrem Kauf folgen:</p>
 <p>
 {Einzelheiten zum Kauf}
@@ -46,6 +47,5 @@ Sie haben ein verbleibendes Geschenkkartenguthaben von {gc_bal_fmt}.
 {!endif}
 <p>
 Danke,<br />
-{site_name}<br />
-{site_url}
+{footer}
 </p>

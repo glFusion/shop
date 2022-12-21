@@ -10,137 +10,137 @@
 {!endif}
 : {$LANG_SHOP['supplier']}
 </h2>
-<form action="{site_admin_url}/plugins/shop/index.php" method="post"
+<form uk-form action="{site_admin_url}/plugins/shop/index.php" method="post"
 	enctype="multipart/form-data"
 	class="uk-form uk-form-horizontal">
 	<input type="hidden" name="sup_id" value="{entry_id}" />
 	<input type="hidden" value="{country}" name="countryDefault" id="countryDefault">
 	<input type="hidden" value="{state}" name="stateDefault" id="stateDefault">
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label" for="f_company">{$LANG_SHOP['company']}:
 			<span id="company" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls">
-			<input required type="text" id="f_company" name="company" size="60" value="{company}" />
+			<input class="uk-input" required type="text" id="f_company" name="company" size="60" value="{company}" />
 			<i class="uk-icon uk-icon-exclamation-triangle uk-text-danger" data-uk-tooltip title="{$LANG_SHOP['required']}"></i>
 		</div>
 	</div>
 
-	<div class="uk-form-row" id="html_editarea">
+	<div class="uk-form-row uk-margin" id="html_editarea">
 		<label class="uk-form-label" for="description">{$LANG_SHOP['description']}:
 			<span id="dscp" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls">
-			<textarea id="description" name="dscp" cols="35" rows="10" style="width:70%">{dscp}</textarea>
+			<textarea class="uk-textarea" id="description" name="dscp" cols="35" rows="10" style="width:70%">{dscp}</textarea>
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label" for="f_name">{$LANG_SHOP['fullname']}:
 			<span id="name" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls">
-			<input type="text" id="f_name" name="name" value="{name}" size="60" maxlength="255" />
+			<input class="uk-input" type="text" id="f_name" name="name" value="{name}" size="60" maxlength="255" />
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label" for="f_address1">{$LANG_SHOP['address1']}:
 			<span id="address1" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls">
-			<input type="text" id="f_address1" name="address1" size="60" value="{address1}" />
+			<input class="uk-input" type="text" id="f_address1" name="address1" size="60" value="{address1}" />
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label" for="f_address2">{$LANG_SHOP['address2']}:
 			<span id="address2" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls">
-			<input type="text" id="f_address2" name="address2" size="60" value="{address2}" />
+			<input class="uk-input" type="text" id="f_address2" name="address2" size="60" value="{address2}" />
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{$LANG_SHOP['country']}:
 			<span id="country" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls">
 			<select id="countrySelect" name="country"
-				onchange='chgCountrySel(this.value)' class="shopStateSelect">
+				onchange='chgCountrySel(this.value)' class="shopStateSelect uk-select">
 				{country_options}
 			</select>
 		</div>
 	</div>
 
-	<div class="uk-form-row" id="stateSelectDiv" style="display:{state_sel_vis};">
+	<div class="uk-form-row uk-margin" id="stateSelectDiv" style="display:{state_sel_vis};">
 		<label class="uk-form-label">{$LANG_SHOP['state']}:
 			<span id="state" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls">
-			<select id="stateSelect" name="state" class="shopStateSelect">
+			<select id="stateSelect" name="state" class="shopStateSelect uk-select">
 				{state_options}
 			</select>
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label" for="f_city">{$LANG_SHOP['city']}:
 			<span id="city" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls">
-			<input type="text" id="f_city" name="city" size="60" value="{city}" />
+			<input class="uk-input" type="text" id="f_city" name="city" size="60" value="{city}" />
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label" for="f_zip">{$LANG_SHOP['zip']}:
 			<span id="zip" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls">
-			<input type="text" id="f_zip" name="zip" size="60" value="{zip}" />
+			<input class="uk-input" type="text" id="f_zip" name="zip" size="60" value="{zip}" />
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label" for="f_phone">{$LANG_SHOP['phone']}:
 			<span id="phone" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls">
-			<input type="text" id="f_phone" name="phone" size="60" value="{phone}" />
+			<input class="uk-input" type="text" id="f_phone" name="phone" size="60" value="{phone}" />
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{$LANG_SHOP['supplier']}:
 			<span id="is_supplier" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls">
-			<input type="checkbox" id="f_is_supplier" name="is_supplier" {supplier_chk} value="1" />
+			<input class="uk-checkbox" type="checkbox" id="f_is_supplier" name="is_supplier" {supplier_chk} value="1" />
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{$LANG_SHOP['brand']}:
 			<span id="is_brand" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls">
-			<input type="checkbox" id="f_is_brand" name="is_brand" {brand_chk} value="1" />
+			<input  class="uk-checkbox" type="checkbox" id="f_is_brand" name="is_brand" {brand_chk} value="1" />
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{$LANG_SHOP['lead_time']}:
 			<span id="hlp_lead_time" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls">
-			<input type="text" id="f_lead_time" name="lead_time" value="{lead_time}"} />
+			<input class="uk-input" type="text" id="f_lead_time" name="lead_time" value="{lead_time}"} />
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{$LANG_SHOP['logo_img']}:
 			<span id="logo" class="tooltip_cfg tooltipstered"></span>
 		</label>
@@ -153,12 +153,12 @@
 		</div>
 	</div>
 
-	<div class="uk-form-row" style="margin-top:10px;">
+	<div class="uk-form-row uk-margin" style="margin-top:10px;">
 		<label class="uk-form-label">&nbsp;</label>
 		<div class="uk-form-controls" style="text-align:center;">
 			<button class="uk-button uk-button-success" type="submit" name="save_sup">{$LANG_ADMIN['submit']}</button>
 			<button class="uk-button uk-button-primary" type="reset">{$LANG_ADMIN['reset']}</button>
-			<a class="uk-button" type="reset" name="suppliers"
+			<a class="uk-button uk-button-default" type="reset" name="suppliers"
 				href="{site_admin_url}/plugins/shop/index.php?suppliers">{$LANG_ADMIN['cancel']}</a>
 		</div>
 	</div>

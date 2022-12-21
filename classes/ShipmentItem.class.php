@@ -3,15 +3,19 @@
  * Class to manage items that are part of a shipment.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.5.0
  * @since       v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
+use glFusion\Database\Database;
+use Shop\Log;
+use Shop\Models\DataArray;
+
 
 /**
  * Class for order line items.
@@ -63,7 +67,7 @@ class ShipmentItem
             }
         } elseif (is_array($si_id) && isset($si_id['quantity'])) {
             // Got a shipment record, just set the variables
-            $this->setVars($si_id);
+            $this->setVars(new DataArray($si_id));
         }
     }
 
@@ -74,17 +78,23 @@ class ShipmentItem
     * @param    integer $rec_id     DB record ID of item
     * @return   boolean     True on success, False on failure
     */
-    public function Read($rec_id)
+    public function Read(int $rec_id) : bool
     {
         global $_TABLES;
 
-        $rec_id = (int)$rec_id;
-        $sql = "SELECT * FROM {$_TABLES['shop.shipment_items']}
-                WHERE si_id = $rec_id";
-        //echo $sql;die;
-        $res = DB_query($sql);
-        if ($res) {
-            $this->setVars(DB_fetchArray($res, false));
+        $db = Database::getInstance();
+        try {
+            $data = $db->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.shipment_items']} WHERE si_id = ?",
+                array($rec_id),
+                array(Database::INTEGER)
+            )->fetchAssociative();
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $data = false;
+        }
+        if (is_array($data)) {
+            $this->setVars(new DataArray($data));
             return true;
         } else {
             $this->si_id = 0;
@@ -179,17 +189,26 @@ class ShipmentItem
      * @param   integer $shipment_id     Shipment ID
      * @return  array       Array of ShipmentItem objects
      */
-    public static function getByShipment($shipment_id)
+    public static function getByShipment(int $shipment_id) : array
     {
         global $_TABLES;
 
         $retval = array();
-        $shipment_id = (int)$shipment_id;
-        $sql = "SELECT * FROM {$_TABLES['shop.shipment_items']}
-            WHERE shipment_id = $shipment_id";
-        $res = DB_query($sql);
-        while ($A = DB_fetchArray($res, false)) {
-            $retval[] = new self($A);
+        $db = Database::getInstance();
+        try {
+            $data = $db->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.shipment_items']} WHERE shipment_id = ?",
+                array($shipment_id),
+                array(Database::INTEGER)
+            )->fetchAllAssociative();
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $data = false;
+        }
+        if (is_array($data)) {
+            foreach ($data as $A) {
+                $retval[] = new self($A);
+            }
         }
         return $retval;
     }
@@ -202,17 +221,26 @@ class ShipmentItem
      * @param   integer $oi_id  OrderItem record ID
      * @return  array       Array of ShipmentItem objects
      */
-    public static function getByOrderItem($oi_id)
+    public static function getByOrderItem(int $oi_id) : array
     {
         global $_TABLES;
 
         $retval = array();
-        $oi_id = (int)$oi_id;
-        $sql = "SELECT * FROM {$_TABLES['shop.shipment_items']}
-            WHERE orderitem_id = $oi_id";
-        $res = DB_query($sql);
-        while ($A = DB_fetchArray($res, false)) {
-            $retval[] = new self($A);
+        $db = Database::getInstance();
+        try {
+            $data = $db->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.shipment_items']} WHERE orderitem_id = ?",
+                array($oi_id),
+                array(Database::INTEGER)
+            )->fetchAssociative();
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $data = false;
+        }
+        if (is_array($data)) {
+            foreach ($data as $A) {
+                $retval[] = new self($A);
+            }
         }
         return $retval;
     }
@@ -235,16 +263,16 @@ class ShipmentItem
     /**
      * Set the object variables from an array.
      *
-     * @param   array   $A      Array of values
+     * @param   DataArray   $A  Array of values
      * @return  boolean     True on success, False if $A is not an array
      */
-    public function setVars($A)
+    public function setVars(DataArray $A) : self
     {
         if (is_array($A))  {
-            $this->si_id = isset($A['si_id']) ? (int)$A['si_id'] : 0;
-            $this->shipment_id = (int)$A['shipment_id'];
-            $this->orderitem_id = (int)$A['orderitem_id'];
-            $this->quantity = (float)$A['quantity'];
+            $this->si_id = $A->getInt('si_id');
+            $this->shipment_id = $A->getInt('shipment_id');
+            $this->orderitem_id = $A->getInt('orderitem_id');
+            $this->quantity = $A->getFloat('quantity');
         }
         return $this;
     }
@@ -253,41 +281,47 @@ class ShipmentItem
     /**
      * Save an order item to the database.
      *
-     * @param   array   $A  Optional array of data to save
+     * @param   DataArray   $A  Optional array of data to save
      * @return  boolean     True on success, False on DB error
      */
-    public function Save($A= NULL)
+    public function Save(?DataArray $A= NULL)
     {
         global $_TABLES;
 
-        if (is_array($A)) {
+        if (!empty($A)) {
             $this->setVars($A);
         }
 
-        if ($this->si_id > 0) {
-            $sql1 = "UPDATE {$_TABLES['shop.shipment_items']} ";
-            $sql3 = " WHERE si_id = '{$this->si_id}'";
-        } else {
-            $sql1 = "INSERT INTO {$_TABLES['shop.shipment_items']} ";
-            $sql3 = '';
-        }
+        $db = Database::getInstance();
+        $values = array(
+            'shipment_id' => $this->shipment_id,
+            'orderitem_id' => $this->orderitem_id,
+            'quantity' => (float)$this->quantity,
+        );
+        $types = array(
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::STRING,
 
-        $sql2 = "SET shipment_id = '{$this->shipment_id}',
-            orderitem_id = '{$this->orderitem_id}',
-            quantity = '{$this->quantity}'";
-        $sql = $sql1 . $sql2 . $sql3;
-        //echo $sql;die;
-        SHOP_log($sql, SHOP_LOG_DEBUG);
-        DB_query($sql);
-        if (!DB_error()) {
-            //Cache::deleteOrder($this->order_id);
+        );
+        try {
             if ($this->si_id == 0) {
-                $this->si_id = DB_insertID();
+                $db->conn->insert($_TABLES['shop.shipment_items'], $values, $types);
+                $this->si_id = $db->conn->lastInsertId();
+            } else {
+                $types[] = Database::INTEGER;
+                $db->conn->update(
+                    $_TABLES['shop.shipment_items'],
+                    $values,
+                    array('si_id' => $this->si_id),
+                    $types
+                );
             }
-            return true;
-        } else {
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
+        return true;
     }
 
 
@@ -301,13 +335,24 @@ class ShipmentItem
     {
         global $_TABLES;
 
-        return (int)DB_getItem(
-            $_TABLES['shop.shipment_items'],
-            'SUM(quantity)',
-            "orderitem_id = $oi_id"
-        );
+        $db = Database::getInstance();
+        try {
+            $data = $db->conn->executeQuery(
+                "SELECT SUM(quantity) AS qty FROM {$_TABLES['shop.shipment_items']}
+                WHERE orderitem_id = ?",
+                array($oi_id),
+                array(Database::INTEGER)
+            )->fetchAssociative();
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $data = false;
+        }
+        if (is_array($data)) {
+            return $data['qty'];
+        } else {
+            return 0;
+        }
     }
 
 }
 
-?>

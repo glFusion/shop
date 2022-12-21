@@ -14,6 +14,7 @@
 namespace Shop\Validators;
 use \SimpleXMLElement;
 use Shop\Cache;
+use Shop\Log;
 
 
 /**
@@ -71,17 +72,12 @@ class usps extends \Shop\Shippers\usps
             $addr->addChild('Zip5', $this->Address->getZip5());
             $addr->addChild('Zip4', $this->Address->getZip4());
             $request = 'API=Verify&XML=' . urlencode($xml->asXML());
-            //var_dump($xml->asXML());die;
-            //var_dump($xml);die;
-            //echo $this->getEndpoint() . '?' . $request . "\n";die;
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $this->getEndpoint() . '?' . $request);
             curl_setopt($ch, CURLOPT_HEADER, 0);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             $result = curl_exec($ch);
             $http_code = curl_getinfo($ch);
-            //var_dump($http_code);die;
-            //var_dump($result);die;
             curl_close($ch);
 
             if ($http_code['http_code'] != 200|| !$result) {
@@ -92,13 +88,12 @@ class usps extends \Shop\Shippers\usps
         }
         $xml = new SimpleXMLElement($result);
         if (property_exists($xml, 'Number')) {
-            SHOP_log("USPS Validator Error {$xml->Number}, {$xml->Description}, {$xml->Source}");
+            Log::write('shop_system', Log::ERROR, "USPS Validator Error {$xml->Number}, {$xml->Description}, {$xml->Source}");
             return false;
         }
         $xml = $xml->Address;
 
         // Check for the validation result
-        //var_dump($xml);die;
         switch ($xml->DPVConfirmation) {
         case 'N':
             // Validation failed, address not found

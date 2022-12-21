@@ -3,9 +3,9 @@
  * Class to read and manipulate Shop configuration values.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2020-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.5.0
  * @since       v1.3.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -39,7 +39,7 @@ final class Config
      *
      * @return  object      Configuration object
      */
-    public static function getInstance()
+    public static function getInstance() : self
     {
         if (self::$instance === NULL) {
             self::$instance = new self;
@@ -60,7 +60,7 @@ final class Config
 
         $this->properties['pi_name'] = self::PI_NAME;
         $this->properties['pi_display_name'] = 'Shop';
-        $this->properties['pi_url'] = 'http://www.glfusion.org';
+        $this->properties['pi_url'] = 'https://www.glfusion.org';
         $this->properties['url'] = $_CONF['site_url'] . '/' . self::PI_NAME;
         $this->properties['admin_url'] = $_CONF['site_admin_url'] . '/plugins/' . self::PI_NAME;
         $this->properties['logfile'] = "{$_CONF['path']}/logs/" . self::PI_NAME . '_downloads.log';
@@ -88,7 +88,7 @@ final class Config
      * @param   mixed       $default    Default value if item is not set
      * @return  mixed       Value of config item
      */
-    private function _get($key=NULL, $default=NULL)
+    private function _get(?string $key=NULL, $default=NULL)
     {
         if ($key === NULL) {
             return $this->properties;
@@ -102,33 +102,55 @@ final class Config
 
     /**
      * Set a configuration value.
-     * Unlike the root glFusion config class, this does not add anything to
-     * the database. It only adds temporary config vars.
      *
      * @param   string  $key    Configuration item name
      * @param   mixed   $val    Value to set
+     * @param   boolean $save   True to save in the DB
+     * @return  object  $this
      */
-    private function _set($key, $val)
+    private function _set(string $key, $val, bool $save=false) : self
     {
         global $_SHOP_CONF;
 
         $this->properties[$key] = $val;
         $_SHOP_CONF[$key] = $val;
+        if ($save) {
+            \config::get_instance()->set($key, $val, self::PI_NAME);
+        }
         return $this;
     }
 
 
     /**
-     * Set a configuration value.
-     * Unlike the root glFusion config class, this does not add anything to
-     * the database. It only adds temporary config vars.
+     * Set a configuration value, optionally saving permanently.
      *
      * @param   string  $key    Configuration item name
      * @param   mixed   $val    Value to set, NULL to unset
+     * @param   boolean $save   True to save in the DB
+     * @return  object  $this
      */
-    public static function set($key, $val=NULL)
+    public static function set(string $key, $val=NULL, bool $save=false) : self
     {
-        return self::getInstance()->_set($key, $val);
+        return self::getInstance()->_set($key, $val, $save);
+    }
+
+
+    /**
+     * Delete a configuration value.
+     * Always removes the value from the properties and the DB, since there's
+     * no need to simply remove from the properties.
+     *
+     * @param   string  $key    Configuration item name
+     * @return  object  $this
+     */
+    private function _del(string $key) : self
+    {
+        global $_SHOP_CONF;
+
+        unset($this->properties[$key]);
+        unset($_SHOP_CONF[$key]);
+        \config::get_instance()->del($key, self::PI_NAME);
+        return $this;
     }
 
 
@@ -140,9 +162,18 @@ final class Config
      * @param   mixed       $default    Default value if item is not set
      * @return  mixed       Value of config item
      */
-    public static function get($key=NULL, $default=NULL)
+    public static function get(?string $key=NULL, $default=NULL)
     {
         return self::getInstance()->_get($key, $default);
+    }
+
+
+    /**
+     * Permanently delete a config option from the database.
+     */
+    public static function del(string $key) : self
+    {
+        return self::agetInstance()->_del($key);
     }
 
 
@@ -151,7 +182,7 @@ final class Config
      *
      * @return  string      Path to main plugin directory.
      */
-    public static function path()
+    public static function path() : string
     {
         return self::_get('path');
     }
@@ -162,7 +193,7 @@ final class Config
      *
      * @return  string      Template path
      */
-    public static function path_template()
+    public static function path_template() : string
     {
         return self::get('path') . 'templates/';
     }

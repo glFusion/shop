@@ -4,16 +4,20 @@
  * Workflows are the steps that a buyer goes through during the purchase process.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2011-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2011-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 use Shop\Models\Session;
+use Shop\Models\ProductType;
+use Shop\Cart;
 
 
 /**
@@ -43,7 +47,7 @@ class Workflow
 
     /** Database table name.
      * @var string */
-    protected static $TABLE = 'shop.workflows';
+    public static $TABLE = 'shop.workflows';
 
     /** Workflow Name.
      * @var string */
@@ -75,27 +79,6 @@ class Workflow
 
 
     /**
-     * Load the workflows into the global workflow array.
-     */
-    public static function Load()
-    {
-        global $_TABLES, $_SHOP_CONF;
-
-        if (!isset($_SHOP_CONF['workflows'])) {
-            $_SHOP_CONF['workflows'] = array();
-            $sql = "SELECT wf_name
-                    FROM {$_TABLES[self::$TABLE]}
-                    WHERE enabled > 0
-                    ORDER BY id ASC";
-            $res = DB_query($sql);
-            while ($A = DB_fetchArray($res, false)) {
-                $_SHOP_CONF['workflows'][] = $A['wf_name'];
-            }
-        }
-    }
-
-
-    /**
      * Get all workflow items, in order of processing.
      * If a cart is supplied, get the appropriate enabled workflows based
      * on the cart contents.
@@ -108,27 +91,37 @@ class Workflow
     {
         global $_TABLES;
 
+        $qb = Database::getInstance()->conn->createQueryBuilder();
+        $qb->select('*')
+            ->from($_TABLES[self::$TABLE])
+            ->orderBy('id', 'ASC');
         if ($Cart) {
             $statuses = array(self::REQ_ALL, self::REQ_VIRTUAL);
-            if ($Cart->hasPhysical()) $statuses[] = self::REQ_PHYSICAL;
-            $statuslist = implode(',', $statuses);
-            $where = " WHERE enabled IN ($statuslist)";
+            if ($Cart->hasPhysical()) {
+                $statuses[] = self::REQ_PHYSICAL;
+            }
+            $keystr = implode('', $statuses);
+            $qb->where('enabled IN (:statuses)')
+               ->setParameter('statuses', $statuses, Database::PARAM_INT_ARRAY);
         } else {
-            $where = '';
-            $statuslist = '0';
+            $keystr = '0';
         }
-        $cache_key = 'workflows_enabled_' . $statuslist;
+        $cache_key = 'workflows_enabled_' . $keystr;
         $workflows = Cache::get($cache_key);
         if (!$workflows) {
             $workflows = array();
-            $sql = "SELECT * FROM {$_TABLES[self::$TABLE]}
-                $where
-                ORDER BY id ASC";
-            $res = DB_query($sql);
-            while ($A = DB_fetchArray($res, false)) {
-                $workflows[] = new self($A);
+            try {
+                $stmt = $qb->execute();
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $stmt = false;
             }
-            Cache::set($cache_key, $workflows, 'workflows');
+            if ($stmt) {
+                while ($A = $stmt->fetchAssociative()) {
+                    $workflows[] = new self($A);
+                }
+            }
+            Cache::set($cache_key, $workflows, self::$TABLE);
         }
         return $workflows;
     }
@@ -172,7 +165,15 @@ class Workflow
     {
         switch ($this->wf_name) {
         case 'addresses':
-            $retval = $Cart->requiresBillto() || $Cart->requiresShipto();
+            $retval = false;
+            $prod_type = $Cart->hasPhysical() ? ProductType::PHYSICAL : ProductType::VIRTUAL;
+            $required = $Cart->getBillto()->getRequiredElements();
+            foreach ($required as $key=>$is_required) {
+                if ($is_required & $prod_type) {
+                    $retval = true;
+                    break;
+                }
+            }
             break;
         case 'shipping':
             $retval = $Cart->requiresShipto() && $Cart->hasPhysical();
@@ -205,16 +206,17 @@ class Workflow
 
         switch ($this->wf_name) {
         case 'viewcart':
-            $status = true;
+            $status = !empty($Cart->getBuyerEmail());
             break;
         case 'addresses':
+            // Check that an address was entered. 0 indicates to-do.
             $billto = !$Cart->requiresBillto() || (
-                $Cart->getBillto()->getID() > 0 &&
-                $Cart->getBillto()->isValid() == ''
+                $Cart->getBillto()->getID() != 0 &&
+                $Cart->getBillto()->isValid($Cart->hasPhysical()) == ''
             );
             $shipto = !$Cart->requiresShipto() || (
-                    $Cart->getShipto()->getID() > 0 &&
-                    $Cart->getShipto()->isValid() == ''
+                    $Cart->getShipto()->getID() != 0 &&
+                    $Cart->getShipto()->isValid($Cart->hasPhysical()) == ''
             );
             $email = !empty($Cart->getBuyerEmail());
             $status = ($billto && $shipto && $email);
@@ -307,10 +309,10 @@ class Workflow
      *
      * @param   integer $id         ID number of element to modify
      * @param   string  $field      Database fieldname to change
-     * @param   integer $newvalue   New value to set
+     * @param   integer $newvalue   New value to set, -1 on error
      * @return  integer     New value, or old value upon failure
      */
-    public static function setValue($id, $field, $newvalue)
+    public static function setValue(int $id, string $field, int $newvalue) : int
     {
         global $_TABLES;
 
@@ -318,22 +320,20 @@ class Workflow
         if ($id < 1) {
             return -1;
         }
-        $field = DB_escapeString($field);
 
-        // Determing the new value (opposite the old)
-        $newvalue = (int)$newvalue;
-
-        $sql = "UPDATE {$_TABLES[self::$TABLE]}
-                SET $field = $newvalue
-                WHERE id='$id'";
-        DB_query($sql, 1);
-        if (!DB_error()) {
-            Cache::clear('workflows');
-            return $newvalue;
-        } else {
-            SHOP_log("SQL error: $sql", SHOP_LOG_ERROR);
+        try {
+            Database::getInstance()->conn->update(
+                $_TABLES[self::$TABLE],
+                array($field => $newvalue),
+                array('id' => $id),
+                array(Database::INTEGER, Database::INTEGER)
+            );
+        } catch (\Throwable $e) {
+            Log::write('shop_system', Log::ERROR, $e->getMessage());
             return -1;
         }
+        Cache::clear(self::$TABLE);
+        return $newvalue;
     }
 
 
@@ -345,49 +345,32 @@ class Workflow
      * physical items, are skipped.
      *
      * @param   string  $currview   Current view
-     * @return  string              Next view in line
+     * @return  object      Next view in line
      */
-    public static function getNextView($currview, $Cart)
+    public static function getNextView(string $currview, Cart $Cart) : ?self
     {
-        global $_SHOP_CONF;
-
         // Load the views, if not done already done
         $workflows = self::getAll();
+        $max_count = count($workflows) - 1; // for zero-bias array
 
         // Bypass any workflows before the current step
-        for ($i = 0; $i < count($workflows) - 1; $i++) {
+        for ($i = 0; $i < $max_count; $i++) {
             if ($workflows[$i]->getName() == $currview) {
                 break;
             }
         }
 
         // Search remaining workflows for the first one still needed.
-        $i++;
-        for (; $i < count($workflows) -1; $i++) {
+        for ($i++; $i < $max_count; $i++) {
             if ($workflows[$i]->isNeeded($Cart)) {
                 break;
             }
         }
-        return $workflows[$i];
-
-        // If the current view is empty, or isn't part of our array,
-        // then set the current key to -1 so we end up returning value 0.
-        if ($currview == '') {
-            $curr_key = -1;
+        if (array_key_exists($i, $workflows)) {
+            return $workflows[$i];
         } else {
-            $curr_key = array_search($currview, $workflows);
-            if ($curr_key === false) $curr_key = -1;
+            return NULL;
         }
-
-        if ($curr_key > -1) {
-            Session::set('prevpage', $workflows[$curr_key]);
-        }
-        if (isset($workflows[$curr_key + 1])) {
-            $view = $workflows[$curr_key + 1];
-        } else {
-            $view = 'checkoutcart';
-        }
-        return $view;
     }
 
 
@@ -441,7 +424,7 @@ class Workflow
         $display .= "<h2>{$LANG_SHOP['workflows']}</h2>\n";
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_workflowlist',
-            array(__CLASS__ , 'getAdminField'),
+            array(__CLASS__, 'getAdminField'),
             $header_arr, $text_arr, $query_arr, $defsort_arr,
             '', '', '', ''
         );
@@ -474,7 +457,7 @@ class Workflow
                     $sel = $fieldvalue == $val ? 'selected="selected"' : '';
                     $options .= "<option value=\"{$val}\" $sel>{$str}</option>" . LB;
                 }
-                $retval = Field::select(array(
+                $retval = FieldList::select(array(
                     'id' => "sel{$fieldname}{$A['id']}",
                     'name' => "{$fieldname}_sel",
                     'onchange' => "SHOPupdateSel(this,'{$A['id']}','enabled', 'workflow');",

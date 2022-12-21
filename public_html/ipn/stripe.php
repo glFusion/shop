@@ -15,17 +15,18 @@
  */
 
 require_once '../../lib-common.php';
+use Shop\Log;
+use Shop\Models\Request;
 
-$gw_name = SHOP_getVar($_GET, '_gw');
+$gw_name = Request::getInstance()->getString('_gw');
 if (!empty($gw_name)) {
     $WH = Shop\Webhook::getInstance($gw_name);
     if ($WH && $WH->Verify()) {
         $WH->Dispatch();
     } else {
-        SHOP_log("Webhook verification failed for $gw_name");
+        Log::write('shop_system', Log::ERROR, "Webhook verification failed for $gw_name");
     }
 }
 
 http_response_code(200);
 
-?>

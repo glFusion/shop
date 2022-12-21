@@ -3,9 +3,9 @@
  * UPS shipper class.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.4.1
  * @since       v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -18,6 +18,7 @@ use \Exception;
 use Shop\Company;
 use Shop\Models\ShippingQuote;
 use Shop\Package;
+use Shop\Log;
 
 
 /**
@@ -279,9 +280,9 @@ class ups extends \Shop\Shipper
             }
             $Tracking->setCache($this->key, $tracking);
         } catch ( Exception $ex ) {
-            SHOP_log(
-                __CLASS__ . '::' . __FUNCTION__ . ' Line ' . __LINE__ .
-                ' Error getting tracking info: ' . print_r($ex,true)
+            $Tracking->addError($LANG_SHOP['err_getting_info']);
+            Log::write('shop_system', Log::ERROR,
+                'Error getting tracking info: ' . print_r($ex,true)
             );
         }
         return $Tracking;
@@ -365,6 +366,7 @@ class ups extends \Shop\Shipper
                 'error'     => true,
             );*/
         }
+
         $Company = new Company;
         try {
             // create AccessRequest XML
@@ -429,6 +431,7 @@ class ups extends \Shop\Shipper
                     $fixed_pkgs++;
                     continue;
                 }
+                $weight = max($Package->getWeight(), 1);
                 $package = $shipment->addChild('Package');
                 $packageType = $package->addChild('PackagingType');
                 $packageType->addChild("Code", "02");
@@ -437,7 +440,7 @@ class ups extends \Shop\Shipper
                 $packageWeight = $package->addChild('PackageWeight');
                 $unitOfMeasurement = $packageWeight->addChild ('UnitOfMeasurement');
                 $unitOfMeasurement->addChild("Code", $this->getWeightUOM());
-                $packageWeight->addChild("Weight", $Package->getWeight());
+                $packageWeight->addChild("Weight", $weight);
             }
             if ($fixed_pkgs < count($Packages)) {
                 $requestXML = $accessRequestXML->asXML () . $rateRequestXML->asXML ();
@@ -480,7 +483,7 @@ class ups extends \Shop\Shipper
                             ->setServiceCode($key)
                             ->setServiceID($classid)
                             ->setServiceTitle(strtoupper($this->key) . ' ' . $dscp)
-                            ->setCost($cost + $fixed_cost)
+                            ->setCost($cost + $fixed_cost + $this->item_shipping['amount'])
                             ->setPackageCount(count($Packages));
                     }
                     uasort($quote_data, array($this, 'sortQuotes'));
@@ -495,13 +498,12 @@ class ups extends \Shop\Shipper
                     ->setServiceCode($this->key . '.fixed')
                     ->setServiceID('_fixed')
                     ->setServiceTitle($this->getCarrierName())
-                    ->setCost($fixed_cost)
+                    ->setCost($fixed_cost + $this->item_shipping['amount'])
                     ->setPackageCount($fixed_pkgs);
             }
         } catch ( Exception $ex ) {
-            SHOP_log(
-                __CLASS__ . '::' . __FUNCTION__ . ' Line ' . __LINE__ .
-                ' Error getting quote for order ' . $Order->getOrderID() .
+            Log::write('shop_system', Log::ERROR,
+                'Error getting quote for order ' . $Order->getOrderID() .
                 print_r($ex,true)
             );
         }

@@ -12,6 +12,9 @@
  * @filesource
  */
 namespace Shop;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
+use Shop\Models\DataArray;
 
 
 /**
@@ -22,11 +25,7 @@ class Region extends RegionBase
 {
     /** Table key.
      * @var string */
-    protected static $TABLE = 'shop.regions';
-
-    /** Cache tag.
-     * @var string */
-    protected static $TAG = 'regions';
+    public static $TABLE = 'shop.regions';
 
     /** Table type, used to create variable names.
      * .@var string */
@@ -54,12 +53,11 @@ class Region extends RegionBase
      *
      * @param   array   $A      Array from form or DB record
      */
-    public function __construct($A)
+    public function __construct(?array $A=NULL)
     {
-        $this->setID($A['region_id'])
-            ->setCode($A['region_code'])
-            ->setName($A['region_name'])
-            ->setEnabled($A['region_enabled']);
+        if (is_array($A)) {
+            $this->setVars(new DataArray($A));
+        }
     }
 
 
@@ -67,9 +65,9 @@ class Region extends RegionBase
      * Get an instance of a Region object.
      *
      * @param   integer $id     Region DB record ID
-     * @return  object  Country object
+     * @return  object  Region object
      */
-    public static function getInstance($id)
+    public static function getInstance(int $id) : self
     {
         global $_TABLES;
         static $instances = array();
@@ -78,23 +76,34 @@ class Region extends RegionBase
         if (isset($instances[$id])) {
             return $instances[$id];
         } else {
-            $sql = "SELECT * FROM {$_TABLES['shop.regions']} WHERE region_id = $id";;
-            $res = DB_query($sql);
-            if ($res && DB_numRows($res) == 1) {
-                $A = DB_fetchArray($res, false);
-            } else {
-                // Create an empty region.
-                // Set enabled to true so isEnabled() will return true
-                // when there is no region assigned (e.g. Antarctica)
-                $A = array(
-                    'region_id'     => 0,
-                    'region_code'   => 0,
-                    'region_name'   => '',
-                    'region_enabled' => 1,
-                );
+            try {
+                $A = Database::getInstance()->conn->executeQuery(
+                    "SELECT * FROM {$_TABLES['shop.regions']} WHERE region_id = ?",
+                    array($id),
+                    array(Database::INTEGER)
+                )->fetchAssociative();
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $A = false;
             }
             return new self($A);
         }
+    }
+
+
+    /**
+     * Set properties from variables.
+     *
+     * @param   DataArray   $A      Array of variables
+     * @return  object  $this
+     */
+    public function setVars(DataArray $A) : self
+    {
+        $this->setID($A->getInt('region_id'))
+             ->setCode($A->getInt('region_code'))
+             ->setName($A->getString('region_name'))
+             ->setEnabled($A->getInt('region_enabled'));
+        return $this;
     }
 
 
@@ -104,7 +113,7 @@ class Region extends RegionBase
      * @param   integer $id     DB record ID
      * @return  object  $this
      */
-    private function setID($id)
+    private function setID(int $id) : self
     {
         $this->region_id = (int)$id;
         return $this;
@@ -116,7 +125,7 @@ class Region extends RegionBase
      *
      * @return  integer     Record ID
      */
-    public function getID()
+    public function getID() : int
     {
         return (int)$this->region_id;
     }
@@ -127,7 +136,7 @@ class Region extends RegionBase
      *
      * @param   $code   integer     Region code
      */
-    private function setCode($code)
+    private function setCode(int $code) : self
     {
         $this->region_code = (int)$code;
         return $this;
@@ -139,7 +148,7 @@ class Region extends RegionBase
      *
      * @return  integer     Region code
      */
-    public function getCode()
+    public function getCode() : int
     {
         return (int)$this->region_code;
     }
@@ -151,9 +160,9 @@ class Region extends RegionBase
      * @param   integer $enabled    Zero to disable, nonzero to enable
      * @return  object  $this
      */
-    private function setEnabled($enabled)
+    private function setEnabled(bool $enabled) : self
     {
-        $this->region_enabled = $enabled == 0 ? 0 : 1;
+        $this->region_enabled = $enabled ? 1 : 0;
         return $this;
     }
 
@@ -163,7 +172,7 @@ class Region extends RegionBase
      *
      * @return  integer     1 if enabled, 0 if not
      */
-    public function isEnabled()
+    public function isEnabled() : int
     {
         return (int)$this->region_enabled;
     }
@@ -175,7 +184,7 @@ class Region extends RegionBase
      * @param   string  $name   Name of region
      * @return  object  $this
      */
-    private function setName($name)
+    private function setName(string $name) : self
     {
         $this->region_name = $name;
         return $this;
@@ -187,7 +196,7 @@ class Region extends RegionBase
      *
      * @return  string      Country name, empty string if not found
      */
-    public function getName()
+    public function getName() : string
     {
         return $this->region_name;
     }
@@ -199,7 +208,7 @@ class Region extends RegionBase
      * @param   string  $enabled    True to only include enabled regions
      * @return  array       Array of Region objects
      */
-    public static function getAll($enabled=true)
+    public static function getAll(bool $enabled=true) : array
     {
         global $_TABLES;
 
@@ -207,17 +216,29 @@ class Region extends RegionBase
         $cache_key = 'shop.regions_all_' . $enabled;
         $retval = Cache::get($cache_key);
         if ($retval === NULL) {
-            $sql = "SELECT * FROM {$_TABLES['shop.regions']}";
+            $qb = Database::getInstance()->conn->createQueryBuilder();
+            $qb->select('*')
+                ->from($_TABLES['shop.regions'])
+               ->orderBy('region_name', 'ASC');
             if ($enabled) {
-                $sql .= ' WHERE region_enabled =1';
+                $qb->where('region_enabled = 1');
             }
-            $sql .= ' ORDER BY region_name ASC';
-            $res = DB_query($sql);
-            while ($A = DB_fetchArray($res, false)) {
-                $retval[$A['region_id']] = new self($A);
+            try {
+                $stmt = $qb->execute();
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $stmt = false;
+            }
+            if ($stmt) {
+                while ($A = $stmt->fetchAssociative()) {
+                    $retval[$A['region_id']] = new self($A);
+                }
             }
             // Cache for a month, this doesn't change often
             Cache::set($cache_key, $retval, 'regions', 43200);
+        }
+        if (!is_array($retval)) {
+            $retval = array();
         }
         return $retval;
     }
@@ -231,7 +252,7 @@ class Region extends RegionBase
      * @param   boolean $enabled    True for only enabled regions
      * @return  string      Option tags for selection list
      */
-    public static function optionList($sel = 0, $enabled = true)
+    public static function optionList(int $sel = 0, bool $enabled = true) : string
     {
         $retval = '';
         $arr = self::getAll($enabled);
@@ -248,8 +269,11 @@ class Region extends RegionBase
      *
      * @return  string      HTML for editing form
      */
-    public function Edit()
+    public function Edit(?DataArray $A=NULL) : string
     {
+        if (!empty($A)) {
+            $this->setVars($A);
+        }
         $T = new Template('admin');
         $T->set_file(array(
             'form' => 'region.thtml',
@@ -270,40 +294,47 @@ class Region extends RegionBase
     /**
      * Save the region information.
      *
-     * @param   array   $A  Optional data array from $_POST
+     * @param   DataArray   $A  Optional data array from $_POST
      * @return  boolean     True on success, False on failure
      */
-    public function Save($A=NULL)
+    public function Save(?DataArray $A=NULL) : bool
     {
         global $_TABLES;
 
         if (is_array($A)) {
-            $this->setID($A['region_id'])
-                ->setCode($A['region_code'])
-                ->setName($A['region_name'])
-                ->setEnabled($A['region_enabled']);
+            $this->setVars($A);
         }
-        if ($this->getID() > 0) {
-            $sql1 = "UPDATE {$_TABLES['shop.regions']} SET ";
-            $sql3 = " WHERE region_id ='" . $this->getID() . "'";
-        } else {
-            $sql1 = "INSERT INTO {$_TABLES['shop.regions']} SET ";
-            $sql3 = '';
-        }
-        $sql2 = "region_name = '" . DB_escapeString($this->getName()) . "',
-            region_code = {$this->getCode()},
-            region_enabled = {$this->isEnabled()}";
-        $sql = $sql1 . $sql2 . $sql3;
-        //var_dump($this);die;
-        //echo $sql;die;
-        SHOP_log($sql, SHOP_LOG_DEBUG);
-        DB_query($sql);
-        if (!DB_error()) {
-            if ($this->getID() == 0) {
-                $this->setID(DB_insertID());
+        $db = Database::getInstance();
+        $values = array(
+            'region_name' => $this->getName(),
+            'region_code' => $this->getCode(),
+            'region_enabled' => $this->isEnabled(),
+        );
+        $types = array(
+            Database::STRING,
+            Database::INTEGER,
+            Database::INTEGER,
+        );
+        try {
+            if ($this->getID() > 0) {
+                $types[] = Database::INTEGER;
+                $db->conn->update(
+                    $_TABLES['shop.regions'],
+                    $values,
+                    array('region_id' => $this->getID()),
+                    $types
+                );
+            } else {
+                $db->conn->insert(
+                    $_TABLES['shop.regions'],
+                    $values,
+                    $types
+                );
+                $this->setID($db->conn->lastInsertId());
             }
             $status = true;
-        } else {
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $status = false;
         }
         return $status;
@@ -315,7 +346,7 @@ class Region extends RegionBase
      *
      * @return  string      HTML for the product list.
      */
-    public static function adminList()
+    public static function adminList() : string
     {
         global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $LANG_SHOP_HELP;
 
@@ -353,14 +384,11 @@ class Region extends RegionBase
         );
 
         $display .= COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
-        $display .= COM_createLink(
-            $LANG_SHOP['new_item'],
-            SHOP_ADMIN_URL . '/regions.php?editregion=x',
-            array(
-                'class' => 'uk-button uk-button-success',
-                'style' => 'float:left',
-            )
-        );
+        $display .= FieldList::buttonLink(array(
+            'text' => $LANG_SHOP['new_item'],
+            'url' => SHOP_ADMIN_URL . '/regions.php?editregion=x',
+            'style' => 'success',
+        ) );
 
         $query_arr = array(
             'table' => 'shop.regions',
@@ -404,14 +432,13 @@ class Region extends RegionBase
 
         switch($fieldname) {
         case 'edit':
-            $retval = COM_createLink(
-                Icon::getHTML('edit'),
-                SHOP_ADMIN_URL . '/regions.php?editregion=' . $A['region_id']
-            );
+            $retval = FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . '/regions.php?editregion=' . $A['region_id'],
+            ) );
             break;
 
         case 'region_enabled':
-            $retval = Field::checkbox(array(
+            $retval = FieldList::checkbox(array(
                 'name' => 'ena_check',
                 'id' => "togenabled{$A['region_id']}",
                 'checked' => $fieldvalue == 1,

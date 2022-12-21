@@ -1,3 +1,4 @@
+{header}
 <p>Merci pour votre achat auprès de {site_name}. Les détails de votre achat suivent:</p>
 <p>
 {purchase_details}

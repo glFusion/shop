@@ -13,6 +13,8 @@
  */
 namespace Shop;
 use Shop\Models\Session;
+use Shop\Models\OrderStatus;
+use Shop\Models\Request;
 use Shop\Field;
 
 
@@ -135,29 +137,25 @@ class Report
 
 
     /**
-     * Set parameters in object and session vars.
+     * Set parameters in object and session vars from $_GET and $_POST.
      *
-     * @param   array   $get    Array of parameters, typically $_GET
      * @return  object  $this
      */
-    public function setParams($get)
+    public function setParams() : self
     {
-        if ($get === NULL) {
-            return;
-        }
-
-        $this->setType(SHOP_getVar($get, 'out_type', 'string', $this->type));
-        $this->allowed_statuses = SHOP_getVar($get, 'orderstatus', 'array');
+        $Args = Request::getInstance();
+        $this->setType($Args->getString('out_type', $this->type));
+        $this->allowed_statuses = $Args->getArray('orderstatus');
         self::_setSessVar('orderstatus', $this->allowed_statuses);
-        $this->setUid(SHOP_getVar($get, 'uid', 'integer'));
-        $period = SHOP_getVar($get, 'period');
-        $from = SHOP_getVar($get, 'from_date');
-        $to = SHOP_getVar($get, 'to');
+        $this->setUid($Args->getInt('uid'));
+        $period = $Args->get('period');
+        $from = $Args->getString('from_date');
+        $to = $Args->getString('to');
         $dates = $this->getDates($period, $from, $to);
         $this->startDate = $dates['start'];
         $this->endDate = $dates['end'];
-        $this->paid_status = SHOP_getVar($get, 'paid', 'integer', 4);
-        $this->limit = SHOP_getVar($get, 'query_limit', 'integer', 50);
+        $this->paid_status = $Args->getInt('paid', 4);
+        $this->limit = $Args->getInt('query_limit', 50);
         return $this;
     }
 
@@ -598,7 +596,7 @@ class Report
         // Get the last day of the last month in the quarter
         $ld = cal_days_in_month(CAL_GREGORIAN, $qtrs[$qtr][1], $year);
         $d1 = new \Date(
-            sprintf('%d-%02d-01 ' . $t1, $year, $qtrs[$qtr][0]),
+            sprintf('%d-%02d-01 00:00:00', $year, $qtrs[$qtr][0]),
             $_CONF['timezone']
         );
         $d2 = new \Date(
@@ -827,13 +825,14 @@ class Report
             break;
 
         case 'sales_amt':
+            $fieldvalue = (float)$fieldvalue;
             if (!$extra['isAdmin']) {
                 $total = (float)$fieldvalue;
                 $tip = '<table width=&quot;50%&quot; align=&quot;center&quot;>' . LB;
                 $tip .= '<tr><td>' . $LANG_SHOP['item_total'] .
                     ': </td><td style=&quot;text-align:right&quot;>' .
                     self::formatMoney($fieldvalue) . '</td></tr>' . LB;
-                $disc_amt = $A['gross_items'] - $A['net_nontax'] - $A['net_taxable'];
+                $disc_amt = (float)($A['gross_items'] - $A['net_nontax'] - $A['net_taxable']);
                 if ($disc_amt > 0) {
                     $total -= $disc_amt;
                     $tip .= '<tr><td>' . $LANG_SHOP['discount'] .
@@ -844,7 +843,7 @@ class Report
                     if (isset($A[$fld]) && is_numeric($A[$fld]) && $A[$fld] > 0) {
                         $tip .= '<tr><td>' . $LANG_SHOP[$fld] .
                                 ': </td><td style=&quot;text-align:right&quot;>' .
-                                self::formatMoney($A[$fld]) .
+                                self::formatMoney((float)$A[$fld]) .
                                 '</td></tr>' . LB;
                         $total += (float)$A[$fld];
                     }
@@ -869,7 +868,7 @@ class Report
         case 'net_nontax':
         case 'tax':
         case 'paid':
-            $retval = self::formatMoney($fieldvalue);
+            $retval = self::formatMoney((float)$fieldvalue);
             break;
 
         case 'customer':
@@ -878,7 +877,7 @@ class Report
             } elseif (isset($A['billto_name']) && !empty($A['billto_name'])) {
                 $fieldvalue = $A['billto_name'];
             } elseif (isset($A['shipto_name']) && !empty($A['shipto_name'])) {
-                $fieldvalue = SHOP_getVar($A, 'shipto_name');
+                $fieldvalue = $A['shipto_name'];
             } else {
                 $fieldvalue = COM_getDisplayName($A['uid']);
             }
@@ -910,7 +909,7 @@ class Report
      * @param   float   $amt    Amount
      * @return  string  Formatted currency string
      */
-    protected static function formatMoney($amt)
+    protected static function formatMoney(float $amt) : string
     {
         return Currency::formatMoney($amt);
     }
@@ -1039,37 +1038,45 @@ class Report
         global $LANG_SHOP;
 
         // Print selected packing lists
-        $prt_pl = '<button type="submit" name="pdfpl" value="x" ' .
-            'class="uk-button uk-button-mini tooltip" ' .
-            'formtarget="_blank" ' .
-            'title="' . $LANG_SHOP['print_sel_pl'] . '" ' .
-            '><i name="pdfpl" class="uk-icon uk-icon-list"></i>' .
-            '</button>';
+        $prt_pl = FieldList::button(array(
+            'name' => 'pdfpl',
+            'value' => 'x',
+            'size' => 'mini',
+            'type' => 'submit',
+            'formtarget' => '_blank',
+            'title' => $LANG_SHOP['print_sel_pl'],
+            'text' => FieldList::list(),
+        ) );
         // Print selected orders
-        $prt_ord = '<button type="submit" name="pdforder" value="x" ' .
-            'class="uk-button uk-button-mini tooltip" ' .
-            'formtarget="_blank" ' .
-            'title="' . $LANG_SHOP['print_sel_ord'] . '" ' .
-            '><i name="pdfpl" class="uk-icon uk-icon-print"></i>' .
-            '</button>';
+        $prt_ord = FieldList::button(array(
+            'name' => 'pdforder',
+            'value' => 'x',
+            'size' => 'mini',
+            'type' => 'submit',
+            'formtarget' => '_blank',
+            'title' => $LANG_SHOP['print_sel_ord'],
+            'text' => FieldList::print(),
+        ) );
         $statuses = OrderStatus::getAll();
         $upd_opts = '<option value="">--' . $LANG_SHOP['update_status'] . '--</option>' . LB;
         foreach ($statuses as $name=>$obj) {
             $upd_opts .= '<option value="' . $name . '">' . OrderStatus::getDscp($name) . '</option>' . LB;
         }
-        $upd_stat = Field::select(array(
+        $upd_stat = FieldList::select(array(
             'name' => 'newstatus',
             'onchange' => "SHOP_enaBtn(bulk_stat_upd, '', this.value);",
             'option_list' => $upd_opts,
         ) );
-        $upd_stat .= '<button type="submit" name="updstatus" value="x" ' .
-            'id="bulk_stat_upd" ' .
-            'class="uk-button uk-button-mini tooltip" ' .
-            'formtarget="_self" ' .
-            'title="' . $LANG_SHOP['update_status'] . '" ' .
-            'onclick="return confirm(\'' . $LANG_SHOP['q_upd_stat_all'] . '\');"' .
-            '><i name="updstat" class="uk-icon uk-icon-check"></i>' .
-            '</button>';
+        $upd_stat .= FieldList::button(array(
+            'name' => 'updstatus',
+            'value' => 'x',
+            'size' => 'mini',
+            'type' => 'submit',
+            'formtarget' => '_self',
+            'title' => $LANG_SHOP['update_status'],
+            'onclick' => "return confirm('{$LANG_SHOP['q_upd_stat_all']}');",
+            'text' => FieldList::checkmark(array()),
+        ) );
 
         $options = array(
             'chkselect' => 'true',
@@ -1080,6 +1087,5 @@ class Report
         return $options;
     }
 
-}   // class Report
+}
 
-?>

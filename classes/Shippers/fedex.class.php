@@ -3,9 +3,9 @@
  * US Postal Service shipper class to get shipping rates.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.4.1
  * @since       v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -18,6 +18,7 @@ use Shop\Currency;
 use Shop\Tracking;
 use Shop\Models\ShippingQuote;
 use Shop\Order;
+use Shop\Log;
 
 
 /**
@@ -130,6 +131,11 @@ class fedex extends \Shop\Shipper
             $this->meter_num = $this->getConfig('prod_meter_num');
             $this->passwd = $this->getConfig('prod_passwd');
         }
+        $services = $this->getConfig('services');
+        if (is_array($services)) {
+            $this->supported_services = $services;
+        }
+
     }
 
 
@@ -253,47 +259,54 @@ class fedex extends \Shop\Shipper
             $Tracking->addError('Unknown Error Response');
             return $Tracking;
         } elseif ($response->HighestSeverity == 'SUCCESS') {
-            $TrackDetails = $response->CompletedTrackDetails->TrackDetails;
-            if (
-                isset($TrackDetails->Notification->Severity)
-                &&
-                $TrackDetails->Notification->Severity != 'SUCCESS'
-            ) {
-                $Tracking->addMeta('Error', $TrackDetails->Notification->LocalizedMessage);
-            } else {
-                if ($TrackDetails->Service) {
-                    $Tracking->addMeta(
-                        'Service',
-                        $TrackDetails->Service->Description
-                    );
+            try {
+                $TrackDetails = $response->CompletedTrackDetails->TrackDetails;
+                if (
+                    isset($TrackDetails->Notification->Severity)
+                    &&
+                    $TrackDetails->Notification->Severity != 'SUCCESS'
+                ) {
+                    $Tracking->addMeta('Error', $TrackDetails->Notification->LocalizedMessage);
+                } else {
+                    if ($TrackDetails->Service) {
+                        $Tracking->addMeta(
+                            'Service',
+                            $TrackDetails->Service->Description
+                        );
+                    }
+                    $StatusDetail = $TrackDetails->StatusDetail;
+                    $Tracking->addMeta('Status', $StatusDetail->Description);
+                    if ($StatusDetail->Code == 'DL') {   // Delivered
+                        $Tracking->addMeta('Delivered to', $StatusDetail->AncillaryDetails->ReasonDescription);
+                    }
+
+                    $Events = $TrackDetails->Events;
+                    foreach ($Events as $Event) {
+                        $loc = $this->_makeTrackLocation($Event->Address);
+                        $Tracking->addStep(
+                            array(
+                                'location' => $loc,
+                                //'datetime' => $Event->Timestamp,
+                                'date'  => substr($Event->Timestamp, 0, 10),
+                                'time'  => substr($Event->Timestamp, 11),
+                                'message' => (string)$Event->EventDescription,
+                            )
+                        );
+                    }
                 }
-                $StatusDetail = $TrackDetails->StatusDetail;
-                $Tracking->addMeta('Status', $StatusDetail->Description);
-                if ($StatusDetail->Code == 'DL') {   // Delivered
-                    $Tracking->addMeta('Delivered to', $TrackDetails->DeliveryLocationDescription);
-                    $Tracking->addMeta('Signed By', $TrackDetails->DeliverySignatureName);
-                }
-                $Events = $TrackDetails->Events;
-                foreach ($Events as $Event) {
-                    $loc = $this->_makeTrackLocation($Event->Address);
-                    $Tracking->addStep(
-                        array(
-                            'location' => $loc,
-                            //'datetime' => $Event->Timestamp,
-                            'date'  => substr($Event->Timestamp, 0, 10),
-                            'time'  => substr($Event->Timestamp, 11),
-                            'message' => (string)$Event->EventDescription,
-                        )
-                    );
-                }
+            } catch (\Exception $e) {
+                $Tracking->addError($LANG_SHOP['err_getting_info']);
+                Log::write('shop_system', Log::ERROR,
+                    __METHOD__ . '() Line ' . __LINE__ .
+                    ' Error getting tracking info: ' . print_r($ex,true)
+                );
             }
         } else {
-            SHOP_log(
-                __CLASS__ . '::' . __FUNCTION__ .
-                '- Error getting tracking info: ' .
+            Log::write('shop_system', Log::ERROR,
+                __METHOD__ . '()- Error getting tracking info: ' .
                 print_r($response,true)
             );
-            $Tracking->addError('Non-successful response received.');
+            $Tracking->addError($LANG_SHOP['err_getting_info']);
         }
         $Tracking->setCache($this->key, $track_num);
         return $Tracking;
@@ -306,9 +319,13 @@ class fedex extends \Shop\Shipper
      * @param   object  $Order  Order to be shipped
      * @return  array       Array of ShippingQuote objects
      */
-    protected function _getQuote($Order)
+    protected function _getQuote($Order) : array
     {
         global $_SHOP_CONF;
+
+        if (!$this->hasValidConfig()) {
+            return array();
+        }
 
         $Addr = $Order->getShipto();
         $Packages = Package::packOrder($Order, $this);
@@ -342,7 +359,7 @@ class fedex extends \Shop\Shipper
 
         // valid values FEDEX_BOX, FEDEX_PAK, FEDEX_TUBE, YOUR_PACKAGING, ...
         $request['RequestedShipment']['PackagingType'] = 'YOUR_PACKAGING';
-        
+
         $request['RequestedShipment']['TotalInsuredValue']=array(
             'Ammount'=> $Order->getGrossItems(),
             'Currency'=> Currency::getInstance()->getCode(),
@@ -397,7 +414,7 @@ class fedex extends \Shop\Shipper
                 'SequenceNumber'=> ++$seq_no,
                 'GroupPackageCount'=> 1,
                 'Weight' => array(
-                        'Value' => $Package->getWeight(),
+                        'Value' => max($Package->getWeight(), 0.5),
                         'Units' => $this->getWeightUOM(),
                 ),
                 'Dimensions' => array(
@@ -410,8 +427,14 @@ class fedex extends \Shop\Shipper
         }
         if ($fixed_pkgs < count($Packages)) {
             $req = $this->_buildSoapRequest('crs', $request);
-            $response = $_soapClient->getRates($req);
+            try {
+                $response = $_soapClient->getRates($req);
+            } catch (\Exception $e) {
+                Log::write('shop_system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $response = NULL;
+            }
             if (
+                $response &&
                 $response->HighestSeverity != 'FAILURE' &&
                 $response->HighestSeverity != 'ERROR'
             ) {
@@ -437,12 +460,11 @@ class fedex extends \Shop\Shipper
                     ->setServiceCode($svc_code)
                     ->setServiceID($svc_id)
                     ->setServiceTitle($svc_dscp)
-                    ->setCost($cost + $fixed_cost)
+                    ->setCost($cost + $fixed_cost + $this->item_shipping['amount'])
                     ->setPackageCount(count($Packages));
             } else {
-                SHOP_log(
-                    __CLASS__ . '::' . __FUNCTION__ .
-                    " Error getting Fedex quote for order {$Order->getOrderID()} " .
+                Log::write('shop_system', Log::ERROR,
+                    __METHOD__ . "() Error getting Fedex quote for order {$Order->getOrderID()} " .
                     print_r($response,true)
                 );
             }
@@ -455,7 +477,7 @@ class fedex extends \Shop\Shipper
                 ->setServiceCode('_fixed')
                 ->setServiceID('_fixed')
                 ->setServiceTitle($this->getCarrierName())
-                ->setCost($fixed_cost)
+                ->setCost($fixed_cost + $this->item_shipping['amount'])
                 ->setPackageCount(count($Packages));
         }
         return $retval;

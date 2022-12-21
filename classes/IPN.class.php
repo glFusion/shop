@@ -15,17 +15,20 @@
  * @copyright   Copyright (c) 2009-2020 Lee Garner
  * @copyright   Copyright (c) 2005-2006 Vincent Furia
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
-use Shop\Logger\IPN as logIPN;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
+use Shop\Loggers\IPN as logIPN;
 use Shop\Products\Coupon;
-use Shop\Models\OrderState;
+use Shop\Models\OrderStatus;
 use Shop\Models\CustomInfo;
+use Shop\Models\DataArray;
 use Shop\Models\IPN as IPNModel;
 
 
@@ -33,9 +36,6 @@ use Shop\Models\IPN as IPNModel;
 if (!defined ('GVERSION')) {
     die ('This file can not be used on its own.');
 }
-
-// Just for E_ALL. If "testing" isn't defined, define it.
-if (!isset($_SHOP_CONF['sys_test_ipn'])) $_SHOP_CONF['sys_test_ipn'] = false;
 
 
 /**
@@ -128,7 +128,7 @@ class IPN
      * standard variables.
      * @var array
      */
-    protected $ipn_data = array();
+    protected $ipn_data = NULL;
 
     /** Custom data that comes from the IPN provider, typically pass-through.
      * @var array
@@ -169,6 +169,10 @@ class IPN
      * @var object */
     protected $IPN = NULL;
 
+    /** Record number of the IPN log entry.
+     * @var integer */
+    protected $ipnLogId = 0;
+
 
     /**
      * Set up variables received in the IPN message.
@@ -177,9 +181,9 @@ class IPN
      *
      * @param   array   $A      $_POST'd variables from the gateway
      */
-    public function __construct($A=array())
+    public function __construct(?DataArray $A=NULL)
     {
-        if (is_array($A)) {
+        if ($A) {
             $this->ipn_data = $A;
         }
         $this->IPN = new IPNModel;
@@ -580,19 +584,12 @@ class IPN
      * @param   string  $status Status string
      * @return  object  $this
      */
-    public function setStatus($status)
+    public function setStatus(string $status) : self
     {
-        switch ($status) {
-        case OrderState::PENDING:
-        case OrderState::PAID:
-        case OrderState::REFUNDED:
-        case OrderState::CLOSED:
-        case OrderState::CANCELED;
+        if (OrderStatus::isValid($status)) {
             $this->status = $status;
-            break;
-        default:
+        } else {
             $this->status = 'unknown';
-            break;
         }
         return $this;
     }
@@ -625,11 +622,13 @@ class IPN
             return;
         }
 
+        $args = new DataArray($args);
+
         // Separate the item ID and options to get pricing
         $tmp = explode('|', $args['item_id']);
         $P = Product::getByID($tmp[0], $this->custom);
         if ($P->isNew()) {
-            SHOP_log("Product {$args['item_id']} not found in catalog", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, "Product {$args['item_id']} not found in catalog");
             return;      // no product found to add
         }
         if (isset($tmp[1])) {
@@ -641,22 +640,22 @@ class IPN
         // IPN-supplied price. This is the case for donations.
         //$overrides = $this->custom->toArray();
         $overrides = array();
-        $overrides['price'] = $args['price'];
-        $overrides['tax'] = LGLIB_getVar($args, 'tax', 'float');
-        $price = $P->getPrice($opts, $args['quantity'], $overrides);
+        $overrides['price'] = $args->getFloat('price');
+        $overrides['tax'] = $args->getFloat('tax');
+        $price = $P->getPrice($opts, $args->getInt('quantity'), $overrides);
 
         $this->items[] = array(
-            'item_id'   => $args['item_id'],
+            'item_id'   => $args->getString('item_id'),
             'item_number' => $tmp[0],
-            'name'      => isset($args['item_name']) ? $args['item_name'] : '',
-            'quantity'  => $args['quantity'],
+            'name'      => $args->getString('item_name'),
+            'quantity'  => $args->getInt('quantity'),
             'price'     => $price,      // price including options
-            'shipping'  => isset($args['shipping']) ? $args['shipping'] : 0,
-            'handling'  => isset($args['handling']) ? $args['handling'] : 0,
+            'shipping'  => $args->getFloat('shipping'),
+            'handling'  => $args->getFloat('handling'),
             //'tax'       => $tax,
             'taxable'   => $P->isTaxable() ? 1 : 0,
             'options'   => isset($tmp[1]) ? $tmp[1] : '',
-            'extras'    => isset($args['extras']) ? $args['extras'] : '',
+            'extras'    => $args->getString('extras'),
             'overrides' => $overrides,
             'custom'    => $this->custom->toArray(),
         );
@@ -684,15 +683,17 @@ class IPN
         } else {
             $verified = 0;
         }
-        $order_id = $this->Order !== NULL ? DB_escapeString($this->Order->getOrderId()) : '';
+        $order_id = $this->Order !== NULL ? $this->Order->getOrderId() : '';
         $ipn = new logIPN();
         $ipn->setOrderID($order_id)
+            ->setRefID($this->txn_id)   // same as TxnID for IPN messages
             ->setTxnID($this->txn_id)
             ->setGateway($this->gw_id)
             ->setEvent($this->event)
             ->setVerified($verified)
-            ->setData($this->ipn_data);
-        return $ipn->Write();
+            ->setData($this->ipn_data->toArray());
+        $this->ipnLogId = $ipn->Write();
+        return $this->ipnLogId;
     }
 
 
@@ -701,23 +702,25 @@ class IPN
      *
      * @return  boolean             True if unique, False otherwise
      */
-    protected function isUniqueTxnId()
+    protected function isUniqueTxnId() : bool
     {
-        global $_TABLES, $_SHOP_CONF;
+        global $_TABLES;
 
-        if (isset($_SHOP_CONF['sys_test_ipn']) && $_SHOP_CONF['sys_test_ipn']) {
+        if (Config::get('sys_test_ipn')) {
             // Special config value set only in config.php for IPN testing
             return true;
         }
 
+        $db = Database::getInstance();
         // Count purchases with txn_id, if > 0
-        $count = DB_count(
+        $count = $db->getCount(
             $_TABLES['shop.ipnlog'],
-            array('gateway', 'txn_id', 'event'),
-            array($this->GW->getName(), $this->txn_id, $this->event)
+            array('gateway', 'ref_id', 'event'),
+            array($this->GW->getName(), $this->txn_id, $this->event),
+            array(Database::STRING, Database::STRING, Database::STRING)
         );
         if ($count > 0) {
-            SHOP_log("Received duplicate IPN {$this->txn_id} for {$this->gw_id}", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, "Received duplicate IPN {$this->txn_id} for {$this->gw_id}");
             return false;
         } else {
             return true;
@@ -745,10 +748,10 @@ class IPN
             $Cur->FormatValue($credit) .' credit, require ' .
             $Cur->FormatValue($total_order);
         if ($total_order <= $total_credit + .0001) {
-            SHOP_log("OK: $msg", SHOP_LOG_DEBUG);
+            Log::write('shop_system', Log::DEBUG, "OK: $msg");
             return true;
         } else {
-            SHOP_log("Insufficient Funds: $msg", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, "Insufficient Funds: $msg");
             return false;
         }
     }
@@ -757,7 +760,7 @@ class IPN
     /**
      * Handles the item purchases.
      * The purchase should already have been validated; this function simply
-     * records the purchases.  Purchased files will be emailed to the
+     * records the purchases. Purchased files will be emailed to the
      * customer by Order::Notify().
      *
      * @uses    self::createOrder()
@@ -765,15 +768,14 @@ class IPN
      */
     protected function handlePurchase()
     {
-        global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP;
+        global $_TABLES, $_CONF, $LANG_SHOP;
 
         $status = is_null($this->Order) ? $this->createOrder() : 0;
         if ($status) {
-            $order_id = 'Unknown';
+            Log::write('shop_system', Log::ERROR, 'Error creating order: ' . print_r($status,true));
+            return false;
         } else {
             $order_id  = $this->Order->getOrderId();
-        }
-        if ($status == 0) {
             // Now all of the items are in the order object, check for sufficient
             // funds. If OK, then save the order and call each handlePurchase()
             // for each item.
@@ -811,12 +813,13 @@ class IPN
                         sprintf(
                             $LANG_SHOP['amt_paid_gw'],
                             $val,
-                            SHOP_getVar($LANG_SHOP, $key, 'string', 'Unknown')
+                            isset($LANG_SHOP[$key]) ? $LANG_SHOP[$key] : 'Unknown'
                         )
                     );
                 }
             }
             $this->Order->Save();
+            $this->setOrderID($order_id);
             $this->recordPayment($order_id);
 
             // Handle the purchase for each order item
@@ -827,9 +830,6 @@ class IPN
             //$ipn_data['sql_date'] = $_CONF['_now']->toMySQL(true);
             $this->IPN['uid'] = $this->Order->getUid();
             $this->Order->handlePurchase($this->IPN);
-        } else {
-            SHOP_log('Error creating order: ' . print_r($status,true), SHOP_LOG_ERROR);
-            return false;
         }
         return true;
     }
@@ -849,16 +849,22 @@ class IPN
      */
     protected function createOrder()
     {
-        global $_TABLES, $_SHOP_CONF;
+        global $_TABLES;
 
         // See if an order already exists for this transaction.
         // If so, load it and update the status. If not, continue on
         // and create a new order
-        $order_id = DB_getItem(
-            $_TABLES['shop.orders'],
-            'order_id',
-            "pmt_txn_id='" . DB_escapeString($this->txn_id) . "'"
-        );
+        $db = Database::getInstance();
+        try {
+            $order_id = $db->getItem(
+                $_TABLES['shop.orders'],
+                'order_id',
+                array('pmt_txn_id' => $this->txn_id)
+            );
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return 1;
+        }
 
         if (!empty($order_id)) {
             $this->Order = Order::getInstance($order_id);
@@ -874,23 +880,30 @@ class IPN
             }
 
             foreach ($this->items as $id=>$item) {
-                $options = DB_escapeString($item['options']);
+                $item = new DataArray($item);
                 $option_desc = array();
-                //$tmp = explode('|', $item['item_number']);
-                //list($item_number,$options) =
-                //if (is_numeric($item_number)) {
-                $P = Product::getByID($item['item_id'], $this->custom);
+                $P = Product::getByID($item->getString('item_id'), $this->custom);
                 $item['short_description'] = $P->getShortDscp();
-                if (!empty($options)) {
+                if (!empty($item['options'])) {
                     // options is expected as CSV
-                    $sql = "SELECT attr_name, attr_value
-                        FROM {$_TABLES['shop.prod_attr']}
-                        WHERE attr_id IN ($options)";
-                    $optres = DB_query($sql);
+                    try {
+                        $data = $db->conn->executeQuery(
+                            "SELECT attr_name, attr_value
+                            FROM {$_TABLES['shop.prod_attr']}
+                            WHERE attr_id IN (?)",
+                            array($item['options']),
+                            array(Database::PARAM_INT_ARRAY)
+                        )->fetchAllAssociative();
+                    } catch (\Exception $e) {
+                        Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                        $data = false;
+                    }
                     $opt_str = '';
-                    while ($O = DB_fetchArray($optres, false)) {
-                        $opt_str .= ', ' . $O['attr_value'];
-                        $option_desc[] = $O['attr_name'] . ': ' . $O['attr_value'];
+                    if (is_array($data)) {
+                        foreach ($data as $O) {
+                            $opt_str .= ', ' . $O['attr_value'];
+                            $option_desc[] = $O['attr_name'] . ': ' . $O['attr_value'];
+                        }
                     }
                 }
 
@@ -906,30 +919,24 @@ class IPN
                 }
                 $args = array(
                     'order_id' => $this->Order->getorderID(),
-                    'product_id' => $item['item_number'],
-                    'description' => $item['short_description'],
-                    'quantity' => $item['quantity'],
+                    'product_id' => $item->getString('item_number'),
+                    'description' => $item->getString('short_description'),
+                    'quantity' => $item->getInt('quantity'),
                     'txn_type' => $this->custom['transtype'],
                     'txn_id' => $this->txn_id,
                     'status' => 'pending',
                     'token' => md5(time()),
                     'price' => $item['price'],
                     'taxable' => $P->isTaxable(),
-                    'options' => $options,
+                    'options' => $item['options'],
                     'options_text' => $option_desc,
                     'extras' => $item['extras'],
-                    'shipping' => SHOP_getVar($item, 'shipping', 'float'),
-                    'handling' => SHOP_getVar($item, 'handling', 'float'),
+                    'shipping' => $item->getFloat('shipping'),
+                    'handling' => $item->getFloat('handling'),
                     'paid' => SHOP_getVar($item['overrides'], 'price', 'float', $item['price']),
                 );
-                $this->Order->addItem($args);
+                $this->Order->addItem(new DataArray($args));
             }   // foreach item
-            /*if (
-                !$this->Order->hasItems() &&
-                !(isset($_SHOP_CONF['sys_test_ipn']) && $_SHOP_CONF['sys_test_ipn'])
-            ) {
-                return 1; // shouldn't normally be empty except during testing
-            }*/
         }
         $this->Order->setUid($this->uid);
         $this->Order->setBuyerEmail($this->payer_email);
@@ -959,7 +966,6 @@ class IPN
             ->setBuyerEmail($this->payer_email)
             ->setLogUser($this->GW->getDscp());
         $this->Order->Save();
-        echo $this->Order->getOrderID() . "<br />\n";
         return 0;
     }
 
@@ -974,26 +980,25 @@ class IPN
      */
     protected function handleRefund()
     {
-        global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP;
+        global $_TABLES, $_CONF, $LANG_SHOP;
 
         // Try to get original order information.  Use the "parent transaction"
         // or invoice number, if available from the IPN message
         $order_id = $this->getOrderId();
         if (empty($order_id)) {
-            $parent_txn = $this->getParentTxnId();
-            if ($parent_txn != '') {
-                $order_id = DB_getItem(
-                    $_TABLES['shop.orders'],
-                    'order_id',
-                    "pmt_txn_id = '" . DB_escapeString($parent_txn_id) . "'"
-                );
+            $parent_txn_id = $this->getParentTxnId();
+            if ($parent_txn_id != '') {
+                $parentPmt = Payment::getByReference($parent_txn_id);
+                if ($parentPmt->getPmtId() > 0) {  // valid payment found
+                    $order_id = $parentPmt->getOrderId();
+                }
             }
         }
 
         if (!empty($order_id)) {
             $Order = Order::getInstance($order_id);
         }
-        if (!$Order || $Order->isNew) {
+        if (!$Order || $Order->isNew()) {
             return false;
         }
 
@@ -1002,23 +1007,23 @@ class IPN
 
         $item_total = 0;
         foreach ($Order->getItems() as $key=>$Item) {
-            $item_total += $Item->quantity * $Item->price;
+            $item_total += $Item->getQuantity() * $Item->getPrice();
         }
         $item_total += $Order->miscCharges();
 
-        if ($item_total == $refund_amt) {
+        if ($item_total <= $refund_amt) {
             // Completely refunded, let the items handle any refund actions.
             // None for catalog items since there's no inventory,
             // but plugin items may need to do something.
-            foreach ($Order->getItems() as $key=>$data) {
-                $P = Product::getByID($data['product_id'], $this->custom);
+            foreach ($Order->getItems() as $key=>$OI) {
+                $OI->getProduct()->handleRefund($OI, $this->IPN);
                 // Don't care about the status, really.  May not even be
                 // a plugin function to handle refunds
-                $P->handleRefund($Order, $this->ipn_data);
             }
             // Update the order status to Refunded
             $Order->updateStatus('refunded');
         }
+        $this->recordPayment($order_id);
         $msg = sprintf($LANG_SHOP['refunded_x'], $this->getCurrency()->Format($refund_amt));
         $Order->Log($msg);
     }
@@ -1070,7 +1075,7 @@ class IPN
     protected function debug($var)
     {
         $msg = print_r($var, true);
-        SHOP_log('IPN Debug: ' . $msg, SHOP_LOG_DEBUG);
+        Log::write('shop_system', Log::DEBUG, 'IPN Debug: ' . $msg);
     }
 
 
@@ -1082,7 +1087,7 @@ class IPN
      */
     protected function Error($str)
     {
-        SHOP_log($this->gw_id. ' IPN Exception: ' . $str, SHOP_LOG_ERROR);
+        Log::write('shop_system', Log::ERROR, $this->gw_id. ' IPN Exception: ' . $str);
     }
 
 
@@ -1099,7 +1104,7 @@ class IPN
         if (class_exists($cls)) {
             return new $cls($vars);
         } else {
-            SHOP_log("IPN::getInstance() - $cls doesn't exist");
+            Log::write('shop_system', Log::ERROR, "IPN::getInstance() - $cls doesn't exist");
             return NULL;
         }
         return $ipns[$name];
@@ -1181,7 +1186,7 @@ class IPN
                     $retval[$key] = $credit;
                 } else {
                     $gc_bal = Coupon::getUserBalance($this->uid);
-                    SHOP_log("Insufficient Gift Card Balance, need $credit, have $gc_bal", SHOP_LOG_DEBUG);
+                    Log::write('shop_system', Log::DEBUG, "Insufficient Gift Card Balance, need $credit, have $gc_bal");
                     $retval[$key] = 0;
                 }
                 break;
@@ -1244,7 +1249,14 @@ class IPN
     {
         global $_TABLES;
 
-        DB_query("TRUNCATE {$_TABLES['shop.ipnlog']}");
+        $db = Database::getInstance();
+        try {
+            $db->conn->executeStatement(
+                "TRUNCATE {$_TABLES['shop.ipnlog']}"
+            );
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
     }
 
 
@@ -1255,10 +1267,12 @@ class IPN
      * @param   mixed   $value  Value of DB field.
      * @return  integer     Count of matching records
      */
-    public static function Count($id='', $value='')
+    public static function Count() : int
     {
         global $_TABLES;
-        return DB_count($_TABLES['shop.ipnlog'], $id, $value);
+
+        $db = Database::getInstance();
+        return $db->getCount($_TABLES['shop.ipnlog']);
     }
 
 
@@ -1271,6 +1285,9 @@ class IPN
     {
         global $LANG_SHOP;
 
+        if ($this->ipnLogId == 0) {     // IPN not logged yet
+            $this->Log();
+        }
         $this->Payment = new Payment;
         $this->Payment->setRefID($this->getTxnId())
             ->setUid($this->getUid())
@@ -1291,7 +1308,7 @@ class IPN
      *
      * @return  boolean     True if valid, False if not.
      */
-    public function Verify()
+    public function Verify() : bool
     {
         return true;
     }
@@ -1333,11 +1350,6 @@ class IPN
     {
         echo "Thanks";
         exit;
-        /*if ($status) {
-            echo COM_refresh(SHOP_URL . '/index.php?thanks=' . $this->gw_id);
-        } else {
-            echo COM_refresh(SHOP_URL . '/index.php?msg=8');
-        }*/
     }
 
 }

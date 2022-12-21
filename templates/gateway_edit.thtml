@@ -67,7 +67,7 @@
 		<div class="uk-form-row uk-margin">
 			<label class="uk-form-label">{$LANG_SHOP['grp_access']}:</label>
 			<div class="uk-form-controls uk-form-controls-text">
-				<select class="uk-select uk-form-small uk-form-width-medium" name="grp_access">
+				<select class="uk-select uk-form-width-medium" name="grp_access">
 					{grp_access_sel}
 				</select>
 				<i style="margin-left:10px;" class="uk-icon uk-icon-question-circle tooltip" title="{$LANG_SHOP_HELP['gw_grp_access']}"></i>
@@ -77,7 +77,7 @@
 		<div class="uk-form-row uk-margin">
 			<label class="uk-form-label" for="orderby">{$LANG_SHOP['orderby']}:</label>
 			<div class="uk-form-controls uk-form-controls-text">
-				<input id="orderby" class="uk-input uk-form-small uk-form-width-small" type="text" size="3" name="orderby" value="{orderby}" />
+				<input id="orderby" class="uk-input uk-form-width-small" type="text" size="3" name="orderby" value="{orderby}" />
 				<i style="margin-left:10px;" class="uk-icon uk-icon-question-circle tooltip" title="{$LANG_SHOP_HELP['gw_order']}"></i>
 			</div>
 		</div>

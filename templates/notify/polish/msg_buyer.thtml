@@ -1,3 +1,4 @@
+{header}
 <p>Dziękujemy za zakup w {site_name}. Szczegóły Twojego zakupu:</p>
 <p>
 {purchase_details}
@@ -47,6 +48,5 @@ Masz pozostałe saldo karty podarunkowej w wysokości {gc_bal_fmt}.
 {!endif}
 <p>
 Dzięki,<br />
-{site_name}<br />
-{site_url}
+{footer}
 </p>

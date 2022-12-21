@@ -3,9 +3,9 @@
  * Automatic installation functions for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.4.2
  * @since       v0.4.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -18,6 +18,8 @@ require_once __DIR__  . '/functions.inc';
 require_once __DIR__ . '/sql/mysql_install.php';
 /** Include default values */
 require_once __DIR__ . '/install_defaults.php';
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 
 global $_CONF;
 $language = $_CONF['language'];
@@ -145,7 +147,7 @@ $tables = array(
     'shipping',
     // v1.0.0
     'oi_opts', 'prod_opt_grps', 'shipments', 'shipment_items',
-    'shipment_packages', 'carrier_config', 'cache',
+    'shipment_packages', 'carrier_config',// 'cache',
     // v1.1.0
     'tax_rates', 'prodXcat', 'product_variants', 'variantXopt', 'suppliers',
     'discountcodes', 'regions', 'countries', 'states',
@@ -178,7 +180,7 @@ function plugin_install_shop()
     $pi_name            = $_SHOP_CONF['pi_name'];
     $pi_display_name    = $_SHOP_CONF['pi_display_name'];
 
-    COM_errorLog("Attempting to install the $pi_display_name plugin", 1);
+    Log::write('system', Log::INFO, "Attempting to install the $pi_display_name plugin");
 
     $ret = INSTALLER_install($INSTALL_plugin[$pi_name]);
     if ($ret > 0) {
@@ -223,12 +225,12 @@ function plugin_postinstall_shop($upgrade=false)
         $_SHOP_CONF['tmpdir'] . '/images/brands',
     );
     foreach ($paths as $path) {
-        COM_errorLog("Creating $path", 1);
+        Log::write('system', Log::INFO, "Creating $path");
         if (!is_dir($path)) {
             mkdir($path, 0755, true);
         }
         if (!is_writable($path)) {
-            COM_errorLog("Cannot write to $path", 1);
+            Log::write('system', Log::ERROR, "Cannot write to $path");
         }
     }
 
@@ -244,14 +246,14 @@ function plugin_postinstall_shop($upgrade=false)
     if (!file_exists($_SHOP_CONF['logfile'])) {
         $fp = fopen($_SHOP_CONF['logfile'], "w+");
         if (!$fp) {
-            COM_errorLog("Failed to create logfile {$_SHOP_CONF['logfile']}", 1);
+            Log::write('system', Log::INFO, "Failed to create logfile {$_SHOP_CONF['logfile']}", 1);
         } else {
             fwrite($fp, "*** Logfile Created ***\n");
             fclose($fp);
         }
     }
     if (!is_writable($_SHOP_CONF['logfile'])) {
-        COM_errorLog("Can't write to {$_SHOP_CONF['logfile']}", 1);
+        Log::write('system', Log::INFO, "Can't write to {$_SHOP_CONF['logfile']}", 1);
     }
 
     if (!$upgrade) {        // only do these for initial installations.
@@ -281,15 +283,16 @@ function plugin_postinstall_shop($upgrade=false)
 
         // Load the sample data. This can be replaced by Paypal data later.
         if (is_array($_SHOP_SAMPLEDATA)) {
-            COM_errorLog("Loading sample data");
+            $db = Database::getInstance();
+            Log::write('system', Log::INFO, "Loading sample data");
             foreach ($_SHOP_SAMPLEDATA as $sql) {
-                DB_query($sql, 1);
-                if (DB_error()) {
-                    COM_errorLog("Sample Data SQL Error: $sql", 1);
+                try {
+                    $db->conn->executeStatement($sql);
+                } catch (\Throwable $e) {
+                    Log::write('system', Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
                 }
             }
         }
     }
 }
 
-?>

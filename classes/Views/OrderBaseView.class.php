@@ -20,7 +20,8 @@ use Shop\Template;
 use Shop\Gateway;
 use Shop\Company;
 use Shop\IPN;
-use Shop\OrderStatus;
+use Shop\FieldList;
+use Shop\Models\OrderStatus;
 
 
 /**
@@ -112,7 +113,7 @@ class OrderBaseView
      * @param   string  $order_id   Order record ID
      * @return  object  $this
      */
-    public function withOrderId($order_id)
+    public function withOrderId(string $order_id) : self
     {
         if (!is_array($order_id)) {
             $this->order_ids = array($order_id);
@@ -191,6 +192,7 @@ class OrderBaseView
     public function asPackingList()
     {
         $this->type = 'packinglist';
+        $this->is_invoice = false;
         return $this;
     }
 
@@ -203,11 +205,18 @@ class OrderBaseView
     public function asInvoice()
     {
         $this->type = 'order';
+        $this->is_invoice = true;
         return $this;
     }
 
 
-    public function withType($type)
+    /**
+     * Set the view type, normally either "packinglist" or "invoice".
+     *
+     * @param   string  $type       View type
+     * @return  object  $this
+     */
+    public function withType(string $type) : self
     {
         $this->type = $type;
         return $this;
@@ -219,7 +228,7 @@ class OrderBaseView
      *
      * @return  boolean     True if html, False if not
      */
-    protected function isHTML()
+    protected function isHTML() : bool
     {
         return $this->output_type == 'html';
     }
@@ -379,8 +388,8 @@ class OrderBaseView
     protected function _renderAddresses()
     {
         if (
-            $this->Order->getBillto()->getID() > 0 ||
-            $this->Order->getBillto()->getID() > 0
+            $this->Order->getBillto()->getID() != 0 ||
+            $this->Order->getShipto()->getID() != 0
         ) {
             $this->TPL->set_var(array(
                 'billto_addr'   =>$this->Order->getBillto()->toHTML(),
@@ -503,7 +512,15 @@ class OrderBaseView
                 'is_invoice'    => $this->is_invoice,
                 'del_item_url'  => COM_buildUrl(SHOP_URL . "/cart.php?action=delete&id={$Item->getID()}"),
                 'embargoed'     => $Item->getInvalid(),
+                'del_item_link' => FieldList::delete(array(
+                    'delete_url' => COM_buildUrl(SHOP_URL . "/cart.php?action=delete&id={$Item->getID()}"),
+                    'attr' => array(
+                        'title' => $LANG_SHOP['remove_item'],
+                        'class' => 'tooltip',
+                    )
+                ) ),
             ) );
+
             if ($P->isPhysical()) {
                 $no_shipping = 0;
             }
@@ -526,11 +543,12 @@ class OrderBaseView
             'total_postfix' => $this->Currency->Post(),
             'total_num'     => $this->Currency->FormatValue($total),
             'cur_decimals'  => $this->Currency->Decimals(),
-            'item_subtotal' => $this->Currency->FormatValue($subtotal),
+            'item_subtotal' => $this->Currency->Format($subtotal),
             'is_invoice'    => $this->is_invoice,
             'icon_dscp'     => $icon_tooltips,
             'have_images'   => $this->is_invoice ? $have_images : false,
-            'shipping'      => $shipping > 0 ? $this->Currency->FormatValue($shipping) : 0,
+            'shipping'      => $shipping,
+            'shipping_fmt'  => $this->Currency->FormatValue($shipping),
             'ship_method'   => $this->Order->getShipperDscp(),
             'handling'      => $handling > 0 ? $this->Currency->FormatValue($handling) : 0,
             'subtotal'      => $subtotal == $total ? '' : $this->Currency->Format($subtotal),
@@ -538,7 +556,8 @@ class OrderBaseView
             'cart_tax'      => $this->Order->getTax() > 0 ? $this->Currency->FormatValue($this->Order->getTax()) : 0,
         ) );
         $this->TPL->set_var(array(
-            'apply_gc'      => $by_gc > 0 ? $this->Currency->FormatValue($by_gc) : 0,
+            // commented for issue #66
+            //'apply_gc'      => $by_gc > 0 ? $this->Currency->FormatValue($by_gc) : 0,
             'net_total'     => $this->Currency->Format($total - $by_gc),
             'discount_code' => $this->Order->getDiscountCode(),
             'dc_row_vis'    => $this->Order->getDiscountCode(),

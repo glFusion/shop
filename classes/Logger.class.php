@@ -67,7 +67,7 @@ class Logger
      * @param   string  $order_id   Order ID
      * @return  object  $this
      */
-    public function setOrderID($order_id)
+    public function setOrderID(string $order_id) : self
     {
         $this->order_id = $order_id;
         return $this;

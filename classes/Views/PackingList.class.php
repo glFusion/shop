@@ -13,6 +13,7 @@ namespace Shop\Views;
 use Shop\Shipper;
 use Shop\Shipment;
 use Shop\Template;
+use Shop\Log;
 
 
 /**
@@ -36,6 +37,7 @@ class PackingList extends Invoice
     public function __construct()
     {
         $this->tplname = 'packinglist';
+        parent::__construct();
         //$this->Shipment = new Shipment($shipment_id);
         //$this->Order = $this->Shipment->getOrder();
     }
@@ -64,12 +66,13 @@ class PackingList extends Invoice
      *
      * @return  string|void     HTML or nothing
      */
-    public function Render()
+    public function Render() : ?string
     {
         if ($this->output_type == 'html') {
             return $this->createHTML();
         } else {
             self::printPDF(array($this->shipment_id));
+            return NULL;
         }
     }
 
@@ -93,6 +96,9 @@ class PackingList extends Invoice
         $T->set_var(array(
             'page_title'    => $LANG_SHOP[$title],
             'shipment_id'    => $this->shipment_id,
+            'logo_url' => $_SHOP_CONF['logo_url'],
+            'logo_width' => $_SHOP_CONF['logo_width'],
+            'logo_height' => $_SHOP_CONF['logo_height'],
         ) );
         $T->set_block('order', 'ItemRow', 'iRow');
         foreach ($this->Items as $Item) {
@@ -166,13 +172,13 @@ class PackingList extends Invoice
      */
     public static function printPDF($ids, $type='pdfpl')
     {
-        USES_lglib_class_html2pdf();
         try {
+            USES_lglib_class_html2pdf();
             $html2pdf = new \Spipu\Html2Pdf\Html2Pdf('P', 'A4', 'en');
             //$html2pdf->setModeDebug();
             $html2pdf->setDefaultFont('Arial');
         } catch(HTML2PDF_exception $e) {
-            SHOP_log($e);
+            Log::write('shop_system', Log::ERROR, $e);
             return false;
         }
 
@@ -189,7 +195,7 @@ class PackingList extends Invoice
             try {
                 $html2pdf->writeHTML($content);
             } catch(HTML2PDF_exception $e) {
-                SHOP_log($e);
+                Log::write('shop_system', Log::ERROR, $e);
                 return false;
             }
         }
@@ -211,4 +217,3 @@ class PackingList extends Invoice
 
 }
 
-?>

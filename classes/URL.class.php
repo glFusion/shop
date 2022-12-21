@@ -1,6 +1,6 @@
 <?php
 /**
- * Class to handle custom order information.
+ * Class to map URL keys to actual URLs.
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2020 Lee Garner <lee@leegarner.com>

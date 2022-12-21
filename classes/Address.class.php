@@ -3,15 +3,19 @@
  * Class to handle billing and shipping addresses.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.5.0
  * @since       v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
+use glFusion\Database\Database;
+use Shop\Models\Request;
+use Shop\Models\DataArray;
+use Shop\Models\ProductType;
 
 
 /**
@@ -74,13 +78,20 @@ class Address
 
     /** DB table name, to facilitate inherited classes.
      * @var string */
-    protected $table = 'shop.addresses';
+    protected $table = 'shop.address';
 
     /** Address field names.
      * @var array */
     protected $_fields = array(
-        'name', 'company', 'address1', 'address2',
-        'city', 'state', 'zip', 'country', 'phone',
+        'name' => array('type' => 'string', 'size' => 255),
+        'company' => array('type' => 'string', 'size' => 255),
+        'address1' => array('type' => 'string', 'size' => 255),
+        'address2' => array('type' => 'string', 'size' => 255),
+        'city' => array('type' => 'string', 'size' => 255),
+        'state' => array('type' => 'string', 'size' => 255),
+        'zip' => array('type' => 'string', 'size' => 40),
+        'country' => array('type' => 'string', 'size' => 255),
+        'phone' => array('type' => 'string', 'size' => 255),
     );
 
 
@@ -99,7 +110,7 @@ class Address
             $data = json_decode($data, true);
         }
         if (is_array($data)) {
-            $this->setVars($data);
+            $this->setVars(new DataArray($data));
         }
         if ($this->addr_id < 1) {
             // in case an empty object is being created, set the user ID
@@ -112,10 +123,10 @@ class Address
     /**
      * Set all the properties from a provided array.
      *
-     * @param   array   $data   Array of property name->value pairs
+     * @param   DataArray   $data   Array of property name->value pairs
      * @return  object  $this
      */
-    public function setVars($data)
+    public function setVars(DataArray $data) : self
     {
         global $_SHOP_CONF;
 
@@ -165,23 +176,29 @@ class Address
      * @param   integer $addr_id    Address ID to retrieve
      * @return  object      Address object, empty if not found
      */
-    public static function getInstance($addr_id)
+    public static function getInstance(?int $addr_id=NULL) : self
     {
         global $_TABLES;
         static $addrs = array();
 
-        $addr_id = (int)$addr_id;
-        if ($addr_id > 0) {
+        if (is_integer($addr_id) && $addr_id > 0) {
             if (isset($addrs[$addr_id])) {
                 return new self($addrs[$addr_id]);
             } else {
-                $res = DB_query("SELECT *
-                    FROM {$_TABLES['shop.address']}
-                    WHERE addr_id = '{$addr_id}'");
-                if ($res) {
-                    $A = DB_fetchArray($res, true);
-                    $addrs[$addr_id] = $A;
-                    return new self($A);
+                try {
+                    $row = Database::getInstance()->conn->executeQuery(
+                        "SELECT * FROM {$_TABLES['shop.address']}
+                        WHERE addr_id = ?",
+                        array($addr_id),
+                        array(Database::INTEGER)
+                    )->fetchAssociative();
+                } catch (\Throwable $e) {
+                    Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                    $row = false;
+                }
+                if (!empty($row)) {
+                    $addrs[$addr_id] = $row;
+                    return new self($row);
                 } else {
                     return new self;
                 }
@@ -577,16 +594,11 @@ class Address
     /**
      * Convert the address fields to a single JSON string.
      *
-     * @param   boolean $escape     True to escape for DB storage
-     * @return  string  Address string
+     * @return  string  JSON string
      */
-    public function toJSON($escape=false)
+    public function toJSON() : string
     {
-        $str = json_encode($this->toArray());
-        if ($escape) {
-            $str = DB_escapeString($str);
-        }
-        return $str;
+        return json_encode($this->toArray());
     }
 
 
@@ -607,11 +619,20 @@ class Address
         $uid = (int)$uid;
         $retval = array();
         if ($uid > 1) {
-            $res = DB_query(
-                "SELECT * FROM {$_TABLES['shop.address']} WHERE uid=$uid"
-            );
-            while ($A = DB_fetchArray($res, false)) {
-                $retval[$A['addr_id']] = new self($A);
+            try {
+                $data = Database::getInstance()->conn->executeQuery(
+                    "SELECT * FROM {$_TABLES['shop.address']} WHERE uid = ?",
+                    array($uid),
+                    array(Database::INTEGER)
+                )->fetchAllAssociative();
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $data = false;
+            }
+            if (!empty($data)) {
+                foreach ($data as $A) {
+                    $retval[$A['addr_id']] = new self($A);
+                }
             }
         }
         $cache[$uid] = $retval;
@@ -676,12 +697,18 @@ class Address
      * @param   string  $sep    Line separator, simple `\n` by default.
      * @return  string      HTML formatted address
      */
-    public function toText($part="all", $sep="\n")
+    public function toText(?string $part=NULL, ?string $sep=NULL) : string
     {
         $parts = array();
-        if (is_string($part)) {
+        if ($part === NULL) {
+            $part = array('all');
+        } elseif (is_string($part)) {
             $part = array($part);
         }
+        if ($sep === NULL) {
+            $sep = "\n";
+        }
+
         foreach ($part as $p) {
             switch ($p) {
             case 'all':
@@ -711,7 +738,7 @@ class Address
                 break;
             case 'country':
                 if ($this->country != Config::get('country')) {
-                    $retval[] = Country::getInstance($this->country)->getName();
+                    $retval[] = Country::getByIsoCode($this->country)->getName();
                 }
                 break;
             default:
@@ -763,12 +790,13 @@ class Address
 
         if (!isset($parts[$this->name])) {
             $parts[$this->name] = array();
-            $status = LGLIB_invokeService(
-                'lglib', 'parseName',
+            $status = PLG_callFunctionForOnePlugin(
+                'service_parseName_lglib',
                 array(
-                    'name' => $this->name,
-                ),
-                $parts[$this->name], $svc_msg
+                    1 => array('name' => $this->name),
+                    2 => &$parts[$this->name],
+                    3 => &$svc_msg,
+                )
             );
         }
         if ($req == NULL) {
@@ -786,7 +814,7 @@ class Address
      *
      * @return  string  HTML for editing form
      */
-    public function Edit()
+    public function Edit() : string
     {
         $have_state_country = false;
         if ($this->uid > 1) {
@@ -798,8 +826,15 @@ class Address
             }
         }
         if (!$have_state_country) {
-            $this->setState(Config::get('state'))
-                 ->setCountry(Config::get('country'));
+            $loc = GeoLocator::getProvider()->geoLocate();
+            if ($loc['ip'] != '') {
+                $A['country'] = $loc['country_code'];
+                $A['state'] = $loc['state_code'];
+                $A['city'] = $loc['city_name'];
+            } else {
+                $this->setState(Config::get('state'))
+                     ->setCountry(Config::get('country'));
+            }
         }
 
         $T = new Template;
@@ -820,8 +855,15 @@ class Address
             'def_shipto_chk' => $this->isDefaultShipto() ? 'checked="checked"' : '',
             'def_billto_chk' => $this->isDefaultBillto() ? 'checked="checked"' : '',
             'cancel_url' => SHOP_getUrl(SHOP_URL . '/account.php?addresses'),
-            'return' => SHOP_getVar($_GET, 'return'),
+            'return' => Request::getInstance()->getString('return'),
+            'action_url' => SHOP_URL . '/account.php',
         ) );
+        $required = $this->getRequiredElements();
+        foreach ($required as $key=>$prod_type) {
+            if ($prod_type > 0) {
+                $T->set_var('req_addr_' . $key, 'required');
+            }
+        }
         $T->parse('output', 'form');
         return  $T->finish($T->get_var('output'));
     }
@@ -830,9 +872,10 @@ class Address
     /**
      * Save the address to the database.
      *
+     * @param   DataArray   $A  Record array to save (not used)
      * @return  integer     Record ID of address, zero on error
      */
-    public function Save()
+    public function Save(?DataArray $A=NULL) : int
     {
         global $_TABLES;
 
@@ -841,60 +884,84 @@ class Address
             return 0;
         }
 
-        if ($this->addr_id > 0) {
-            $sql1 = "UPDATE {$_TABLES['shop.address']} SET ";
-            $sql2 = " WHERE addr_id='" . $this->addr_id . "'";
-        } else {
-            $sql1 = "INSERT INTO {$_TABLES['shop.address']} SET ";
-            $sql2 = '';
+        $values = array(
+            'uid' => $this->uid,
+            'name' => $this->name,
+            'company' => $this->company,
+            'address1' => $this->address1,
+            'address2' => $this->address2,
+            'city' => $this->city,
+            'state' => $this->state,
+            'country' => $this->country,
+            'phone' => $this->getPhone(),
+            'zip' => $this->zip,
+            'billto_def' => $this->isDefaultBillto(),
+            'shipto_def' => $this->isDefaultShipto(),
+        );
+        $types = array(
+            Database::INTEGER,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::INTEGER,
+            Database::INTEGER,
+        );
+        $db = Database::getInstance();
+        try {
+            if ($this->addr_id == 0) {
+                $db->conn->insert(
+                    $_TABLES['shop.address'],
+                    $values,
+                    $types
+                );
+                $this->addr_id = $db->conn->lastInsertId();
+            } else {
+                $types[] = Database::INTEGER;
+                $db->conn->update(
+                    $_TABLES['shop.address'],
+                    $values,
+                    array('addr_id' => $this->addr_id),
+                    $types
+                );
+            }
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
 
-        $sql = "uid = '" . (int)$this->uid . "',
-                name = '" . DB_escapeString($this->name) . "',
-                company = '" . DB_escapeString($this->company) . "',
-                address1 = '" . DB_escapeString($this->address1) . "',
-                address2 = '" . DB_escapeString($this->address2) . "',
-                city = '" . DB_escapeString($this->city) . "',
-                state = '" . DB_escapeString($this->state) . "',
-                country = '" . DB_escapeString($this->country) . "',
-                phone = '" . $this->getPhone() . "',
-                zip = '" . DB_escapeString($this->zip) . "',
-                billto_def = '" . $this->isDefaultBillto() . "',
-                shipto_def = '" . $this->isDefaultShipto() . "'";
-        $sql = $sql1 . $sql . $sql2;
-        //echo $sql;die;
-        DB_query($sql);
-        if (!DB_error()) {
-            if ($this->addr_id == 0) {
-                $this->addr_id = DB_insertID();
-            }
-
+        if ($this->addr_id > 0) {
             // If this is the new default address, turn off the other default
             foreach (array('billto', 'shipto') as $type) {
                 if ($this->isDefault($type)) {
-                    $sql = "UPDATE {$_TABLES['shop.address']}
-                        SET {$type}_def = 0 WHERE
-                        uid = {$this->uid}
-                        AND addr_id <> {$this->addr_id}
-                        AND {$type}_def = 1";
-                    DB_query($sql);
+                    try {
+                        $colname = $db->conn->quoteIdentifier($type . '_def');
+                        $db->conn->executeStatement(
+                            "UPDATE {$_TABLES['shop.address']} SET $colname = 0
+                            WHERE uid = ? AND addr_id <> ? AND $colname = 1",
+                            array($this->uid, $this->addr_id),
+                            array(Database::INTEGER, Database::INTEGER)
+                        );
+                    } catch (\Throwable $e) {
+                        Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                    }
                 }
             }
-            Cache::clear('shop.user_' . $this->uid);
-            return $this->addr_id;
-        } else {
-            return 0;
         }
+        return $this->addr_id;
     }
 
 
     /**
-     *  Return the properties array.
-     *  Keys can be prefixed with billto_ or shipto_ to match Orders schema.
+     * Return the properties array.
      *
-     *  @return array   Address properties
+     * @return array   Address properties
      */
-    public function toArray()
+    public function toArray() : array
     {
         return array(
             'id'        => $this->addr_id,
@@ -918,18 +985,22 @@ class Address
      * @param   string  $prefix Optional prefix used in array indexes
      * @return  object  $this
      */
-    public function fromArray($A, $prefix='')
+    public function fromArray(array $A, ?string $prefix=NULL) : self
     {
-        if ($prefix !== '') {
+        if (!empty($prefix)) {
             $prefix .= '_';
         }
         if (isset($A[$prefix . 'id'])) {
             $this->addr_id = (int)$A[$prefix . 'id'];
         }
-        foreach ($this->_fields as $fldname) {
+        foreach ($this->_fields as $fldname=>$info) {
             $var = $prefix . $fldname;
             if (isset($A[$var])) {
-                $this->$fldname = $A[$var];
+                if ($info['type'] == 'int') {
+                    $this->$fldname = (int)$A[$var];
+                } else {
+                    $this->$fldname = substr($A[$var], 0, $info['size']);
+                }
             } else {
                 $this->$fldname = '';
             }
@@ -944,40 +1015,24 @@ class Address
      * @param   boolean $required   True if an address is required at all
      * @return  string      List of invalid items, or empty string for success
      */
-    public function isValid($required=true)
+    public function isValid(bool $has_physical=false) : string
     {
         global $LANG_SHOP, $_SHOP_CONF;
 
+        if ($has_physical) {
+            $val = ProductType::PHYSICAL;
+        } else {
+            $val = ProductType::VIRTUAL;
+        }
+
         $invalid = array();
         $retval = '';
+        $required = $this->getRequiredElements();
 
-        if (empty($this->name) && empty($this->company)) {
-            $invalid[] = 'name_or_company';
-        }
-        if (
-            $required && empty($this->address1)
-        ) {
-            $invalid[] = 'address1';
-        }
-        if (
-            $required && empty($this->city)
-        ) {
-            $invalid[] = 'city';
-        }
-        if (
-            $required && empty($this->state)
-        ) {
-            $invalid[] = 'state';
-        }
-        if (
-            $required && empty($this->zip)
-        ) {
-            $invalid[] = 'zip';
-        }
-        if (
-            $required && $this->country == ''
-        ) {
-            $invalid[] = 'country';
+        foreach ($this->_fields as $key=>$dummy) {
+            if (empty($this->$key) && ($required[$key] & $val)) {
+                $invalid[] = $key;
+            }
         }
 
         if (!empty($invalid)) {
@@ -1003,10 +1058,44 @@ class Address
         if ($this->addr_id < 1) {
             return false;
         }
-        DB_delete($_TABLES['shop.address'], 'addr_id', $this->addr_id);
-        Cache::clear('shop.user_' . $this->uid);
-        Cache::clear('shop.address_' . $this->uid);
+        try {
+            Database::getInstance()->conn->delete(
+                $_TABLES['shop.address'],
+                array('addr_id' => $this->addr_id),
+                array(Database::INTEGER)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return false;
+        }
         return true;
+    }
+
+
+    /**
+     * Delete multiple addresses for a user.
+     *
+     * @param   array   $addr_ids   Array of address record IDs to delete
+     * @param   integer $uid        User ID, default is current user
+     */
+    public static function deleteMulti(array $ids, ?int $uid=NULL) : void
+    {
+        global $_TABLES, $_USER;
+
+        if (empty($uid)) {
+            $uid = (int)$_USER['uid'];
+        }
+        $db = Database::getInstance();
+        try {
+            $db->conn->executeStatement(
+                "DELETE FROM {$_TABLES['shop.address']}
+                WHERE addr_id IN (?) AND uid = ?",
+                array($ids, $uid),
+                array(Database::PARAM_INT_ARRAY, Database::INTEGER)
+            );
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
     }
 
 
@@ -1079,7 +1168,7 @@ class Address
     {
         global $_SHOP_CONF;
 
-        if (SHOP_getVar($_SHOP_CONF, 'address_validator') != '') {
+        if (!empty(Config::get('address_validator'))) {
             $cls = 'Shop\\Validators\\' . $_SHOP_CONF['address_validator'];
             if (class_exists($cls)) {
                 $AV = new $cls($this);
@@ -1143,6 +1232,156 @@ class Address
             $retval = new self;
         }
         return $retval;
+    }
+
+
+    /**
+     * Product Admin List View.
+     *
+     * @param   integer $uid    User ID, optional for child classes
+     * @return  string      HTML for the product list.
+     */
+    public static function adminList(?int $uid=NULL) : string
+    {
+        global $_SHOP_CONF, $_TABLES, $LANG_SHOP,
+            $LANG_ADMIN, $LANG_SHOP_HELP;
+
+        $uid = (int)$uid;
+        $display = '';
+        $sql = "SELECT * FROM {$_TABLES['shop.address']} WHERE uid = $uid";
+        $header_arr = array(
+            array(
+                'text'  => $LANG_ADMIN['edit'],
+                'field' => 'edit',
+                'align' => 'center',
+            ),
+            array(
+                'text'  => $LANG_SHOP['hdr_def_billto'],
+                'field' => 'billto_def',
+                'align' => 'center',
+            ),
+            array(
+                'text'  => $LANG_SHOP['hdr_def_shipto'],
+                'field' => 'shipto_def',
+                'align' => 'center',
+            ),
+            array(
+                'text'  => $LANG_SHOP['address'],
+                'field' => 'address',
+            ),
+            array(
+                'text'  => $LANG_ADMIN['delete'],
+                'field' => 'delete',
+                'align' => 'center',
+            ),
+        );
+        $query_arr = array(
+            'table' => 'shop.address',
+            'sql'   => $sql,
+            'query_fields' => array(),
+            'default_filter' => '',
+        );
+
+        $text_arr = array(
+            'has_extras' => true,
+            'form_url' => Config::get('url') . "/account.php?addresses",
+        );
+        $defsort_arr = array(
+            'field' => 'addr_id',
+            'direction' => 'ASC',
+        );
+        $filter = '';
+        $options = array(
+            'chkdelete' => true,
+            'chkfield' => 'addr_id',
+        );
+
+        $T = new Template;
+        $T->set_file('list', 'acc_addresses.thtml');
+        $T->set_var(array(
+            'uid' =>  $uid,
+            'addr_list' => ADMIN_list(
+                Config::PI_NAME . '_address_' . $uid,
+                array(__CLASS__,  'adminListField'),
+                $header_arr, $text_arr, $query_arr, $defsort_arr,
+                $filter, '', $options, ''
+            ),
+        ) );
+        $T->parse('output', 'list');
+        $display .= $T->finish($T->get_var('output'));
+        return $display;
+    }
+
+
+    /**
+     * Get an individual field for the admin list.
+     *
+     * @param   string  $fieldname  Name of field (from the array, not the db)
+     * @param   mixed   $fieldvalue Value of the field
+     * @param   array   $A          Array of all fields from the database
+     * @param   array   $icon_arr   System icon array (not used)
+     * @return  string              HTML for field display in the table
+     */
+    public static function adminListField($fieldname, $fieldvalue, $A, $icon_arr, $extra=array()) : string
+    {
+        global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_ADMIN;
+
+        switch ($fieldname) {
+        case 'edit':
+            $retval = FieldList::edit(array(
+                'url' => Config::get('url') . "/account.php?mode=editaddr&return=addresses&id=" . $A['addr_id'],
+            ) );
+            break;
+
+        case 'delete':
+            $retval = FieldList::delete(array(
+                'delete_url' => Config::get('url') . '/account.php?mode=deladdr&id=' . $A['addr_id'],
+                'attr' => array(
+                    'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
+                    'title' => $LANG_SHOP['del_item'],
+                    'class' => 'tooltip',
+                ),
+            ) );
+            break;
+
+        case 'billto_def':
+        case 'shipto_def':
+            $retval = FieldList::radio(array(
+                'name' => $fieldname,
+                'checked' => (int)$fieldvalue,
+                'value' => (int)$A['addr_id'],
+                'onclick' => "SHOP_setDefAddr('shipto', {$A['addr_id']});return false;",
+            ) );
+            break;
+
+        case 'address':
+            $Addr = new self;
+            $retval = $Addr->fromArray($A)->toText(NULL, ', ');
+            break;
+
+        default:
+            $retval = (string)$fieldvalue;
+            break;
+        }
+        return $retval;
+    }
+
+
+    /**
+     * Get a keyed array of required elements from the global config.
+     *
+     * @return  array   Array of name->required_type
+     */
+    public function getRequiredElements() : array
+    {
+        static $required = NULL;
+        if ($required === NULL) {
+            $required = array();
+            foreach ($this->_fields as $fld=>$dummy) {
+                $required[$fld] = (int)Config::get('req_addr_' . $fld);
+            }
+        }
+        return $required;
     }
 
 }

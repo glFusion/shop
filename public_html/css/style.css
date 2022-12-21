@@ -129,7 +129,7 @@ div.shopProductDetail .shopShortDesc {
 
 .shopProductDetail #shopProductAttrib {
     float: right;
-    text-align: right;
+    /*text-align: right;*/
     margin-right: 30px;
     clear: right;
     padding-bottom: 10px;
@@ -166,7 +166,6 @@ div.shopDetailAttrib.v2 {
     clear: both;
     margin-bottom: 1em;
     margin-top: 2em;
-    font-size: 1.2em;
 }
 div.shopProductDesc.v2 {
     margin-bottom: 2em;
@@ -295,6 +294,9 @@ div.shopProductListOuter {
 li.shopListItemBlock a,
 li.shopListItemBlock a:hover {
     text-decoration: none;
+}
+li.shopListItemBlock {
+	width: 175px;
 }
 
 .shopProductListItemUrl2 div.ratingbar,
@@ -463,9 +465,9 @@ div.shopProductListItem.v1 div.ItemButtons {
     width: 50%;
 }*/
 
-div.orderAddress {
+/*div.orderAddress {
     margin-bottom: 15px;
-}
+}*/
 div.orderAddress span.header {
     font-size: 18px;
     font-weight: bold;
@@ -933,22 +935,18 @@ dl#featurelist dt {
   float: left;
   width: 30%;
   /* adjust the width; make sure the total of both is 100% */
-  padding: 0;
-  margin: 0;
   margin-top:5px;
+  clear:both;
 }
 dl#featurelist dd {
   float: left;
   width: 70%;
   /* adjust the width; make sure the total of both is 100% */
-  padding: 0;
-  margin: 0;
   margin-top:5px;
 }
 
-
 div.cart {
-    width: 90%;
+/*    width: 90%;*/
     margin: auto;
 }
 
@@ -985,6 +983,7 @@ div.cart {
 }
 div.cart-item {
     margin-bottom: 15px;
+	/*padding-right: 10px;*/
 }
 .cart-item .cart-item-product .cart-item-image {
     float:left;
@@ -1084,6 +1083,11 @@ div.cart-item {
         /*width: 100%;*/
         *zoom: 1;
     }
+
+	/* Make the workflow selectors smaller on small screens */
+	li.shop-wf-panel {
+		padding: 3px;
+	}
 }
 
 .shopCustomPriceField {
@@ -1120,4 +1124,16 @@ div.cart-item {
 
 .shopOrderNoteIcon {
 	cursor: pointer;
+}
+
+div.shopIpnLog a {
+	text-decoration: none;
+}
+
+div.orderSection {
+	border: 1px solid grey;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	margin-top: 5px !important;
+	padding-right: 10px;
 }

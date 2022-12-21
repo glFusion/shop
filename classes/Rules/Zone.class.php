@@ -12,6 +12,8 @@
  * @filesource
  */
 namespace Shop\Rules;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 use Shop\Region;
 use Shop\Country;
 use Shop\State;
@@ -21,6 +23,8 @@ use Shop\Config;
 use Shop\GeoLocator;
 use Shop\Field;
 use Shop\Tooltipster;
+use Shop\FieldList;
+use Shop\Models\DataArray;
 
 
 /**
@@ -33,7 +37,7 @@ class Zone
 
     /** Table key for DBO utilities.
      * @var string */
-    protected static $TABLE = 'shop.zone_rules';
+    public static $TABLE = 'shop.zone_rules';
 
     /** ID Field name for DBO utilities.
      * @var string */
@@ -110,19 +114,35 @@ class Zone
     /**
      * Get all rule records from the database.
      *
+     * @param   boolean $enabled    True to return only enabled rules
      * @return  array       Array of Rule objects.
      */
-    public static function getAll()
+    public static function getAll(?bool $enabled=NULL) : array
     {
         global $_TABLES;
 
         static $Rules = NULL;
         if ($Rules === NULL) {
-            $sql = "SELECT * FROM {$_TABLES['shop.zone_rules']}
-                ORDER BY rule_id ASC";
-            $res = DB_query($sql);
-            while ($A = DB_fetchArray($res, false)) {
-                $Rules[$A['rule_id']] = new self($A);
+            $Rules = array();
+            $db = Database::getInstance();
+            $qb = $db->conn->createQueryBuilder();
+            try {
+                $qb->select('*')
+                   ->from($_TABLES['shop.zone_rules'])
+                   ->orderBy('rule_id', 'ASC');
+                if ($enabled) {
+                    $qb->where('enabled = :enabled')
+                       ->setParameter('enabled', 1, Database::INTEGER);
+                }
+                $data = $qb->execute()->fetchAllAssociative();
+            } catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $data = false;
+            }
+            if (is_array($data)) {
+                foreach ($data as $A) {
+                    $Rules[$A['rule_id']] = new self($A);
+                }
             }
         }
         return $Rules;
@@ -135,18 +155,22 @@ class Zone
      * @param   integer $rule_id    Rule record ID
      * @return  object  $this
      */
-    public static function getInstance($rule_id)
+    public static function getInstance(int $rule_id) : self
     {
         global $_TABLES;
 
-        $rule_id = (int)$rule_id;
-        $sql = "SELECT * FROM {$_TABLES['shop.zone_rules']}
-            WHERE rule_id = $rule_id
-            LIMIT 1";
-        $res = DB_query($sql);
-        if ($res && DB_numRows($res) == 1) {
-            $A = DB_fetchArray($res, false);
-            $retval = new self($A);
+        try {
+            $row = Database::getInstance()->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.zone_rules']} WHERE rule_id = ?",
+                array($rule_id),
+                array(Database::INTEGER)
+            )->fetchAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $row = false;
+        }
+        if (is_array($row)) {
+            $retval = new self($row);
         } else {
             $retval = new self;
         }
@@ -200,15 +224,15 @@ class Zone
                 ) {
                     return true;    // default to OK if unable to geocode
                 } else {
-                    $State = State::getInstance($data['state_code']);
-                    $Country = Country::getInstance($data['country_code']);
+                    $State = State::getByIsoCode($data['state_code']);
+                    $Country = Country::getByIsoCode($data['country_code']);
                 }
             } else {
                 return true;    // no geolocation configured
             }
         } else {
-            $State = State::getInstance($Addr);
-            $Country = Country::getInstance($Addr->getCountry());
+            $State = State::getByAddress($Addr);
+            $Country = Country::getByIsoCode($Addr->getCountry());
         }
         $state_id = $State->getID();
         $country_id = $State->getCountryID();
@@ -305,12 +329,19 @@ class Zone
      *
      * @param   integer $rule_id    Rule record ID
      */
-    public static function deleteRule($rule_id)
+    public static function deleteRule(int $rule_id) : void
     {
         global $_TABLES;
 
-        $rule_id = (int)$rule_id;
-        DB_delete($_TABLES['shop.zone_rules'], 'rule_id', $rule_id);
+        try {
+            Database::getInstance()->conn->delete(
+                $_TABLES['shop.zone_rules'],
+                array('rule_id' => $rule_id),
+                array(Database::INTEGER)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
     }
 
 
@@ -340,43 +371,55 @@ class Zone
      * @param  array   $A      Optional array of values from $_POST
      * @return boolean         True if no errors, False otherwise
      */
-    public function Save($A = NULL)
+    public function Save(?DataArray $A = NULL) : bool
     {
         global $_TABLES, $_SHOP_CONF;
 
-        if (is_array($A)) {
-            $this->rule_name = $A['rule_name'];
-            $this->rule_dscp = $A['rule_dscp'];
-            $this->allow = (int)$A['allow'];
-            $this->enabled = isset($A['enabled']) ? 1 : 0;
+        if (!empty($A)) {
+            $this->rule_name = $A->getString('rule_name');
+            $this->rule_dscp = $A->getString('rule_dscp');
+            $this->allow = $A->getInt('allow');
+            $this->enabled = $A->getBool('enabled') ? 1 : 0;
         }
 
-        if ($this->rule_id == 0) {
-            $sql1 = "INSERT INTO {$_TABLES['shop.zone_rules']} SET ";
-            $sql3 = '';
-        } else {
-            $sql1 = "UPDATE {$_TABLES['shop.zone_rules']} SET ";
-            $sql3 = " WHERE rule_id='{$this->rule_id}'";
-        }
-        $sql2 = "rule_name = '" . DB_escapeString($this->rule_name) . "',
-            rule_dscp = '" . DB_escapeString($this->rule_dscp) . "',
-            allow = " . (int)$this->allow . ",
-            enabled = " . (int)$this->enabled . ",
-            regions = '" . DB_escapeString(json_encode($this->regions)) . "',
-            countries = '" . DB_escapeString(json_encode($this->countries)) . "',
-            states = '" . DB_escapeString(json_encode($this->states)) . "'";
-        $sql = $sql1 . $sql2 . $sql3;
-        //echo $sql;die;
-        //SHOP_log($sql, SHOP_LOG_DEBUG);
-        DB_query($sql);
-        if (!DB_error()) {
+        $db = Database::getInstance();
+        $values = array(
+            'rule_name' => $this->rule_name,
+            'rule_dscp' => $this->rule_dscp,
+            'allow' => $this->allow,
+            'enabled' => $this->enabled,
+            'regions' => json_encode($this->regions),
+            'countries' => json_encode($this->countries),
+            'states' => json_encode($this->states),
+        );
+        $types = array(
+            Database::STRING,
+            Database::STRING,
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+        );
+
+        try {
             if ($this->rule_id == 0) {
-                $this->rule_id = DB_insertID();
+                $db->conn->insert($_TABLES['shop.zone_rules'], $values, $types);
+                $this->rule_id = $db->conn->lastInsertId();
+            } else {
+                $types[] = Database::INTEGER;   // for rule_id
+                $db->conn->update(
+                    $_TABLES['shop.zone_rules'],
+                    $values,
+                    array('rule_id' => $this->rule_id),
+                    $types
+                );
             }
-            return true;
-        } else {
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
+        return true;
     }
 
 
@@ -428,14 +471,11 @@ class Zone
         );
 
         $display = COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
-        $display .= COM_createLink(
-            $LANG_SHOP['new_item'],
-            SHOP_ADMIN_URL . '/rules.php?rule_edit=0',
-            array(
-                'style' => 'float:left;',
-                'class' => 'uk-button uk-button-success',
-            )
-        );
+        $display .= FieldList::buttonLink(array(
+            'text' => $LANG_SHOP['new_item'],
+            'url' => SHOP_ADMIN_URL . '/rules.php?rule_edit=0',
+            'style' => 'success',
+        ) );
         $text_arr = array(
             'form_url' => SHOP_ADMIN_URL . '/rules.php',
         );
@@ -486,10 +526,9 @@ class Zone
 
         switch($fieldname) {
         case 'edit':
-            $retval .= COM_createLink(
-                Icon::getHTML('edit', 'tooltip', array('title' => $LANG_ADMIN['edit'])),
-                SHOP_ADMIN_URL . "/rules.php?rule_edit={$A['rule_id']}"
-            );
+            $retval .= FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . "/rules.php?rule_edit={$A['rule_id']}",
+            ) );
             break;
 
         case 'allow':
@@ -497,19 +536,18 @@ class Zone
             break;
 
         case 'delete':
-            $retval .= COM_createLink(
-                Icon::getHTML('delete'),
-                SHOP_ADMIN_URL. '/rules.php?rule_del=' . $A['rule_id'],
-                array(
+            $retval .= FieldList::delete(array(
+                'delete_url' => SHOP_ADMIN_URL. '/rules.php?rule_del=' . $A['rule_id'],
+                'attr' => array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                     'title' => $LANG_SHOP['del_item'],
                     'class' => 'tooltip',
-                )
-            );
+                ),
+            ) );
             break;
 
         case 'enabled':
-            $retval .= Field::checkbox(array(
+            $retval .= FieldList::checkbox(array(
                 'name' => 'ena_check',
                 'id' => "togenabled{$A['rule_id']}",
                 'checked' => $fieldvalue == 1,
@@ -576,7 +614,7 @@ class Zone
 
         $T->set_block('form', 'countryBlk', 'CB');
         foreach ($this->countries as $id) {
-            $Obj = Country::getInstance($id);
+            $Obj = Country::getByRecordId($id);
             $T->set_var(array(
                 'id'    => $id,
                 'name'  => $Obj->getName(),
@@ -586,7 +624,7 @@ class Zone
 
         $T->set_block('form', 'stateBlk', 'SB');
         foreach ($this->states as $id) {
-            $Obj = State::getInstance($id);
+            $Obj = State::getByRecordId($id);
             $T->set_var(array(
                 'id'    => $id,
                 'name'  => $Obj->getName(),
@@ -600,4 +638,3 @@ class Zone
 
 }
 
-?>

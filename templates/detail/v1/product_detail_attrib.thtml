@@ -8,8 +8,8 @@
 	</a>
 </div>
 {!endif}
-+{!if aff_link}
-<div class="floatright">
+{!if aff_link}
+<div class="floatright" style="margin-bottom:10px;">
 	<a class="uk-button uk-button-mini cpybtn" title="{lang_copy_clipboard}" data-clipboard-text="{aff_link}">{$LANG_SHOP['my_aff_link']}
 	</a>
 	<script src="{site_url}/javascript/addons/clipboard/clipboard.min.js"></script>
@@ -30,7 +30,7 @@
 			<h1>{short_description}</h1>
 			{name}
 			<p />
-			<div class="shopDetailPrice v1">
+			<div id="pricedisplay" class="shopDetailPrice v1" style="display:{price_vis}">
 				<b>{$LANG_SHOP['price']}:&nbsp;&nbsp;</b>
 {!if on_sale}
 				<span class="shopPrice was">{price_prefix}</span><span class="shopPrice was" id="price_was">{orig_price}</span>
@@ -60,7 +60,7 @@
 					</select>
 {!!elseif {og_type} == "checkbox" !!}
 <!-- BEGIN Optioncheckbox -->
-					<input type="checkbox" name="options[]" value="{opt_id}" {checked} onclick="ProcessForm(this.form);"/>&nbsp;{opt_str}<br />
+					<input type="checkbox" name="cboptions[]" value="{opt_id}" {checked} onclick="ProcessForm(this.form);"/>&nbsp;{opt_str}<br />
 <!-- END Optioncheckbox -->
 {!!elseif {og_type} == "radio" !!}
 <!-- BEGIN Optionradio -->
@@ -72,6 +72,17 @@
 				</div>
 			</div>
 <!-- END OptionGroup -->
+
+<!-- BEGIN checkboxGroups -->
+            <div class=uk-form-row>
+                <label class="uk-form-label">{cb_group_name}:</label>
+                    <div class="uk-form-controls">
+<!-- BEGIN checkboxOptions -->
+                        <input id="cbox_opt_{option_id}" class="uk-checkbox" type="checkbox" name="extras[options][]" value="{option_id}" onchange="ProcessForm('{frm_id}');"/>&nbsp;<label for="cbox_opt_{option_id}">{option_dscp}</label><br />
+<!-- END checkboxOptions -->
+                    </div>
+            </div>
+<!-- END checkboxGroups -->
 
 <!-- BEGIN CustAttrib -->
 			<div class=uk-form-row>
@@ -108,8 +119,7 @@
 			{buy_now_button}<br />
 <!-- END BtnBlock -->
 		</div>
-		<div id="oos_msg" class="shopOnhand uk-alert uk-alert-danger floatright" style="visibility:hidden;">
-		</div>
+		<div id="oos_msg" class="shopOnhand uk-alert uk-alert-danger floatright" style="display:none;"></div>
 		<div id="shopProductDesc" class="shopProductDesc v1">
 			{description}
 		</div>
@@ -123,7 +133,7 @@
 {!endif}
 		<ul id="productThumbWrapper" class="shopProductThumbWrapper v1">
 <!-- BEGIN Thumbnail -->
-			<li class="shopProductThumb v1">
+			<li class="shopProductThumb v1 uk-lightbox">
  {!if thumb_url}
 				<a href="{img_url}" data-uk-lightbox="{group:'product'}">
 					<img src="{thumb_url}"

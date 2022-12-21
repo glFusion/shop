@@ -6,7 +6,7 @@
  * glFusion configuration system, such as allowed file types.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2021 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     v1.4.1
  * @license     http://opensource.org/licenses/gpl-2.0.php
@@ -20,8 +20,8 @@ if (!defined ('GVERSION')) {
 
 global $_DB_table_prefix, $_TABLES;
 
-Shop\Config::set('pi_version', '1.4.1');
-Shop\Config::set('gl_version', '1.7.9');
+Shop\Config::set('pi_version', '1.4.1.10');
+Shop\Config::set('gl_version', '2.0.0');
 
 $_SHOP_table_prefix = $_DB_table_prefix . 'shop_';
 
@@ -51,7 +51,6 @@ $_TABLES['shop.shipments']    = $_SHOP_table_prefix . 'shipments';
 $_TABLES['shop.shipment_items']   = $_SHOP_table_prefix . 'shipment_items';
 $_TABLES['shop.shipment_packages']   = $_SHOP_table_prefix . 'shipment_packages';
 $_TABLES['shop.carrier_config'] = $_SHOP_table_prefix . 'carrier_config';
-$_TABLES['shop.cache'] = $_SHOP_table_prefix . 'cache';
 $_TABLES['shop.payments'] = $_SHOP_table_prefix . 'payments';
 $_TABLES['shop.tax_rates'] = $_SHOP_table_prefix . 'tax_rates';
 $_TABLES['shop.discountcodes'] = $_SHOP_table_prefix . 'discountcodes';
@@ -73,8 +72,12 @@ $_TABLES['shop.affiliate_saleitems'] = $_SHOP_table_prefix . 'affiliate_saleitem
 $_TABLES['shop.affiliate_payments'] = $_SHOP_table_prefix . 'affiliate_payments';
 $_TABLES['shop.stock'] = $_SHOP_table_prefix . 'stock';
 $_TABLES['shop.plugin_products'] = $_SHOP_table_prefix . 'plugin_products';
+$_TABLES['shop.product_rules'] = $_SHOP_table_prefix . 'product_rules';
+$_TABLES['shop.prodXcbox'] = $_SHOP_table_prefix . 'prodXcbox';
+$_TABLES['shop.invoices'] = $_SHOP_table_prefix . 'invoices';
 
 // Deprecate eventually
 $_TABLES['shop.prod_attr']    = $_SHOP_table_prefix . 'product_attributes';
 $_TABLES['shop.purchases']    = $_SHOP_table_prefix . 'purchases';
+$_TABLES['shop.cache'] = $_SHOP_table_prefix . 'cache';
 

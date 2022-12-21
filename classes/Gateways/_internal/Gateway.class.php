@@ -13,6 +13,7 @@
  */
 namespace Shop\Gateways\_internal;
 use Shop\Template;
+use Shop\Product;
 
 
 /**
@@ -31,11 +32,6 @@ class Gateway extends \Shop\Gateway
     /** Gateway service description.
      * @var string */
     protected $gw_desc = 'Internal Payment Gateway';
-
-    /** Flag this gateway as bundled with the Shop plugin.
-     * Gateway version will be set to the Shop plugin's version.
-     * @var integer */
-    protected $bundled = 1;
 
 
     /**
@@ -93,9 +89,10 @@ class Gateway extends \Shop\Gateway
      * @uses    Gateway::_ReadButton()
      * @uses    Gateway::_SaveButton()
      * @param   object  $P      Product Item object
+     * @param   float   $price  Optional override price
      * @return  string          HTML code for the button.
      */
-    public function ProductButton($P)
+    public function ProductButton(Product $P, ?float $price=NULL) : string
     {
         global $LANG_SHOP;
 

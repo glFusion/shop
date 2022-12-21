@@ -18,7 +18,7 @@ require_once '../lib-common.php';
 
 // If plugin is installed but not enabled, display an error and exit gracefully
 if (
-    !function_exists('SHOP_access_check') ||
+    !function_exists('SHOP_access_check') ||    // first ensure plugin is installed
     !SHOP_access_check()
 ) {
     COM_404();
@@ -61,7 +61,7 @@ if (!empty($id)) {
 }
 if (empty($content)) {
     SHOP_setMsg($LANG_SHOP['item_not_found']);
-    COM_refresh(SHOP_URL);
+    echo COM_refresh(SHOP_URL);
 }
 if (empty($breadcrumbs)) {
     // Hack to change the link text depending on the return URL

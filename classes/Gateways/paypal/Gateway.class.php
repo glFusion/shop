@@ -3,15 +3,16 @@
  * Gateway implementation for PayPal.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.4.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop\Gateways\paypal;
+use Shop\Product;
 use Shop\Config;
 use Shop\Company;
 use Shop\Address;
@@ -19,11 +20,12 @@ use Shop\Currency;
 use Shop\Order;
 use Shop\Shipper;
 use Shop\Models\CustomInfo;
-use Shop\Models\OrderState;
+use Shop\Models\DataArray;
 use Shop\Models\Token;
 use Shop\Template;
 use Shop\Tax;
 use Shop\Customer;
+use Shop\Log;
 
 
 /**
@@ -43,11 +45,6 @@ class Gateway extends \Shop\Gateway
     /** Gateway service description.
      * @var string */
     protected $gw_desc = 'PayPal Web Payments Standard';
-
-    /** Flag this gateway as bundled with the Shop plugin.
-     * Gateway version will be set to the Shop plugin's version.
-     * @var integer */
-    protected $bundled = 1;
 
     /** Business e-mail to be used for creating buttons.
      * @var string */
@@ -376,23 +373,23 @@ class Gateway extends \Shop\Gateway
 
         $pub_key = @openssl_x509_read(file_get_contents($keys['pub_key']));
         if (!$pub_key) {
-            SHOP_log("Failed reading public key from {$keys['pub_key']}", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, "Failed reading public key from {$keys['pub_key']}");
             return '';
         }
         $prv_key = @openssl_get_privatekey(file_get_contents($keys['prv_key']));
         if (!$prv_key) {
-            SHOP_log("Failed reading private key from {$keys['prv_key']}", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, "Failed reading private key from {$keys['prv_key']}");
             return '';
         }
         $pp_cert = @openssl_x509_read(file_get_contents($keys['pp_cert']));
         if (!$pp_cert) {
-            SHOP_log("Failed reading PayPal certificate from {$keys['pp_cert']}", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, "Failed reading PayPal certificate from {$keys['pp_cert']}");
             return '';
         }
 
         //  Make sure this key and certificate belong together
         if (!openssl_x509_check_private_key($pub_key, $prv_key)) {
-            SHOP_log("Mismatched private & public keys", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, "Mismatched private & public keys");
             return '';
         }
 
@@ -481,7 +478,7 @@ class Gateway extends \Shop\Gateway
      * @param   object  $P      Product Item object
      * @return  string          HTML code for the button.
      */
-    public function ProductButton($P)
+    public function ProductButton(Product $P, ?float $set_price = NULL) : string
     {
         global $LANG_SHOP;
 
@@ -490,7 +487,7 @@ class Gateway extends \Shop\Gateway
 
         // Make sure we want to create a buy_now-type button.
         // Not for items that require shipping or free products.
-        if ($P->isPhysical() || $P->getPrice() < .01) {
+        if ($P->isPhysical() || (!$P->allowCustomPrice() && $P->getPrice() < .01)) {
             return '';
         }
 
@@ -508,7 +505,7 @@ class Gateway extends \Shop\Gateway
             'custom' => $this->custom->encode(),
             'return' => $this->returnUrl('', ''),
             'cancel_return' => $P->getCancelUrl(),
-            'amount' => $P->getPrice(),
+            'amount' => $set_price !=- NULL ? $set_price : $P->getSalePrice(),
             'notify_url' => $this->ipn_url,
         );
 
@@ -700,10 +697,11 @@ class Gateway extends \Shop\Gateway
      * calls the parent function to save to the database.
      *
      * @param   array   $A      Array of name=>value pairs (e.g. $_POST)
+     * @return  boolean     True on success, False on error
      */
-    public function SaveConfig($A = NULL)
+    public function saveConfig(?DataArray $A = NULL) : bool
     {
-        if (is_array($A)) {
+        if (!empty($A)) {
             foreach ($this->getConfig() as $name=>$value) {
                 switch ($name) {
                 case 'encrypt':

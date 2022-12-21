@@ -3,16 +3,17 @@
  * Payment class for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.5.0
  * @since       v1.3.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
-use Shop\Models\OrderState;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 
 
 /**
@@ -28,7 +29,7 @@ class Payment
      * @var integer */
     private $pmt_id = 0;
 
-    /** Transaction reference ID provided by the payment gateway.
+    /** Payment reference ID provided by the payment gateway.
      * @var string */
     private $ref_id = '';
 
@@ -73,6 +74,11 @@ class Payment
      * @var status */
     private $status = '';
 
+    /** Order object related to this payment.
+     * This is to easily retrieve the order object without having to
+     * recreate it, since an order object is updated in Save() anyway.
+     * @var object */
+    private $Order = NULL;
 
 
     /**
@@ -80,22 +86,22 @@ class Payment
      *
      * @param   array|null  $A  Optional data array
      */
-    public function __construct($A=NULL)
+    public function __construct(?array $A=NULL)
     {
         if (is_array($A)) {
             $pmt_id = isset($A['pmt_id']) ? $A['pmt_id'] : 0;
             $this->setPmtID($pmt_id)
-                ->setRefID($A['pmt_ref_id'])
-                ->setAmount($A['pmt_amount'])
-                ->setTS($A['pmt_ts'])
-                ->setIsMoney($A['is_money'])
-                ->setGateway($A['pmt_gateway'])
-                ->setOrderID($A['pmt_order_id'])
-                ->setComment($A['pmt_comment'])
-                ->setMethod($A['pmt_method'])
-                ->setStatus($A['pmt_status'])
-                ->setComplete($A['is_complete'])
-                ->setUid($A['pmt_uid']);
+                 ->setRefID($A['pmt_ref_id'])
+                 ->setAmount($A['pmt_amount'])
+                 ->setTS($A['pmt_ts'])
+                 ->setIsMoney($A['is_money'])
+                 ->setGateway($A['pmt_gateway'])
+                 ->setOrderID($A['pmt_order_id'])
+                 ->setComment($A['pmt_comment'])
+                 ->setMethod($A['pmt_method'])
+                 ->setStatus($A['pmt_status'])
+                 ->setComplete($A['is_complete'])
+                 ->setUid($A['pmt_uid']);
         } else {
             $this->ts = time();
             $this->ref_id = COM_makeSid() . rand(100,999);
@@ -109,19 +115,30 @@ class Payment
      * @param   integer $id     DB record ID
      * @return  object      Payment object
      */
-    public static function getInstance($id)
+    public static function getInstance(int $id) : self
     {
         global $_TABLES;
 
-        $sql = "SELECT * FROM {$_TABLES['shop.payments']}
-            WHERE pmt_id = " . (int)$id;
-        $res = DB_query($sql);
-        if ($res) {
-            $A = DB_fetchArray($res, true);
-        } else {
-            $A = NULL;
+        if ($id == 0) {
+            return new self;
         }
-        return new self($A);
+
+        $db = Database::getInstance();
+        try {
+            $data = $db->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.payments']} WHERE pmt_id = ?",
+                array($id),
+                array(Database::INTEGER)
+            )->fetchAssociative();
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $data = false;
+        }
+        if (is_array($data)) {
+            return new self($data);
+        } else {
+            return new self;
+        }
     }
 
 
@@ -131,19 +148,26 @@ class Payment
      * @param   string  $ref_id Paymetn reference ID
      * @return  object      Payment object
      */
-    public static function getByReference($ref_id)
+    public static function getByReference(string $ref_id) : self
     {
         global $_TABLES;
 
-        $sql = "SELECT * FROM {$_TABLES['shop.payments']}
-            WHERE pmt_ref_id = '" . DB_escapeString($ref_id) . "'";
-        $res = DB_query($sql);
-        if ($res) {
-            $A = DB_fetchArray($res, true);
-        } else {
-            $A = NULL;
+        $db = Database::getInstance();
+        try {
+            $data = $db->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.payments']} WHERE pmt_ref_id = ?",
+                array($ref_id),
+                array(Database::STRING)
+            )->fetchAssociative();
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $data = false;
         }
-        return new self($A);
+        if (is_array($data)) {
+            return new self($data);
+        } else {
+            return new self;
+        }
     }
 
 
@@ -412,43 +436,67 @@ class Payment
      * @param   boolean $notify_buyer   True to notify the buyer
      * @return  object  $this
      */
-    public function Save($notify_buyer=true)
+    public function Save($notify_buyer=true) : self
     {
         global $_TABLES, $LANG_SHOP;
 
-        if ($this->pmt_id == 0) {
-            $sql1 = "INSERT INTO {$_TABLES['shop.payments']} SET ";
-            $sql3 = '';
-        } else {
-            $sql1 = "UPDATE {$_TABLES['shop.payments']} SET ";
-            $sql3 = " WHERE pmt_id = " . $this->pmt_id;
-        }
-        $sql2 = "pmt_ts = {$this->getTS()},
-            is_money = {$this->isMoney()},
-            pmt_gateway = '" . DB_escapeString($this->getGateway()) . "',
-            pmt_amount = '" . $this->getAmount() . "',
-            pmt_ref_id = '" . DB_escapeString($this->getRefID()) . "',
-            pmt_order_id = '" . DB_escapeString($this->getOrderID()) . "',
-            pmt_method = '" . DB_escapeString($this->method) . "',
-            pmt_comment = '" . DB_escapeString($this->comment) . "',
-            pmt_status = '" . DB_escapeString($this->getStatus()) . "',
-            is_complete = {$this->isComplete()},
-            pmt_uid = " . (int)$this->uid;
-        $sql = $sql1 . $sql2 . $sql3;
-        //echo $sql;die;
-        $res = DB_query($sql);
-        if (!DB_error() && $this->isComplete()) {
-            $lang_str = $this->getAmount() < 0 ? $LANG_SHOP['amt_credit_gw'] : $LANG_SHOP['amt_paid_gw'];
-            $this->setPmtId(DB_insertID());
-            $Order = Order::getInstance($this->getOrderID());
-            $Order->updatePmtStatus()
-                ->Log(
-                    sprintf(
-                        $lang_str,
-                        $this->getAmount(),
-                        $this->getGateway()
-                    )
+        $db = Database::getInstance();
+        $values = array(
+            'pmt_ts' => $this->getTS(),
+            'is_money' => $this->isMoney(),
+            'pmt_gateway' => $this->getGateway(),
+            'pmt_amount' => $this->getAmount(),
+            'pmt_ref_id' => $this->getRefID(),
+            'pmt_order_id' => $this->getOrderID(),
+            'pmt_method' => $this->method,
+            'pmt_comment' => $this->comment,
+            'pmt_status' => $this->getStatus(),
+            'is_complete' => $this->isComplete(),
+            'pmt_uid' => $this->uid,
+        );
+        $types = array(
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::INTEGER,
+            Database::INTEGER,
+        );
+        try {
+            if ($this->pmt_id == 0) {
+                $db->conn->insert($_TABLES['shop.payments'], $values, $types);
+                $this->setPmtId($db->conn->lastInsertId());
+            } else {
+                $types[] = Database::INTEGER;
+                $db->conn->update(
+                    $_TABLES['shop.payments'],
+                    $values,
+                    array('pmt_id' => $this->pmt_id),
+                    $types
                 );
+            }
+            $stat = true;
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $stat = false;
+        }
+
+        if ($stat && $this->isComplete()) {
+            $lang_str = $this->getAmount() < 0 ? $LANG_SHOP['amt_credit_gw'] : $LANG_SHOP['amt_paid_gw'];
+            $this->Order = Order::getInstance($this->getOrderID());
+            $this->Order->updatePmtStatus();
+            $this->Order->Log(
+                sprintf(
+                    $lang_str,
+                    $this->getAmount(),
+                    $this->getGateway()
+                )
+            );
         }
         return $this;
     }
@@ -458,77 +506,90 @@ class Payment
      * Migrate payment information from the IPN log to the Payments table.
      * This is done during upgrade to v1.3.0.
      */
-    public static function loadFromIPN()
+    public static function loadFromIPN() : void
     {
         global $_TABLES, $LANG_SHOP;
 
-        $sql = "SELECT * FROM {$_TABLES['shop.ipnlog']}
-            ORDER BY ts ASC";
-            //WHERE id = 860
-        $res = DB_query($sql);
-        $Pmt = new self;
-        $done = array();        // Avoid duplicates
-        while ($A = DB_fetchArray($res, false)) {
-            $ipn_data = @unserialize($A['ipn_data']);
-            if (empty($A['gateway']) || empty($ipn_data)) {
-                continue;
-            }
-            $cls = 'Shop\\ipn\\' . $A['gateway'];
-            if (!class_exists($cls)) {
-                continue;
-            }
-            $ipn = new $cls($ipn_data);
-            if (isset($ipn_data['pmt_gross']) && $ipn_data['pmt_gross'] > 0) {
-                $pmt_gross = $ipn_data['pmt_gross'];
-            } else {
-                $pmt_gross = $ipn->getPmtGross();
-            }
-            if ($pmt_gross < .01) {
-                continue;
-            }
+        $db = Database::getInstance();
+        try {
+            $data = $db->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.ipnlog']} ORDER BY ts ASC"
+            )->fetchAllAssociative();
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $data = NULL;
+        }
+        if (is_array($data)) {
+            $done = array();        // Avoid duplicates
+            foreach ($data as $A) {
+                $ipn_data = @unserialize($A['ipn_data']);
+                if (empty($A['gateway']) || empty($ipn_data)) {
+                    continue;
+                }
+                $cls = 'Shop\\ipn\\' . $A['gateway'];
+                if (!class_exists($cls)) {
+                    continue;
+                }
+                $ipn = new $cls($ipn_data);
+                if (isset($ipn_data['pmt_gross']) && $ipn_data['pmt_gross'] > 0) {
+                    $pmt_gross = $ipn_data['pmt_gross'];
+                } else {
+                    $pmt_gross = $ipn->getPmtGross();
+                }
+                if ($pmt_gross < .01) {
+                    continue;
+                }
 
-            if (!empty($A['order_id'])) {
-                $order_id = $A['order_id'];
-            } elseif ($ipn->getOrderId() != '') {
-                $order_id = $ipn->getOrderID();
-            } elseif ($ipn->getTxnId() != '') {
-                $order_id = DB_getItem(
-                    $_TABLES['shop.orders'],
-                    'order_id',
-                    "pmt_txn_id = '" . DB_escapeString($ipn->getTxnId()) . "'"
-                );
-            } else {
-                $order_id = '';
-            }
-            if (!array_key_exists($A['txn_id'], $done)) {
-                $Pmt->setRefID($A['txn_id'])
-                    ->setAmount($pmt_gross)
-                    ->setTS($A['ts'])
-                    ->setIsMoney(true)
-                    ->setGateway($A['gateway'])
-                    ->setMethod($ipn->getGW()->getDisplayName())
-                    ->setOrderID($order_id)
-                    ->setComment('Imported from IPN log')
-                    ->Save();
-                $done[$Pmt->getRefId()] = 'done';
+                if (!empty($A['order_id'])) {
+                    $order_id = $A['order_id'];
+                } elseif ($ipn->getOrderId() != '') {
+                    $order_id = $ipn->getOrderID();
+                } elseif ($ipn->getTxnId() != '') {
+                    $order_id = $db->getItem(
+                        $_TABLES['shop.orders'],
+                        'order_id',
+                        array('pmt_txn_id', $ipn->getTxnId())
+                    );
+                } else {
+                    $order_id = '';
+                }
+                if (!array_key_exists($A['txn_id'], $done)) {
+                    $Pmt->setRefID($A['txn_id'])
+                        ->setAmount($pmt_gross)
+                        ->setTS($A['ts'])
+                        ->setIsMoney(true)
+                        ->setGateway($A['gateway'])
+                        ->setMethod($ipn->getGW()->getDisplayName())
+                        ->setOrderID($order_id)
+                        ->setComment('Imported from IPN log')
+                        ->Save();
+                    $done[$Pmt->getRefId()] = 'done';
+                }
             }
         }
 
         // Get all the "payments" via coupons.
-        $sql = "SELECT * FROM {$_TABLES['shop.coupon_log']}
-            WHERE msg = 'gc_applied'";
-        $res = DB_query($sql);
-        while ($A = DB_fetchArray($res, false)) {
-            $Pmt = new self;
-            $Pmt->setRefID(uniqid())
-                ->setAmount($A['amount'])
-                ->setTS($A['ts'])
-                ->setIsMoney(false)
-                ->setGateway('_coupon')
-                ->setMethod('Apply Coupon')
-                ->setComment($LANG_SHOP['gc_pmt_comment'])
-                ->setOrderID($A['order_id'])
-                ->Save();
+        try {
+            $pmts = $db->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.coupon_log']} WHERE msg = 'gc_applied'"
+            )->fetchAllAssociative();
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $pmts = false;
+        }
+        if (is_array($pmts)) {
+            foreach ($pmts as $A) {
+                $Pmt = new self;
+                $Pmt->setRefID(uniqid())
+                    ->setAmount($A['amount'])
+                    ->setTS($A['ts'])
+                    ->setIsMoney(false)
+                    ->setGateway('_coupon')
+                    ->setMethod('Apply Coupon')
+                    ->setComment($LANG_SHOP['gc_pmt_comment'])
+                    ->setOrderID($A['order_id'])
+                    ->Save();
+            }
         }
     }
 
@@ -540,28 +601,54 @@ class Payment
      * @param   integer $is_complete    True to get only completed pmts
      * @return  array       Array of Payment objects
      */
-    public static function getByOrder($order_id, $is_complete=1)
+    public static function getByOrder($order_id, $is_complete=1) : array
     {
         global $_TABLES;
-        static $P = array();
+        /*static $P = array();
 
         if (isset($P[$order_id])) {
             return $P[$order_id];
-        }
+        }*/
+        $retval = array();
 
+        $db = Database::getInstance();
+        $qb = $db->conn->createQueryBuilder();
         $P[$order_id] = array();
-        $order_id = DB_escapeString($order_id);
-        $sql = "SELECT * FROM {$_TABLES['shop.payments']}
-            WHERE pmt_order_id = '$order_id'";
+
+        $qb->select('*')
+           ->from($_TABLES['shop.payments'])
+           ->where('pmt_order_id = :pmt_order_id')
+           ->setParameter('pmt_order_id', $order_id, Database::STRING)
+           ->orderBy('pmt_ts', 'ASC');
         if ($is_complete) {
-            $sql .= " AND is_complete = 1";
+            $qb->andWhere('is_complete = 1');
         }
-        $sql .= " ORDER BY pmt_ts ASC";
-        $res = DB_query($sql);
-        while ($A = DB_fetchArray($res, false)) {
-            $P[$order_id][] = new self($A);
+        try {
+            $data = $qb->execute()->fetchAllAssociative();
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $data = false;
         }
-        return $P[$order_id];
+        if (is_array($data)) {
+            foreach ($data as $A) {
+                //$P[$order_id][] = new self($A);
+                $retval[] = new self($A);
+            }
+        }
+        //return $P[$order_id];
+        return $retval;
+    }
+
+
+    /**
+     * Get the order object after saving.
+     * This saves the caller from having to read the order data yet again.
+     *
+     * @return  object      Order object, NULL if not instantiated
+     */
+    public function getOrder() : ?Order
+    {
+        return $this->Order;
     }
 
 
@@ -614,11 +701,20 @@ class Payment
      *
      * @param   integer $pmt_id     Payment record ID
      */
-    public static function delete($pmt_id)
+    public static function delete(int $pmt_id) : void
     {
         global $_TABLES;
 
-        DB_delete($_TABLES['shop.payments'], 'pmt_id', (int)$pmt_id);
+        $db = Database::getInstance();
+        try {
+            $db->conn->delete(
+                $_TABLES['shop.payments'],
+                array('pmt_id' => $pmt_id),
+                array(Database::INTEGER)
+            );
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
     }
 
 
@@ -627,11 +723,16 @@ class Payment
      * No safety check or confirmation is done; that should be done before
      * calling this function.
      */
-    public static function Purge()
+    public static function Purge() : void
     {
         global $_TABLES;
 
-        DB_query("TRUNCATE {$_TABLES['shop.payments']}");
+        $db = Database::getInstance();
+        try {
+            $db->conn->executeStatement("TRUNCATE {$_TABLES['shop.payments']}");
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
     }
 
 
@@ -642,7 +743,7 @@ class Payment
      * @param   string  $order_id   Optional Order ID to limit listing
      * @return  string      HTML for payment list
      */
-    public static function adminList($order_id='')
+    public static function adminList(?string $order_id=NULL) : string
     {
         global $LANG_SHOP;
 
@@ -654,19 +755,16 @@ class Payment
             $R->setParam('order_id', $order_id);
         }
         if ($order_id != 'x') {
-            $new_btn = COM_createLink(
-                $LANG_SHOP['add_payment'],
-                SHOP_ADMIN_URL . '/payments.php?newpayment=' . $order_id,
-                array(
-                    'class' => 'uk-button uk-button-success',
-                )
-            );
+            $new_btn = FieldList::buttonLink(array(
+                'text' => $LANG_SHOP['add_payment'],
+                'url' => SHOP_ADMIN_URL . '/payments.php?newpayment=' . $order_id,
+                'style' => 'success',
+            ) );
         } else {
             $new_btn = '';
         }
         $R->setAdmin(true)
-            // Params usually from GET but could be POSTed
-            ->setParams($_REQUEST)
+            ->setParams()
             ->setShowHeader(false);
         return $new_btn . $R->Render();
     }

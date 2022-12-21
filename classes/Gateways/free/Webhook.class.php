@@ -16,6 +16,7 @@ namespace Shop\Gateways\free;
 use Shop\Config;
 use Shop\Order;
 use Shop\Payment;
+use Shop\Log;
 
 
 /**
@@ -50,14 +51,15 @@ class Webhook extends \Shop\Webhook
      *
      * @return  boolean     True if valid, False if not
      */
-    public function Verify()
+    public function Verify() : bool
     {
         $this->setEvent('free_order');
         $this->setOrderID(SHOP_getVar($this->getData(), 'order_id'));
         $this->setID(SHOP_getVar($this->getData(), 'txn_id'));
 
         if (!$this->isUniqueTxnId()) {
-            return false;
+            // Duplicate transaction, not an error.
+            return true;
         }
 
         // Log the message here to be sure it's logged.
@@ -66,13 +68,13 @@ class Webhook extends \Shop\Webhook
         // Get the Shop order record and make sure it's valid.
         $this->Order = Order::getInstance($this->getOrderId());
         if ($this->Order->isNew()) {
-            SHOP_log("Order {$this->getOrderId()} not found");
+            Log::write('shop_system', Log::ERROR, "Order {$this->getOrderId()} not found");
             return false;
         }
 
         // Verify that this is a free order.
         if ($this->Order->getTotal() > .0001) {
-            SHOP_log("Order {$this->getOrderId()} is not a free order");
+            Log::write('shop_system', Log::ERROR, "Order {$this->getOrderId()} is not a free order");
             return false;
         }
 
@@ -83,17 +85,16 @@ class Webhook extends \Shop\Webhook
     /**
      * Process the transaction.
      * Verifies that the transaction is valid, then records the purchase and
-     * notifies the buyer and administrator
+     * notifies the buyer and administrator.
      *
      * @uses    self::Verify()
      */
-    public function Dispatch()
+    public function Dispatch() : bool
     {
         global $LANG_SHOP;
 
         switch ($this->getEvent()) {
         case 'free_order':
-            $status = false;
             $status = $this->handlePurchase();
             if ($status) {
                 $this->Order->updatePmtStatus()
@@ -107,7 +108,7 @@ class Webhook extends \Shop\Webhook
             } else {
                 SHOP_setMsg($LANG_SHOP['pmt_error']);
             }
-            COM_refresh(SHOP_URL . '/index.php');
+            echo COM_refresh(SHOP_URL . '/index.php');
             break;
         }
         return true;

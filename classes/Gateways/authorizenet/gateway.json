@@ -1,8 +1,0 @@
-{
-    "name": "authorizenet",
-    "files": {
-        "public_html": [
-            "hooks/authorizenet.php"
-        ]
-    }
-}

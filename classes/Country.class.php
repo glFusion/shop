@@ -12,6 +12,9 @@
  * @filesource
  */
 namespace Shop;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
+use Shop\Models\DataArray;
 
 
 /**
@@ -22,11 +25,7 @@ class Country extends RegionBase
 {
     /** Country DB table key.
      * @var string */
-    protected static $TABLE = 'shop.countries';
-
-    /** Cache tag.
-     * @var string */
-    protected static $TAG = 'countries';
+    public static $TABLE = 'shop.countries';
 
     /** Table type, used to create variable names.
      * .@var string */
@@ -78,87 +77,88 @@ class Country extends RegionBase
      *
      * @param   array   $A      Array from form or DB record
      */
-    public function __construct($A)
+    public function __construct(?array $A=NULL)
     {
-        $this->setVars($A);
+        if (is_array($A)) {
+            $A = new DataArray($A);
+            $this->setVars($A);
+        }
     }
 
 
     /**
      * Set variables from a DB record or form into local variables.
      *
-     * @param   array   $A      Array from $_POST or DB
+     * @param   DataArray   $A  Data Array from $_POST or DB
      */
-    private function setVars($A)
+    private function setVars(DataArray $A) : void
     {
-        if (isset($A['country_id'])) {
-            $this->setID($A['country_id']);
-        }
-        if (isset($A['alpha2'])) {
-            $this->setAlpha2($A['alpha2']);
-        }
-        if (isset($A['alpha3'])) {
-            $this->setAlpha3($A['alpha3']);
-        }
-        if (isset($A['region_id'])) {
-            $this->setRegionID($A['region_id']);
-        }
-        if (isset($A['country_code'])) {
-            $this->setCode($A['country_code']);
-        }
-        if (isset($A['country_name'])) {
-            $this->setName($A['country_name']);
-        }
-        if (isset($A['currency_code'])) {
-            $this->setCurrencyCode($A['currency_code']);
-        }
-        if (isset($A['country_enabled'])) {
-            $this->setEnabled($A['country_enabled']);
-        }
-        if (isset($A['dial_code'])) {
-            $this->setDialCode($A['dial_code']);
-        }
+        $this->setID($A->getInt('country_id'));
+        $this->setAlpha2($A->getString('alpha2'));
+        $this->setAlpha3($A->getString('alpha3'));
+        $this->setRegionID($A->getInt('region_id'));
+        $this->setCode($A->getString('country_code'));
+        $this->setName($A->getString('country_name'));
+        $this->setCurrencyCode($A->getString('currency_code'));
+        $this->setEnabled($A->getInt('country_enabled'));
+        $this->setDialCode($A->getString('dial_code'));
     }
 
 
     /**
-     * Get an instance of a country object.
+     * Get a Country based on the DB record ID.
      *
-     * @param   string  $code   2-letter country code
-     * @return  object  Country object
+     * @param   integer $id     Record ID
+     * @return  object      Country object
      */
-    public static function getInstance($code)
+    public static function getByRecordId(int $id) : self
+    {
+        $qb = Database::getInstance()->conn->createQueryBuilder();
+        $qb->where('country_id = :id')
+           ->setParameter('id', $id, Database::INTEGER);
+        return self::_getInstance($qb);
+    }
+
+
+    /**
+     * Get a Country based on the alpha string, e.g. `US`.
+     *
+     * @param   string  $code   Alpha code for the country
+     * @return  object      Country object
+     */
+    public static function getByIsoCode(string $code) : self
+    {
+        $qb = Database::getInstance()->conn->createQueryBuilder();
+        $qb->where('alpha2 = :code')
+           ->setParameter('code', $code, Database::STRING);
+        return self::_getInstance($qb);
+    }
+
+
+    /**
+     * Internal function to get a country using a pre-built QueryBuilder.
+     *
+     * @param   object  $qb     QueryBuilder object
+     * @return  object      Country object
+     */
+    private static function _getInstance(\Doctrine\DBAL\Query\QueryBuilder $qb) : self
     {
         global $_TABLES;
-        static $instances = array();
 
-        if (isset($instances[$code])) {
-            return $instances[$code];
-        } else {
-            $sql = "SELECT * FROM {$_TABLES['shop.countries']} WHERE ";
-            if (is_integer($code)) {
-                $sql .= "country_id = $code";
-            } else {
-                $sql .= "alpha2 = '" . DB_escapeString($code) . "'";
-            }
-            $res = DB_query($sql);
-            if ($res && DB_numRows($res) == 1) {
-                $A = DB_fetchArray($res, false);
-            } else {
-                $A = array(
-                    'country_id'    => 0,
-                    'region_id'     => 0,
-                    'country_code'  => 0,
-                    'currency_code' => '',
-                    'alpha2'      => '',
-                    'alpha3'      => '',
-                    'country_name'  => '',
-                    'dial_code'     => '',
-                    'country_enabled' => 1,
-                );
-            }
-            return new self($A);
+        try {
+            $A = $qb->select('*')
+                    ->from($_TABLES['shop.countries'])
+                    ->execute()
+                    ->fetchAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $A = false;
         }
+        if (!$A) {
+            // Expected by the constructor.
+            $A = NULL;
+        }
+        return new self($A);
     }
 
 
@@ -416,17 +416,25 @@ class Country extends RegionBase
         $cache_key = 'shop.countries_all_' . $enabled;
         $retval = Cache::get($cache_key);
         if ($retval === NULL) {
-            $sql = "SELECT c.* FROM {$_TABLES['shop.countries']} c";
+            $qb = Database::getInstance()->conn->createQueryBuilder();
+            $qb->select('c.*')
+               ->from($_TABLES['shop.countries'], 'c')
+               ->orderBy('c.country_name', 'ASC');
             if ($enabled) {
-                $sql .= " LEFT JOIN {$_TABLES['shop.regions']} r
-                    ON c.region_id = r.region_id
-                    WHERE c.country_enabled = 1
-                    AND r.region_enabled =1";
+                $qb->leftJoin('c', $_TABLES['shop.regions'], 'r', 'c.region_id = r.region_id')
+                   ->where('c.country_enabled = 1')
+                   ->andWhere('r.region_enabled = 1');
             }
-            $sql .= ' ORDER BY c.country_name ASC';
-            $res = DB_query($sql);
-            while ($A = DB_fetchArray($res, false)) {
-                $retval[$A['alpha2']] = new self($A);
+            try {
+                $stmt = $qb->execute();
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $stmt = false;
+            }
+            if ($stmt) {
+                while ($A = $stmt->fetchAssociative()) {
+                    $retval[$A['alpha2']] = new self($A);
+                }
             }
             // Cache for a month, this doesn't change often
             Cache::set($cache_key, $retval, 'regions', 43200);
@@ -476,12 +484,12 @@ class Country extends RegionBase
     /**
      * Edit a country record.
      *
-     * @param   array   $A  $_POST values, if re-editing due to an error
+     * @param   DataArray   $A  $_POST values, if re-editing due to an error
      * @return  string      HTML for editing form
      */
-    public function Edit($A=NULL)
+    public function Edit(?DataArray $A=NULL)
     {
-        if (is_array($A)) {
+        if (!empty($A)) {
             $this->setVars($A);
         }
         $T = new Template('admin');
@@ -508,51 +516,58 @@ class Country extends RegionBase
     /**
      * Save the country information.
      *
-     * @param   array   $A  Optional data array from $_POST
+     * @param   DataArray   $A  Optional data array from $_POST
      * @return  boolean     True on success, False on failure
      */
-    public function Save($A=NULL)
+    public function Save(?DataArray $A=NULL) : bool
     {
-        global $_TABLES;
+        global $_TABLES, $LANG_SHOP;
 
-        if (is_array($A)) {
-            $this->setID($A['country_id'])
-                ->setAlpha2($A['alpha2'])
-                ->setAlpha3($A['alpha3'])
-                ->setRegionID($A['region_id'])
-                ->setCode($A['country_code'])
-                ->setName($A['country_name'])
-                ->setCurrencyCode($A['currency_code'])
-                ->setEnabled($A['country_enabled'])
-                ->setDialCode($A['dial_code']);
+        if (!empty($A)) {
+            $this->setVars($A);
         }
-        if ($this->getID() > 0) {
-            $sql1 = "UPDATE {$_TABLES['shop.countries']} SET ";
-            $sql3 = " WHERE country_id ='" . $this->getID() . "'";
-        } else {
-            $sql1 = "INSERT INTO {$_TABLES['shop.countries']} SET ";
-            $sql3 = '';
-        }
-        $sql2 = "alpha2 = '" . DB_escapeString($this->getAlpha2()) . "',
-            alpha3 = '" . DB_escapeString($this->getAlpha3()) . "',
-            region_id = {$this->getRegionID()},
-            country_code = {$this->getCode()},
-            country_name = '" . DB_escapeString($this->country_name) . "',
-            currency_code = '" . DB_escapeString($this->currency_code) . "',
-            dial_code = '" . DB_escapeString($this->dial_code) . "',
-            country_enabled = " . (int)$this->country_enabled;
-        $sql = $sql1 . $sql2 . $sql3;
-        //var_dump($this);die;
-        //echo $sql;die;
-        DB_query($sql, 1);  // suppress errors, show nice error message instead
-        if (!DB_error()) {
-            if ($this->getID() == 0) {
-                $this->setID(DB_insertID());
+        $values = array(
+            'alpha2' => $this->getAlpha2(),
+            'alpha3' => $this->getAlpha3(),
+            'region_id' => $this->getRegionID(),
+            'country_code' => $this->getCode(),
+            'country_name' => $this->country_name,
+            'currency_code' => $this->currency_code,
+            'dial_code' => $this->dial_code,
+            'country_enabled' => $this->country_enabled,
+        );
+        $types = array(
+            Database::STRING,
+            Database::STRING,
+            Database::INTEGER,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::INTEGER,
+        );
+        $db = Database::getInstance();
+        try {
+            if ($this->getID() > 0) {
+                $types[] = Database::INTEGER;
+                $db->conn->update(
+                    $_TABLES['shop.countries'],
+                    $values,
+                    array('country_id' => $this->getID()),
+                    $types
+                );
+            } else {
+                $db->conn->update(
+                    $_TABLES['shop.countries'],
+                    $values,
+                    $types
+                );
             }
+            $this->setID($db->conn->lastInsertId());
             $status = true;
-        } else {
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $this->addError($LANG_SHOP['err_dup_iso']);
-            SHOP_log($sql, SHOP_LOG_ERROR);
             $status = false;
         }
         return $status;
@@ -646,14 +661,11 @@ class Country extends RegionBase
         );
 
         $display .= COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
-        $display .= COM_createLink(
-            $LANG_SHOP['new_item'],
-            SHOP_ADMIN_URL . '/regions.php?editcountry=0',
-            array(
-                'class' => 'uk-button uk-button-success',
-                'style' => 'float:left',
-            )
-        );
+        $display .= FieldList::buttonLink(array(
+            'text' => $LANG_SHOP['new_item'],
+            'url' => SHOP_ADMIN_URL . '/regions.php?editcountry=0',
+            'style' => 'success',
+        ) );
 
         $query_arr = array(
             'table' => 'shop.countries',
@@ -711,14 +723,13 @@ class Country extends RegionBase
 
         switch($fieldname) {
         case 'edit':
-            $retval = COM_createLink(
-                Icon::getHTML('edit'),
-                SHOP_ADMIN_URL . '/regions.php?editcountry=' . $A['country_id']
-            );
+            $retval = FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . '/regions.php?editcountry=' . $A['country_id'],
+            ) );
             break;
 
         case 'country_enabled':
-            $retval .= Field::checkbox(array(
+            $retval .= FieldList::checkbox(array(
                 'name' => 'ena_check',
                 'id' => "togenabled{$A['country_id']}",
                 'checked' => $fieldvalue == 1,

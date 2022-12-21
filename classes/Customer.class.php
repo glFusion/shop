@@ -12,7 +12,10 @@
  * @filesource
  */
 namespace Shop;
+use glFusion\Database\Database;
 use Shop\Models\ReferralTag;
+use Shop\Models\DataArray;
+use Shop\Models\ProductType;
 
 
 /**
@@ -59,7 +62,7 @@ class Customer
 
     /** Customer IDs created by payment gateways.
      * @var array */
-    private $gw_ids = array();
+    private $gw_ids = NULL;
 
     /** Shopping cart information.
      * @var array */
@@ -93,6 +96,7 @@ class Customer
             $uid = $_USER['uid'];
         }
         $this->uid = (int)$uid;  // Save the user ID
+        $this->gw_ids = new DataArray;
         $this->ReadUser();  // Load the user's stored addresses
     }
 
@@ -111,23 +115,30 @@ class Customer
         if ($uid < 2) {     // Anon information is not saved
             return;
         }
-        $sql = "SELECT u.username, u.fullname, u.email, u.language,
-            ui.*, UNIX_TIMESTAMP(ui.created) AS created_ts
-            FROM {$_TABLES['users']} u
-            LEFT JOIN {$_TABLES['shop.userinfo']} ui
-                ON u.uid = ui.uid
-            WHERE u.uid = $uid";
-        $res = DB_query($sql);
-        if (DB_numRows($res) == 1) {
-            $A = DB_fetchArray($res, false);
+        try {
+            $A = Database::getInstance()->conn->executeQuery(
+                "SELECT u.username, u.fullname, u.email, u.language,
+                ui.*, UNIX_TIMESTAMP(ui.created) AS created_ts
+                FROM {$_TABLES['users']} u
+                LEFT JOIN {$_TABLES['shop.userinfo']} ui ON u.uid = ui.uid
+                WHERE u.uid = ?",
+                array($uid),
+                array(Database::INTEGER)
+            )->fetchAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $A = false;
+        }
+        if (is_array($A)) {
+            $A = new DataArray($A);
             $this->username = $A['username'];
             $this->fullname = $A['fullname'];
             $this->email = $A['email'];
             $this->language = str_replace('_' . COM_getCharset(), '', $A['language']);
             $this->setCart($A['cart']);
-            $this->setPrefGW(SHOP_getVar($A, 'pref_gw'));
+            $this->setPrefGW($A->getString('pref_gw'));
             $this->addresses = Address::getByUser($uid);
-            $this->gw_ids = $this->getCustomerIds($uid);
+            $this->gw_ids = new DataArray($this->getCustomerIds($uid));
             $this->setCreationDate($A['created_ts']);
             if ($A['uid'] > 0) {
                 // The returned uid value will be null if the user record was
@@ -178,7 +189,7 @@ class Customer
      * @param   string  $cust_id    Gateway's reference ID
      * @return  object  $this
      */
-    public function setGatewayID($gw_id, $cust_id)
+    public function setGatewayId($gw_id, $cust_id)
     {
         global $_TABLES;
 
@@ -202,9 +213,9 @@ class Customer
      * @param   string  $gw_id      ID of gateway
      * @return  string      Customer ID, NULL if not set
      */
-    public function getGatewayId($gw_id)
+    public function getGatewayId(string $gw_id) : string
     {
-        return SHOP_getVar($this->gw_ids, $gw_id, 'string', NULL);
+        return $this->gw_ids->getString($gw_id);
     }
 
 
@@ -269,15 +280,17 @@ class Customer
      * @param   integer $add_id     DB Id of address
      * @return  array               Array of address values
      */
-    public function getAddress($add_id)
+    public function getAddress(int $add_id) : Address
     {
         global $_TABLES;
 
         $add_id = (int)$add_id;
         if (array_key_exists($add_id, $this->addresses)) {
             return $this->addresses[$add_id];
-        } else {
+        } elseif (!empty($this->addresses)) {
             return reset($this->addresses);
+        } else {
+            return new self;
         }
     }
 
@@ -287,7 +300,7 @@ class Customer
      *
      * @return  array       Array of addresses
      */
-    public function getAddresses()
+    public function getAddresses() : array
     {
         return $this->addresses;
     }
@@ -301,7 +314,7 @@ class Customer
      * @param   string  $type   Type of address to get
      * @return  mixed   Address array (name, street, city, etc.), or NULL
      */
-    public function getDefaultAddress($type='billto')
+    public function getDefaultAddress($type='billto') : Address
     {
         if ($this->uid < 2) {
             // Anonymous has no saved address
@@ -317,7 +330,9 @@ class Customer
         if (count($this->addresses) > 0) {
             return reset($this->addresses);
         } else {
-            return new Address;
+            $retval = new Address;
+            $retval->setName($this->fullname);
+            return $retval;
         }
     }
 
@@ -457,7 +472,7 @@ class Customer
         $type = $type == 'billto' ? 'billto' : 'shipto';
         $Address = new Address($A);
         $Address->setUid($this->uid);     // Probably not included in $_POST
-        $msg = $Address->isValid();
+        $msg = $Address->isValid(ProductType::PHYSICAL);
         if (!empty($msg)) {
             return array(-1, $msg);
         }
@@ -509,7 +524,7 @@ class Customer
             cart = '$cart',
             affiliate_id = '" . DB_escapeString($this->affiliate_id) . "',
             aff_pmt_method = '" . DB_escapeString($this->aff_pmt_method) . "'";
-        SHOP_log($sql, SHOP_LOG_DEBUG);
+        Log::write('shop_system', Log::DEBUG, $sql);
         DB_query($sql);
         return DB_error() ? false : true;
     }
@@ -529,6 +544,41 @@ class Customer
         $uid = (int)$uid;
         DB_delete($_TABLES['shop.userinfo'], 'uid', $uid);
         DB_delete($_TABLES['shop.address'], 'uid', $uid);
+    }
+
+
+    /**
+     * Change a customer's user ID. Called from plugin_user_merge function.
+     *
+     * @param   integer $old_uid    Original user ID
+     * @param   integer $new_uid    New user ID
+     */
+    public static function changeUid(int $old_uid, int $new_uid) : void
+    {
+        global $_TABLES;
+
+        $db = Database::getInstance();
+        try {
+            $db->conn->executeQuery(
+                "UPDATE {$_TABLES['shop.address']} SET uid = ? WHERE uid = ?",
+                array($new_uid, $old_uid),
+                array(Database::INTEGER, Database::INTEGER)
+            );
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return;
+        }
+
+        try {
+            $db->conn->executeQuery(
+                "UPDATE {$_TABLES['shop.userinfo']} SET uid = ? WHERE uid = ?",
+                array($new_uid, $old_uid),
+                array(Database::INTEGER, Database::INTEGER)
+            );
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return;
+        }
     }
 
 
@@ -617,6 +667,7 @@ class Customer
             }
             $have_address = true;
         }
+        $A = new DataArray($A);
         $addr_id = $Def->getID();
         if ($addr_id > 0) {
             $have_address = true;
@@ -673,13 +724,10 @@ class Customer
                 'ad_billto_def' => $address->isDefaultBillto(),
                 'ad_shipto_def' => $address->isDefaultShipto(),
                 'ad_checked' => $ad_checked,
-                'del_icon'  => Icon::getHTML(
-                    'delete', 'tooltip',
-                    array(
-                        'title' => $LANG_SHOP['delete'],
-                        'onclick' => 'removeAddress(' . $address->getID() . ');',
-                    )
-                ),
+                'del_icon'  => FieldList::delete(array(
+                    'title' => $LANG_SHOP['delete'],
+                    'onclick' => 'removeAddress(' . $address->getID() . ');',
+                ) ),
             ) );
             $T->parse('sAddr', 'SavedAddress', true);
         }
@@ -702,8 +750,8 @@ class Customer
         // Get the state options into a variable so the length of the options
         // can be set in a template var, to set the visibility.
         $state_options = State::optionList(
-            SHOP_getVar($A, 'country', 'string', $country, false),
-            SHOP_getVar($A, 'state', 'string', $selAddress->getState(), false)
+            $A->getString('country', $country),
+            $A->getString('state', $selAddress->getState())
         );
         $T->set_var(array(
             'pi_url'        => SHOP_URL,
@@ -727,7 +775,7 @@ class Customer
             'action'        => $this->formaction,
             'next_step'     => (int)$step + 1,
             'country_options' => Country::optionList(
-                SHOP_getVar($A, 'country', 'string', $country, false)
+                $A->getString('country', $country)
             ),
             'state_options' => $state_options,
             'state_sel_vis' => strlen($state_options) > 0 ? '' : 'none',
@@ -768,11 +816,11 @@ class Customer
      * @param   integer $uid    User ID
      * @return  object          Customer object for the user
      */
-    public static function getInstance($uid = 0)
+    public static function getInstance(?int $uid = NULL) : self
     {
         global $_USER;
 
-        if ($uid == 0) {
+        if (empty($uid)) {
             $uid = $_USER['uid'];
         }
         $uid = (int)$uid;
@@ -905,6 +953,41 @@ class Customer
         } else {
             return '';
         }
+    }
+
+
+    /**
+     * Parse a fullname string into component parts.
+     *
+     * @param   string  $name       Full name to parse
+     * @return  mixed       Array of parts, or specified format
+     */
+    public static function parseName(string $name, ?string $format=NULL)
+    {
+        $args = array(1 => $name);
+        if ($format !== NULL) {
+            $args[2] = $format;
+        }
+        $retval = PLG_callFunctionForOnePlugin(
+            'plugin_parseName_lglib',
+            $args,
+        );
+        if (empty($retval)) {
+            $p = explode(' ', $name);
+            $parts = array();
+            $parts['fname'] = $p[0];
+            $parts['lname'] = isset($p[1]) ? $p[1] : '';
+            if ($format == 'LCF') {
+                if (!empty($parts['lname'])) {
+                    $retval = $parts['lname'] . ', ' . $parts['fname'];
+                } else {
+                    $retval = $parts['fname'];
+                }
+            } else {
+                $retval = $parts;
+            }
+        }
+        return $retval;
     }
 
 }

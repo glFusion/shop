@@ -118,26 +118,6 @@ class Order
     }
 
 
-    public function asPackingList()
-    {
-        $this->type = 'packinglist';
-        return $this;
-    }
-
-    public function asInvoice()
-    {
-        $this->type = 'order';
-        return $this;
-    }
-
-
-    public function withType($type)
-    {
-        $this->type = $type;
-        return $this;
-    }
-
-
     /**
      * Load the order information from the database.
      *
@@ -415,11 +395,11 @@ class Order
                 $pmt_method = $this->Order->getPmtMethod();
             }
 
-            /*$T->set_var(array(
+            $T->set_var(array(
                 'pmt_method' => $pmt_method,
                 //'pmt_txn_id' => $this->pmt_txn_id,
                 'ipn_det_url' => IPN::getDetailUrl($this->pmt_txn_id, 'txn_id'),
-            ) );*/
+            ) );
         }
 
         $Payments = $this->Order->getPayments();

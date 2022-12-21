@@ -23,29 +23,30 @@ if (
     COM_404();
     exit;
 }
+use Shop\Models\Token;
+use Shop\Models\Request;
+$Request = Request::getInstance();
 
 // Get the order and make sure it's valid. Also it must not be "final".
-if (isset($_POST['order_id'])) {
-    $order_id = $_POST['order_id'];
-} elseif (isset($_GET['order_id'])) {
-    $order_id = $_GET['order_id'];
-} else {
-    $order_id = '';
-}
+$order_id = $Request->getString('order_id');
 
 if (!empty($order_id)) {
+    $secret = $Request->getString('secret');
+    if (!empty($secret)) {
+        $secret = Token::decrypt($secret);
+    }
     $Order = Shop\Order::getInstance($order_id);
-    if (!$Order->isNew()) {
+    if (!$Order->isNew() && $Order->getSecret() == $secret) {
         $GW = Shop\Gateway::getInstance($Order->getPmtMethod());
         $Order->setFinal();
         $redirect = $GW->confirmOrder($Order);
         if (!empty($redirect)) {
-            COM_refresh($redirect);
+            echo COM_refresh($redirect);
         } else {
-            COM_refresh(Shop\Config::get('url'));
+            echo COM_refresh(Shop\Config::get('url'));
         }
     }
 } else {
     SHOP_setMsg("There was an error processing your order");
-    COM_refresh(Shop\Config::get('url') . '/cart.php');
+    echo COM_refresh(Shop\Config::get('url') . '/cart.php');
 }

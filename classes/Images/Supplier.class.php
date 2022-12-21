@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Shop\Images;
+use Shop\Config;
 
 
 /**

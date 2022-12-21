@@ -10,7 +10,7 @@
 			<span id="module_code" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls uk-form-controls-text">
-			<select class="uk-select uk-form-small uk-form-width-medium" id="carrierCode" name="module_code">
+			<select class="uk-select uk-form-width-medium" id="carrierCode" name="module_code">
 				<option value="">--{$LANG_SHOP['other']}--</option>
 <!-- BEGIN shipperCodes -->
 				<option value="{module_code}" {selected}>{module_name} ({module_code})</option>
@@ -24,7 +24,7 @@
 			<span id="name" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls uk-form-controls-text">
-			<input class="uk-input uk-form-small uk-form-width-medium" required type="text" name="name" value="{name}" maxlength="40" />
+			<input class="uk-input uk-form-width-medium" required type="text" name="name" value="{name}" maxlength="40" />
 		</div>
 	</div>
 
@@ -51,7 +51,7 @@
 			<span id="tax_loc" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls uk-form-controls-text">
-			<select class="uk-select uk-form-small uk-form-width-medium" name="tax_loc">
+			<select class="uk-select uk-form-width-medium" name="tax_loc">
 				<option value="0" {tax_loc_0}>{$LANG_SHOP['origin']}</option>
 				<option value="1" {tax_loc_1}>{$LANG_SHOP['destination']}</option>
 			</select>
@@ -68,20 +68,16 @@
 	</div>
 
 	<div class="uk-form-row uk-margin">
-		<label class="uk-form-label">{$LANG_SHOP['min_ship_units']}:
+		<label class="uk-form-label">{$LANG_SHOP['shipping_units']}:
+			<span id="ship_units" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls uk-form-controls-text">
+			{$LANG_SHOP['minimum']}:
 			<span id="min_units" class="tooltip_cfg tooltipstered"></span>
-		</label>
-		<div class="uk-form-controls uk-form-controls-text">
-			<input class="uk-input uk-form-small uk-form-width-small" type="text" name="min_units" value="{min_units}" maxlength="40" />
-		</div>
-	</div>
-
-	<div class="uk-form-row uk-margin" id="prod_sel">
-		<label class="uk-form-label">{$LANG_SHOP['max_ship_units']}:
+			<input class="uk-input uk-form-width-small" type="text" name="min_units" value="{min_units}" maxlength="40" />
+			{$LANG_SHOP['maximum']}:
 			<span id="max_units" class="tooltip_cfg tooltipstered"></span>
-		</label>
-		<div class="uk-form-controls uk-form-controls-text">
-			<input class="uk-input uk-form-small uk-form-width-small" type="text" name="max_units" value="{max_units}" maxlength="40" />
+			<input class="uk-input uk-form-width-small" type="text" name="max_units" value="{max_units}" maxlength="40" />
 		</div>
 	</div>
 
@@ -92,7 +88,7 @@
 		<div class="uk-form-controls uk-form-controls-text">
 			<input class="uk-checkbox" type="checkbox" id="ena_free" name="ena_free" value="1" {ena_free_chk} onclick="toggleFreeThreshold(this);" />
 			<span id="span_free_threshold" style="display:{span_free_vis}">&nbsp;&nbsp;{$LANG_SHOP['value']}:
-				<input class="uk-input uk-form-small uk-form-width-xsmall" type="text" name="free_threshold" value="{free_threshold}" />
+				<input class="uk-input uk-form-width-small" type="text" name="free_threshold" value="{free_threshold}" />
 			</span>
 		</div>
 	</div>
@@ -102,7 +98,7 @@
 			<span id="rate_method" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls uk-form-controls-text">
-			<select onchange="toggleRateTable(this.value);" class="uk-select uk-form-small uk-form-width-medium" name="quote_method">
+			<select onchange="toggleRateTable(this.value);" class="uk-select uk-form-width-medium" name="quote_method">
 				<option value="1" {chk_qm_1}>{$LANG_SHOP['rate_table']}</option>
 				<option value="2" {chk_qm_2}>{$LANG_SHOP['pkg_rates']}</option>
 			</select>
@@ -128,9 +124,9 @@
 				</tr>
 <!-- BEGIN rateTable -->
 				<tr>
-					<td><input class="uk-input uk-form-small uk-form-width-medium" type="text" name="rateDscp[]" value="{rate_dscp}" /></td>
-					<td><input class="uk-input uk-form-small uk-form-width-medium" type="text" name="rateUnits[]" value="{rate_units}" style="text-align:right" /></td>
-					<td><input class="uk-input uk-form-small uk-form-width-medium" type="text" name="rateRate[]" value="{rate_price}" style="text-align:right" /></td>
+					<td><input class="uk-input uk-form-width-medium" type="text" name="rateDscp[]" value="{rate_dscp}" /></td>
+					<td><input class="uk-input uk-form-width-medium" type="text" name="rateUnits[]" value="{rate_units}" style="text-align:right" /></td>
+					<td><input class="uk-input uk-form-width-medium" type="text" name="rateRate[]" value="{rate_price}" style="text-align:right" /></td>
 					<td><i class="uk-icon uk-icon-remove uk-text-danger" data-uk-tooltip
 						title="{$LANG_SHOP['rem_row']}"
 						onclick="javascript:return removeRow(this);"></i>
@@ -148,7 +144,7 @@
 			<span id="hlp_pkg_code" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls uk-form-controls-text">
-			<select class="uk-select uk-form-small uk-form-width-medium" id="pkg_code_select" name="pkg_code">
+			<select class="uk-select uk-form-width-medium" id="pkg_code_select" name="pkg_code">
 				<option value="" {sel_none}>-- None -- </option>
 <!-- BEGIN PkgCodes -->
 				<option value="{pkg_code}" {sel}>{pkg_dscp}</option>
@@ -162,7 +158,7 @@
 			<span id="hlp_svc_code" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls uk-form-controls-text">
-			<select class="uk-select uk-form-small uk-form-width-medium" id="svc_code_select" name="svc_code">
+			<select class="uk-select uk-form-width-medium" id="svc_code_select" name="svc_code">
 				<option value="_na" {sel_none}>-- None --</option>
 <!-- BEGIN SvcCodes -->
 				<option value="{svc_code}" {sel}>{svc_dscp}</option>
@@ -177,7 +173,7 @@
 			<span id="grp_access" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls uk-form-controls-text">
-			<select class="uk-select uk-form-small uk-form-width-medium" id="grp_access" name="grp_access">
+			<select class="uk-select uk-form-width-medium" id="grp_access" name="grp_access">
 				{grp_sel}
 			</select>
 		</div>
@@ -188,7 +184,7 @@
 			<span id="start" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls uk-form-controls-text">
-			<input class="uk-input uk-form-small uk-form-width-medium shop_datepicker" type="text" id="valid_from" name="valid_from" value="{valid_from}"/>
+			<input class="uk-input uk-form-width-medium shop_datepicker" type="text" id="valid_from" name="valid_from" value="{valid_from}"/>
 			<i class="uk-icon uk-icon-remove uk-text-danger"
 				onclick='SHOP_resetShipperDates("valid_from");'></i>
 		</div>
@@ -199,7 +195,7 @@
 			<span id="end" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls uk-form-controls-text">
-			<input class="uk-input uk-form-small uk-form-width-medium shop_datepicker" type="text" id="valid_to" name="valid_to" value="{valid_to}" />
+			<input class="uk-input uk-form-width-medium shop_datepicker" type="text" id="valid_to" name="valid_to" value="{valid_to}" />
 			<i class="uk-icon uk-icon-remove uk-text-danger"
 				onclick='SHOP_resetShipperDates("valid_to");'></i>
 		</div>

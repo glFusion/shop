@@ -26,45 +26,34 @@ if (
 
 require_once('../../auth.inc.php');
 USES_lib_admin();
-
+$Request = Shop\Models\Request::getInstance();
 $content = '';
 
 // Get the message to the admin, if any
 $msg = array();
-if (isset($_REQUEST['msg'])) $msg[] = $_REQUEST['msg'];
+if (isset($Request['msg'])) $msg[] = $Request->getString('msg');
 
-$action = 'packages';     // Default if no correct view specified
 $expected = array(
     // Actions to perform
     'pkgsave', 'pkgdelete',
     // Views to display
     'pkglist', 'pkgedit',
 );
-foreach($expected as $provided) {
-    if (isset($_POST[$provided])) {
-        $action = $provided;
-        $actionval = $_POST[$provided];
-        break;
-    } elseif (isset($_GET[$provided])) {
-        $action = $provided;
-        $actionval = $_GET[$provided];
-        break;
-    }
-}
+list($action, $actionval) = $Request->getAction($expected, 'packages');
 
 switch ($action) {
 case 'pkgdelete':
     Shop\Package::Delete($actionval);
-    COM_refresh(SHOP_ADMIN_URL . '/packages.php');
+    echo COM_refresh(SHOP_ADMIN_URL . '/packages.php');
     break;
 
 case 'pkgsave':
     // Save a payment gateway configuration
-    $Pkg = \Shop\Package::getInstance($_POST['pkg_id']);
+    $Pkg = \Shop\Package::getInstance($Request->getInt('pkg_id'));
     if ($Pkg !== NULL) {
-        $status = $Pkg->Save($_POST);
+        $status = $Pkg->Save($Request);
     }
-    COM_refresh(SHOP_ADMIN_URL . '/packages.php');
+    echo COM_refresh(SHOP_ADMIN_URL . '/packages.php');
     break;
 
 case 'pkgedit':

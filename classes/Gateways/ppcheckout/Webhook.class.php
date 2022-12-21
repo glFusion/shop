@@ -3,10 +3,10 @@
  * Paypal Webhook class for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     vTBD
- * @since       vTBD
+ * @version     v1.5.0
+ * @since       v1.3.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -14,8 +14,8 @@
 namespace Shop\Gateways\ppcheckout;
 use Shop\Payment;
 use Shop\Order;
-use Shop\Models\OrderState;
-use Shop\Models\IPN as IPNModel;
+use Shop\Log;
+use Shop\Config;
 
 
 /**
@@ -43,8 +43,8 @@ class Webhook extends \Shop\Webhook
             $this->blob = file_get_contents('php://input');
             $this->setHeaders(NULL);
         }
-        //SHOP_log("Paypal Webook Payload: " . $this->blob, SHOP_LOG_DEBUG);
-        //SHOP_log("Paypal Webhook Headers: " . var_export($_SERVER,true), SHOP_LOG_DEBUG);
+        //Log::write('shop_system', Log::DEBUG, "Paypal Webook Payload: " . $this->blob);
+        //Log::write('shop_system', Log::DEBUG, "Paypal Webhook Headers: " . var_export($_SERVER,true));
 
         $this->setTimestamp();
         $this->setData(json_decode($this->blob));
@@ -57,7 +57,7 @@ class Webhook extends \Shop\Webhook
      *
      * @return  boolean     True on success, False on error
      */
-    public function Dispatch()
+    public function Dispatch() : bool
     {
         $retval = true;
 
@@ -85,7 +85,7 @@ class Webhook extends \Shop\Webhook
                 $response = $this->GW->captureAuth($resource->id);
                 if ($response && isset($response->result)) {
                     if ($response->statusCode >= 200 && $response->statusCode < 300) {
-                        SHOP_log("Order {$resource->custom_id} captured successfully: capture id " .
+                        Log::write('shop_system', Log::ERROR, "Order {$resource->custom_id} captured successfully: capture id " .
                             $response->result->id . " status: " . $response->result->status);
                     }
                 }
@@ -120,23 +120,61 @@ class Webhook extends \Shop\Webhook
                 $this->Order = Order::getInstance($this->getOrderID());
                 $this->setPayment($resource->amount->value);
                 $this->setCurrency($resource->amount->currency_code);
-                $ref_id = $resource->id;
+                $this->setRefID($resource->id);
+                $LogID = $this->logIPN();
                 // Get the payment by reference ID to make sure it's unique
-                $Pmt = Payment::getByReference($ref_id);
+                $Pmt = Payment::getByReference($this->refID);
                 if ($Pmt->getPmtID() == 0) {
-                    $Pmt->setRefID($ref_id)
+                    $Pmt->setRefID($this->refID)
                         ->setAmount($this->getPayment())
                         ->setGateway($this->getSource())
-                        ->setMethod($this->getSource())
+                        ->setMethod($this->GW->getDisplayName())
                         ->setComment('Webhook ' . $this->getID())
+                        ->setComplete(true)
                         ->setOrderID($this->getOrderID());
                     if ($Pmt->Save()) {
                         $retval = $this->handlePurchase();
                     }
                 }
-                $this->setID($ref_id);  // use the payment ID
-                $this->logIPN();
+                $this->setID($this->refID);  // use the payment ID
             }
+            break;
+
+        case 'PAYMENT.CAPTURE.REFUNDED':
+            $order_id = '';
+            $pmt_ref = '';
+            if (isset($resource->custom_id)) {
+                $this->setOrderId($resource->custom_id);
+            }
+            if (
+                isset($resource->links) &&
+                is_array($resource->links) &&
+                isset($resource->links[1])
+            ) {
+                $pmt = $resource->links[1];
+                if ($pmt->rel == 'up') {    // original payment reference
+                    $orig_pmt_ref = basename($pmt->href);
+                }
+            }
+            if (!empty($orig_pmt_ref)) {
+                $origPmt = Payment::getByReference($orig_pmt_ref);
+            } else {
+                $origPmt = NULL;
+            }
+
+            $refund_amount = (float)$resource->seller_payable_breakdown->total_refunded_amount->value;
+            $this->setCurrency($resource->seller_payable_breakdown->total_refunded_amount->currency_code);
+            if ($origPmt && !empty($this->getOrderId())) {
+                $Order = Order::getInstance($this->getOrderId());
+                if ($refund_amount >= $Order->getTotal()) {
+                    $this->handleFullRefund($Order);
+                }
+            }
+            $this->setPayment($refund_amount * -1);
+            $this->setComplete($resource->status == 'COMPLETED');
+            $this->setRefId($resource->id);
+            $this->setPmtMethod('refund');
+            $this->recordPayment();
             break;
 
         case 'CHECKOUT.ORDER.APPROVED_X':
@@ -181,14 +219,14 @@ class Webhook extends \Shop\Webhook
                         is_array($unit->payments->captures)
                     ) {
                         $capture = $unit->payments->captures[0];
-                        $ref_id = $capture->id;
+                        $this->setRefID($capture->id);
                         if (isset($capture->amount)) {
                             $this->setPayment($unit->amount->value);
                             $this->setCurrency($unit->amount->currency_code);
                         }
-                        $Pmt = Payment::getByReference($ref_id);
-                        //if ($Pmt->getPmtID() == 0) {
-                            $Pmt->setRefID($ref_id)
+                        $Pmt = Payment::getByReference($this->refID);
+                        if ($Pmt->getPmtID() == 0) {
+                            $Pmt->setRefID($this->refID)
                                 ->setAmount($this->getPayment())
                                 ->setGateway($this->getSource())
                                 ->setMethod('Paypal Checkout')
@@ -196,8 +234,8 @@ class Webhook extends \Shop\Webhook
                                 ->setOrderID($this->getOrderID());
                             return $Pmt->Save();
                             $this->handlePurchase();
-                        //}
-                        $this->setID($ref_id);  // use the payment ID for logging
+                        }
+                        $this->setID($this->refID);  // use the payment ID for logging
                         $this->logIPN();
                     }
                 }
@@ -208,26 +246,12 @@ class Webhook extends \Shop\Webhook
             if (isset($resource->invoice)) {
                 $invoice = $resource->invoice;
             }
+
             if ($invoice) {
-                $this->IPN = new IPNModel(array(
-                    'sql_date' => '',       // SQL-formatted date string
-                    'uid' => 0,             // user ID to receive credit
-                    'pmt_gross' => 0,       // gross amount paid
-                    'txn_id' => '',         // transaction ID
-                    'gw_name' => '',        // gateway short name
-                    'memo' => '',           // misc. comment
-                    'first_name' => '',     // payer's first name
-                    'last_name' => '',      // payer's last name
-                    'payer_name' => '',     // payer's full name
-                    'payer_email' => '',    // payer's email address
-                    'custom' => array(  // backward compatibility for plugins
-                        'uid' => 0,
-                    ),
-                ) );
                 if (isset($invoice->detail)) {
                     $this->setOrderId($invoice->detail->reference);
                 } else {
-                    SHOP_log("Order number not found");
+                    Log::write('shop_system', Log::ERROR, "Order number not found");
                     break;
                 }
 
@@ -242,11 +266,11 @@ class Webhook extends \Shop\Webhook
                         // If there are multiple payments for the order, all are included.
                         $payment = array_pop($payments->transactions);
                         if ($payment) {
-                            $ref_id = $payment->payment_id;
+                            $this->setRefID($payment->payment_id);
                             // Get the payment by reference ID to make sure it's unique
-                            $Pmt = Payment::getByReference($ref_id);
+                            $Pmt = Payment::getByReference($this->refID);
                             if ($Pmt->getPmtID() == 0) {
-                                $Pmt->setRefID($ref_id)
+                                $Pmt->setRefID($this->refID)
                                     ->setAmount($payment->amount->value)
                                     ->setGateway($this->getSource())
                                     ->setMethod($payment->method)
@@ -256,7 +280,7 @@ class Webhook extends \Shop\Webhook
                                 $retval = $Pmt->Save();
                             }
                         }
-                        $this->setID($ref_id);  // use the payment ID
+                        $this->setID($this->refID);  // use the payment ID
                         $this->logIPN();
                      }
                 }
@@ -274,7 +298,7 @@ class Webhook extends \Shop\Webhook
                         $status = true;
                     }
                 }
-                SHOP_log("Invoice created for {$this->getOrderID()}", SHOP_LOG_DEBUG);
+                Log::write('shop_system', Log::DEBUG, "Invoice created for {$this->getOrderID()}");
                 $this->Order = Order::getInstance($this->getOrderID());
                 if (!$this->Order->isNew()) {
                     $terms_gw = \Shop\Gateway::create($this->Order->getPmtMethod());
@@ -282,37 +306,12 @@ class Webhook extends \Shop\Webhook
                     $this->Order->setGatewayRef($invoice->id)
                           ->setInfo('terms_gw', $this->GW->getName())
                           ->Save();
-                    $this->Order->updateStatus($terms_gw->getConfig('after_inv_status'));
+                    $this->Order->createInvoice()
+                                ->updateStatus($terms_gw->getConfig('after_inv_status'));
                 }
             }
             if (!$status) {
-                SHOP_log("Error processing webhook " . $this->getEvent());
-            }
-            break;
-
-        case 'PAYMENT.CAPTURE.REFUNDED':
-            if (isset($resource->custom_id)) {
-                $this->setOrderID($resource->custom_id);
-                $this->setPayment($resource->amount->value);
-                $this->setCurrency($resource->amount->currency_code);
-                $ref_id = $resource->id;
-                // Get the payment by reference ID to make sure it's unique
-                $Pmt = Payment::getByReference($ref_id);
-                if ($Pmt->getPmtID() == 0) {
-                    $Pmt->setRefID($ref_id)
-                        ->setAmount($this->getPayment() * -1)
-                        ->setGateway($this->getSource())
-                        ->setMethod($this->getSource())
-                        ->setComment('Webhook ' . $this->getID())
-                        ->setOrderID($this->getOrderID());
-                    $retval = $Pmt->Save();
-                }
-                $this->setID($ref_id);  // use the payment ID
-                $this->logIPN();
-            } else {
-                SHOP_log("Order number not found for refund");
-                $retval = false;
-                break;
+                Log::write('shop_system', Log::ERROR, "Error processing webhook " . $this->getEvent());
             }
             break;
         }
@@ -325,7 +324,7 @@ class Webhook extends \Shop\Webhook
      *
      * @return  boolean     True if valid, False if not.
      */
-    public function Verify()
+    public function Verify() : bool
     {
         $status = false;        // default to invalid
 
@@ -339,32 +338,11 @@ class Webhook extends \Shop\Webhook
             return $status;
         }
 
-        if (isset($_GET['testhook'])) {
+        if (Config::get('sys_test_ipn')) {
             $this->setVerified(true);
             return true;
         }
         $gw = \Shop\Gateway::getInstance($this->getSource());
-        /*for ($i = 0; $i < 3; $i++) {
-            if ($i > 0) {
-                sleep(10);
-            }
-            $resp = json_decode($gw->getWebhookDetails($this->getID()));
-            COM_errorLog("DEBUG: " . var_export($resp, true));
-            if ($resp) {
-                if (
-                    isset($resp->id) && isset($resp->event_id) &&
-                    $resp->id == $data->id &&
-                    $resp->event_type == $data->event_type
-                ) {
-                    $status = true;
-                    break;
-                }
-            }
-        }
-        $this->setVerified($status);
-        return $status;
-         */
-
         $body = '{
             "auth_algo": "' . $this->getHeader('Paypal-Auth-Algo') . '",
             "cert_url": "' . $this->getHeader('Paypal-Cert-Url') . '",
@@ -388,17 +366,17 @@ class Webhook extends \Shop\Webhook
         $result = @json_decode(curl_exec($ch), true);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         if (!is_array($result)) {
-            SHOP_log("Error decoding response: Code $code, Data " . print_r($result,true));
+            Log::write('shop_system', Log::ERROR, "Error decoding response: Code $code, Data " . print_r($result,true));
             $status = false;
         }
-        SHOP_log("Received code $code from PayPal", SHOP_LOG_DEBUG);
+        Log::write('shop_system', Log::DEBUG, "Received code $code from PayPal");
         switch ($code) {
         case 200:
-            SHOP_log("Result " . print_r($result,true), SHOP_LOG_DEBUG);
+            Log::write('shop_system', Log::DEBUG, "Result " . print_r($result,true));
             $status = SHOP_getVar($result, 'verification_status') == 'SUCCESS' ? true : false;
             break;
         default:
-            SHOP_log("Error $code : " . var_export($result, true));
+            Log::write('shop_system', Log::ERROR, "Error $code : " . var_export($result, true));
             $status = false;
             if (isset($result['name']) && $result['name'] == 'VALIDATION_ERROR') {
                 // fatal error

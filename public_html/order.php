@@ -3,9 +3,10 @@
  * View and print orders.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner
+ * @copyright   Copyright (c) 2019-2022 Lee Garner
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.5.0
+ * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -13,6 +14,7 @@
 
 /** Require core glFusion code */
 require_once '../lib-common.php';
+use Shop\Models\Request;
 
 if (
     !function_exists('SHOP_access_check') ||
@@ -22,16 +24,19 @@ if (
     exit;
 }
 
+$Request = Request::getInstance();
 $page_title = '';
 $action = '';
 $actionval = '';
 $view = '';
 
-// Retrieve and sanitize input variables.  Typically _GET, but may be _POSTed.
 COM_setArgNames(array('mode', 'id', 'token'));
 
-if (isset($_GET['mode'])) {
-    $mode = COM_applyFilter($_GET['mode']);
+$mode = $Request->getString('mode', COM_getArgument('mode'));
+$id = $Request->getString('id', COM_getArgument('id'));
+$token = $Request->getString('token', COM_getArgument('token'));
+/*if (isset($Request['mode'])) {
+    $mode = COM_applyFilter($Request['mode']);
 } else {
     $mode = COM_getArgument('mode');
 }
@@ -44,7 +49,7 @@ if (isset($_GET['token'])) {
     $token = COM_sanitizeID($_GET['token']);
 } else {
     $token = COM_applyFilter(COM_getArgument('token'));
-}
+}*/
 if (empty($mode) && !empty($id)) {
     $mode = 'view';
 }
@@ -57,7 +62,6 @@ case 'view':
     if ($order->canView($token)) {
         $View = new Shop\Views\Invoice();
         $content .= $View->withOrder($order)->withToken($token)->Render();
-        //$content .= $order->View();
     } else {
         COM_404();
     }
@@ -72,20 +76,6 @@ case 'pdforder':
         COM_404();
     }
     break;
-
-case 'packinglist':
-case 'print':
-    echo __LINE__ . ' deprecatd';die;
-    // Display a printed order or packing list and exit.
-    // This is expected to be shown in a _blank browser window/tab.
-    $order = \Shop\Order::getInstance($id);
-    if ($order->canView($token)) {
-        echo $order->View($mode);
-        exit;
-    } else {
-        COM_404();
-    }
-    break;
 }
 
 $display = \Shop\Menu::siteHeader();
@@ -94,4 +84,3 @@ $display .= $content;
 $display .= \Shop\Menu::siteFooter();
 echo $display;
 
-?>
