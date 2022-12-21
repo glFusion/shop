@@ -3,20 +3,23 @@
  * Sitemap driver for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2017-2020 Lee Garner
+ * @copyright   Copyright (c) 2017-2022 Lee Garner
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Sitemap\Drivers;
+use Sitemap\Models\Item;
 use Shop\Category;
+use Shop\Config;
+
 
 /**
  * Sitemap driver class for Shop.
- * @paackage shop
+ * @package shop
  */
 class shop extends BaseDriver
 {
@@ -29,10 +32,9 @@ class shop extends BaseDriver
      *
      * @return  string  Entry URL
      */
-    public function getEntryPoint()
+    public function getEntryPoint() : ?string
     {
-        global $_SHOP_CONF;
-        return $_SHOP_CONF['shop_enabled'] ? SHOP_URL : '';
+        return Config::get('shop_enabled') ? Config::get('url') . '/index.php' : NULL;
     }
 
 
@@ -43,8 +45,8 @@ class shop extends BaseDriver
      */
     public function getDisplayName()
     {
-        global $LANG_SHOP, $_SHOP_CONF;
-        return $_SHOP_CONF['shop_enabled'] ? $LANG_SHOP['main_title'] : '';
+        global $LANG_SHOP;
+        return Config::get('shop_enabled') ? $LANG_SHOP['main_title'] : '';
     }
 
 
@@ -56,10 +58,8 @@ class shop extends BaseDriver
      */
     public function getItems($cat_id = 0)
     {
-        global $_TABLES, $_USER, $_SHOP_CONF;
-
         $entries = array();
-        if (!$_SHOP_CONF['shop_enabled']) {
+        if (!Config::get('shop_enabled')) {
             return $entries;
         }
         $opts = array(
@@ -71,13 +71,12 @@ class shop extends BaseDriver
         $items = PLG_getItemInfo('shop', '*', 'id,introtext,date,url', $this->uid, $opts);
         if (is_array($items)) {
             foreach ($items as $A) {
-                $entries[] = array(
-                    'id'    => $A['id'],
-                    'title' => $A['introtext'],
-                    'uri'   => $A['url'],
-                    'date'  => $A['date'],
-                    'image_uri' => false,
-                );
+                $item = new Item;
+                $item->withItemId($A['id'])
+                     ->withTitle($A['introtext'])
+                     ->withUrl($A['url'])
+                     ->withDate($A['date']);
+                $entries[] = $item->toArray();
             }
         }
         return $entries;
@@ -90,12 +89,10 @@ class shop extends BaseDriver
      * @param   integer $base   Category ID
      * @return  array       Array of categories
      */
-    public function getChildCategories($base = false)
+    public function getChildCategories($base = false) : array
     {
-        global $_SHOP_CONF;
-
         $retval = array();
-        if (!$_SHOP_CONF['shop_enabled']) {
+        if (!Config::get('shop_enabled')) {
             return $retval;
         }
 
@@ -107,13 +104,12 @@ class shop extends BaseDriver
         $cats = $Root->getChildren();
         foreach ($cats as $Cat) {
             if ($Cat->hasAccess($this->groups)) {
-                $retval[] = array(
-                    'id'        => $Cat->getID(),
-                    'title'     => $Cat->getName(),
-                    'uri'       => SHOP_URL . '/index.php?category=' . $Cat->getID(),
-                    'date'      => false,
-                    'image_uri' => $Cat->getImage()['url'],
-                );
+                $item = new Item;
+                $item->withItemId($Cat->getID())
+                     ->withTitle($Cat->getName())
+                     ->withUrl(SHOP_URL . '/index.php?category=' . $Cat->getID())
+                     ->withImageUrl($Cat->getImage()['url']);
+                $retval[] = $item->toArray();
             }
         }
         return $retval;
@@ -121,4 +117,3 @@ class shop extends BaseDriver
 
 }
 
-?>
