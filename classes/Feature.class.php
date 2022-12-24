@@ -202,7 +202,7 @@ class Feature
      */
     public function Save(?DataArray $A=NULL) : bool
     {
-        global $_TABLES, $_SHOP_CONF;
+        global $_TABLES;
 
         $reorder = false;
         if (!empty($A)) {
@@ -321,7 +321,7 @@ class Feature
      */
     public function Edit()
     {
-        global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_SYSTEM;
+        global $_TABLES, $_CONF, $LANG_SHOP;
 
         $T = new Template('admin');
         $T->set_file('form', 'feature_form.thtml');
@@ -371,7 +371,7 @@ class Feature
      */
     public static function adminList()
     {
-        global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $_SYSTEM;
+        global $_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN;
 
         $sql = "SELECT * FROM {$_TABLES['shop.features']}";
 
@@ -428,7 +428,7 @@ class Feature
         $filter = '';
         $options = array('chkdelete' => true, 'chkfield' => 'ft_id');
         $display .= ADMIN_list(
-            $_SHOP_CONF['pi_name'] . '_feat_list',
+            Config::PI_NAME . '_feat_list',
             array(__CLASS__,  'getAdminField'),
             $header_arr, $text_arr, $query_arr, $defsort_arr,
             $filter, $extra, $options, ''
@@ -450,7 +450,7 @@ class Feature
      */
     public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr, $extra)
     {
-        global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_ADMIN;
+        global $_CONF, $LANG_SHOP;
 
         $retval = '';
 
@@ -854,4 +854,3 @@ class Feature
     }
 
 }
-

@@ -7,7 +7,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2020-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.4.2
+ * @version     v1.5.0
  * @since       v1.2.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -145,18 +145,7 @@ class FeatureValue
      */
     public function Save($A = array())
     {
-        global $_TABLES, $_SHOP_CONF;
-
-        /*if (is_array($A)) {
-            if (!isset($A['orderby'])) {
-                // Put this field at the end of the line by default.
-                $A['orderby'] = 65535;
-            } else {
-                // Bump the number from the "position after" value.
-                $A['orderby'] += 5;
-            }
-            $this->setVars($A);
-        }*/
+        global $_TABLES;
 
         // Make sure the necessary fields are filled in
         if (!$this->isValidRecord()) {
@@ -165,7 +154,7 @@ class FeatureValue
         $db = Database::getInstance();
         $values = array(
             'ft_id' => $this->getFeatureID(),
-            'fv_value' => $fv_value,
+            'fv_value' => $this->fv_value,
         );
         $types = array(
             Database::INTEGER,
@@ -174,16 +163,16 @@ class FeatureValue
         try {
             if ($this->fv_id == 0) {
                 $db->conn->insert($_TABLES['shop.features_values'], $values, $types);
+                $this->fv_id = $db->conn->lastInsertId();
             } else {
                 $types[] = Database::INTEGER;   // for fv_id
                 $db->conn->update(
                     $_TABLES['shop.features_values'],
                     $values,
-                    array('fv_id' => $fv_id),
+                    array('fv_id' => $this->fv_id),
                     $types
                 );
             }
-            $this->fv_id = $db->conn->lastInsertId();
             return true;
         } catch (\Throwable $e) {
             Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
@@ -374,4 +363,3 @@ class FeatureValue
     }
 
 }
-

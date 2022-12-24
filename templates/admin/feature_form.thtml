@@ -42,7 +42,7 @@
         <tr id="fv_row_{fv_id}">
             <td>{fv_text}</td>
             <td style="text-align:center">
-                <i class="uk-icon uk-icon-remove uk-text-danger" data-uk-tooltip
+                <i class="uk-icon uk-icon-minus-square uk-text-danger" data-uk-tooltip
                     style="cursor:pointer;"
                     onclick="delFV({fv_id});" title="{$LANG_SHOP['delete']}"></i>
             </td>
@@ -136,7 +136,7 @@ function addFV()
                 if (result.status == true) {
                     var newRowContent = '<tr id="fv_row_' + result.fv_id + '"><td>' +
                         result.fv_text + '</td><td style="text-align:center;">' +
-                        '<i class="uk-icon uk-icon-remove uk-text-danger" data-uk-tooltip title="{$LANG_SHOP['rem_row']}" ' +
+                        '<i class="uk-icon uk-icon-minus-square uk-text-danger" data-uk-tooltip title="{$LANG_SHOP['rem_row']}" ' +
                         'style="cursor:pointer;" ' +
                         'onclick="javascript:return delFV(' + result.fv_id + ');"></i>' +
                         '</td></tr>';

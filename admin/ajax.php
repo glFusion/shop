@@ -99,7 +99,7 @@ case 'delFV':
     }
     break;
 
- case 'newFV':       // Add a new feature value
+case 'newFV':       // Add a new feature value
     $retval = array(
         'status' => false,
         'statusMessage' => 'An error occurred',
@@ -111,7 +111,7 @@ case 'delFV':
     if (!empty($fv_text)) {
         $FV = new Shop\FeatureValue();
         $FV->setValue($fv_text)
-            ->setFeatureID($ft_id);
+           ->setFeatureID($ft_id);
         $status = $FV->Save();
         if ($status) {
             $retval['status'] = true;
