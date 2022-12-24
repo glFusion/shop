@@ -322,7 +322,7 @@ class Report
      * @param   string  $order_id   Order ID
      * @return  object  $this
      */
-    public function withOrderId($order_id)
+    public function withOrderId(string $order_id) : self
     {
         $this->order_id = $order_id;
         return $this;

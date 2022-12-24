@@ -175,7 +175,7 @@ class AffiliateSale
      * @param   string  $id     Order ID
      * @return  object  $this
      */
-    public function withOrderId($id)
+    public function withOrderId(string $id) : self
     {
         $this->aff_order_id = $id;
         return $this;
@@ -188,7 +188,7 @@ class AffiliateSale
      * @param   integer $id     Payment record ID
      * @return  object  $this
      */
-    public function withPmtId($id)
+    public function withPmtId(int $id) : self
     {
         $this->aff_pmt_id = (int)$id;
         return $this;

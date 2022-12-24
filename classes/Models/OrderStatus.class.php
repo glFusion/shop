@@ -180,10 +180,8 @@ class OrderStatus
 
     /**
      * Get all order status objects into an array.
-     *
-     * @param   object  $Cart   Not used, for compatibility with Workflow::getAll()
      */
-    public static function getAll()
+    public static function getAll() : array
     {
         global $_TABLES;
         static $statuses = NULL;
@@ -217,9 +215,9 @@ class OrderStatus
      * @param   string  Name of status to get
      * @return  array   Array of status info
      */
-    public static function getInstance($name)
+    public static function getInstance(string $name) : self
     {
-        $statuses = self::getAll(true);
+        $statuses = self::getAll();
         if (isset($statuses[$name])) {
             return $statuses[$name];
         } else {
@@ -282,9 +280,9 @@ class OrderStatus
      *
      * @return  boolean     True or False
      */
-    public function notifyBuyer()
+    public function notifyBuyer() : bool
     {
-        return $this->notify_buyer == 1 ? true : false;
+        return $this->notify_buyer ? true : false;
     }
 
 
@@ -293,9 +291,9 @@ class OrderStatus
      *
      * @return  boolean     True or False
      */
-    public function notifyAdmin()
+    public function notifyAdmin() : bool
     {
-        return $this->notify_admin == 1 ? true : false;
+        return $this->notify_admin ? true : false;
     }
 
 
@@ -304,7 +302,7 @@ class OrderStatus
      *
      * @return  string      Name value
      */
-    public function getName()
+    public function getName() : string
     {
         return $this->name;
     }
@@ -316,7 +314,7 @@ class OrderStatus
      * @param   string  Name of the status
      * @return  string      Language-specific description
      */
-    public static function getDscp($name)
+    public static function getDscp(string $name) : string
     {
         global $LANG_SHOP;
 
@@ -324,17 +322,24 @@ class OrderStatus
     }
 
 
+    /**
+     * Get an order status that matches a column value.
+     *
+     * @param   string  $column     Column to match, NULL to skip
+     * @param   integer $status     Matchind status, NULL to skip
+     * @return  array       Array of matching OrderStatus objects
+     */
     private static function _getByAttribute(?string $column=NULL, ?int $status=NULL) : array
     {
         global $_TABLES;
 
         $retval = array();
         $db = Database::getInstance();
-        $sql = "SELECT * FROM {$_TABLES['shop.orderstatus']}
-            WHERE enabled = ?";
+        $sql = "SELECT * FROM {$_TABLES['shop.orderstatus']} WHERE enabled = ?";
         $values = array(1);
         $types = array(Database::INTEGER);
         if ($column !== NULL && $status !== NULL) {
+            $column = $db->conn->quoteIdentifier($column);
             $sql .= " AND $column = ?";
             $values[] = $status;
             $types[] = Database::INTEGER;

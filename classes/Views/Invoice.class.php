@@ -135,7 +135,7 @@ class Invoice extends OrderBaseView
      * @param   array|string  $order_id   Order record ID
      * @return  object  $this
      */
-    public function withOrderIds($order_ids)
+    public function withOrderIds($order_ids) : self
     {
         if (!is_array($order_ids)) {
             $this->order_ids = array($order_ids);
