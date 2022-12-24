@@ -109,7 +109,7 @@ case 'newFV':       // Add a new feature value
     $ft_id = $Request->getInt('ft_id');
     $fv_text = $Request->getString('fv_text');
     if (!empty($fv_text)) {
-        $FV = new Shop\FeatureValue();
+        $FV = new Shop\FeatureValue;
         $FV->setValue($fv_text)
            ->setFeatureID($ft_id);
         $status = $FV->Save();
@@ -119,6 +119,8 @@ case 'newFV':       // Add a new feature value
             $retval['fv_id'] = $FV->getID();
             $retval['fv_text'] = $FV->getValue();
         }
+    } else {
+        $status['statusMessage'] = 'Feature Value Text cannot be empty';
     }
     break;
 

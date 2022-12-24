@@ -16,6 +16,7 @@
 namespace Shop;
 use glFusion\Database\Database;
 use glFusion\Log\Log;
+use Shop\Models\DataArray;
 
 
 /**
@@ -43,28 +44,14 @@ class FeatureValue
      * If $id is an array, then it is a complete DB record and the properties
      * just need to be set.
      *
-     * @param   integer|array   $id Option record or record ID
+     * @param   integer|array   $fv_id  Option record or record ID
      */
-    public function __construct($id=0)
+    public function __construct(?int $fv_id=NULL)
     {
-        $this->isNew = true;
-
-        if (is_array($id)) {
-            // Received a full Option record already read from the DB
-            $this->setVars($id);
-            $this->isNew = false;
-        } else {
-            $id = (int)$id;
-            if ($id < 1) {
-                // New entry, set defaults
+        if (!empty($fv_id)) {
+            $this->fv_id =  $fv_id;
+            if (!$this->Read()) {
                 $this->fv_id = 0;
-                $this->ft_id = 0;
-                $this->fv_value = '';
-            } else {
-                $this->fv_id =  $id;
-                if (!$this->Read()) {
-                    $this->fv_id = 0;
-                }
             }
         }
     }
@@ -76,7 +63,7 @@ class FeatureValue
      * @param   integer $fv_id  FeatureValue record ID
      * @return  object      FeatureValue object
      */
-    public static function getInstance($fv_id)
+    public static function getInstance(int $fv_id) : self
     {
         static $fv_arr = array();
         if (!array_key_exists($fv_id, $fv_arr)) {
@@ -89,14 +76,15 @@ class FeatureValue
     /**
      * Sets all variables to the matching values from $row.
      *
-     * @param   array $row Array of values, from DB or $_POST
+     * @param   DataArray   $row Array of values, from DB or $_POST
+     * @return  object  $this
      */
-    public function setVars($row)
+    public function setVars(DataArray $row) : self
     {
-        if (!is_array($row)) return;
-        $this->fv_id = (int)$row['fv_id'];
-        $this->ft_id = (int)$row['ft_id'];
-        $this->fv_value = $row['fv_value'];
+        $this->fv_id = $row->getInt('fv_id');
+        $this->ft_id = $row->getINt('ft_id');
+        $this->fv_value = $row->getString('fv_value');
+        return $this;
     }
 
 
@@ -129,7 +117,7 @@ class FeatureValue
             $row = false;
         }
         if (is_array($row)) {
-            $this->setVars($row);
+            $this->setVars(new DataArray($row));
             return true;
         } else {
             return false;
@@ -140,12 +128,16 @@ class FeatureValue
     /**
      * Save the current values to the database.
      *
-     * @param   array   $A      Array of values from $_POST
+     * @param   DataArray   $A  Optional values from $_POST
      * @return  boolean         True if no errors, False otherwise
      */
-    public function Save($A = array())
+    public function Save(?DataArray $A=NULL) : bool
     {
         global $_TABLES;
+
+        if (!empty($A)) {
+            $this->setVars($A);
+        }
 
         // Make sure the necessary fields are filled in
         if (!$this->isValidRecord()) {
@@ -215,7 +207,7 @@ class FeatureValue
      *
      * @param   integer $ft_id      Feature ID
      */
-    public static function deleteOptionGroup($ft_id)
+    public static function deleteOptionGroup(int $ft_id) : void
     {
         global $_TABLES;
 
@@ -229,7 +221,7 @@ class FeatureValue
      *
      * @return  boolean     True if ok, False when first test fails.
      */
-    public function isValidRecord()
+    public function isValidRecord() : bool
     {
         // Check that basic required fields are filled in
         if (
@@ -268,7 +260,8 @@ class FeatureValue
             }
             if ($stmt) {
                 while ($A = $stmt->fetchAssociative()) {
-                    $opts[$A['fv_id']] = new self($A);
+                    $opts[$A['fv_id']] = new self;
+                    $opts[$A['fv_id']]->setVars(new DataArray($A));
                 }
             }
             //Cache::set($cache_key, $opts, array('products', 'options'));
@@ -283,7 +276,7 @@ class FeatureValue
      * @param   string  $val    Feature value
      * @return  object  $this
      */
-    public function setValue($val)
+    public function setValue(string $val) : self
     {
         $this->fv_value = $val;
         return $this;
@@ -295,7 +288,7 @@ class FeatureValue
      *
      * @return  string  OptionValue value string
      */
-    public function getValue()
+    public function getValue() : string
     {
         return $this->fv_value;
     }
@@ -306,7 +299,7 @@ class FeatureValue
      *
      * @return  integer     Record ID
      */
-    public function getID()
+    public function getID() : int
     {
         return $this->fv_id;
     }
@@ -318,7 +311,7 @@ class FeatureValue
      * @param   integer $ft_id  Feature record ID
      * @return  object  $this
      */
-    public function setFeatureID($ft_id)
+    public function setFeatureID(int $ft_id) : self
     {
         $this->ft_id = (int)$ft_id;
         return $this;
@@ -330,7 +323,7 @@ class FeatureValue
      *
      * @param   integer     Feature record ID
      */
-    public function getFeatureID()
+    public function getFeatureID() : int
     {
         return (int)$this->ft_id;
     }
@@ -344,7 +337,7 @@ class FeatureValue
      * @param   array   $exclude    Optional array of feature IDs to exclude
      * @return  string      HTML for option tags
      */
-    public static function optionList($ft_id, $sel=0, $exclude=array())
+    public static function optionList(int $ft_id, int $sel=0, array $exclude=array()) : string
     {
         global $_TABLES;
 
