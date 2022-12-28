@@ -91,7 +91,7 @@ class Country extends RegionBase
      *
      * @param   DataArray   $A  Data Array from $_POST or DB
      */
-    private function setVars(DataArray $A) : void
+    public function setVars(DataArray $A) : void
     {
         $this->setID($A->getInt('country_id'));
         $this->setAlpha2($A->getString('alpha2'));

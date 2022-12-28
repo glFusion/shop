@@ -76,16 +76,27 @@ class State extends RegionBase
     public function __construct(?array $A=NULL)
     {
         if (is_array($A)) {
-            $A = new DataArray($A);
-            $this->setID($A->getInt('state_id'))
-                 ->setCountryID($A->getInt('country_id'))
-                 ->setCountryISO($A->getString('country_iso'))
-                 ->setISO($A->getString('iso_code'))
-                 ->setName($A->getString('state_name'))
-                 ->setEnabled($A->getInt('state_enabled', 1))
-                 ->setTaxHandling($A->getInt('tax_handling'))
-                 ->setTaxShipping($A->getInt('tax_shipping'));
+            $this->setVars(new DataArray($A));
         }
+    }
+
+
+    /**
+     * Set variables from a DB record or form into local variables.
+     *
+     * @param   DataArray   $A  Data Array from $_POST or DB
+     */
+    public function setVars(DataArray $A) : self
+    {
+        $this->setID($A->getInt('state_id'))
+             ->setCountryID($A->getInt('country_id'))
+             ->setCountryISO($A->getString('country_iso'))
+             ->setISO($A->getString('iso_code'))
+             ->setName($A->getString('state_name'))
+             ->setEnabled($A->getInt('state_enabled', 1))
+             ->setTaxHandling($A->getInt('tax_handling'))
+             ->setTaxShipping($A->getInt('tax_shipping'));
+        return $this;
     }
 
 
@@ -176,7 +187,7 @@ class State extends RegionBase
      * @param   string  $code   2-letter ISO code
      * @return  object  $this
      */
-    private function setISO($code)
+    private function setISO(string $code) : self
     {
         $this->iso_code = $code;
         return $this;
@@ -188,7 +199,7 @@ class State extends RegionBase
      *
      * @return  string      ISO code
      */
-    public function getISO()
+    public function getISO() : string
     {
         return $this->iso_code;
     }
@@ -200,7 +211,7 @@ class State extends RegionBase
      * @param   integer $id     DB record ID
      * @return  object  $this
      */
-    private function setID($id)
+    private function setID(int $id) : self
     {
         $this->state_id = (int)$id;
         return $this;
@@ -212,7 +223,7 @@ class State extends RegionBase
      *
      * @return  integer     Record ID
      */
-    public function getID()
+    public function getID() : int
     {
         return (int)$this->state_id;
     }
@@ -224,7 +235,7 @@ class State extends RegionBase
      * @param   integer $id     DB record ID for the parent country
      * @return  object  $this
      */
-    private function setCountryID($id)
+    private function setCountryID(int $id) : self
     {
         $this->country_id = (int)$id;
         return $this;
@@ -238,7 +249,7 @@ class State extends RegionBase
      * @param   string  $iso    Country ISO code
      * @return  object  $this
      */
-    private function setCountryISO($iso)
+    private function setCountryISO(string $iso) : self
     {
         $this->country_iso = $iso;
         return $this;
@@ -250,7 +261,7 @@ class State extends RegionBase
      *
      * @return  integer     Record ID
      */
-    public function getCountryID()
+    public function getCountryID() : int
     {
         return (int)$this->country_id;
     }
@@ -286,7 +297,7 @@ class State extends RegionBase
      *
      * @return  boolean     True if enabled, False if not.
      */
-    public function isEnabled()
+    public function isEnabled() : bool
     {
         return (
             $this->state_enabled &&
@@ -301,7 +312,7 @@ class State extends RegionBase
      * @param   string  $name   Name of state
      * @return  object  $this
      */
-    private function setName($name)
+    private function setName(string $name) : self
     {
         $this->state_name = $name;
         return $this;
@@ -314,7 +325,7 @@ class State extends RegionBase
      *
      * @return  string      Country name, empty string if not found
      */
-    public function getName()
+    public function getName() : string
     {
         return $this->state_name;
     }
@@ -325,7 +336,7 @@ class State extends RegionBase
      *
      * @return  object  Country object
      */
-    public function getCountry()
+    public function getCountry() : Country
     {
         if ($this->Country === NULL) {
             $this->Country = Country::getByRecordId($this->getCountryID());
@@ -340,7 +351,7 @@ class State extends RegionBase
      * @param   boolean $flag   True to tax shipping, False if not
      * @return  object  $this
      */
-    public function setTaxShipping($flag)
+    public function setTaxShipping(bool $flag) : self
     {
         $this->tax_shipping = $flag ? 1 : 0;
         return $this;
@@ -352,7 +363,7 @@ class State extends RegionBase
      *
      * @return  integer     1 if tax is charged, 0 if not.
      */
-    public function taxesShipping()
+    public function taxesShipping() : int
     {
         return $this->tax_shipping ? 1 : 0;
     }
@@ -364,7 +375,7 @@ class State extends RegionBase
      * @param   boolean $flag   True to tax handling, False if not
      * @return  object  $this
      */
-    public function setTaxHandling($flag)
+    public function setTaxHandling(bool $flag) : self
     {
         $this->tax_handling = $flag ? 1 : 0;
         return $this;
@@ -376,7 +387,7 @@ class State extends RegionBase
      *
      * @return  integer     1 if tax is charged, 0 if not.
      */
-    public function taxesHandling()
+    public function taxesHandling() : int
     {
         return $this->tax_handling ? 1 : 0;
     }
@@ -436,7 +447,7 @@ class State extends RegionBase
      * @param   boolean $enabled    True to return only enabled states
      * @return  string      HTML option elements
      */
-    public static function optionList($country='', $state='', $enabled=true)
+    public static function optionList(string $country='', string $state='', bool $enabled=true) : string
     {
         $retval = '';
         $arr = self::getAll($country, $enabled);
@@ -481,21 +492,12 @@ class State extends RegionBase
      * @param   DataArray   $A  Optional DataArray from $_POST
      * @return  boolean     True on success, False on failure
      */
-    public function Save(?DataArray $A=NULL)
+    public function Save(?DataArray $A=NULL) : bool
     {
         global $_TABLES, $LANG_SHOP;
 
-        $this->Country = Country::getByIsoCode($A['country_iso']);
-        $country_id = $this->Country->getID();
         if (!empty($A)) {
-            $this->setID($A->getInt('state_id'))
-                ->setCountryID($country_id)
-                ->setCountryISO($A->getString('country_iso'))
-                ->setISO($A->getString('iso_code'))
-                ->setName($A->getString('state_name'))
-                ->setEnabled($A->getInt('state_enabled'))
-                 ->setTaxHandling($A->getInt('tax_handling'))
-                 ->setTaxShipping($A->getInt('tax_shipping'));
+            $this->setVars($A);
         }
         $values = array(
             'country_id' => $this->getCountryID(),
@@ -549,7 +551,7 @@ class State extends RegionBase
      * @param   integer $country_id     Optional country ID to limit list
      * @return  string      HTML for the product list.
      */
-    public static function adminList($country_id = 0)
+    public static function adminList(int $country_id = 0) : string
     {
         global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $LANG_SHOP_HELP;
 
@@ -633,13 +635,6 @@ class State extends RegionBase
             'form_url' => SHOP_ADMIN_URL . "/regions.php?states=x&country_id=$country_id",
         );
 
-        /*$options = array(
-            'chkdelete' => 'true',
-            'chkfield' => 'state_id',
-            'chkname' => 'state_id',
-            'chkactions' => self::getBulkActionButtons(),
-        );*/
-
         $T = new Template('admin');
         $T->set_file(array(
             'filter' => 'sel_region.thtml',
@@ -683,7 +678,7 @@ class State extends RegionBase
      * @param   array   $icon_arr   System icon array (not used)
      * @return  string              HTML for field display in the table
      */
-    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr)
+    public static function getAdminField(string $fieldname, $fieldvalue, array $A, array $icon_arr) : string
     {
         global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_ADMIN;
 
@@ -765,11 +760,11 @@ class State extends RegionBase
         $qb = Database::getInstance()->conn->createQueryBuilder();
         try {
             $stmt = $qb->select('s.country_id', 'c.country_name')
-                    ->from($_TABLES['shop.states'], 's')
-                    ->leftJoin('s', $_TABLES['shop.countries'], 'c', 's.country_id = c.country_id')
-                    ->groupBy('s.country_id')
-                    ->orderBy('c.country_name', 'ASC')
-                    ->execute();
+                       ->from($_TABLES['shop.states'], 's')
+                       ->leftJoin('s', $_TABLES['shop.countries'], 'c', 's.country_id = c.country_id')
+                       ->groupBy('s.country_id')
+                       ->orderBy('c.country_name', 'ASC')
+                       ->execute();
         } catch (\Throwable $e) {
             Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $stmt = false;

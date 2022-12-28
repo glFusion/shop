@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2020-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.4.2
+ * @version     v1.5.0
  * @since       v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -13,13 +13,14 @@
  */
 namespace Shop;
 use glFusion\Database\Database;
+use Shop\Models\DataArray;
 
 
 /**
  * Class to handle country information.
  * @package shop
  */
-class RegionBase
+abstract class RegionBase
 {
     /** Error messages returned to the caller.
      * @var array */
@@ -31,7 +32,7 @@ class RegionBase
      *
      * @param   array   $A      Array from form or DB record
      */
-    public function __construct($A)
+    public function __construct(array $A=array())
     {
         $this->setVars($A);
     }
@@ -42,16 +43,13 @@ class RegionBase
      *
      * @param   integer $oldvalue   Old (current) value
      * @param   string  $varname    Name of DB field to set
-     * @param   integer $id         ID number of element to modify
+     * @param   array   $id         Array of record IDs to modify
      * @return  integer     New value, or old value upon failure
      */
-    public static function Toggle(int $oldvalue, string $varname, $id) : int
+    public static function Toggle(int $oldvalue, string $varname, array $id) : int
     {
         global $_TABLES;
 
-        if (!is_array($id)) {
-            $id = array($id);
-        }
         $db = Database::getInstance();
         switch ($varname) {     // allow only valid field names
         case static::$KEY . '_enabled':
@@ -87,19 +85,20 @@ class RegionBase
      * @uses    self::Toggle()
      * @param   integer $oldval     Old (current) value
      * @param   string  $varname    Name of DB field to set
-     * @param   integer $id         ID number of element to modify
+     * @param   integer $ids        ID number of element to modify
      * @return  integer     New value, or old value upon failure
      */
-    public static function BulkToggle($oldval, $varname, $id)
+    public static function BulkToggle(int $oldval, string $varname, array $ids) : int
     {
         global $LANG_SHOP;
 
-        $newval = self::Toggle($oldval, $varname, $id);
+        $newval = self::Toggle($oldval, $varname, $ids);
         if ($newval != $oldval) {
             SHOP_setMsg($LANG_SHOP['msg_updated']);
         } else {
             SHOP_setMsg($LANG_SHOP['msg_nochange']);
         }
+        return $newval;
     }
 
 
@@ -109,7 +108,7 @@ class RegionBase
      * @param   string  $msg    Message to add
      * @param   boolean $clear  Clear array first?
      */
-    protected function addError($msg, $clear=false)
+    protected function addError(string $msg, bool $clear=false) : void
     {
         if ($clear) {
             $this->messages = array();
@@ -124,7 +123,7 @@ class RegionBase
      * @param   boolean $list   True to get as a list, False for a raw array
      * @return  array|string    Array of errors, or HTML list
      */
-    public function getErrors($list=true)
+    public function getErrors(bool $list=true)
     {
         if ($list) {
             if (empty($this->messages)) {
@@ -153,9 +152,9 @@ class RegionBase
      * These are the same for all region types, differing only in the
      * variable naming.
      *
-     * @return  string      HTML for action buttons
+     * @return  array   Array of available admin list options
      */
-    protected static function getAdminListOptions()
+    protected static function getAdminListOptions() : array
     {
         global $LANG_ADMIN, $LANG_SHOP;
 
@@ -176,5 +175,11 @@ class RegionBase
             );
         return $options;
     }
+
+
+    /**
+     * Set all the field properties.
+     */
+    abstract public function setVars(DataArray $A);
 
 }

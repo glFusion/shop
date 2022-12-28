@@ -18,7 +18,7 @@ require_once '../../../lib-common.php';
 // This is for administrators only.  It's called by Javascript,
 // so don't try to display a message
 if (!plugin_ismoderator_shop()) {
-    COM_accessLog("User {$_USER['username']} tried to illegally access the shop admin ajax function.");
+    COM_errorLog("User {$_USER['username']} tried to illegally access the shop admin ajax function.");
     $retval = array(
         'status' => false,
         'statusMessage' => $LANG_SHOP['access_denied'],
@@ -499,15 +499,15 @@ case 'toggle':
         break;
 
     case 'region':
-        $newval = Shop\Region::Toggle($oldval, $type, $id);
+        $newval = Shop\Region::Toggle($oldval, $type, array($id));
         break;
 
     case 'country':
-        $newval = \Shop\Country::Toggle($oldval, $type, $id);
+        $newval = \Shop\Country::Toggle($oldval, $type, array($id));
         break;
 
     case 'state':
-        $newval = \Shop\State::Toggle($oldval, $type, $id);
+        $newval = \Shop\State::Toggle($oldval, $type, array($id));
         break;
 
     case 'pi_product':

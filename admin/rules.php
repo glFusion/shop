@@ -37,7 +37,7 @@ $expected = array(
     'rule_del', 'rule_add', 'rule_save', 'delbutton_x',
     'pr_save', 'pr_del',
     // Views to display
-    'zr_list', 'rule_edit', 'pr_list', 'pr_edit',
+    'zr_list', 'zr_edit', 'pr_list', 'pr_edit',
 );
 list($action, $actionval) = $Request->getAction($expected, 'pr_list');
 
@@ -94,7 +94,7 @@ case 'rule_save':
     echo COM_refresh(SHOP_ADMIN_URL . '/rules.php?zr_list');
     break;
 
-case 'rule_edit':
+case 'zr_edit':
     $content .= Shop\Menu::adminRules('zr_list');
     $content .= Shop\Rules\Zone::getInstance($actionval)->Edit();
     break;
