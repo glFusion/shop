@@ -296,7 +296,6 @@ class Upgrade
                 'classes/Gateways/paypal/gateway.json',
                 'classes/Gateways/ppcheckout/gateway.json',
                 'templates/feeds/catalog/facebook.thtml',
-                // 1.6.0
                 'classes/Catalog.class.php',
                 'templates/viewcart.thtml',
             ),
@@ -306,6 +305,10 @@ class Upgrade
                 'js/country_state.js',
                 'docs/english/attribute_form.html',
                 'js/toggleEnabled.js',
+                'ipn/square.php',
+                'ipn/stripe.php',
+                'ipn/internal.php',
+                'ipn/authorizenet.php',
             ),
             // admin/plugins/shop
             $_CONF['path_html'] . 'admin/plugins/shop' => array(
