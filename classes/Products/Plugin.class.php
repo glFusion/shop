@@ -112,7 +112,7 @@ class Plugin extends \Shop\Product
                 array(Database::STRING)
             )->fetchAssociative();
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $row = false;
         }
         if (is_array($row)) {
@@ -291,7 +291,7 @@ class Plugin extends \Shop\Product
      */
     public function handlePurchase(OrderItem &$Item, IPN $IPN) : int
     {
-        Log::write('shop_system', Log::DEBUG, 'handlePurchase pi_info: ' . $this->pi_name);
+        Log::debug('handlePurchase pi_info: ' . $this->pi_name);
         $status = PLG_RET_OK;       // Assume OK in case the plugin does nothing
         if ($IPN['uid'] < 1) {
             $IPN->setUid($Item->getOrder()->getUid());
@@ -800,7 +800,7 @@ class Plugin extends \Shop\Product
                     array(Database::INTEGER)
                 )->fetchAssociative();
             } catch (\Throwable $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $row = false;
             }
             if (is_array($row)) {
@@ -842,7 +842,7 @@ class Plugin extends \Shop\Product
         try {
             Database::getInstance()->conn->delete($_TABLES[self::$TABLE], 'id', (int)$id);
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
     }
 
@@ -886,7 +886,7 @@ class Plugin extends \Shop\Product
             }
             return true;
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
     }

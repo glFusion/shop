@@ -13,7 +13,7 @@
  */
 namespace Shop;
 use glFusion\Database\Database;
-use glFusion\Log\Log;
+use Shop\Log;
 use Shop\Models\Stock;
 use Shop\Models\ProductVariantInfo;
 use Shop\Models\DataArray;
@@ -192,7 +192,7 @@ class ProductVariant
                ->execute()
                ->fetchAssociative();
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $row = false;
         }
         if (is_array($row)) {
@@ -271,7 +271,7 @@ class ProductVariant
         try {
             $row = $qb->execute()->fetchAssociative();
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $row = false;
         }
         if (is_array($row)) {
@@ -324,7 +324,7 @@ class ProductVariant
                                ->setParameter('pv_id', $this->getID(), Database::INTEGER)
                                ->execute();
                 } catch (\Throwable $e) {
-                    Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                    Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                     $stmt = false;
                 }
                 if ($stmt) {
@@ -659,7 +659,7 @@ class ProductVariant
                 array(Database::INTEGER)
             );
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $stmt = false;
         }
         if ($stmt) {
@@ -979,7 +979,7 @@ class ProductVariant
                     array($types)
                 );
             } catch (\Throwable $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 return false;
             }
         }
@@ -1102,7 +1102,7 @@ class ProductVariant
                     ->withReserved(0)
                     ->Save();
             } catch (\Throwable $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             }
         }
         if (!empty($vals)) {
@@ -1199,7 +1199,7 @@ class ProductVariant
                 ->Save();
             $retval = true;
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $retval = false;
         }
 
@@ -1228,7 +1228,7 @@ class ProductVariant
                 try {
                     $db->conn->executeStatement($sql);
                 } catch (\Throwable $e) {
-                    Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                    Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 }
             }
             if (!empty($removed)) {
@@ -1240,7 +1240,7 @@ class ProductVariant
                         array(Database::INTEGER, Database::PARAM_INT_ARRAY)
                     );
                 } catch (\Throwable $e) {
-                    Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                    Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 }
             }
         }
@@ -2009,7 +2009,7 @@ class ProductVariant
         try {
             $stmt = $qb->execute();
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $stmt = false;
         }
         if ($stmt) {

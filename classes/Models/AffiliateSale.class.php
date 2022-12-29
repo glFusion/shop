@@ -12,11 +12,11 @@
  * @filesource
  */
 namespace Shop\Models;
+use glFusion\Database\Database;
 use Shop\Customer;
 use Shop\Order;
 use Shop\Config;
-use glFusion\Database\Database;
-use glFusion\Log\Log;
+use Shop\Log;
 
 
 /**
@@ -66,7 +66,7 @@ class AffiliateSale
                     array(Database::INTEGER)
                 )->fetchAssociative();
             } catch (\Exception $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $A = false;
             }
             if (!empty($A)) {
@@ -96,7 +96,7 @@ class AffiliateSale
                 array(Database::STRING)
             )->fetchAssociative();
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $A = false;
         }
         if (!empty($A)) {
@@ -234,7 +234,7 @@ class AffiliateSale
         }
 
         // Find the affiliate. Also verifies that the referral is valid.
-        Log::write('shop_system', Log::DEBUG, "Processing referral bonus for {$Affiliate->getUid()}");
+        Log::debug("Processing referral bonus for {$Affiliate->getUid()}");
         if (!empty($AffSaleItems)) {
             $AffSale = new self;
             $AffSale->withOrderId($Order->getOrderId())
@@ -248,7 +248,7 @@ class AffiliateSale
             }
             return $AffSale;
         } else {
-            Log::write('shop_system', Log::DEBUG, "No eligible referral bonus items found for {$Affiliate->getUid()}");
+            Log::debug("No eligible referral bonus items found for {$Affiliate->getUid()}");
             return NULL;
         }
     }
@@ -287,7 +287,7 @@ class AffiliateSale
                     $types
                 );
             }  catch (\Exception $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 return false;
             }
             $this->aff_sale_id = $db->conn->lastInsertId();
@@ -301,7 +301,7 @@ class AffiliateSale
                     $types
                 );
             }  catch (\Exception $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 return false;
             }
         }
@@ -331,7 +331,7 @@ class AffiliateSale
                 array(Database::INTEGER, Database::PARAM_INT_ARRAY)
             );
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
     }
 

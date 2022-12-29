@@ -138,7 +138,7 @@ class ipn extends \Shop\IPN
                 'handling'  => $handling,
             ));
         }
-        Log::write('shop_system', Log::DEBUG, "Net Settled: {$this->getPmtGross()} {$this->getCurrency()->getCode()}");
+        Log::debug("Net Settled: {$this->getPmtGross()} {$this->getCurrency()->getCode()}");
         $this->handlePurchase();
         $this->Log(true);
         SHOP_setMsg('Thank youi for your order.');

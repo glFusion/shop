@@ -13,7 +13,7 @@
  */
 namespace Shop;
 use glFusion\Database\Database;
-use glFusion\Log\Log;
+use Shop\Log;
 use Shop\Models\DataArray;
 
 
@@ -109,7 +109,7 @@ class Feature
                     "SELECT * FROM {$_TABLES['shop.features']}"
                 );
             } catch (\Throwable $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $stmt = false;
             }
             if ($stmt) {
@@ -182,7 +182,7 @@ class Feature
                 array(Database::INTEGER)
             )->fetchAssociative();
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $row = false;
         }
         if (is_array($row)) {
@@ -257,7 +257,7 @@ class Feature
                 $this->ft_id = $db->conn->lastInsertId();
             }
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $this->AddError($err);
             return false;
         }
@@ -292,7 +292,7 @@ class Feature
             $db->conn->delete($_TABLES['shop.prodXfeat'], $values, $types);
             $db->conn->delete($_TABLES['shop.features'], $values, $types);
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
         return true;
@@ -530,7 +530,7 @@ class Feature
         try {
             $stmt = $qb->execute();
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $stmt = false;
         }
         if ($stmt) {
@@ -704,7 +704,7 @@ class Feature
                 )
             );
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
         return true;
@@ -751,7 +751,7 @@ class Feature
                 )
             );
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
         return true;
@@ -780,7 +780,7 @@ class Feature
             Database::getInstance()->conn->delete($_TABLES['shop.prodXfeat'], $values, $types);
             return true;
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
     }
@@ -835,7 +835,7 @@ class Feature
                 array(Database::INTEGER)
             );
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
         try {
             $db->conn->executeStatement(
@@ -847,7 +847,7 @@ class Feature
                 array(Database::INTEGER, Database::INTEGER)
             );
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
         return true;

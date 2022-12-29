@@ -67,14 +67,14 @@ class Webhook extends \Shop\Webhook
         // Get the Shop order record and make sure it's valid.
         $this->Order = Order::getInstance($this->getOrderId());
         if ($this->Order->isNew()) {
-            Log::write('shop_system', Log::ERROR, "Order {$this->getOrderId()} not found");
+            Log::error("Order {$this->getOrderId()} not found");
             $retval = false;
         }
 
         // Verify that the user has a sufficient coupon balance,
         $bal_due = $this->Order->getBalanceDue();
         if (!Coupon::verifyBalance($bal_due, $this->Order->getUid())) {
-            Log::write('shop_system', Log::ERROR, "Insufficient coupon balance for order {$this->getOrderId()}");
+            Log::error("Insufficient coupon balance for order {$this->getOrderId()}");
             $retval = false;
         }
 
@@ -109,7 +109,7 @@ class Webhook extends \Shop\Webhook
             $bal_due = $this->Order->getBalanceDue();
             $this->Order->setGC($bal_due);
             if ($this->Order->getGC() < $bal_due) {
-                Log::write('shop_system', Log::ERROR, "Error, order {$this->getOrderId()} cannot be fully paid by coupon.");
+                Log::error("Order {$this->getOrderId()} cannot be fully paid by coupon.");
                 $this->Order->setGC(0);
                 return false;
             }

@@ -35,7 +35,7 @@ trait PDF
             //$html2pdf->setModeDebug();
             $this->html2pdf->setDefaultFont('Arial');
         } catch(HTML2PDF_exception $e) {
-            Log::write('shop_system', Log::ERROR, $e);
+            Log::error($e);
             return false;
         }
         return true;
@@ -47,7 +47,7 @@ trait PDF
         try {
             $this->html2pdf->writeHTML($content);
         } catch(HTML2PDF_exception $e) {
-            Log::write('shop_system', Log::ERROR, $e);
+            Log::error($e);
             return false;
         }
     }

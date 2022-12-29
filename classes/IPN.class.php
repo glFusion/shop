@@ -23,7 +23,7 @@
  */
 namespace Shop;
 use glFusion\Database\Database;
-use glFusion\Log\Log;
+use Shop\Log;
 use Shop\Loggers\IPN as logIPN;
 use Shop\Products\Coupon;
 use Shop\Models\OrderStatus;
@@ -628,7 +628,7 @@ class IPN
         $tmp = explode('|', $args['item_id']);
         $P = Product::getByID($tmp[0], $this->custom);
         if ($P->isNew()) {
-            Log::write('shop_system', Log::ERROR, "Product {$args['item_id']} not found in catalog");
+            Log::error("Product {$args['item_id']} not found in catalog");
             return;      // no product found to add
         }
         if (isset($tmp[1])) {
@@ -720,7 +720,7 @@ class IPN
             array(Database::STRING, Database::STRING, Database::STRING)
         );
         if ($count > 0) {
-            Log::write('shop_system', Log::ERROR, "Received duplicate IPN {$this->txn_id} for {$this->gw_id}");
+            Log::error("Received duplicate IPN {$this->txn_id} for {$this->gw_id}");
             return false;
         } else {
             return true;
@@ -748,10 +748,10 @@ class IPN
             $Cur->FormatValue($credit) .' credit, require ' .
             $Cur->FormatValue($total_order);
         if ($total_order <= $total_credit + .0001) {
-            Log::write('shop_system', Log::DEBUG, "OK: $msg");
+            Log::debug("OK: $msg");
             return true;
         } else {
-            Log::write('shop_system', Log::ERROR, "Insufficient Funds: $msg");
+            Log::error("Insufficient Funds: $msg");
             return false;
         }
     }
@@ -772,7 +772,7 @@ class IPN
 
         $status = is_null($this->Order) ? $this->createOrder() : 0;
         if ($status) {
-            Log::write('shop_system', Log::ERROR, 'Error creating order: ' . print_r($status,true));
+            Log::error('Error creating order: ' . print_r($status,true));
             return false;
         } else {
             $order_id  = $this->Order->getOrderId();
@@ -862,7 +862,7 @@ class IPN
                 array('pmt_txn_id' => $this->txn_id)
             );
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return 1;
         }
 
@@ -895,7 +895,7 @@ class IPN
                             array(Database::PARAM_INT_ARRAY)
                         )->fetchAllAssociative();
                     } catch (\Exception $e) {
-                        Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                        Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                         $data = false;
                     }
                     $opt_str = '';
@@ -1075,7 +1075,7 @@ class IPN
     protected function debug($var)
     {
         $msg = print_r($var, true);
-        Log::write('shop_system', Log::DEBUG, 'IPN Debug: ' . $msg);
+        Log::debug('IPN Debug: ' . $msg);
     }
 
 
@@ -1087,7 +1087,7 @@ class IPN
      */
     protected function Error($str)
     {
-        Log::write('shop_system', Log::ERROR, $this->gw_id. ' IPN Exception: ' . $str);
+        Log::error($this->gw_id. ' IPN Exception: ' . $str);
     }
 
 
@@ -1104,7 +1104,7 @@ class IPN
         if (class_exists($cls)) {
             return new $cls($vars);
         } else {
-            Log::write('shop_system', Log::ERROR, "IPN::getInstance() - $cls doesn't exist");
+            Log::error(__METHOD__ . " - $cls doesn't exist");
             return NULL;
         }
         return $ipns[$name];
@@ -1186,7 +1186,7 @@ class IPN
                     $retval[$key] = $credit;
                 } else {
                     $gc_bal = Coupon::getUserBalance($this->uid);
-                    Log::write('shop_system', Log::DEBUG, "Insufficient Gift Card Balance, need $credit, have $gc_bal");
+                    Log::debug("Insufficient Gift Card Balance, need $credit, have $gc_bal");
                     $retval[$key] = 0;
                 }
                 break;
@@ -1255,7 +1255,7 @@ class IPN
                 "TRUNCATE {$_TABLES['shop.ipnlog']}"
             );
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
     }
 

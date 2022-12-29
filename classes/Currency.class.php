@@ -104,7 +104,7 @@ class Currency
                 array(Database::STRING)
             )->fetchAssociative();
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $row = false;
         }
         if (is_array($row)) {
@@ -474,7 +474,7 @@ class Currency
                     "SELECT * FROM {$_TABLES['shop.currency']} ORDER BY code ASC"
                 );
             } catch (\Throwable $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $stmt = false;
             }
             if ($stmt) {
@@ -490,7 +490,7 @@ class Currency
 
     /**
      * Convert an amount to an integer based on the number of decimals.
-     * Example: $1.95 US becomes 195
+     * Example: $1.95 US becomes 195, or 100 Yen remains 100.
      *
      * @param   float   $amount     Money amount to convert
      * @return  integer             Integer version of the amount
@@ -503,7 +503,7 @@ class Currency
 
     /**
      * Convert an amount to an integer based on the number of decimals.
-     * Example: 195 becomes 1.95
+     * Example: 195 USD becomes 1.95, and 100 Yen remains 100.
      *
      * @param   integer $intval     Integer version of the amount
      * @return  float               Money amount to convert

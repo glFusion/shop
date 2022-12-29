@@ -13,7 +13,7 @@
  */
 namespace Shop\Rules;
 use glFusion\Database\Database;
-use glFusion\Log\Log;
+use Shop\Log;
 use Shop\Product as ProductClass;
 use Shop\Category;
 use Shop\Shipper;
@@ -191,7 +191,7 @@ class Product
                 array(Database::INTEGER)
             )->fetchAssociative();
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $data = false;
         }
         if (is_array($data)) {
@@ -437,7 +437,7 @@ class Product
                 );
             }
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
         self::clearCache();
@@ -474,7 +474,7 @@ class Product
                 array(Database::INTEGER, Database::INTEGER)
             );
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
         self::clearCache();
     }

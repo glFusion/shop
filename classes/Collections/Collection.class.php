@@ -13,8 +13,8 @@
  */
 namespace Shop\Collections;
 use glFusion\Database\Database;
-use glFusion\Log\Log;
 use Doctrine\DBAL\Query\QueryBuilder;
+use Shop\Log;
 use Shop\Cache;
 use Shop\Util\JSON;
 
@@ -190,7 +190,7 @@ abstract class Collection
         try {
             $stmt = $this->_qb->execute();
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $stmt = false;
         }
         return $stmt;

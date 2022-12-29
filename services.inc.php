@@ -17,7 +17,7 @@ if (!defined ('GVERSION')) {
     die ('This file can not be used on its own!');
 }
 use glFusion\Database\Database;
-use glFusion\Log\Log;
+use Shop\Log;
 use Shop\Models\DataArray;
 use Shop\Config;
 
@@ -395,7 +395,7 @@ function service_sendcards_shop($args, &$output, &$svc_msg)
                 array(Database::INTEGER)
             )->fetchAllAssociative();
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
             $data = false;
         }
         if (is_array($data)) {

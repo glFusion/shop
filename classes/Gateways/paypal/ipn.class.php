@@ -169,9 +169,9 @@ class ipn extends \Shop\IPN
         $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
         if ($http_code != 200) {
-            Log::write('shop_system', Log::ERROR, "IPN Verification returned $http_code");
+            Log::error("IPN Verification returned $http_code");
         } elseif (strcmp($response, 'VERIFIED') != 0) {
-            Log::write('shop_system', Log::ERROR, "IPN Verification reponse $response");
+            Log::error("IPN Verification reponse $response");
         } else {
             $verified = true;
         }
@@ -259,7 +259,7 @@ class ipn extends \Shop\IPN
                     'handling'  => $handling,
                 ));
             }
-            Log::write('shop_system', Log::DEBUG, "Net Settled: {$this->getPmtGross()} {$this->getCurrency()->getCode()}");
+            Log::debug("Net Settled: {$this->getPmtGross()} {$this->getCurrency()->getCode()}");
             $this->handlePurchase();    // Order gets created here.
 
             // Set the billing and shipping address to at least get the name,
@@ -292,7 +292,7 @@ class ipn extends \Shop\IPN
                 ->setPmtHandling($this->Order->getHandling());
             $Cart = $this->Order->getItems();
             if (empty($Cart)) {
-                Log::write('shop_system', Log::ERROR, "Empty Cart for id {$this->Order->getOrderID()}");
+                Log::error("Empty Cart for id {$this->Order->getOrderID()}");
                 return false;
             }
 
@@ -316,7 +316,7 @@ class ipn extends \Shop\IPN
             }
 
             $payment_gross = $this->getPmtGross();
-            Log::write('shop_system', Log::DEBUG, "Received $payment_gross gross payment");
+            Log::debug("Received $payment_gross gross payment");
             $this->handlePurchase();
             break;
 
@@ -341,4 +341,3 @@ class ipn extends \Shop\IPN
     }
 
 }
-

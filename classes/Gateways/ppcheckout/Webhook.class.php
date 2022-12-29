@@ -43,8 +43,8 @@ class Webhook extends \Shop\Webhook
             $this->blob = file_get_contents('php://input');
             $this->setHeaders(NULL);
         }
-        //Log::write('shop_system', Log::DEBUG, "Paypal Webook Payload: " . $this->blob);
-        //Log::write('shop_system', Log::DEBUG, "Paypal Webhook Headers: " . var_export($_SERVER,true));
+        //Log::debug("Paypal Webook Payload: " . $this->blob);
+        //Log::debug("Paypal Webhook Headers: " . var_export($_SERVER,true));
 
         $this->setTimestamp();
         $this->setData(json_decode($this->blob));
@@ -85,7 +85,7 @@ class Webhook extends \Shop\Webhook
                 $response = $this->GW->captureAuth($resource->id);
                 if ($response && isset($response->result)) {
                     if ($response->statusCode >= 200 && $response->statusCode < 300) {
-                        Log::write('shop_system', Log::ERROR, "Order {$resource->custom_id} captured successfully: capture id " .
+                        Log::error("Order {$resource->custom_id} captured successfully: capture id " .
                             $response->result->id . " status: " . $response->result->status);
                     }
                 }
@@ -251,7 +251,7 @@ class Webhook extends \Shop\Webhook
                 if (isset($invoice->detail)) {
                     $this->setOrderId($invoice->detail->reference);
                 } else {
-                    Log::write('shop_system', Log::ERROR, "Order number not found");
+                    Log::error("Order number not found");
                     break;
                 }
 
@@ -298,7 +298,7 @@ class Webhook extends \Shop\Webhook
                         $status = true;
                     }
                 }
-                Log::write('shop_system', Log::DEBUG, "Invoice created for {$this->getOrderID()}");
+                Log::debug("Invoice created for {$this->getOrderID()}");
                 $this->Order = Order::getInstance($this->getOrderID());
                 if (!$this->Order->isNew()) {
                     $terms_gw = \Shop\Gateway::create($this->Order->getPmtMethod());
@@ -311,7 +311,7 @@ class Webhook extends \Shop\Webhook
                 }
             }
             if (!$status) {
-                Log::write('shop_system', Log::ERROR, "Error processing webhook " . $this->getEvent());
+                Log::error("Error processing webhook " . $this->getEvent());
             }
             break;
         }
@@ -366,17 +366,17 @@ class Webhook extends \Shop\Webhook
         $result = @json_decode(curl_exec($ch), true);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         if (!is_array($result)) {
-            Log::write('shop_system', Log::ERROR, "Error decoding response: Code $code, Data " . print_r($result,true));
+            Log::error("Error decoding response: Code $code, Data " . print_r($result,true));
             $status = false;
         }
-        Log::write('shop_system', Log::DEBUG, "Received code $code from PayPal");
+        Log::debug("Received code $code from PayPal");
         switch ($code) {
         case 200:
-            Log::write('shop_system', Log::DEBUG, "Result " . print_r($result,true));
+            Log::debug("Result " . print_r($result,true));
             $status = SHOP_getVar($result, 'verification_status') == 'SUCCESS' ? true : false;
             break;
         default:
-            Log::write('shop_system', Log::ERROR, "Error $code : " . var_export($result, true));
+            Log::error("Error $code : " . var_export($result, true));
             $status = false;
             if (isset($result['name']) && $result['name'] == 'VALIDATION_ERROR') {
                 // fatal error

@@ -281,8 +281,7 @@ class ups extends \Shop\Shipper
             $Tracking->setCache($this->key, $tracking);
         } catch ( Exception $ex ) {
             $Tracking->addError($LANG_SHOP['err_getting_info']);
-            Log::write('shop_system', Log::ERROR,
-                'Error getting tracking info: ' . print_r($ex,true)
+            Log::system(Log::ERROR, 'Error getting tracking info: ' . print_r($ex,true)
             );
         }
         return $Tracking;
@@ -502,9 +501,9 @@ class ups extends \Shop\Shipper
                     ->setPackageCount($fixed_pkgs);
             }
         } catch ( Exception $ex ) {
-            Log::write('shop_system', Log::ERROR,
-                'Error getting quote for order ' . $Order->getOrderID() .
-                print_r($ex,true)
+            Log::system(
+                Log::ERROR,
+                'Error getting quote for order ' . $Order->getOrderID() . print_r($ex,true)
             );
         }
         return $quote_data;

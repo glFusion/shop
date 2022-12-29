@@ -13,7 +13,7 @@
  */
 namespace Shop;
 use glFusion\Database\Database;
-use glFusion\Log\Log;
+use Shop\Log;
 use Shop\Models\DataArray;
 
 
@@ -83,7 +83,7 @@ class Region extends RegionBase
                     array(Database::INTEGER)
                 )->fetchAssociative();
             } catch (\Throwable $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $A = false;
             }
             return new self($A);
@@ -226,7 +226,7 @@ class Region extends RegionBase
             try {
                 $stmt = $qb->execute();
             } catch (\Throwable $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $stmt = false;
             }
             if ($stmt) {
@@ -334,7 +334,7 @@ class Region extends RegionBase
             }
             $status = true;
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $status = false;
         }
         return $status;

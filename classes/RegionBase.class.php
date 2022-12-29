@@ -71,7 +71,7 @@ abstract class RegionBase
                 Cache::clear('regions');
                 return $newvalue;
             } catch (\Throwable $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 return $oldvalue;
             }
         }

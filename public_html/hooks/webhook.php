@@ -26,18 +26,18 @@ if (isset($_GET['_gw'])) {
 
 if (empty($gw_name)) {
     $log_level = Log::ALERT;
-    Log::write('shop_system', Log::ALERT, "Gateway not specified in Webhook message data");
+    Log::write('shop', Log::ALERT, "Gateway not specified in Webhook message data");
 } else {
     $log_level = Log::DEBUG;
-    Log::write('shop_system', Log::DEBUG, "Received $gw_name Webhook:");
+    Log::debug("Received $gw_name Webhook:");
 }
 
 // Log everything before instantiating the webhook handler in case
 // something goes wrong later.
-Log::write('shop_system', $log_level, "Got Webhook Headers: " . var_export($_SERVER,true));
-Log::write('shop_system', $log_level, "Got Webhook GET: " . var_export($_GET, true));
-Log::write('shop_system', $log_level, "Got Webhook POST: " . var_export($_POST, true));
-Log::write('shop_system', $log_level, "Got php:://input: " . var_export(@file_get_contents('php://input'), true));
+Log::write('shop', $log_level, "Got Webhook Headers: " . var_export($_SERVER,true));
+Log::write('shop', $log_level, "Got Webhook GET: " . var_export($_GET, true));
+Log::write('shop', $log_level, "Got Webhook POST: " . var_export($_POST, true));
+Log::write('shop', $log_level, "Got php:://input: " . var_export(@file_get_contents('php://input'), true));
 
 // Get the complete IPN message prior to any processing
 $status = true;
@@ -46,14 +46,14 @@ if (!empty($gw_name)) {
     if ($WH) {
         if ($WH->Verify()) {
             $status = $WH->Dispatch();
-            Log::write('shop_system', Log::DEBUG, 'Webhook Dispatch status: ' . var_export($status,true));
+            Log::debug('Webhook Dispatch status: ' . var_export($status,true));
         } else {
-            Log::write('shop_system', Log::ERROR, "Webhook verification failed for $gw_name");
+            Log::error("Webhook verification failed for $gw_name");
             $status = false;
         }
         $WH->redirectAfterCompletion();
     } else {
-        Log::write('shop_system', Log::ERROR, "Invalid gateway '$gw_name' requested for webhook");
+        Log::error("Invalid gateway '$gw_name' requested for webhook");
         $status = false;
     }
 }

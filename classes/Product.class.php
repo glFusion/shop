@@ -506,7 +506,7 @@ class Product
                     array(Database::STRING)
                 )->fetchAssociative();
             } catch (\Throwable $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $A = false;
             }
             if (is_array($A) && isset($A['id'])) {
@@ -546,7 +546,7 @@ class Product
                         array(Database::INTEGER)
                     )->fetchAssociative();
                 } catch (\Throwable $e) {
-                    Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                    Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                     $A = false;
                 }
                 if (is_array($A) && isset($A['id'])) {
@@ -595,7 +595,7 @@ class Product
                     array(Database::INTEGER)
                 );
             } catch (\Throwable $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $stmt = false;
             }
             if ($stmt) {
@@ -809,7 +809,7 @@ class Product
                 array(Database::INTEGER)
             )->fetchAssociative();
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $row = false;
         }
         if (is_array($row)) {
@@ -1060,7 +1060,7 @@ class Product
                 } elseif ($filename != '') {
                     $this->filename = $filename;
                 }
-                Log::write('shop_system', Log::DEBUG, __METHOD__ . ': Uploaded file: ' . $this->filename);
+                Log::debug(__METHOD__ . ': Uploaded file: ' . $this->filename);
             }
             if ($this->filename == '') {
                 // Not having a file is an error for downloadable products.
@@ -1129,7 +1129,7 @@ class Product
                                 array(Database::INTEGER, Database::INTEGER)
                             );
                         } catch (\Throwable $e) {
-                            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                         }
                     }
                     $orderby += 10;
@@ -1204,12 +1204,12 @@ class Product
         // Final check to catch error messages from the SQL update
         if (empty($this->Errors)) {
             SHOP_setMsg($LANG_SHOP['msg_updated']);
-            Log::write('shop_system', Log::DEBUG, __METHOD__ . ": Update of product {$this->id} succeeded.");
+            Log::debug(__METHOD__ . ": Update of product {$this->id} succeeded.");
             PLG_itemSaved($this->id, $_SHOP_CONF['pi_name']);
             return true;
         } else {
             SHOP_setMsg($this->Errors, 'error');
-            Log::write('shop_system', Log::ERROR, __METHOD__ . ": Update of product {$this->id} failed.");
+            Log::error(__METHOD__ . ": Update of product {$this->id} failed.");
             echo COM_refresh(SHOP_ADMIN_URL . '/index.php?return=products&editproduct=x&id=' . $this->id);
             return false;
         }
@@ -1308,7 +1308,7 @@ class Product
         try {
             if ($this->id > 0) {
                 // Updating an existing record.
-                Log::write('shop_system', Log::DEBUG, __METHOD__ . ": Preparing to update product id {$this->id}");
+                Log::debug(__METHOD__ . ": Preparing to update product id {$this->id}");
                 $types[] = Database::INTEGER;   // for product id
                 $db->conn->update(
                     $_TABLES['shop.products'],
@@ -1325,7 +1325,7 @@ class Product
                 }
             } else {
                 // Inserting a new record.
-                Log::write('shop_system', Log::DEBUG, __METHOD__ . ': Preparing to save a new product.');
+                Log::debug(__METHOD__ . ': Preparing to save a new product.');
                 $values['dt_add'] = $_CONF['_now']->toMySQL(false);
                 $types[] = Database::STRING;
                 $db->conn->insert(
@@ -1337,7 +1337,7 @@ class Product
             }
             return true;
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
     }
@@ -1376,7 +1376,7 @@ class Product
                 array(Database::INTEGER)
             );
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
 
         ProductVariant::deleteByProduct($this->id);
@@ -1391,7 +1391,7 @@ class Product
                 array(Database::INTEGER)
             );
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
         self::clearCache();
         PLG_itemDeleted($this->id, $_SHOP_CONF['pi_name']);
@@ -2244,7 +2244,7 @@ class Product
                 array(Database::STRING)
             );
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
         $retval .= $T->parse('output', 'product');
         $retval = PLG_outputFilter($retval, 'shop');
@@ -2924,7 +2924,7 @@ class Product
         $this->name = $this->name . '_' . uniqid();
         $this->saveToDB();
         if ($this->id < 1) {
-            Log::write('shop_system', Log::ERROR, __METHOD__ . ": Error duplicating product id $old_id");
+            Log::error(__METHOD__ . ": Error duplicating product id $old_id");
             return false;
         }
         $new_id = $this->id;
@@ -3585,7 +3585,7 @@ class Product
                     array(Database::STRING)
                 )->fetchAllAssociative();
             } catch (\Throwable $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $rows = false;
             }
             if (!empty($rows)) {
@@ -3649,7 +3649,7 @@ class Product
             Cache::clear(self::$TABLE);
             return true;
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
     }
@@ -3689,7 +3689,7 @@ class Product
                     "SELECT * FROM {$_TABLES['shop.products']} ORDER BY name ASC"
                 );
             } catch (\Throwable $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $stmt = false;
             }
             if (!empty($stmt)) {
@@ -3939,7 +3939,7 @@ class Product
                    ->setParameter('ids', $ids, Database::PARAM_INT_ARRAY)
                    ->execute();
             } catch (\Throwable $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 return false;
             }
         }
@@ -3955,13 +3955,13 @@ class Product
                 );
                 $status = true;
             } catch (\Throwable $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $status = false;
             }
             try {
                 $stmt = $qb->execute();
             } catch (\Throwable $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $stmt = false;
             }
             if ($status) {
@@ -3979,7 +3979,7 @@ class Product
                 try {
                     $db->conn->executeStatement($sql);
                 } catch (\Throwable $e) {
-                    Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                    Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                     return false;
                 }
             }
@@ -4464,7 +4464,7 @@ class Product
                 array(Database::STRING, Database::INTEGER)
             )->fetchAssociative();
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $row = false;
         }
         if (is_array($row) && $row['cnt'] > 0) {
@@ -4490,7 +4490,7 @@ class Product
                 "SELECT id FROM {$_TABLES['shop.products']} ORDER BY id ASC LIMIT 1"
             )->fetchAssociative();
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $row = false;
         }
         if (is_array($row)) {
@@ -4657,7 +4657,7 @@ class Product
                 array(Database::INTEGER)
             );
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
 
         foreach ($cat_ids as $cat_id) {
@@ -4672,7 +4672,7 @@ class Product
             $db->conn->executeStatement($sql);
             Category::clearCache();
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
         return $this;
     }

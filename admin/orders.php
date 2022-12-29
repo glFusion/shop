@@ -67,7 +67,7 @@ case 'updstatus':
             $Order = Shop\Order::getInstance($order_id);
             if (!$Order->isNew) {
                 $Order->updateStatus($newstatus);
-                Log::write('shop_system', Log::INFO, "Updated order $order_id from {$oldstatus[$order_id]} to $newstatus");
+                Log::info("Updated order $order_id from {$oldstatus[$order_id]} to $newstatus");
             }
         }
     }

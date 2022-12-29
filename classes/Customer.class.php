@@ -126,7 +126,7 @@ class Customer
                 array(Database::INTEGER)
             )->fetchAssociative();
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $A = false;
         }
         if (is_array($A)) {
@@ -524,7 +524,7 @@ class Customer
             cart = '$cart',
             affiliate_id = '" . DB_escapeString($this->affiliate_id) . "',
             aff_pmt_method = '" . DB_escapeString($this->aff_pmt_method) . "'";
-        Log::write('shop_system', Log::DEBUG, $sql);
+        Log::debug($sql);
         DB_query($sql);
         return DB_error() ? false : true;
     }
@@ -565,7 +565,7 @@ class Customer
                 array(Database::INTEGER, Database::INTEGER)
             );
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return;
         }
 
@@ -576,7 +576,7 @@ class Customer
                 array(Database::INTEGER, Database::INTEGER)
             );
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return;
         }
     }

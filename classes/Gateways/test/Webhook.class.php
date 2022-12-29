@@ -72,12 +72,12 @@ class Webhook extends \Shop\Webhook
         // Get the Shop order record and make sure it's valid.
         $this->Order = Order::getInstance($this->getOrderId());
         if ($this->Order->isNew()) {
-            Log::write('shop_system', Log::ERROR, "Order {$this->getOrderId()} not found");
+            Log::error("Order {$this->getOrderId()} not found");
             return false;
         }
 
         if (Token::decrypt($this->whData['secret']) != $this->Order->getSecret()) {
-            Log::write('shop_system', Log::ERROR, "Order {$this->getOrderId()} not found");
+            Log::error("Order {$this->getOrderId()} not found");
             return false;
         }
 
@@ -111,7 +111,7 @@ class Webhook extends \Shop\Webhook
                     ->setOrderID($this->getOrderID())
                     ->Save();
                 if ($this->isSufficientFunds()) {
-                    Log::write('shop_system', Log::DEBUG, "Handling purchase for {$this->getOrderID()}");
+                    Log::debug("Handling purchase for {$this->getOrderID()}");
                     $status = $this->handlePurchase();
                 }
             }

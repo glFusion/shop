@@ -371,23 +371,23 @@ class Gateway extends \Shop\Gateway
 
         $pub_key = @openssl_x509_read(file_get_contents($keys['pub_key']));
         if (!$pub_key) {
-            Log::write('shop_system', Log::ERROR, "Failed reading public key from {$keys['pub_key']}");
+            Log::error("Failed reading public key from {$keys['pub_key']}");
             return '';
         }
         $prv_key = @openssl_get_privatekey(file_get_contents($keys['prv_key']));
         if (!$prv_key) {
-            Log::write('shop_system', Log::ERROR, "Failed reading private key from {$keys['prv_key']}");
+            Log::error("Failed reading private key from {$keys['prv_key']}");
             return '';
         }
         $pp_cert = @openssl_x509_read(file_get_contents($keys['pp_cert']));
         if (!$pp_cert) {
-            Log::write('shop_system', Log::ERROR, "Failed reading PayPal certificate from {$keys['pp_cert']}");
+            Log::error("Failed reading PayPal certificate from {$keys['pp_cert']}");
             return '';
         }
 
         //  Make sure this key and certificate belong together
         if (!openssl_x509_check_private_key($pub_key, $prv_key)) {
-            Log::write('shop_system', Log::ERROR, "Mismatched private & public keys");
+            Log::error("Mismatched private & public keys");
             return '';
         }
 

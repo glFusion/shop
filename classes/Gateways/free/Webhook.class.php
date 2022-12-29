@@ -68,13 +68,13 @@ class Webhook extends \Shop\Webhook
         // Get the Shop order record and make sure it's valid.
         $this->Order = Order::getInstance($this->getOrderId());
         if ($this->Order->isNew()) {
-            Log::write('shop_system', Log::ERROR, "Order {$this->getOrderId()} not found");
+            Log::error("Order {$this->getOrderId()} not found");
             return false;
         }
 
         // Verify that this is a free order.
         if ($this->Order->getTotal() > .0001) {
-            Log::write('shop_system', Log::ERROR, "Order {$this->getOrderId()} is not a free order");
+            Log::error("Order {$this->getOrderId()} is not a free order");
             return false;
         }
 

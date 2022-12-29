@@ -13,7 +13,7 @@
  */
 namespace Shop\Upgrades;
 use glFusion\Database\Database;
-use glFusion\Log\Log;
+use Shop\Log;
 use Shop\Cache;
 use Shop\Gateway;
 use Shop\GatewayManager;
@@ -107,7 +107,7 @@ class Upgrade
         GatewayManager::upgradeAll(self::$current_ver);
         self::removeOldFiles();
         CTL_clearCache();   // clear cache to ensure CSS updates come through
-        Log::write('system', Log::INFO, "Successfully updated the {$_SHOP_CONF['pi_display_name']} Plugin");
+        Log::system(Log::INFO, "Successfully updated the {$_SHOP_CONF['pi_display_name']} Plugin");
         // Set a message in the session to replace the "has not been upgraded" message
         SHOP_setMsg("Shop Plugin has been updated to " . self::$current_ver, 'info', 1);
         return true;
@@ -147,27 +147,27 @@ class Upgrade
         }
 
         // Execute SQL now to perform the upgrade
-        Log::write('system', Log::INFO, "--- Updating Shop to version $version");
+        Log::system(Log::INFO, "--- Updating Shop to version $version");
         foreach($SHOP_UPGRADE[$version] as $sql) {
             if ($use_innodb) {
                 // If using InnoDB, change the Engine in the statement.
                 $sql = str_replace('MyISAM', 'InnoDB', $sql);
             }
 
-            Log::write('system', Log::INFO, "Shop Plugin $version update: Executing SQL => $sql");
+            Log::system(Log::INFO, "Shop Plugin $version update: Executing SQL => $sql");
             try {
                 DB_query($sql, '1');
                 if (DB_error()) {
                     // check for error here for glFusion < 2.0.0
-                    Log::write('system', Log::INFO, 'SQL Error during update');
+                    Log::system(Log::INFO, 'SQL Error during update');
                     //if (!$ignore_error) return false;
                 }
             } catch (Exception $e) {
-                Log::write('system', Log::INFO, 'SQL Error ' . $e->getMessage());
+                Log::system(Log::INFO, 'SQL Error ' . $e->getMessage());
                 //if (!$ignore_error) return false;
             }
         }
-        Log::write('system', Log::INFO, "--- Shop plugin SQL update to version $version done");
+        Log::system(Log::INFO, "--- Shop plugin SQL update to version $version done");
         return true;
     }
 
@@ -193,10 +193,10 @@ class Upgrade
 
         $res = DB_query($sql, 1);
         if (DB_error()) {
-            Log::write('system', Log::INFO, "Error updating the {$_SHOP_CONF['pi_display_name']} Plugin version");
+            Log::system(Log::INFO, "Error updating the {$_SHOP_CONF['pi_display_name']} Plugin version");
             return false;
         } else {
-            Log::write('system', Log::INFO, "{$_SHOP_CONF['pi_display_name']} version set to $ver");
+            Log::system(Log::INFO, "{$_SHOP_CONF['pi_display_name']} version set to $ver");
             // Set in-memory config vars to avoid tripping SHOP_isMinVersion();
             $_SHOP_CONF['pi_version'] = $ver;
             $_PLUGIN_INFO[self::$pi_name]['pi_version'] = $ver;
@@ -318,7 +318,7 @@ class Upgrade
         foreach ($paths as $path=>$files) {
             foreach ($files as $file) {
                 if (file_exists("$path/$file")) {
-                    Log::write('system', Log::ERROR, "removing $path/$file");
+                    Log::system(Log::ERROR, "removing $path/$file");
                     self::delPath("$path/$file");
                 }
             }

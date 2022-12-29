@@ -153,7 +153,7 @@ class MigratePP
             $pp_tbl = $shop_tbl;
         }
 
-        Log::write('shop_system', Log::INFO, "-- Migrating table $shop_tbl");
+        Log::info("-- Migrating table $shop_tbl");
         $shop_tbl = $_TABLES['shop.' . $shop_tbl];
         $pp_tbl = $_TABLES['paypal.' . $pp_tbl];
         return self::_dbExecute(array(
@@ -173,7 +173,7 @@ class MigratePP
     {
         global $_TABLES;
 
-        Log::write('shop_system', Log::INFO, "Migrating Coupons ...");
+        Log::info("Migrating Coupons ...");
         $status = self::_dbExecute(array(
             "TRUNCATE {$_TABLES['shop.coupons']}",
             "INSERT INTO {$_TABLES['shop.coupons']}
@@ -204,7 +204,7 @@ class MigratePP
     {
         global $_TABLES;
 
-        Log::write('shop_system', Log::INFO, "Migrating Product Categories ...");
+        Log::info("Migrating Product Categories ...");
         $sql = array(
             "TRUNCATE {$_TABLES['shop.categories']}",
             "INSERT INTO {$_TABLES['shop.categories']} (
@@ -230,7 +230,7 @@ class MigratePP
     {
         global $_TABLES;
 
-        Log::write('shop_system', Log::INFO, "Migrating Products ...");
+        Log::info("Migrating Products ...");
         return self::_dbExecute(array(
             "TRUNCATE {$_TABLES['shop.products']}",
             "INSERT INTO {$_TABLES['shop.products']} (
@@ -271,7 +271,7 @@ class MigratePP
     {
         global $_TABLES, $_PP_CONF, $_SHOP_CONF;
 
-        Log::write('shop_system', Log::INFO, "Migrating Orders ...");
+        Log::info("Migrating Orders ...");
         $add_flds = '';
         // If not at Paypal 0.6.1, add dummy currency and order sequence values
         if (!COM_checkVersion($_PP_CONF['pi_version'], '0.6.1')) {
@@ -329,7 +329,7 @@ class MigratePP
     {
         global $_TABLES;
 
-        Log::write('shop_system', Log::INFO, "Migrating Order Items ...");
+        Log::info("Migrating Order Items ...");
         // This version renames the "purchases" table to "orderitems".
         // Adds: qty_discounts, base_price
         // Removes: status
@@ -362,7 +362,7 @@ class MigratePP
     {
         global $_TABLES, $_CONF;
 
-        Log::write('shop_system', Log::INFO, "Migrating Sale Pricing ...");
+        Log::info("Migrating Sale Pricing ...");
         // Shop 1.0.0 changes the dates used in the Sales table.
         $tz_offset = $_CONF['_now']->format('P', true);
         return self::_dbExecute(array(
@@ -388,7 +388,7 @@ class MigratePP
     {
         global $_TABLES;
 
-        Log::write('shop_system', Log::INFO, "Transferring orderitem options to orderitem_options table");
+        Log::info("Transferring orderitem options to orderitem_options table");
         $sql = "SELECT * FROM {$_TABLES['paypal.purchases']}";
         $res = DB_query($sql);
         while ($A = DB_fetchArray($res, false)) {
@@ -432,7 +432,7 @@ class MigratePP
     {
         global $_TABLES;
 
-        Log::write('shop_system', Log::INFO, "Migrating Option Values ...");
+        Log::info("Migrating Option Values ...");
         if (self::_tableHasIndex('shop.prod_opt_vals', 'item_id')) {
             self::_dbExecute("ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP KEY `item_id`");
         }
@@ -464,7 +464,7 @@ class MigratePP
     {
         global $_TABLES;
 
-        Log::write('shop_system', Log::INFO, "Creating product variants and trimming option Values ...");
+        Log::info("Creating product variants and trimming option Values ...");
         // Upgrades to use the new product variants.
         // TODO: drop item_id column, after creating Variant records
         $r_allvals = self::_dbExecute("SELECT * FROM {$_TABLES['shop.prod_opt_vals']}");
@@ -544,7 +544,7 @@ class MigratePP
         global $_TABLES;
 
         // Initial populate of the new attribute group table, after the main migration.
-        Log::write('shop_system', Log::INFO, "Migrating Option Groups ...");
+        Log::info("Migrating Option Groups ...");
         return self::_dbExecute(array(
             "TRUNCATE {$_TABLES['shop.prod_opt_grps']}",
             "INSERT INTO {$_TABLES['shop.prod_opt_grps']} (pog_name)
@@ -568,7 +568,7 @@ class MigratePP
     {
         global $_TABLES;
 
-        Log::write('shop_system', Log::INFO, "Migrating Shipping ...");
+        Log::info("Migrating Shipping ...");
         return self::_dbExecute(array(
             "TRUNCATE {$_TABLES['shop.shipping']}",
             "INSERT INTO {$_TABLES['shop.shipping']} (
@@ -602,7 +602,7 @@ class MigratePP
     {
         global $_TABLES;
 
-        Log::write('shop_system', Log::INFO, "Migrating Payment Gateways ...");
+        Log::info("Migrating Payment Gateways ...");
         return self::_dbExecute(array(
             "TRUNCATE {$_TABLES['shop.gateways']}",
             "INSERT INTO {$_TABLES['shop.gateways']}
@@ -640,7 +640,7 @@ class MigratePP
     {
         global $_TABLES;
 
-        Log::write('shop_system', Log::INFO, "Migrating IPN Log ...");
+        Log::info("Migrating IPN Log ...");
         return self::_dbExecute(array(
             "TRUNCATE {$_TABLES['shop.ipnlog']}",
             "INSERT INTO {$_TABLES['shop.ipnlog']}
@@ -661,7 +661,7 @@ class MigratePP
     {
         global $_TABLES;
 
-        Log::write('shop_system', Log::INFO, "Migrating Addreses ...");
+        Log::info("Migrating Addreses ...");
         return self::_dbExecute(array(
             "TRUNCATE {$_TABLES['shop.address']}",
             "INSERT INTO {$_TABLES['shop.address']} (
@@ -685,7 +685,7 @@ class MigratePP
     {
         global $_TABLES;
 
-        Log::write('shop_system', Log::INFO, "Migrating User Information ...");
+        Log::info("Migrating User Information ...");
         return self::_dbExecute(array(
             "TRUNCATE {$_TABLES['shop.userinfo']}",
             "INSERT INTO {$_TABLES['shop.userinfo']}
@@ -721,14 +721,14 @@ class MigratePP
         if (!isset($_PP_CONF)) {
             require_once $pp_path;
             if (!isset($_PP_CONF)) {
-                Log::write('shop_system', Log::ERROR, 'Could not include ' . $pp_path);
+                Log::error('Could not include ' . $pp_path);
                 return false;
             }
         }
 
         // Verify that the Paypal plugin is installed.
         if (!DB_checkTableExists('paypal.products')) {
-            Log::write('shop_system', Log::ERROR, 'Paypal tables may be missing');
+            Log::error('Paypal tables may be missing');
             return false;
         }
 
@@ -737,7 +737,7 @@ class MigratePP
             !isset($_PP_CONF['pi_version']) ||
             !COM_checkVersion($_PP_CONF['pi_version'], '0.6.0')
         ) {
-            Log::write('shop_system', Log::ERROR, 'Paypal version not found or less than 0.6.0');
+            Log::error('Paypal version not found or less than 0.6.0');
             return false;
         }
 
@@ -760,10 +760,10 @@ class MigratePP
             $sql_arr = array($sql_arr);
         }
         foreach ($sql_arr as $sql) {
-            Log::write('shop_system', Log::INFO, ".... executing sql: $sql");
+            Log::info(".... executing sql: $sql");
             $retval = DB_query($sql, 1);
             if (DB_error()) {
-                Log::write('shop_system', Log::ERROR, ".... Error executing sql: $sql");
+                Log::error(".... Error executing sql: $sql");
                 $retval = false;
                 break;
             }

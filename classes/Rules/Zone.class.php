@@ -13,7 +13,7 @@
  */
 namespace Shop\Rules;
 use glFusion\Database\Database;
-use glFusion\Log\Log;
+use Shop\Log;
 use Shop\Region;
 use Shop\Country;
 use Shop\State;
@@ -136,7 +136,7 @@ class Zone
                 }
                 $data = $qb->execute()->fetchAllAssociative();
             } catch (\Exception $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $data = false;
             }
             if (is_array($data)) {
@@ -166,7 +166,7 @@ class Zone
                 array(Database::INTEGER)
             )->fetchAssociative();
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $row = false;
         }
         if (is_array($row)) {
@@ -340,7 +340,7 @@ class Zone
                 array(Database::INTEGER)
             );
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
     }
 
@@ -416,7 +416,7 @@ class Zone
                 );
             }
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
         return true;

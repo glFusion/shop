@@ -90,7 +90,7 @@ class ShipmentItem
                 array(Database::INTEGER)
             )->fetchAssociative();
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $data = false;
         }
         if (is_array($data)) {
@@ -202,7 +202,7 @@ class ShipmentItem
                 array(Database::INTEGER)
             )->fetchAllAssociative();
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $data = false;
         }
         if (is_array($data)) {
@@ -234,7 +234,7 @@ class ShipmentItem
                 array(Database::INTEGER)
             )->fetchAssociative();
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $data = false;
         }
         if (is_array($data)) {
@@ -318,7 +318,7 @@ class ShipmentItem
                 );
             }
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
         return true;
@@ -344,7 +344,7 @@ class ShipmentItem
                 array(Database::INTEGER)
             )->fetchAssociative();
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $data = false;
         }
         if (is_array($data)) {

@@ -13,11 +13,11 @@
  * @filesource
  */
 namespace Shop;
-use Shop\Config;
-use Shop\Cache;
 use glFusion\FileSystem;
 use glFusion\Database\Database;
-use glFusion\Log\Log;
+use Shop\Config;
+use Shop\Cache;
+use Shop\Log;
 
 
 /**
@@ -65,7 +65,7 @@ class GatewayManager
             try {
                 $data = $db->conn->executeQuery($sql)->fetchAllAssociative();
             } catch (\Exception $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $data = false;
             }
             if (is_array($data)) {
@@ -151,7 +151,7 @@ class GatewayManager
         try {
             $data = $db->conn->executeQuery($sql)->fetchAllAssociative();
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $msg);
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $msg);
             $data = false;
         }
         if (is_array($data)) {
@@ -430,7 +430,7 @@ class GatewayManager
             ) );
             $upload->setFieldName('gw_file');
             if (!$upload->setPath($_CONF['path_data'] . 'temp')) {
-                Log::write('shop_system', Log::ERROR, "Error setting temp path: " . $upload->printErrors(false));
+                Log::error("Error setting temp path: " . $upload->printErrors(false));
             }
 
             $filename = $_FILES['gw_file']['name'];
@@ -438,12 +438,12 @@ class GatewayManager
             $upload->uploadFiles();
 
             if ($upload->areErrors()) {
-                Log::write('shop_system', Log::ERROR, "Errors during upload: " . $upload->printErrors());
+                Log::error("Errors during upload: " . $upload->printErrors());
                 return false;
             }
             $Finalfilename = $_CONF['path_data'] . 'temp/' . $filename;
         } else {
-            Log::write('shop_system', Log::ERROR, "No file found to upload");
+            Log::error("No file found to upload");
             return false;
         }
 
@@ -453,19 +453,19 @@ class GatewayManager
         }
         $tmp = FileSystem::mkTmpDir();
         if ($tmp === false) {
-            Log::write('shop_system', Log::ERROR, "Failed to create temp directory");
+            Log::error("Failed to create temp directory");
             return false;
         }
         $tmp_path = $_CONF['path_data'] . $tmp;
         if (!COM_decompress($Finalfilename, $tmp_path)) {
-            Log::write('shop_system', Log::ERROR, "Failed to decompress $Finalfilename into $tmp_path");
+            Log::error("Failed to decompress $Finalfilename into $tmp_path");
             FileSystem::deleteDir($tmp_path);
             return false;
         }
         @unlink($Finalfilename);
 
         if (!$dh = @opendir($tmp_path)) {
-            Log::write('shop_system', Log::ERROR, "Failed to open $tmp_path");
+            Log::error("Failed to open $tmp_path");
             return false;
         }
         $upl_path = $tmp_path;
@@ -481,7 +481,7 @@ class GatewayManager
         closedir($dh);
 
         if (empty($upl_path)) {
-            Log::write('shop_system', Log::ERROR, "Could not find upload path under $tmp_path");
+            Log::error("Could not find upload path under $tmp_path");
             return false;
         }
 
@@ -519,7 +519,7 @@ class GatewayManager
             return true;
         } else {
             foreach ($fs->getErrors() as $msg) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $msg);
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $msg);
             }
             return false;
         }

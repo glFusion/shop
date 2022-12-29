@@ -67,7 +67,7 @@ class Catalog
         $T = new Template('feeds/catalog/');
         $T->set_file('feed', $feed . '.thtml');
         if (!empty($T->last_error)) {
-            Log::write('shop_system', Log::ERROR, "Missing catalog feed template for $feed");
+            Log::error("Missing catalog feed template for $feed");
             return false;
         }
         $T->set_var(array(

@@ -14,12 +14,12 @@
  * @filesource
  */
 namespace Shop;
+use glFusion\Database\Database;
 use Shop\Loggers\IPN as logIPN;
 use Shop\Models\IPN as IPNModel;
 use Shop\Customer;
 use Shop\Address;
-use glFusion\Database\Database;
-use glFusion\Log\Log;
+use Shop\Log;
 
 
 /**
@@ -150,7 +150,7 @@ abstract class Webhook
         if (class_exists($cls)) {
             return new $cls($blob);
         } else {
-            Log::write('shop_system', Log::ERROR, __METHOD__ . ": - $cls doesn't exist");
+            Log::error(__METHOD__ . ": - $cls doesn't exist");
             return NULL;
         }
     }
@@ -582,10 +582,10 @@ abstract class Webhook
         $msg = $Cur->FormatValue($this->getPayment()) . ' received, require ' .
             $Cur->FormatValue($bal_due);
         if ($bal_due <= $this->getPayment() + .0001) {
-            Log::write('shop_system', Log::DEBUG, __METHOD__ . ": OK: $msg");
+            Log::debug(__METHOD__ . ": OK: $msg");
             return true;
         } else {
-            Log::write('shop_system', Log::ERROR, __METHOD__ . ": Insufficient Funds: $msg");
+            Log::error(__METHOD__ . ": Insufficient Funds: $msg");
             return false;
         }
     }
@@ -611,7 +611,7 @@ abstract class Webhook
         }
 
         if ($this->Order->isNew()) {
-            Log::write('shop_system', Log::ERROR, __METHOD__ . ": Order {$this->getOrderID()} is not valid");
+            Log::error(__METHOD__ . ": Order {$this->getOrderID()} is not valid");
             return false;
         }
         if ($this->Order->getUid() > 1) {
@@ -631,9 +631,9 @@ abstract class Webhook
             // Handle the purchase for each order item
             $this->Order->handlePurchase($this->IPN);
         } else {
-            Log::write('shop_system', Log::ERROR, __METHOD__ . ': Cannot process order ' . $this->getOrderID());
-            Log::write('shop_system', Log::DEBUG, __METHOD__ . ': canprocess? ' . var_export($this->GW->okToProcess($this->Order),true));
-            Log::write('shop_system', Log::DEBUG, __METHOD__ . ': status ' . $this->Order->getStatus());
+            Log::error(__METHOD__ . ': Cannot process order ' . $this->getOrderID());
+            Log::debug(__METHOD__ . ': canprocess? ' . var_export($this->GW->okToProcess($this->Order),true));
+            Log::debug(__METHOD__ . ': status ' . $this->Order->getStatus());
             return false;
         }
         return true;
@@ -684,12 +684,12 @@ abstract class Webhook
                 array(Database::STRING, Database::STRING, Database::STRING)
             );
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $count = 0;
         }
         if ($count > 0) {
             $this->setStatusMsg('Duplicate webhook');
-            Log::write('shop_system', Log::ERROR, __METHOD__ . ": Received duplicate webhook {$this->getID()} for {$this->GW->getName()}");
+            Log::error(__METHOD__ . ": Received duplicate webhook {$this->getID()} for {$this->GW->getName()}");
             $this->logIPN();
             return false;
         } else {

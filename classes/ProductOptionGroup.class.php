@@ -238,7 +238,7 @@ class ProductOptionGroup
             pog_name = '" . DB_escapeString($this->pog_name) . "',
             pog_orderby='{$this->pog_orderby}'";
         $sql = $sql1 . $sql2 . $sql3;
-        Log::write('shop_system', Log::DEBUG, $sql);
+        Log::debug($sql);
         DB_query($sql, 1);
         $err = DB_error();
         if ($err == '') {
@@ -564,7 +564,7 @@ class ProductOptionGroup
         try {
             $stmt = $qb->execute();
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $stmt = false;
         }
         if ($stmt) {

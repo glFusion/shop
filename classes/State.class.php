@@ -13,7 +13,7 @@
  */
 namespace Shop;
 use glFusion\Database\Database;
-use glFusion\Log\Log;
+use Shop\Log;
 use Shop\Models\DataArray;
 
 
@@ -170,7 +170,7 @@ class State extends RegionBase
         try {
             $A = $qb->execute()->fetchAssociative();
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $A = false;
         }
         if (!$A) {
@@ -425,7 +425,7 @@ class State extends RegionBase
                 }
                 $stmt = $qb->execute();
             } catch (\Throwable $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $stmt = false;
             }
             if ($stmt) {
@@ -536,7 +536,7 @@ class State extends RegionBase
             }
             $status = true;
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $this->addError($LANG_SHOP['err_dup_iso']);
             $status = false;
         }
@@ -737,7 +737,7 @@ class State extends RegionBase
                ->execute()
                ->fetchAssociative();
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $A = false;
         }
         if (is_array($A)) {
@@ -766,7 +766,7 @@ class State extends RegionBase
                        ->orderBy('c.country_name', 'ASC')
                        ->execute();
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $stmt = false;
         }
         if ($stmt) {

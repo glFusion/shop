@@ -25,15 +25,15 @@ $gateway = Request::getInstance()->getString('_gw');
 
 if (empty($gateway)) {
     $log_level = Log::ALERT;
-    Log::write('shop_system', $log_level, "Gateway not specified in IPN message data");
+    Log::write('shop', $log_level, "Gateway not specified in IPN message data");
 } else {
     $log_level = Log::DEBUG;
 }
 
 // Debug logging
-Log::write('shop_system', $log_level, "Got IPN GET: " . var_export($_GET, true));
-Log::write('shop_system', $log_level, "Got IPN POST: " . var_export($_POST, true));
-Log::write('shop_system', $log_level, "Got php:://input: " . var_export(@file_get_contents('php://input'), true));
+Log::write('shop', $log_level, "Got IPN GET: " . var_export($_GET, true));
+Log::write('shop', $log_level, "Got IPN POST: " . var_export($_POST, true));
+Log::write('shop', $log_level, "Got php:://input: " . var_export(@file_get_contents('php://input'), true));
 
 // Instantiate without data.
 // It's the gateway's job to retrieve from $_GET, $_POST, etc.

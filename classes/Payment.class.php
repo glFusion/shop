@@ -13,7 +13,7 @@
  */
 namespace Shop;
 use glFusion\Database\Database;
-use glFusion\Log\Log;
+use Shop\Log;
 
 
 /**
@@ -131,7 +131,7 @@ class Payment
                 array(Database::INTEGER)
             )->fetchAssociative();
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $data = false;
         }
         if (is_array($data)) {
@@ -160,7 +160,7 @@ class Payment
                 array(Database::STRING)
             )->fetchAssociative();
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $data = false;
         }
         if (is_array($data)) {
@@ -482,7 +482,7 @@ class Payment
             }
             $stat = true;
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $stat = false;
         }
 
@@ -516,7 +516,7 @@ class Payment
                 "SELECT * FROM {$_TABLES['shop.ipnlog']} ORDER BY ts ASC"
             )->fetchAllAssociative();
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $data = NULL;
         }
         if (is_array($data)) {
@@ -574,7 +574,7 @@ class Payment
                 "SELECT * FROM {$_TABLES['shop.coupon_log']} WHERE msg = 'gc_applied'"
             )->fetchAllAssociative();
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $pmts = false;
         }
         if (is_array($pmts)) {
@@ -626,7 +626,7 @@ class Payment
         try {
             $data = $qb->execute()->fetchAllAssociative();
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $data = false;
         }
         if (is_array($data)) {
@@ -713,7 +713,7 @@ class Payment
                 array(Database::INTEGER)
             );
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
     }
 
@@ -731,7 +731,7 @@ class Payment
         try {
             $db->conn->executeStatement("TRUNCATE {$_TABLES['shop.payments']}");
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
     }
 

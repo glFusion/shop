@@ -13,7 +13,7 @@
  */
 namespace Shop\Models;
 use glFusion\Database\Database;
-use glFusion\Log\Log;
+use Shop\Log;
 use Shop\FieldList;
 use Shop\ProductOptionValue;
 
@@ -153,7 +153,7 @@ class ProductCheckbox
                 array(Database::INTEGER)
             )->fetchAllAssociative();
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $data = false;
         }
         if (is_array($data)) {
@@ -195,7 +195,7 @@ class ProductCheckbox
                 array(Database::INTEGER)
             )->fetchAssociative();
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $data = false;
         }
         if (is_array($data)) {
@@ -266,10 +266,10 @@ class ProductCheckbox
                     array(Database::STRING, Database::INTEGER, Database::INTEGER),
                 );
             } catch (\Exception $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             }
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $newval = $oldval;
         }
         return $newval;
@@ -289,7 +289,7 @@ class ProductCheckbox
             );
             return true;
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
     }
@@ -317,7 +317,7 @@ class ProductCheckbox
                     )
                 );
             } catch (\Exception $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             }
         }
     }

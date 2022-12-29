@@ -133,7 +133,7 @@ class Syndication extends \glFusion\Syndication\Feed
         $T = new Template('feeds/catalog/');
         $T->set_file('feed', $this->type . '.thtml');
         if (!empty($T->last_error)) {
-            Log::write('shop_system', Log::ERROR, "Missing catalog feed template for {$this->type}");
+            Log::error("Missing catalog feed template for {$this->type}");
             return false;
         }
         $Cur = \Currency::getInstance();
@@ -324,7 +324,7 @@ class Syndication extends \glFusion\Syndication\Feed
                         array(Database::STRING,Database::STRING,Database::STRING)
                     );
                 } catch (\Throwable $e) {
-                    Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                    Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 }
             }
             return NULL;

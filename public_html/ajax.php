@@ -118,7 +118,7 @@ case 'cartaddone':
 
 case 'addcartitem':
     if (!isset($Request['item_number'])) {
-        Log::write('shop_system', Log::ERROR, "Ajax addcartitem:: Missing Item Number");
+        Log::error("Ajax addcartitem:: Missing Item Number");
         echo json_encode(array('content' => '', 'statusMessage' => ''));
         exit;
     }
@@ -134,7 +134,7 @@ case 'addcartitem':
     /*$nonce = $Cart->makeNonce($item_number . $item_name);
     $supplied_nonce = $Request->getString('nonce');
     if ($supplied_nonce != $nonce) {
-        Log::write('shop_system', Log::ERROR, "Bad nonce: {$supplied_nonce} for cart {$Cart->getOrderID()}, should be $nonce");
+        Log::error("Bad nonce: {$supplied_nonce} for cart {$Cart->getOrderID()}, should be $nonce");
         echo json_encode(array('content' => '', 'statusMessage' => ''));
         exit;
     }*/

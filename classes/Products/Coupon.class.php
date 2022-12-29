@@ -236,7 +236,7 @@ class Coupon extends \Shop\Product
             );
             return $code;
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return NULL;
         }
     }
@@ -273,12 +273,12 @@ class Coupon extends \Shop\Product
                 array(Database::STRING)
             )->fetchAssociative();
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $data = false;
         }
 
         if (!is_array($data) || count($data) == 0) {
-            Log::write('shop_system', Log::ERROR, "Attempting to redeem coupon $code, not found in database");
+            Log::error("Attempting to redeem coupon $code, not found in database");
             return array(
                 3,
                 sprintf(
@@ -288,10 +288,10 @@ class Coupon extends \Shop\Product
             );
         } else {
             if ($data['redeemed'] > 0 && $data['redeemer'] > 0) {
-                Log::write('shop_system', Log::ERROR, "Coupon code $code was already redeemed");
+                Log::error("Coupon code $code was already redeemed");
                 return array(1, $LANG_SHOP['coupon_apply_msg1']);
             } elseif ($data['status'] != self::VALID) {
-                Log::write('shop_system', Log::ERROR, "Coupon $code status is not valid");
+                Log::error("Coupon $code status is not valid");
                 return array(1, $LANG_SHOP['coupon_apply_msg3']);
             }
         }
@@ -310,7 +310,7 @@ class Coupon extends \Shop\Product
                 Cache::clear('coupons');
                 self::writeLog($code, $uid, $amount, 'gc_redeemed');
             } catch (\Exception $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::error(__METHOD__ . ': ' . $e->getMessage());
                 return array(2, sprintf($LANG_SHOP['coupon_apply_msg2'], $_CONF['site_email']));
             }
         }
@@ -385,7 +385,7 @@ class Coupon extends \Shop\Product
                     array(Database::STRING, Database::STRING)
                 );
             } catch (\Exception $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             }
             if ($remain == 0) break;
         }
@@ -422,7 +422,7 @@ class Coupon extends \Shop\Product
             );
             return true;
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
     }
@@ -483,7 +483,7 @@ class Coupon extends \Shop\Product
         }
 
         $Shop = new Company;
-        Log::write('shop_system', Log::DEBUG, "Sending Coupon to " . $recip);
+        Log::debug("Sending Coupon to " . $recip);
         $T = new Template('notify');
         $T->set_file(array(
             'header_tpl' => 'header.thtml',
@@ -532,7 +532,7 @@ class Coupon extends \Shop\Product
             'subject' => $LANG_SHOP_EMAIL['coupon_subject'],
         );
         COM_emailNotification($email_vars);
-        Log::write('shop_system', Log::DEBUG, "Coupon notification sent to $recip.");
+        Log::debug("Coupon notification sent to $recip.");
     }
 
 
@@ -631,7 +631,7 @@ class Coupon extends \Shop\Product
                 $qb->orderBy('redeemed', 'ASC');
                 $data = $qb->execute()->fetchAllAssociative();
             } catch (\Exception $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $data = false;
             }
             if (is_array($data)) {
@@ -748,7 +748,7 @@ class Coupon extends \Shop\Product
                 )
             );
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
     }
 
@@ -783,7 +783,7 @@ class Coupon extends \Shop\Product
             $data = $db->conn->executeQuery($sql, $values, $types)
                              ->getchAllAssociative();
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $data = false;
         }
         if (is_array($data)) {
@@ -879,11 +879,11 @@ class Coupon extends \Shop\Product
 
         // Check that the requested status is valid
         if ($newstatus != self::VOID && $newstatus != self::VALID) {
-            Log::write('shop_system', Log::ERROR, __METHOD__ . ": Invalid status: $newstatus");
+            Log::error(__METHOD__ . ": Invalid status: $newstatus");
             return false;
         }
 
-        Log::write('shop_system', Log::DEBUG, "Setting $code as $newstatus");
+        Log::debug("Setting $code as $newstatus");
         $db = Database::getInstance();
         $qb = $db->conn->createQueryBuilder();
         try {
@@ -894,7 +894,7 @@ class Coupon extends \Shop\Product
                 array(Database::STRING)
             )->fetchAssociative();
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $data = false;
         }
         if (!is_array($data) || empty($data)) {
@@ -924,7 +924,7 @@ class Coupon extends \Shop\Product
             $qb->execute();
             self::writeLog($code, $data['redeemer'], $balance, $log_code);
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
         return true;
@@ -957,7 +957,7 @@ class Coupon extends \Shop\Product
         try {
             $data = $qb->execute()->fetchAllAssociative();
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $data = false;
         }
         if (is_array($data)) {
@@ -970,7 +970,7 @@ class Coupon extends \Shop\Product
                         array(Database::INTEGER, Database::STRING)
                     );
                 } catch (\Exception $e) {
-                    Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                    Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 }
                 self::writeLog($c, $A['redeemer'], $A['balance'], 'gc_expired');
             }
@@ -1016,7 +1016,7 @@ class Coupon extends \Shop\Product
                 "TRUNCATE {$_TABLES['shop.coupons']}"
             );
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
         try {
@@ -1024,7 +1024,7 @@ class Coupon extends \Shop\Product
                 "TRUNCATE {$_TABLES['shop.coupon_log']}"
             );
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
         return true;

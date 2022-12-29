@@ -139,7 +139,7 @@ class ProductOptionValue
                 array(Database::INTEGER)
             )->fetchAssociative();
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $row = false;
         }
         if (is_array($row)) {
@@ -225,7 +225,7 @@ class ProductOptionValue
             Cache::clear(self::$TABLE);
             return true;
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $this->AddError($err);
             return false;
         }
@@ -432,7 +432,7 @@ class ProductOptionValue
                 array(Database::INTEGER)
             )->fetchAllAssociative();
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $rows = false;
         }
         if (is_array($rows)) {
@@ -449,7 +449,7 @@ class ProductOptionValue
                             array(Database::INTEGER, Database::INTEGER)
                         );
                     } catch (\Throwable $e) {
-                        Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                        Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                         // Ignore error and continue.
                     }
                 }
@@ -495,7 +495,7 @@ class ProductOptionValue
                 );
                 self::reOrder($this->pog_id);
             } catch (\Throwable $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             }
         }
     }
@@ -805,7 +805,7 @@ class ProductOptionValue
             try {
                 $stmt = $qb->execute();
             } catch (\Throwable $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $stmt = false;
             }
             if ($stmt) {

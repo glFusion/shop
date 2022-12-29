@@ -421,17 +421,19 @@ case 'confirm':
     break;
 
 case 'cancel':
-    list($cart_id, $token) = explode('/', $actionval);
-    if (!empty($cart_id)) {
-        // Don't use getInstance() to avoid creating a new cart
-        $Cart = new Shop\Cart($cart_id, false);
-        if ($token == $Cart->getToken()) {
-            // Order ID may be reset due to an invalid status for a cart,
-            // so put it back.
-            $Cart->setOrderID($cart_id);
-            // Only reset if the token is valid, then update the token to
-            // invalidate further changes using this token.
-            $Cart->cancelFinal();
+    if (strpos($actionval, '/') > 0) {
+        list($cart_id, $token) = explode('/', $actionval);
+        if (!empty($cart_id)) {
+            // Don't use getInstance() to avoid creating a new cart
+            $Cart = new Shop\Order($cart_id);
+            if ($token == $Cart->getToken()) {
+                // Order ID may be reset due to an invalid status for a cart,
+                // so put it back.
+                $Cart->setOrderID($cart_id);
+                // Only reset if the token is valid, then update the token to
+                // invalidate further changes using this token.
+                $Cart->cancelFinal();
+            }
         }
     }
     // fall through to view cart

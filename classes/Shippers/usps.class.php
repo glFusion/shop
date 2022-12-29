@@ -575,9 +575,7 @@ class usps extends \Shop\Shipper
             }
         } catch ( Exception $ex ) {
             $Tracking->addError($LANG_SHOP['err_getting_info']);
-            Log::write('shop_system', Log::ERROR, 
-                'Error getting tracking info: ' . print_r($ex,true)
-            );
+            Log::error('Error getting tracking info: ' . print_r($ex,true));
         }
         $Tracking->setCache($this->key, $track_num);
         return $Tracking;

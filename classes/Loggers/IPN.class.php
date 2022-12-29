@@ -251,7 +251,7 @@ class IPN extends \Shop\Logger
             );
             return $db->conn->lastInsertId();
         } catch (\Exception $e) {
-            Log::write('shop_system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::error(__METHOD__ . ': ' . $e->getMessage());
             return 0;
         }
     }

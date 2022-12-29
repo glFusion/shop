@@ -73,7 +73,7 @@ class Product extends \Shop\Image
                 product_id = '{$this->record_id}',
                 nonce = '" . DB_escapeString($this->nonce) . "',
                 filename = '" . DB_escapeString($basename) . "'";
-            Log::write('shop_system', Log::DEBUG, $sql);
+            Log::debug($sql);
             $result = DB_query($sql);
             if (!$result) {
                 $this->_addError("uploadFiles() : Failed to insert {$filename}");

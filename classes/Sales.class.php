@@ -13,7 +13,7 @@
  */
 namespace Shop;
 use glFusion\Database\Database;
-use glFusion\Log\Log;
+use Shop\Log;
 use Shop\Models\Dates;
 use Shop\Models\DataArray;
 
@@ -100,7 +100,7 @@ class Sales
                 array(Database::INTEGER)
             )->fetchAssociative();
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $row = false;
         }
         if (is_array($row)) {
@@ -200,7 +200,7 @@ class Sales
                         array(Database::STRING, Database::INTEGER)
                     );
                 } catch (\Throwable $e) {
-                    Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                    Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                     $stmt = false;
                 }
                 if ($stmt) {
@@ -419,7 +419,7 @@ class Sales
                 );
             }
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
 
@@ -449,7 +449,7 @@ class Sales
                 array(Database::INTEGER)
             );
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
         Cache::clear(self::$base_tag);
@@ -482,7 +482,7 @@ class Sales
                     )
                 );
             } catch (\Throwable $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             }
         }
     }

@@ -48,29 +48,6 @@ list($action, $actionval) = $Request->getAction($expected);
 $view = 'list';
 
 switch ($action) {
-case 'updstatus':
-    echo "remove reports.php updatestatus";die;
-    $newstatus = $Request->getString('newstatus');
-    if ($newstatus == '') {
-        break;
-    }
-    $orders = $Request->getArray('orders');
-    $oldstatus = $Request->getArray('oldstatus');
-    foreach ($orders as $id=>$order_id) {
-        if (!isset($oldstatus[$order_id]) || $oldstatus[$order_id] != $newstatus) {
-            $Order = Shop\Order::getInstance($order_id);
-            if (!$Order->isNew) {
-                $Order->updateStatus($newstatus);
-                Log::write('shop_system', Log::INFO, "Updated order $order_id from {$oldstatus[$order_id]} to $newstatus");
-            }
-        }
-    }
-    $actionval = $Request->getString('run');
-    if ($actionval != '') {
-        $view = 'run';
-    }
-    break;
-
 default:
     $view = $action;
     break;
@@ -137,5 +114,3 @@ if (!empty($msg)) {
 $display .= $content;
 $display .= COM_siteFooter();
 echo $display;
-
-?>

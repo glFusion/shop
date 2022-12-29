@@ -69,7 +69,7 @@ class Webhook extends \Shop\Webhook
         // Get the Shop order record and make sure it's valid.
         $this->Order = Order::getInstance($this->getOrderId());
         if ($this->Order->isNew()) {
-            Log::write('shop_system', Log::ERROR, "Order {$this->getOrderId()} not found");
+            Log::error("Order {$this->getOrderId()} not found");
             return false;
         }
 

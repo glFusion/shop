@@ -16,14 +16,14 @@
 require_once '../../lib-common.php';
 use Shop\Log;
 
-// Get the complete IPN message prior to any processing
-Log::write('shop_system', Log::DEBUG, "Received IPN:");
-Log::write('shop_system', Log::DEBUG, var_export($_POST, true));
+// Debug logging
+Log::debug("Got IPN GET: " . var_export($_GET, true));
+Log::debug("Got IPN POST: " . var_export($_POST, true));
+Log::debug("Got php:://input: " . var_export(@file_get_contents('php://input'), true));
 
 // Process IPN request
-$ipn = \Shop\IPN::getInstance('paypal', $_POST);
-$ipn->Process();
+$IPN = \Shop\IPN::getInstance('paypal', $_POST);
+$IPN->Process();
 
 // Finished (this isn't necessary...but heck...why not?)
 echo "Thanks";
-

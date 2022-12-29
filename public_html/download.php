@@ -19,7 +19,7 @@
 /** Import core glFusion libraries */
 require_once('../lib-common.php');
 use glFusion\Database\Database;
-use glFusion\Log\Log;
+use Shop\Log;
 use Shop\Config;
 use Shop\Models\Request;
 
@@ -61,7 +61,7 @@ if ($id > 0) {
 try {
     $A = $qb->execute()->fetchAssociative();
 } catch (\Exception $e) {
-    Log::write('system', Log::ERROR, __FILE__.'/'.__LINE__. ': ' . $e->getMessage());
+    Log::system(Log::ERROR, __FILE__.'/'.__LINE__. ': ' . $e->getMessage());
     $A = false;
 }
 //  If a file was found, do the download.
@@ -76,24 +76,23 @@ if (is_array($A) && !empty($A['file'])) {
     // Check for errors
     if ($DL->areErrors()) {
         $errs = $DL->printErrors(false);
-        Log::write(
-            'shop_downloads', Log::ERROR,
+        Log::error(
             "{$_USER['username']} tried to download " .
-            "the file with id {$id} but for some reason could not"
+            "the file with id {$id} but for some reason could not."
         );
-        Log::write('shop_downloads', Log::ERROR, "SHOP-DWNLD: $errs");
+        Log::error("SHOP-DWNLD: $errs");
         echo COM_refresh($_CONF['site_url']);
     } else {
-        Log::write(
-            'shop_downloads', Log::ERROR,
+        Log::error(
             "{$_USER['username']} successfully downloaded "
             . "the file with id {$id}."
         );
     }
 } else {
-    Log::write('shop_downloads', Log::ERROR, "{$_USER['username']}/{$_USER['uid']} " .
-            "tried to download the file with id {$id} " .
-            "but this is not a downloadable file");
+    Log::error(
+        "{$_USER['username']}/{$_USER['uid']} " .
+        "tried to download the file with id {$id} " .
+        "but this is not a downloadable file."
+    );
     echo COM_refresh($_CONF['site_url']. '/index.php?msg=07&plugin=shop');
 }
-

@@ -158,7 +158,7 @@ class ipn extends \Shop\IPN
                     'price'     => $price,
                 ));
             }
-            Log::write('shop_system', Log::DEBUG, "Net Settled: {$this->getPmtGross()} {$this->getCurrency()->getCode()}");
+            Log::debug("Net Settled: {$this->getPmtGross()} {$this->getCurrency()->getCode()}");
             $this->handlePurchase();    // Order gets created here.
 
             // Set the billing and shipping address to at least get the name,

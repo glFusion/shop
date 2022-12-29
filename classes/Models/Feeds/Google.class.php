@@ -38,7 +38,7 @@ class Google extends \Shop\Models\Syndication
         $T = new Template('feeds/catalog/');
         $T->set_file('feed', 'google.thtml');
         if (!empty($T->last_error)) {
-            Log::write('shop_system', Log::ERROR, "Missing catalog feed template for {$this->fid}");
+            Log::error("Missing catalog feed template for {$this->fid}");
             return false;
         }
 

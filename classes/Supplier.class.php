@@ -78,7 +78,7 @@ class Supplier extends Address
                     array(Database::INTEGER)
                 )->fetchAssociative();
             } catch (\Throwable $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $A = false;
             }
             if (is_array($A)) {
@@ -446,7 +446,7 @@ class Supplier extends Address
                 $this->setID($db->conn->lastInsertId());
             }
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return 0;
         }
         return $this->getID();
@@ -470,7 +470,7 @@ class Supplier extends Address
                 array(Database::INTEGER)
             );
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
     }
 

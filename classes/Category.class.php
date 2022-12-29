@@ -289,7 +289,7 @@ class Category
                 prod_rule = " . $this->prod_rule;
             $sql = $sql1 . $sql2 . $sql3;
             //echo $sql;die;
-            Log::write('shop_system', Log::DEBUG, $sql);
+            Log::debug($sql);
             DB_query($sql);
             if (!DB_error()) {
                 if ($this->isNew) {

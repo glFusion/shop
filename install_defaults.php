@@ -1436,8 +1436,7 @@ function plugin_initconfig_shop()
             _addConfigItem($cfgItem);
         }
     } else {
-        Log::write('shop_system', Log::ERROR, 'initconfig error: Shop config group already exists');
+        Log::system(Log::ERROR, 'initconfig error: Shop config group already exists');
     }
     return true;
 }
-

@@ -17,6 +17,7 @@ use Shop\Config;
 use Shop\Cart;
 use Shop\Order;
 use Shop\Product;
+use Shop\Log;
 use Shop\Models\OrderStatus;
 use Shop\Models\ProductType;
 use Shop\Models\CustomInfo;
@@ -28,7 +29,6 @@ use Shop\Models\DataArray;
 use Shop\Cache;
 use glFusion\FileSystem;
 use glFusion\Database\Database;
-use glFusion\Log\Log;
 
 
 /**
@@ -223,7 +223,7 @@ class Gateway
                     array(Database::STRING)
                 )->fetchAssociative();
             } catch (\Exception $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $A = false;
             }
         }
@@ -433,7 +433,7 @@ class Gateway
             ON DUPLICATE KEY UPDATE
                 button = '{$btn_value}'";
         //echo $sql;die;
-        //Log::write('shop_system', Log::DEBUG, $sql);
+        //Log::debug($sql);
         DB_query($sql);
     }
 
@@ -514,7 +514,7 @@ class Gateway
             self::ReOrder();
             return true;
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
     }
@@ -595,7 +595,7 @@ class Gateway
                 array(Database::STRING)
             );
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
     }
 
@@ -653,7 +653,7 @@ class Gateway
                 Cache::clear(self::$TABLE);
                 return true;
             } catch (\Exception $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 return false;
             }
         }
@@ -677,7 +677,7 @@ class Gateway
             );
             Cache::clear(self::$TABLE);
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
     }
 
@@ -1757,7 +1757,7 @@ class Gateway
                 Cache::clear(self::$TABLE);
                 return true;
             } catch (\Exception $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 return false;
             }
         } else {
@@ -1796,7 +1796,7 @@ class Gateway
             // Bundled plugins that still have a gateway.json file
             // may get here. v1.5.0 upgrade removes those files so this
             // should happen only once.
-            Log::write('system', Log::ERROR, var_export($this->readJSON(),true));
+            Log::system(Log::ERROR, var_export($this->readJSON(),true));
             return 'unknown';
         }
     }
@@ -1868,7 +1868,7 @@ class Gateway
      */
     public function sendPayouts(array &$Payouts) : void
     {
-        Log::write('shop_system', Log::ERROR, "Payouts not implemented for gateway {$this->gw_name}");
+        Log::error("Payouts not implemented for gateway {$this->gw_name}");
         foreach ($Payouts as $Payout) {
             $Payout['txn_id'] = 'n/a';
         }

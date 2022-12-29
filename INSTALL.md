@@ -29,8 +29,6 @@ then you may manually install the plugin.
 
 3. Crete the working directories for the plugin.
 ```
-    touch <private>/logs/shop_downloads.log
-    chmod 666 <private>/logs/shop_downloads.log
     cd private/data
     mkdir shop
     mkdir shop/keys

@@ -13,7 +13,7 @@
  */
 namespace Shop;
 use glFusion\Database\Database;
-use glFusion\Log\Log;
+use Shop\Log;
 use Shop\Models\DataArray;
 use Shop\Util\JSON;
 
@@ -138,7 +138,7 @@ class Package
                 array(Database::INTEGER)
             )->fetchAssociative();
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $row = false;
         }
         $retval = new self;
@@ -280,7 +280,7 @@ class Package
             }
             return true;
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
     }
@@ -308,7 +308,7 @@ class Package
             );
             return true;
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
     }
@@ -895,7 +895,7 @@ class Package
 
             if ($item['packed'] !== true) {
                 // This shipper cannot handle this item
-                Log::write('shop_system', Log::ERROR, "Error packing " . print_r($item,true));
+                Log::error("Error packing " . print_r($item,true));
                 // Flag the total rate as NULL to indicate that this shipper
                 // cannot be used.
                 break;

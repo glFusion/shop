@@ -13,7 +13,7 @@
  */
 namespace Shop;
 use glFusion\Database\Database;
-use glFusion\Log\Log;
+use Shop\Log;
 use Shop\Models\Dates;
 use Shop\Models\ShippingQuote;
 use Shop\Models\DataArray;
@@ -232,7 +232,7 @@ class Shipper
                 array(Database::INTEGER)
             )->fetchAssociative();
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $A = false;
         }
         if (is_array($A)) {
@@ -657,7 +657,7 @@ class Shipper
                 }
                 $stmt = $qb->execute();
             } catch (\Throwable $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $stmt = false;
             }
             if ($stmt) {
@@ -958,7 +958,7 @@ class Shipper
             }
             if ($item['packed'] !== true) {
                 // This shipper cannot handle this item
-                Log::write('shop_system', Log::ERROR, "Error packing " . print_r($item,true));
+                Log::error("Error packing " . print_r($item,true));
                 // Flag the total rate as NULL to indicate that this shipper
                 // cannot be used.
                 $total_rate = NULL;
@@ -1042,7 +1042,7 @@ class Shipper
             Cache::clear(self::$TABLE);
             $status = true;
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $status = false;
         }
 
@@ -1077,7 +1077,7 @@ class Shipper
                 Cache::clear(self::$TABLE);
                 return true;
             } catch (\Throwable $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 return false;
             }
         }
@@ -1772,7 +1772,7 @@ class Shipper
                 array(Database::STRING, Database::STRING)
             );
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
         return true;

@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Shop\Models;
+use Shop\Log;
 
 
 /**
@@ -48,7 +49,7 @@ class Token
                 $bytes = random_bytes(ceil($len / 2));
                 $retval = substr(bin2hex($bytes), 0, $len);
             } catch (\Exception $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             }
         } elseif ($format & self::SID) {
             $retval = COM_makeSid();

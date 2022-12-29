@@ -18,7 +18,7 @@ use Shop\GatewayManager;
 use Shop\Payment as pmtClass;
 use Shop\FieldList;
 use glFusion\Database\Database;
-use glFusion\Log\Log;
+use Shop\Log;
 
 
 /**
@@ -260,7 +260,7 @@ class payment extends \Shop\Report
                 array(Database::INTEGER)
             )->fetchAssociative();
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $A = false;
         }
         if (empty($A)) {
@@ -276,7 +276,7 @@ class payment extends \Shop\Report
                 array(Database::STRING, Database::STRING)
             )->fetchAllAssociative();
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $ipns = false;
         }
         if (is_array($ipns)) {

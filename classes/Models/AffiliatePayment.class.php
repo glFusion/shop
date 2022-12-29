@@ -13,7 +13,7 @@
  */
 namespace Shop\Models;
 use glFusion\Database\Database;
-use glFusion\Log\Log;
+use Shop\Log;
 use Shop\Currency;
 use Shop\Config;
 use Shop\Customer;
@@ -66,7 +66,7 @@ class AffiliatePayment
                     array(Database::INTEGER)
                 )->fetchAssociative();
             } catch (\Exception $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $A = false;
             }
             if (is_array($A)) {
@@ -210,7 +210,7 @@ class AffiliatePayment
         $min_pmt = (float)Config::get('aff_min_payment');
         $statuses = OrderStatus::getAffiliateEligible();
         if (empty($statuses)) {
-            Log::write('shop_system', Log::INFO, 'No order statuses are eligible for affiliate payments');
+            Log::info('No order statuses are eligible for affiliate payments');
             return false;
         }
 
@@ -232,7 +232,7 @@ class AffiliatePayment
                        ->setParameter('statuses', array_keys($statuses), Database::PARAM_STR_ARRAY)
                        ->execute();
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $stmt = false;
         }
         if (!$stmt) {
@@ -314,7 +314,7 @@ class AffiliatePayment
                 );
                 $this->withPmtId($db->conn->lastInsertId());
             } catch (\Exception $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 return false;
             }
         } else {
@@ -337,7 +337,7 @@ class AffiliatePayment
                     )
                 );
             } catch (\Exception $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 return false;
             }
         }
@@ -363,7 +363,7 @@ class AffiliatePayment
                 ORDER BY aff_pmt_method ASC"
             );
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $stmt = false;
         }
         if ($stmt) {
@@ -419,7 +419,7 @@ class AffiliatePayment
                         array(Database::STRING, Database::INTEGER)
                     );
                 } catch (\Exception $e) {
-                    Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                    Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 }
             }
         }

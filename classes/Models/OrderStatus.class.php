@@ -13,7 +13,7 @@
  */
 namespace Shop\Models;
 use glFusion\Database\Database;
-use glFusion\Log\Log;
+use Shop\Log;
 use Shop\FieldList;
 use Shop\Template;
 use Shop\Config;
@@ -167,7 +167,7 @@ class OrderStatus
                 array(Database::INTEGER)
             )->fetchAssociative();
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $data = false;
         }
         $retval = new self;
@@ -196,7 +196,7 @@ class OrderStatus
                     ORDER BY orderby ASC"
                 )->fetchAllAssociative();
             } catch (\Exception $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $data = false;
             }
             if (is_array($data)) {
@@ -347,7 +347,7 @@ class OrderStatus
         try {
             $data = $db->conn->executeQuery($sql, $values, $types)->fetchAllAssociative();
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $data = false;
         }
         if (is_array($data)) {
@@ -708,7 +708,7 @@ class OrderStatus
                 );
                 $this->id = $db->conn->lastInsertId();
             } catch (\Exception $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 return false;
             }
         } else {
@@ -732,7 +732,7 @@ class OrderStatus
                 );
                 $this->id = $db->conn->lastInsertId();
             } catch (\Exception $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 return false;
             }
         }

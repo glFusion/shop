@@ -193,7 +193,7 @@ class Address
                         array(Database::INTEGER)
                     )->fetchAssociative();
                 } catch (\Throwable $e) {
-                    Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                    Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                     $row = false;
                 }
                 if (!empty($row)) {
@@ -626,7 +626,7 @@ class Address
                     array(Database::INTEGER)
                 )->fetchAllAssociative();
             } catch (\Throwable $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $data = false;
             }
             if (!empty($data)) {
@@ -931,7 +931,7 @@ class Address
                 );
             }
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
 
         if ($this->addr_id > 0) {
@@ -947,7 +947,7 @@ class Address
                             array(Database::INTEGER, Database::INTEGER)
                         );
                     } catch (\Throwable $e) {
-                        Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                        Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                     }
                 }
             }
@@ -1065,7 +1065,7 @@ class Address
                 array(Database::INTEGER)
             );
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
         return true;
@@ -1094,7 +1094,7 @@ class Address
                 array(Database::PARAM_INT_ARRAY, Database::INTEGER)
             );
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
     }
 

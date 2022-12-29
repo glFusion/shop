@@ -178,7 +178,7 @@ class PackingList extends Invoice
             //$html2pdf->setModeDebug();
             $html2pdf->setDefaultFont('Arial');
         } catch(HTML2PDF_exception $e) {
-            Log::write('shop_system', Log::ERROR, $e);
+            Log::error($e);
             return false;
         }
 
@@ -195,7 +195,7 @@ class PackingList extends Invoice
             try {
                 $html2pdf->writeHTML($content);
             } catch(HTML2PDF_exception $e) {
-                Log::write('shop_system', Log::ERROR, $e);
+                Log::error($e);
                 return false;
             }
         }

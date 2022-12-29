@@ -689,7 +689,7 @@ class Cart extends Order
                     array(Database::INTEGER, Database::STRING)
                 )->fetchAssociative();
             } catch (\Throwable $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $row = false;
             }
             if (is_array($row)) {
@@ -735,7 +735,7 @@ class Cart extends Order
             $msg .= " except $save";
         }
         DB_query($sql);
-        Log::write('shop_system', Log::DEBUG, $msg);
+        Log::debug($msg);
     }
 
 
@@ -873,7 +873,7 @@ class Cart extends Order
     {
         global $_TABLES;
         DB_delete($_TABLES['shop.orders'], 'status', OrderStatus::CART);
-        Log::write('shop_system', Log::INFO, "All carts for all users deleted");
+        Log::info("All carts for all users deleted");
     }
 
 
@@ -1136,7 +1136,7 @@ class Cart extends Order
                       ->execute()
                       ->fetchAssociative();
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $row = false;
         }
         if (is_array($row)) {

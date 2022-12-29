@@ -14,7 +14,7 @@
  */
 namespace Shop;
 use glFusion\Database\Database;
-use glFusion\Log\Log;
+use Shop\Log;
 use Shop\Models\Session;
 use Shop\Models\ProductType;
 use Shop\Cart;
@@ -113,7 +113,7 @@ class Workflow
             try {
                 $stmt = $qb->execute();
             } catch (\Throwable $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $stmt = false;
             }
             if ($stmt) {
@@ -329,7 +329,7 @@ class Workflow
                 array(Database::INTEGER, Database::INTEGER)
             );
         } catch (\Throwable $e) {
-            Log::write('shop_system', Log::ERROR, $e->getMessage());
+            Log::error($e->getMessage());
             return -1;
         }
         Cache::clear(self::$TABLE);

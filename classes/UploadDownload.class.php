@@ -18,7 +18,7 @@
  * @filesource
  */
 namespace Shop;
-use glFusion\Log\Log;
+use Shop\Log;
 
 
 /**
@@ -158,7 +158,7 @@ class UploadDownload
         $nwarnings = $nwarnings + 1;
         $this->_warnings[$nwarnings] = $warningText;
         if ($this->loggingEnabled()) {
-            Log::write('shop_system', Log::WARNING, $warningText);
+            Log::warn($warningText);
         }
     }
 
@@ -174,7 +174,7 @@ class UploadDownload
         $nerrors = $nerrors + 1;
         $this->_errors[$nerrors] = $errorText;
         if ($this->loggingEnabled()) {
-            Log::write('shop_system', Log::ERROR, $errorText);
+            Log::error($errorText);
         }
     }
 
@@ -190,7 +190,7 @@ class UploadDownload
         $nmsgs = $nmsgs + 1;
         $this->_debugMessages[$nmsgs] = $debugText;
         if ($this->loggingEnabled()) {
-            Log::write('shop_system', Log::DEBUG, $debugText);
+            Log::debug($debugText);
         }
     }
 
@@ -334,9 +334,7 @@ class UploadDownload
         }
 
         if ($this->_currentFile['size'] > $this->_maxFileSize) {
-            Log::write('shop_system', Log::WARNING, 
-                "Uploaded file: ".$this->_currentFile['name']." exceeds max file size of " . $this->_maxFileSize
-            );
+            Log::warn("Uploaded file: ".$this->_currentFile['name']." exceeds max file size of " . $this->_maxFileSize);
             return false;
         } else {
             return true;

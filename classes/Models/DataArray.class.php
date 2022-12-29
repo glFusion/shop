@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Shop\Models;
+use Shop\Log;
 
 
 /**
@@ -62,7 +63,7 @@ class DataArray implements \ArrayAccess, \Iterator
         try {
             $A = json_decode($str, true);
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ": Error decoding $str");
+            Log::system(Log::ERROR, __METHOD__ . ": Error decoding $str");
             $A = array();
         }
         return new self($A);

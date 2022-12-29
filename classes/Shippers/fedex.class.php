@@ -296,13 +296,13 @@ class fedex extends \Shop\Shipper
                 }
             } catch (\Exception $e) {
                 $Tracking->addError($LANG_SHOP['err_getting_info']);
-                Log::write('shop_system', Log::ERROR,
+                Log::error(
                     __METHOD__ . '() Line ' . __LINE__ .
                     ' Error getting tracking info: ' . print_r($ex,true)
                 );
             }
         } else {
-            Log::write('shop_system', Log::ERROR,
+            Log::error(
                 __METHOD__ . '()- Error getting tracking info: ' .
                 print_r($response,true)
             );
@@ -430,7 +430,7 @@ class fedex extends \Shop\Shipper
             try {
                 $response = $_soapClient->getRates($req);
             } catch (\Exception $e) {
-                Log::write('shop_system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::error(__METHOD__ . ': ' . $e->getMessage());
                 $response = NULL;
             }
             if (
@@ -463,7 +463,7 @@ class fedex extends \Shop\Shipper
                     ->setCost($cost + $fixed_cost + $this->item_shipping['amount'])
                     ->setPackageCount(count($Packages));
             } else {
-                Log::write('shop_system', Log::ERROR,
+                Log::error(
                     __METHOD__ . "() Error getting Fedex quote for order {$Order->getOrderID()} " .
                     print_r($response,true)
                 );

@@ -58,7 +58,7 @@ class table extends \Shop\Tax
                     array(Database::STRING, Database::STRING, Database::STRING)
                 )->fetchAssociative();
             } catch (\Throwable $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $A = false;
             }
 
@@ -311,7 +311,7 @@ class table extends \Shop\Tax
                     array(Database::STRING)
                 )->fetchAssociative();
             } catch (\Throwable $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $A = false;
             }
         }
@@ -369,7 +369,7 @@ class table extends \Shop\Tax
                 array(Database::PARAM_STR_ARRAY)
             );
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
     }
 
@@ -430,7 +430,7 @@ class table extends \Shop\Tax
                 $types
             );
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
         return true;
@@ -468,7 +468,7 @@ class table extends \Shop\Tax
             foreach ($upload->getFilenames() as $fname) {
                 $filename = $_CONF['path_data'] . $fname;
                 if (!is_file($filename)) { // empty upload form
-                    Log::write('shop_system', Log::ERROR, "Tax upload file $filename not found");
+                    Log::error("Tax upload file $filename not found");
                     echo COM_refresh(SHOP_ADMIN_URL . '/index.php?taximport');
                 }
             }
@@ -566,7 +566,7 @@ class table extends \Shop\Tax
                         );
                         $successes++;
                     } catch (\Throwable $e) {
-                        Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                        Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                         $failures++;
                     }
                 }

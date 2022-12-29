@@ -92,23 +92,14 @@ if (file_exists(__DIR__ . '/config.php')) {
     include_once __DIR__ . '/config.php';
 }
 
-Log::config('shop_system',
+Log::config('shop',
     array(
       'type'  => 'file',
       'path'  => $_CONF['path_log'],
-      'file'  => 'shop_system.log',
+      'file'  => 'shop.log',
       'level' => Config::get('log_level'),
     )
 );
-Log::config('shop_downloads',
-    array(
-      'type'  => 'file',
-      'path'  => $_CONF['path_log'],
-      'file'  => 'shop_downloads.log',
-      'level' => Log::INFO,
-    )
-);
-
 
 //  Set user ID = 1 for anonymous users.
 if (empty($_USER['uid']) || $_USER['uid'] < 2) {
@@ -313,7 +304,7 @@ function plugin_deletecomment_shop($cid, $id)
                     array(Database::STRING, Database::INTEGER)
                 );
             } catch (\Throwable $e) {
-                Log::write('system', Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
             }
             // Redirect back to the product detail page
             return COM_refresh(Config::get('url') . '/detail.php?id=' . $id);
@@ -877,7 +868,7 @@ function plugin_enablestatechange_shop($enabled)
                 array(Database::INTEGER, Database::STRING)
             );
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
         }
     }
     if (!$enabled) {
@@ -887,7 +878,7 @@ function plugin_enablestatechange_shop($enabled)
                 "UPDATE {$_TABLES['blocks']} SET is_enabled = 0 WHERE name LIKE 'phpblock_shop_%'"
             );
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
         }
     }
 }
@@ -915,7 +906,7 @@ function plugin_itemdeleted_shop($id, $type)
                 array(Database::INTEGER, Database::STRING)
             );
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
         }
         unset($_POST['enabledplugins'][Config::PI_NAME]);
         unset($_POST['pluginarray'][Config::PI_NAME]);
@@ -927,7 +918,7 @@ function plugin_itemdeleted_shop($id, $type)
                 array(Database::STRING, Database::STRING)
             );
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
         }
     }
 }
@@ -1181,7 +1172,7 @@ function phpblock_shop_categories()
         try {
             $stmt = $qb->execute();
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
             $stmt = false;
         }
         if ($stmt) {
@@ -1255,7 +1246,7 @@ function phpblock_shop_popular()
            ->setMaxResults($limit)
            ->execute();
     } catch (\Throwable $e) {
-        Log::write('system', Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
+        Log::system(Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
         $stmt = false;
     }
     $retval = SHOP_phpblock_product($stmt);
@@ -1610,7 +1601,7 @@ function plugin_runScheduledTask_shop()
                        ->execute()
                        ->fetchAllAssociative();
         } catch (\Exception $e) {
-            Log::write('system', Log::ERRROR, __FUNCTION__ . ': ' . $e->getMessage());
+            Log::system(Log::ERRROR, __FUNCTION__ . ': ' . $e->getMessage());
             $data = false;
         }
         if (!empty($data)) {
@@ -1633,7 +1624,7 @@ function plugin_runScheduledTask_shop()
             array(Database::STRING)
         )->fetchAllAssociative();
     } catch (\Exception $e) {
-        Log::write('system', Log::ERRROR, __FUNCTION__ . ': ' . $e->getMessage());
+        Log::system(Log::ERRROR, __FUNCTION__ . ': ' . $e->getMessage());
         $data = false;
     }
     if (!empty($data)) {
@@ -1653,7 +1644,7 @@ function plugin_runScheduledTask_shop()
             WHERE last_update < NOW() - INTERVAL 120 DAY"
         );
     } catch (\Exception $e) {
-        Log::write('system', Log::ERRROR, __FUNCTION__ . ': ' . $e->getMessage());
+        Log::system(Log::ERRROR, __FUNCTION__ . ': ' . $e->getMessage());
     }
 
     if (Shop\Order::redactPII() > 0) {
@@ -1819,7 +1810,7 @@ function plugin_configmanager_use_sku_shop_validate($val)
                 "SELECT COUNT(DISTINCT name) FROM {$_TABLES['shop.products']}"
             )->fetchAssociative();
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
             $uniq_skus = false;
         }
         $uniq_skus = (int)$uniq_skus;
@@ -1992,7 +1983,7 @@ function SHOP_child_cat_product_count($p_cat)
             array(Database::INTEGER, Database::INTEGER)
         );
     } catch (\Throwable $e) {
-        Log::write('system', Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
+        Log::system(Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
         $stmt = false;
     }
     if ($stmt) {
@@ -2158,7 +2149,7 @@ function plugin_getiteminfo_shop($id, $what, $uid=0, $options=array())
     try {
         $stmt = $qb->execute();
     } catch (\Throwable $e) {
-        Log::write('system', Log::INFO, __FUNCTION__ . ': ' . $e->getMessage());
+        Log::system(Log::INFO, __FUNCTION__ . ': ' . $e->getMessage());
         $stmt = false;
     }
 
@@ -2312,7 +2303,7 @@ function plugin_itemsaved_shop(string $id, string $type, ?string $old_id = NULL)
             array(Database::STRING, Database::STRING)
         );
     } catch (\Throwable $e) {
-        Log::write('system', Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
+        Log::system(Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
     }
 }
 
@@ -2457,7 +2448,7 @@ function SHOP_getVar($A, $varname, $type = 'string', $default = NULL, $emptyok =
     }
 
     if (!is_array($A)) {
-        Log::write('system', Log::ERROR, __FUNCTION__ . ': Invalid array provided ' . var_export($A,true));
+        Log::system(Log::ERROR, __FUNCTION__ . ': Invalid array provided ' . var_export($A,true));
         return $default;
     }
     if (!array_key_exists($varname, $A)) {

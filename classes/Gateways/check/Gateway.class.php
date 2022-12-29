@@ -286,7 +286,7 @@ class Gateway extends \Shop\Gateway
             // inventory item.  Otherwise, it should be a plugin-supplied
             // item with the item number like pi_name:item_number:options
             if (SHOP_is_plugin_item($item_number)) {
-                Log::write('shop_system', Log::DEBUG, "handlePurchase for Plugin item " . $item_number);
+                Log::debug("handlePurchase for Plugin item " . $item_number);
 
                 // Initialize item info array to be used later
                 $A = array();
@@ -306,7 +306,7 @@ class Gateway extends \Shop\Gateway
                 if (!empty($product_info)) {
                     $items[$id]['name'] = $product_info['name'];
                 }
-                Log::write('shop_system', Log::DEBUG, "Got name " . $items[$id]['name']);
+                Log::debug("Got name " . $items[$id]['name']);
                 $vars = array(
                         'item' => $item,
                         'ipn_data' => array(),
@@ -330,7 +330,7 @@ class Gateway extends \Shop\Gateway
                 $prod_types |= ProductType::VIRTUAL;
 
             } else {
-                Log::write('shop_system', Log::DEBUG, "Shop item " . $item_number);
+                Log::debug("Shop item " . $item_number);
                 $P = new \Shop\Product($item_number);
                 $A = array('name' => $P->name,
                     'short_description' => $P->short_description,
@@ -355,7 +355,7 @@ class Gateway extends \Shop\Gateway
 
             // An invalid item number, or nothing returned for a plugin
             if (empty($A)) {
-                Log::write('shop_system', Log::DEBUG, "Item {$item['item_number']} not found");
+                Log::debug("Item {$item['item_number']} not found");
                 continue;
             }
 
@@ -409,7 +409,7 @@ class Gateway extends \Shop\Gateway
                     )
                 );
             } catch (\Exception $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             }
         }   // foreach item
 

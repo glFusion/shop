@@ -139,7 +139,7 @@ class ShipmentPL
             //$html2pdf->setModeDebug();
             $html2pdf->setDefaultFont('Arial');
         } catch(HTML2PDF_exception $e) {
-            Log::write('shop_system', Log::ERROR, $e);
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
 
@@ -156,7 +156,7 @@ class ShipmentPL
             try {
                 $html2pdf->writeHTML($content);
             } catch(HTML2PDF_exception $e) {
-                Log::write('shop_system', Log::ERROR, $e);
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 return false;
             }
         }

@@ -13,7 +13,7 @@
  */
 namespace Shop;
 use glFusion\Database\Database;
-use glFusion\Log\Log;
+use Shop\Log;
 
 
 /**
@@ -615,7 +615,7 @@ class Affiliate
             $db->conn->executeStatement("TRUNCATE {$_TABLES['shop.affiliate_sales']}");
             $db->conn->executeStatement("TRUNCATE {$_TABLES['shop.affiliate_payments']}");
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
     }
 
@@ -650,7 +650,7 @@ class Affiliate
         try {
             $data = $db->conn->executeQuery($sql);
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
             $data = false;
         }
         if (!empty($data)) {
@@ -664,7 +664,7 @@ class Affiliate
                         array(Database::INTEGER, Database::STRING, Database::STRING)
                     );
                 } catch (\Exception $e) {
-                    Log::write('system', Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
+                    Log::system(Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
                 }
             }
         }

@@ -94,7 +94,7 @@ if ($price !== NULL) {
     $args['override'] = true;
 }
 $new_qty = $Cart->addItem($args);
-Log::write('shop_system', Log::DEBUG, "Adding $item_number, qty $new_qty");
+Log::debug("Adding $item_number, qty $new_qty");
 $msg = $LANG_SHOP['msg_item_added'];
 if ($new_qty === false) {
     $msg = $LANG_SHOP['out_of_stock'];

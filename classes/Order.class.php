@@ -334,7 +334,7 @@ class Order
                 array('invoice_id' => $inv_num)
             );
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $order_id = false;
         }
         if ($order_id) {
@@ -367,7 +367,7 @@ class Order
                 array(Database::INTEGER)
             );
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $stmt = false;
         }
         if ($stmt) {
@@ -446,7 +446,7 @@ class Order
                 array(Database::STRING)
             )->fetchAssociative();
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $row = false;
         }
         if (is_array($row)) {
@@ -494,7 +494,7 @@ class Order
                 $retval[$A['order_id']]->setVars($A);
             }
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
         return $retval;
     }
@@ -928,7 +928,7 @@ class Order
                 array(Database::STRING)
             );
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $db->conn->rollback();
             return false;
         }
@@ -939,7 +939,7 @@ class Order
                 array(Database::STRING)
             );
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $db->conn->rollback();
             return false;
         }
@@ -950,7 +950,7 @@ class Order
                 array(Database::STRING)
             );
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $db->conn->rollback();
             return false;
         }
@@ -1075,7 +1075,7 @@ class Order
                     $values['order_id'] = $this->order_id;
                     $done = false;      // Try the loop again
                 } catch (\Throwable $e) {
-                    Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                    Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                     // DB error, mark done to break loop but set status to 
                     // false to skip saving items.
                     $done = true;
@@ -1095,7 +1095,7 @@ class Order
             try {
                 $db->conn->update($_TABLES['shop.orders'], $values, $where, $types);
             } catch (\Exception $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             }
         }
 
@@ -1136,7 +1136,7 @@ class Order
                 $types
             );
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
         return $this;
     }
@@ -1249,7 +1249,7 @@ class Order
                 }
                 $qb->execute();
             } catch (\Exception $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             }
         } else {
             try {
@@ -1260,7 +1260,7 @@ class Order
                     array(Database::STRING, Database::STRING)
                 );
             } catch (\Exception $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $this->status = $oldstatus;     // update in-memory object
             }
         }
@@ -1391,7 +1391,7 @@ class Order
                 )->fetchAssociative();
                 $count[$uid] = (int)$data['total'];
             } catch (\Exception $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $count[$uid] = 0;
             }
         }
@@ -1441,7 +1441,7 @@ class Order
             );
             return true;
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
     }
@@ -1492,7 +1492,7 @@ class Order
 
             $text = $this->_prepareNotification($T, $gw_msg, true);
 
-            Log::write('shop_system', Log::DEBUG, "Sending email to " . $this->uid . ' at ' . $this->buyer_email);
+            Log::debug("Sending email to " . $this->uid . ' at ' . $this->buyer_email);
             if (isset($LANG_SHOP['subj_email_user'][$status])) {
                 $subject = $LANG_SHOP['subj_email_user'][$status];
             } else {
@@ -1510,7 +1510,7 @@ class Order
                      ->setSubject(htmlspecialchars($subject))
                      ->setMessage($text, true)
                      ->send();*/
-            Log::write('shop_system', Log::DEBUG, "Buyer Notification Done.");
+            Log::debug("Buyer Notification Done.");
             $LANG_SHOP = $save_language;    // Restore the default language
         }
 
@@ -1530,7 +1530,7 @@ class Order
 
             $text = $this->_prepareNotification($T, $gw_msg, false);
 
-            Log::write('shop_system', Log::DEBUG, "Sending email to admin at " . $Shop->getEmail());
+            Log::debug("Sending email to admin at " . $Shop->getEmail());
             COM_emailNotification(array(
                 'to' => array('email' => $Shop->getEmail(), 'name' => $Shop->getCompany()),
                 'from' => Company::getInstance()->getEmail(),
@@ -1541,7 +1541,7 @@ class Order
                      ->setSubject($LANG_SHOP['subj_email_admin'])
                      ->setMessage($text, true)
                      ->send();*/
-            Log::write('shop_system', Log::DEBUG, "Admin Notification Done.");
+            Log::debug("Admin Notification Done.");
         }
         return $this;
     }
@@ -1851,7 +1851,7 @@ class Order
                 array(Database::STRING)
             )->fetchAllAssociative();
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $log = array();
         }
         return $log;
@@ -2847,7 +2847,7 @@ class Order
             )->fetchAssociative();
             $count = (int)$data['total'];
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $count = 0;
         }
         return ($count > 0 || IPN::Count() > 0);
@@ -3480,7 +3480,7 @@ class Order
         if (OrderStatus::isValid($newstatus)) {
             $this->status = $newstatus;
         } else {
-            Log::write('shop_system', Log::ERROR, "Invalid log status '{$newstatus}' specified for order {$this->getOrderID()}");
+            Log::error("Invalid log status '{$newstatus}' specified for order {$this->getOrderID()}");
         }
         return $this;
     }
@@ -4168,7 +4168,7 @@ class Order
         global $_TABLES, $LANG_SHOP, $_CONF;
 
         if ($this->isNew()) {
-            Log::write('shop_system', Log::DEBUG, "Cart ID $cart_id was not found");
+            Log::debug("Cart ID $cart_id was not found");
             // Cart not found, do nothing
             return $this;
         }
@@ -4197,9 +4197,7 @@ class Order
             // Update the order status and date
             $this->setStatus($newstatus, true, false)->setOrderDate()->Save(false);
 
-            Log::write('shop_system', Log::DEBUG,
-                "Cart {$this->order_id} status changed from $oldstatus to $newstatus"
-            );
+            Log::debug("Cart {$this->order_id} status changed from $oldstatus to $newstatus");
         }
         Session::set('order_id', $this->getOrderID());
         return $this;
@@ -4330,7 +4328,7 @@ class Order
                     array('order_id' => $this->order_id)
                 );
             } catch (\Throwable $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             }
         }
         return $this;
@@ -4378,7 +4376,7 @@ class Order
                 array(Database::INTEGER, Database::STRING)
             );
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
     }
 
@@ -4421,7 +4419,7 @@ class Order
                 array(Database::INTEGER, Database::INTEGER)
             );
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
     }
 
@@ -4444,7 +4442,7 @@ class Order
                 array(Database::INTEGER, Database::INTEGER)
             );
         } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
     }
 
@@ -4482,7 +4480,7 @@ class Order
                     array(Database::INTEGER, Database::PARAM_STR_ARRAY)
                 )->fetchAllAssociative();
             } catch (\Exception $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $ids = false;
             }
             if (is_array($ids)) {
@@ -4525,7 +4523,7 @@ class Order
                            ->setParameter('states', $order_states, Database::PARAM_STR_ARRAY)
                            ->execute();
             } catch (\Exception $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                 $rows = 0;
             }
             break;
@@ -4569,7 +4567,7 @@ class Order
                       ->execute()
                       ->fetchAssociative();
         } catch (\Throwable $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $row = false;
         }
         if (is_array($row)) {
