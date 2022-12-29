@@ -18,6 +18,7 @@ use Shop\ProductVariant;
 use Shop\ProductOptionGroup;
 use Shop\Models\Request;
 use Shop\Models\ProductCheckbox;
+use Shop\Models\OrderStatus;
 
 
 /**
@@ -41,6 +42,19 @@ class itempurchase extends \Shop\Report
      */
     private $item_dscp;
 
+    /** All possible allowed order statuses.
+     * Excludes cart.
+     * @var array */
+    private $default_statuses = array(
+        OrderStatus::INVOICED,
+        OrderStatus::PENDING,
+        OrderStatus::PROCESSING,
+        OrderStatus::SHIPPED,
+        OrderStatus::CLOSED,
+        OrderStatus::REFUNDED,
+    );
+
+
     /**
      * Constructor.
      */
@@ -48,7 +62,7 @@ class itempurchase extends \Shop\Report
     {
         $this->filter_item = true;
         $this->filter_uid = false;
-        $this->filter_status = false;
+        //$this->filter_status = false;
         // This report doesn't show carts
         parent::__construct();
     }
@@ -125,12 +139,24 @@ class itempurchase extends \Shop\Report
             'direction' => 'DESC',
         );
 
-        $where = " WHERE ord.status <> 'cart'
-            AND oi.product_id = '{$this->item_id}'
+        $where = " WHERE oi.product_id = '{$this->item_id}'
             AND (ord.order_date >= '$from_date'
             AND ord.order_date <= '$to_date')";
         if ($this->uid > 0) {
             $where .= " AND uid = {$this->uid}";
+        }
+        $orderstatus = $this->allowed_statuses;
+        if (empty($orderstatus)) {
+            $orderstatus = self::_getSessVar('orderstatus');
+        }
+        if (empty($orderstatus)) {
+            // If still empty, may come from a direct link instead of the
+            // report config page. Allow all valid "order" statuses.
+            // Excludes cart.
+            $orderstatus = $this->default_statuses;
+        }
+        if (!empty($orderstatus)) {
+            $where .= " AND ord.status IN ('" . implode("','", $orderstatus) . "')";
         }
 
         $query_arr = array(
