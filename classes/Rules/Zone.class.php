@@ -473,7 +473,7 @@ class Zone
         $display = COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
         $display .= FieldList::buttonLink(array(
             'text' => $LANG_SHOP['new_item'],
-            'url' => SHOP_ADMIN_URL . '/rules.php?rule_edit=0',
+            'url' => SHOP_ADMIN_URL . '/rules.php?zr_edit=0',
             'style' => 'success',
         ) );
         $text_arr = array(
@@ -527,7 +527,7 @@ class Zone
         switch($fieldname) {
         case 'edit':
             $retval .= FieldList::edit(array(
-                'url' => SHOP_ADMIN_URL . "/rules.php?rule_edit={$A['rule_id']}",
+                'url' => SHOP_ADMIN_URL . "/rules.php?zr_edit={$A['rule_id']}",
             ) );
             break;
 
