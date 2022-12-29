@@ -16,7 +16,7 @@
  * @filesource
  */
 namespace Shop\Gateways\test;
-use Shop\Cart;
+use Shop\Order;
 use Shop\Coupon;
 use Shop\Currency;
 use Shop\Template;
@@ -48,7 +48,7 @@ class Gateway extends \Shop\Gateway
      *
      * @param   array   $A      Array of fields from the DB
      */
-    public function __construct($A=array())
+    public function __construct(array $A=array())
     {
         // These are used by the parent constructor, set them first.
         $this->do_redirect = false; // handled internally
@@ -75,7 +75,7 @@ class Gateway extends \Shop\Gateway
      *  @param  object  $cart   Shopping cart
      *  @return string          HTML for input vars
      */
-    public function gatewayVars($cart)
+    public function gatewayVars(Order $cart) : string
     {
         global $_USER;
 
@@ -222,7 +222,7 @@ class Gateway extends \Shop\Gateway
      *
      * @return  boolean     True
      */
-    public function allowNoIPN()
+    public function allowNoIPN() : bool
     {
         return true;
     }
@@ -236,7 +236,7 @@ class Gateway extends \Shop\Gateway
      *
      * @return  boolean     True if access is allowed, False if not
      */
-    public function hasAccess($total=0)
+    public function hasAccess(float $total=0) : bool
     {
         return $this->isEnabled() && SEC_inGroup($this->grp_access);
     }
@@ -252,7 +252,7 @@ class Gateway extends \Shop\Gateway
      *
      * @return  string      URL to payment processor
      */
-    public function getActionUrl()
+    public function getActionUrl() : string
     {
         return $this->getWebhookUrl();
     }

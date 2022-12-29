@@ -12,7 +12,7 @@
  * @filesource
  */
 namespace Shop\Gateways\free;
-use Shop\Cart;
+use Shop\Order;
 use Shop\Coupon;
 use Shop\Currency;
 use Shop\Template;
@@ -43,7 +43,7 @@ class Gateway extends \Shop\Gateway
      *
      * @param   array   $A      Array of fields from the DB
      */
-    public function __construct($A=array())
+    public function __construct(array $A=array())
     {
         global $LANG_SHOP;
 
@@ -71,7 +71,7 @@ class Gateway extends \Shop\Gateway
      *  @param  object  $cart   Shopping cart
      *  @return string          HTML for input vars
      */
-    public function gatewayVars($cart)
+    public function gatewayVars(Order $cart) : string
     {
         global $_USER;
 
@@ -159,7 +159,7 @@ class Gateway extends \Shop\Gateway
      * @param   float   $total  Order total
      * @return  boolean     True if access is allowed, False if not
      */
-    public function hasAccess($total=0)
+    public function hasAccess(float $total=0) : bool
     {
         return $total == 0 && $this->isEnabled() && SEC_inGroup($this->grp_access);
     }

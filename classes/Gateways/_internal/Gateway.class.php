@@ -40,7 +40,7 @@ class Gateway extends \Shop\Gateway
      *
      * @param   array   $A      Array of fields from the DB
      */
-    public function __construct($A=array())
+    public function __construct(array $A=array())
     {
         // This gateway can service all button type by default
         $this->services = array(
@@ -63,7 +63,7 @@ class Gateway extends \Shop\Gateway
      * @param   string  $btn_type   Type of button being created
      * @return  array       Array ('cmd'=>command, 'tpl'=>template name
      */
-    private function gwButtonType($btn_type='')
+    private function gwButtonType(string $btn_type='') : array
     {
         switch ($btn_type) {
         case 'donation':
@@ -205,7 +205,7 @@ class Gateway extends \Shop\Gateway
      * @param   integer $due_days   Due days (terms)
      * @return  string      Proper terms string for Paypal
      */
-    private function getInvoiceTerms($due_days=0)
+    private function getInvoiceTerms(int $due_days=0) : string
     {
         $due_days = (int)$due_days;
         if ($due_days == 0) {
@@ -234,7 +234,7 @@ class Gateway extends \Shop\Gateway
      * @param   float   $total  Order total
      * @return  boolean     True if access is allowed, False if not
      */
-    public function hasAccess($total=0)
+    public function hasAccess(float $total=0) : bool
     {
         return $this->isEnabled() && SEC_inGroup($this->grp_access);
     }

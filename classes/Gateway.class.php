@@ -14,11 +14,15 @@
  */
 namespace Shop;
 use Shop\Config;
+use Shop\Cart;
+use Shop\Order;
+use Shop\Product;
 use Shop\Models\OrderStatus;
 use Shop\Models\ProductType;
 use Shop\Models\CustomInfo;
 use Shop\Models\ButtonKey;
 use Shop\Models\PayoutHeader;
+use Shop\Models\PaymentRadio;
 use Shop\Models\GatewayInfo;
 use Shop\Models\DataArray;
 use Shop\Cache;
@@ -179,7 +183,7 @@ class Gateway
      * @uses    self::AddCustom()
      * @param   array   $A  Optional array of fields, used with getInstance()
      */
-    function __construct($A = array())
+    function __construct(array $A = array())
     {
         global $_TABLES, $_USER;
 
@@ -284,7 +288,7 @@ class Gateway
      * @param   string  $key    Name of property to return
      * @return  mixed   property value if defined, otherwise returns NULL
      */
-    public function __get($key)
+    public function __get(string $key)
     {
         switch ($key) {
         case 'buy_now':
@@ -314,7 +318,7 @@ class Gateway
      *
      * @return  string      Short name of gateway
      */
-    public function getName()
+    public function getName() : string
     {
         return $this->gw_name;
     }
@@ -326,7 +330,7 @@ class Gateway
      * @param   string  $name   Provider name
      * @return  object  $this
      */
-    public function setDisplayName($name)
+    public function setDisplayName(string $name) : self
     {
         $this->gw_provider = $name;
         return $this;
@@ -338,7 +342,7 @@ class Gateway
      *
      * @return  string      Short name of gateway
      */
-    public function getDisplayName()
+    public function getDisplayName() : string
     {
         return $this->gw_provider;
     }
@@ -349,7 +353,7 @@ class Gateway
     *
     *   @return string      Full name of the gateway
     */
-    public function getDscp()
+    public function getDscp() : string
     {
         return $this->gw_desc;
     }
@@ -360,7 +364,7 @@ class Gateway
      *
      * @return  object  $this
      */
-    public function loadSDK()
+    public function loadSDK() : self
     {
         $dir = __DIR__ . '/Gateways/' . $this->gw_name . '/vendor';
         if (is_dir($dir)) {
@@ -377,7 +381,7 @@ class Gateway
      * @param   string  $btn_key    Button Key, btn_type + price
      * @return  string      Button code, or empty if not available
      */
-    protected function _ReadButton(object $P, string $btn_key) : string
+    protected function _ReadButton(Product $P, string $btn_key) : string
     {
         global $_TABLES;
 
@@ -407,9 +411,9 @@ class Gateway
      * @param   object  $P          Product object
      * @param   string  $btn_key    Button key (name)
      * @param   string  $btn_value  Value to save fo rbutton
-     * @param   string  $btn_value  HTML code for this button
+     * @param   string      HTML code for this button
      */
-    protected function _SaveButton($P, $btn_key, $btn_value)
+    protected function _SaveButton(Product $P, string $btn_key, string $btn_value) : string
     {
         global $_TABLES;
 
@@ -524,7 +528,7 @@ class Gateway
      * @param   string  $id         Gateway ID
      * @return  integer             New value, or old value upon failure
      */
-    protected static function do_toggle($oldvalue, $varname, $id)
+    protected static function do_toggle(int $oldvalue, string $varname, string $id) : int
     {
         $newval = self::_toggle($oldvalue, $varname, $id);
         if ($newval != $oldvalue) {
@@ -542,7 +546,7 @@ class Gateway
      * @param   string  $id         Gateway ID
      * @return  integer             New value, or old value upon failure
      */
-    public static function toggleEnabled($oldvalue, $id)
+    public static function toggleEnabled(int $oldvalue, string $id) : int
     {
         return self::do_toggle($oldvalue, 'enabled', $id);
     }
@@ -556,7 +560,7 @@ class Gateway
      * @param   string  $id         Gateway ID
      * @return  integer              New value, or old value upon failure
      */
-    public static function toggleBuyNow($oldvalue, $id)
+    public static function toggleBuyNow(int $oldvalue, string $id) : int
     {
         return self::do_toggle($oldvalue, 'buy_now', $id);
     }
@@ -570,7 +574,7 @@ class Gateway
      * @param   string  $id         Gateway ID
      * @return  integer              New value, or old value upon failure
      */
-    public static function toggleDonation($oldvalue, $id)
+    public static function toggleDonation(int $oldvalue, string $id) : int
     {
         return self::do_toggle($oldvalue, 'donation', $id);
     }
@@ -579,7 +583,7 @@ class Gateway
     /**
      * Clear the cached buttons for this payment gateway.
      */
-    public function clearButtonCache()
+    public function clearButtonCache() : void
     {
         global $_TABLES;
 
@@ -683,7 +687,7 @@ class Gateway
      *
      * @return  string      HTML for checkboxes
      */
-    protected function getServiceCheckboxes()
+    protected function getServiceCheckboxes() : string
     {
         global $LANG_SHOP;
 
@@ -728,7 +732,7 @@ class Gateway
      *
      * @return  object  $this
      */
-    protected function loadLanguage()
+    protected function loadLanguage() : self
     {
         global $_CONF;
 
@@ -756,7 +760,7 @@ class Gateway
      * @param   string  $key    Language string key
      * @return  string      Language string, or key value if not defined
      */
-    protected function getLang($key, $default=NULL)
+    protected function getLang(string $key, ?string $default=NULL) : string
     {
         if (is_array($this->lang) && array_key_exists($key, $this->lang)) {
             return $this->lang[$key];
@@ -776,7 +780,7 @@ class Gateway
      * @param   object  $Order  Order object
      * @return  string          Status of the order
      */
-    public function getPaidStatus($Order)
+    public function getPaidStatus(Order $Order) : string
     {
         if ($Order->hasPhysical()) {
             $retval = OrderStatus::PROCESSING;
@@ -797,7 +801,7 @@ class Gateway
      * @param   array   $cart   The shopping cart, to get addresses, etc.
      * @return  string          Order ID just created
      */
-    protected function createOrder($A, $cart)
+    protected function createOrder(array $A, array $cart) : string
     {
         global $_TABLES, $_USER;
 
@@ -866,7 +870,7 @@ class Gateway
      * @param   object  $cart   Shoppping cart
      * @return  string      HTML for checkout button
      */
-    public function checkoutButton($cart, $text='')
+    public function checkoutButton(Order $cart, string $text='') : string
     {
         global $_USER, $LANG_SHOP;
 
@@ -896,9 +900,9 @@ class Gateway
      * Get the logo files for light and dark themes.
      * Gateway classes may override this if necessary.
      *
-     * @return  array   Array of image file paths
+     * @return  string      Path to logo image file
      */
-    protected function getLogoFile()
+    protected function getLogoFile() : string
     {
         global $_SYSTEM;
 
@@ -929,7 +933,7 @@ class Gateway
      *
      * @return  string  Gateway logo URL
      */
-    public function getLogo()
+    public function getLogo() : string
     {
         global $_CONF;
 
@@ -965,7 +969,7 @@ class Gateway
      * @param   string  $value      Item value
      * @return  object  $this
      */
-    public function AddCustom($key, $value)
+    public function AddCustom(string $key, string $value) : self
     {
         // The CustomInfo object implements ArrayAccess
         $this->custom[$key] = $value;
@@ -980,7 +984,7 @@ class Gateway
      * @param   string  $email  Email address to check
      * @return  boolean     True if valid, False if not.
      */
-    public function isBusinessEmail($email)
+    public function isBusinessEmail(string $email) : bool
     {
         return true;
     }
@@ -996,7 +1000,7 @@ class Gateway
      *
      * @return  string      URL to payment processor
      */
-    public function getActionUrl()
+    public function getActionUrl() : string
     {
         return $this->gw_url;
     }
@@ -1007,7 +1011,7 @@ class Gateway
      *
      * @return  string      URL for postbacks
      */
-    public function getPostBackUrl()
+    public function getPostBackUrl() : string
     {
         return $this->postback_url;
     }
@@ -1024,7 +1028,7 @@ class Gateway
      *
      * @return array   Array of name=>value pairs, empty for default msg
      */
-    public function thanksVars()
+    public function thanksVars() : array
     {
         $R = array(
             //'gateway_url'   => Gateway URL for use to check purchase
@@ -1042,7 +1046,7 @@ class Gateway
      *
      * @return  object  Customer object
      */
-    protected static function Customer()
+    protected static function Customer() : Customer
     {
         static $Customer = NULL;
 
@@ -1061,7 +1065,7 @@ class Gateway
      * @param   array   $data       Array of original IPN data
      * @return  array               Name=>Value array of data for display
      */
-    public function ipnlogVars($data)
+    public function ipnlogVars(array $data) : array
     {
         return array();
     }
@@ -1080,7 +1084,7 @@ class Gateway
      *
      * @return  string      HTML for the configuration form.
      */
-    public function Configure()
+    public function Configure() : string
     {
         global $_CONF, $LANG_SHOP, $_TABLES;
 
@@ -1154,7 +1158,7 @@ class Gateway
      * @param   string  $env    Environment (test, prod or global)
      * @return  array   Array of fields (name=>field_info)
      */
-    protected function getConfigFields($env='global')
+    protected function getConfigFields(string $env='global') : array
     {
         $fields = array();
         if (!array_key_exists($env, $this->cfgFields)) {
@@ -1228,7 +1232,7 @@ class Gateway
      * @param   string  $gw_name    Gateway name
      * @return  object      Gateway object
      */
-    public static function create($gw_name)
+    public static function create(string $gw_name) : self
     {
         $cls = __NAMESPACE__ . "\\Gateways\\{$gw_name}\\Gateway";
         if (class_exists($cls)) {
@@ -1248,7 +1252,7 @@ class Gateway
      * @param   array   $A          Optional array of fields and values
      * @return  object              Gateway object
      */
-    public static function getInstance($gw_name, $A=array())
+    public static function getInstance(string $gw_name, array $A=array()) : self
     {
         global $_TABLES;
 
@@ -1269,65 +1273,9 @@ class Gateway
      *
      * @return  array       Array of installed and enabled gateways
      */
-    public static function getEnabled()
+    public static function getEnabled() : array
     {
         return GatewayManager::getAll(true);
-    }
-
-
-    /**
-     * Get all gateways into a static array.
-     *
-     * @param   boolean $enabled    True to get only enabled gateways
-     * @return  array       Array of gateways, enabled or all
-     */
-    public static function XXgetAll($enabled = false)
-    {
-        global $_TABLES;
-
-        $gateways = array();
-        $key = $enabled ? 1 : 0;
-        $gateways[$key] = array();
-        $cache_key = 'gateways_' . $key;
-        $tmp = Cache::get($cache_key);
-        if ($tmp === NULL) {
-            $tmp = array();
-            // Load the gateways
-            $db = Database::getInstance();
-            $sql = "SELECT * FROM {$_TABLES['shop.gateways']}";
-            // If not loading all gateways, get just then enabled ones
-            if ($enabled) $sql .= ' WHERE enabled=1';
-            $sql .= ' ORDER BY orderby';
-            try {
-                $data = $db->conn->executeQuery($sql)->fetchAllAssociative();
-            } catch (\Exception $e) {
-                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
-                $data = false;
-            }
-            if (is_array($data)) {
-                foreach ($data as $A) {
-                    $tmp[] = $A;
-                }
-            }
-            Cache::set($cache_key, $tmp, self::$TABLE);
-        }
-        // For each available gateway, load its class file and add it
-        // to the static array. Check that a valid object is
-        // returned from getInstance()
-        foreach ($tmp as $A) {
-            $cls = __NAMESPACE__ . '\\Gateways\\' . $A['id'] . '\\Gateway';
-            if (class_exists($cls)) {
-                $gw = new $cls($A);
-            } else {
-                $gw = NULL;
-            }
-            if (is_object($gw)) {
-                $gateways[$key][$A['id']] = $gw;
-            } else {
-                continue;       // Gateway enabled but not installed
-            }
-        }
-        return $gateways[$key];
     }
 
 
@@ -1338,7 +1286,7 @@ class Gateway
      * @param   string  $cfgItem    Name of field to get
      * @return  mixed       Value of field, empty string if not defined
      */
-    public function getConfig($cfgItem = '')
+    public function getConfig(string $cfgItem = '')
     {
         if ($cfgItem == '') {
             // Get all items at once
@@ -1358,15 +1306,15 @@ class Gateway
      *
      * @return  boolean     True if the test_mode config var is set
      */
-    public function isSandbox()
+    public function isSandbox() : bool
     {
         if (
             isset($this->config['global']['test_mode']) &&
             $this->config['global']['test_mode']
         ) {
-            return 1;
+            return true;
         } else {
-            return 0;
+            return false;
         }
     }
 
@@ -1377,7 +1325,7 @@ class Gateway
      * @param   string  $env    Environment (test, prod or global)
      * @return  array       Configuration array
      */
-    public function getEnvConfig($env='global')
+    public function getEnvConfig($env='global') : array
     {
         return $this->config[$env];
     }
@@ -1393,7 +1341,7 @@ class Gateway
      * @param   string  $env    Selected Environment
      * @return  object  $this
      */
-    public function setEnv($env=NULL)
+    public function setEnv(?string $env=NULL) : self
     {
         if ($env === NULL) {
             $env = $this->isSandbox() ? 'test' : 'prod';
@@ -1414,9 +1362,9 @@ class Gateway
      * Get the radio button for this gateway to show on the checkout form.
      *
      * @param   boolean $selected   True if the button should be selected
-     * @return  string      HTML for radio button
+     * @return  PaymentRadio    Radio button object
      */
-    public function checkoutRadio($Cart, $selected = false)
+    public function checkoutRadio(Order $Cart, bool $selected = false) : ?PaymentRadio
     {
         $retval = new \Shop\Models\PaymentRadio;
         $retval['gw_name'] = $this->gw_name;
@@ -1434,7 +1382,7 @@ class Gateway
      * @param   object  $cart   Cart object
      * @return  string      Gateay variable input fields
      */
-    public function gatewayVars($cart)
+    public function gatewayVars(Order $cart) : string
     {
         return '';
     }
@@ -1446,7 +1394,7 @@ class Gateway
      *
      * @return  string  HTML for checkout button
      */
-    public function getCheckoutButton()
+    public function getCheckoutButton() : ?string
     {
         return NULL;
     }
@@ -1459,13 +1407,13 @@ class Gateway
      * @param   object  $cart   Shopping cart object
      * @return  string  Javascript commands.
      */
-    public function getCheckoutJS($cart)
+    public function getCheckoutJS(Order $cart) : string
     {
         return 'finalizeCart("' . $cart->getOrderID() . '","' . $cart->getUID() . '", ' . $this->do_redirect . '); return true;';
     }
 
 
-    public function getButtonJS($cart)
+    public function getButtonJS(Order $cart) : ?string
     {
         return NULL;
     }
@@ -1477,7 +1425,7 @@ class Gateway
      *
      * @return  string  Form method
      */
-    public function getMethod()
+    public function getMethod() : string
     {
         return 'post';
     }
@@ -1487,7 +1435,7 @@ class Gateway
      * Run additional functions after saving the configuration.
      * Default: Do nothing.
      */
-    protected function _postConfigSave()
+    protected function _postConfigSave() : void
     {
         return;
     }
@@ -1501,7 +1449,7 @@ class Gateway
      * @param   string  $env    Environment (test, prod or global)
      * @return  object  $this
      */
-    public function setConfig($key, $value, $env)
+    public function setConfig(string $key, $value, string $env) : self
     {
         $this->config[$env][$key] = $value;
         return $this;
@@ -1513,7 +1461,7 @@ class Gateway
      *
      * @param   string  $gw_id  Gateway ID
      */
-    public static function setSelected($gw_id)
+    public static function setSelected(string $gw_id) : void
     {
         SESS_setVar('shop_gateway_sel', $gw_id);
     }
@@ -1524,7 +1472,7 @@ class Gateway
      *
      * @return  string|null  Saved gateway, NULL if none previously saved
      */
-    public static function getSelected()
+    public static function getSelected() : ?string
     {
         return SESS_getVar('shop_gateway_sel');
     }
@@ -1536,7 +1484,7 @@ class Gateway
      *
      * @return  string  Instruction text
      */
-    protected function getInstructions()
+    protected function getInstructions() : string
     {
         return '';
     }
@@ -1549,7 +1497,7 @@ class Gateway
      *
      * @return  boolean     True if no IPN required, default = false
      */
-    public function allowNoIPN()
+    public function allowNoIPN() : bool
     {
         return false;
     }
@@ -1562,7 +1510,7 @@ class Gateway
      * @see     getInstructions()
      * @return  string      Warning message
      */
-    protected function adminWarnBB()
+    protected function adminWarnBB() : string
     {
         global $LANG_SHOP_HELP, $_CONF, $_TABLES;
 
@@ -1605,7 +1553,7 @@ class Gateway
      * @param   float   $total  Total order amount
      * @return  boolean     True if access is allowed, False if not
      */
-    public function hasAccess($total=0)
+    public function hasAccess(float $total=0) : bool
     {
         return $total > 0 && $this->isEnabled() && SEC_inGroup($this->grp_access);
     }
@@ -1620,7 +1568,7 @@ class Gateway
      * @param   string  $token      Order token, to verify accessa
      * @return  string      URL to pass to the gateway as the return URL
      */
-    protected function returnUrl($cart_id, $token)
+    protected function returnUrl(string $cart_id, string $token) : string
     {
         return SHOP_URL . '/index.php?thanks=' . $this->gw_name .
             '/' . $cart_id .
@@ -1633,7 +1581,7 @@ class Gateway
      *
      * @return  integer     1 if enabled, 0 if not
      */
-    protected function isEnabled()
+    protected function isEnabled() : bool
     {
         return $this->enabled ? 1 : 0;
     }
@@ -1642,10 +1590,10 @@ class Gateway
     /**
      * Return a dummy value during AJAX finalizing cart.
      *
-     * @param   string  $order_id   Order ID
+     * @param   object  $Order  Order object
      * @return  boolean     False, indicating no action was taken
      */
-    public function processOrder($order_id)
+    public function processOrder(Order $Order) : bool
     {
         return false;
     }
@@ -1658,7 +1606,7 @@ class Gateway
      *
      * @return  boolean     True if valid, False if not
      */
-    public function isValid()
+    public function isValid() : bool
     {
         return $this->gw_name != '';
     }
@@ -1669,7 +1617,7 @@ class Gateway
      *
      * @return  boolean     True if a billing address is required
      */
-    public function requiresBillto()
+    public function requiresBillto() : bool
     {
         return $this->req_billto ? 1 : 0;
     }
@@ -1682,7 +1630,7 @@ class Gateway
      * @param   array   $args   Array of optional arguments
      * @return  string      IPN URL
      */
-    public function getWebhookUrl($args=array())
+    public function getWebhookUrl(array $args=array()) : string
     {
         static $urls = array();
         if (!array_key_exists($this->gw_name, $urls)) {
@@ -1712,7 +1660,7 @@ class Gateway
      * @param   array   $args   Array of optional arguments
      * @return  string      IPN URL
      */
-    public function getIpnUrl($args=array())
+    public function getIpnUrl(array $args=array()) : string
     {
         if ($this->ipn_url === '') {
             $url = Config::get('ipn_url');
@@ -1741,7 +1689,7 @@ class Gateway
      *
      * @return  boolean     True of online payments accepted
      */
-    public function canPayOnline()
+    public function canPayOnline() : bool
     {
         return $this->can_pay_online ? 1 : 0;
     }
@@ -1754,7 +1702,7 @@ class Gateway
      *
      * @return  boolean     True if pay-later is supported, False if not
      */
-    public function canPayLater()
+    public function canPayLater() : bool
     {
         return false;
     }
@@ -1766,7 +1714,7 @@ class Gateway
      *
      * @return  string  HTML for payment button
      */
-    public function payOnlineButton($Order)
+    public function payOnlineButton(Order $Order) : string
     {
         global $LANG_SHOP;
 
@@ -1781,7 +1729,7 @@ class Gateway
      *
      * @return  boolean     True to process the order, False to hold
      */
-    public function okToProcess($Order)
+    public function okToProcess(Order $Order) : bool
     {
         return $Order->isPaid();
     }
@@ -1883,7 +1831,7 @@ class Gateway
      * @param   object  $Order  Order object
      * @return  string      Redirect URL
      */
-    public function confirmOrder($Order)
+    public function confirmOrder(Order $Order) : string
     {
         return '';
     }
@@ -1895,7 +1843,7 @@ class Gateway
      *
      * @return  boolean     True if a valid config is set, False if not
      */
-    public function hasValidConfig()
+    public function hasValidConfig() : bool
     {
         return true;
     }
@@ -1906,7 +1854,7 @@ class Gateway
      *
      * @return  boolean     True if payouts are supported, otherwise false
      */
-    public function supportsPayouts()
+    public function supportsPayouts() : bool
     {
         return $this->getConfig('supports_payouts') ? true : false;
     }

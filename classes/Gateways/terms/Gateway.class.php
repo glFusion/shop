@@ -19,6 +19,7 @@ use Shop\Models\Token;
 use Shop\Gateway as GW;
 use Shop\GatewayManager;
 use Shop\FieldList;
+use Shop\Order;
 
 
 /**
@@ -42,7 +43,7 @@ class Gateway extends \Shop\Gateway
      *
      * @param   array   $A      Array of fields from the DB
      */
-    public function __construct($A=array())
+    public function __construct(array $A=array())
     {
         global $LANG_SHOP;
 
@@ -85,7 +86,7 @@ class Gateway extends \Shop\Gateway
      *  @param  object  $cart   Shopping cart
      *  @return string          HTML for input vars
      */
-    public function gatewayVars($Cart)
+    public function gatewayVars(Order $Cart) : string
     {
         global $_USER;
 
@@ -100,7 +101,7 @@ class Gateway extends \Shop\Gateway
     }
 
 
-    protected function getConfigOptions($name, $env='global')
+    protected function getConfigOptions(string $name, string $env='global') : array
     {
         global $LANG_SHOP;
 
@@ -140,7 +141,7 @@ class Gateway extends \Shop\Gateway
      *
      * @return  boolean     True
      */
-    public function allowNoIPN()
+    public function allowNoIPN() : bool
     {
         return true;
     }
@@ -151,10 +152,10 @@ class Gateway extends \Shop\Gateway
      * Gets the actual payment gateway name from the config and
      * calls on it to create the invoice.
      *
-     * @param   string  $order_id   Order ID
+     * @param   object  $Order  Order object
      * @return  boolean     True on success, False on error
      */
-    public function processOrder($Order)
+    public function processOrder(Order $Order) : bool
     {
         $gw_name = $this->getConfig('gateway');
         if (empty($gw_name)) {
@@ -178,9 +179,9 @@ class Gateway extends \Shop\Gateway
      * For Net Terms, this is the same as processOrder().
      *
      * @param   object  $Order  Order object
-     * @return  boolean     True on success, False on error
+     * @return  string      Redirect URL after confirmation
      */
-    public function confirmOrder($Order)
+    public function confirmOrder(Order $Order) : string
     {
         $status = $this->processOrder($Order);
         if ($status) {
@@ -197,7 +198,7 @@ class Gateway extends \Shop\Gateway
      *
      * @return  string      Description string
      */
-    public function getLogo()
+    public function getLogo() : string
     {
         global $LANG_SHOP;
 
@@ -210,7 +211,7 @@ class Gateway extends \Shop\Gateway
      *
      * @return  string      Net X Days
      */
-    public function getDscp()
+    public function getDscp() : string
     {
         return $this->getLogo();
     }
@@ -223,7 +224,7 @@ class Gateway extends \Shop\Gateway
      *
      * @return  string      Empty string
      */
-    public function getCheckoutJS($cart)
+    public function getCheckoutJS(Order $cart) : string
     {
         return '';
     }
@@ -234,7 +235,7 @@ class Gateway extends \Shop\Gateway
      *
      * @return  string      Instructional text
      */
-    protected function getInstructions()
+    protected function getInstructions() : string
     {
         return $this->getLang('config_instr');
     }
@@ -246,7 +247,7 @@ class Gateway extends \Shop\Gateway
      *
      * @return  boolean     True to process the order, False to hold
      */
-    public function okToProcess($Order)
+    public function okToProcess(Order $Order) : bool
     {
         return true;
     }
@@ -258,7 +259,7 @@ class Gateway extends \Shop\Gateway
      *
      * @return  string  HTML for payment button
      */
-    public function payOnlineButton($Order)
+    public function payOnlineButton(Order $Order) : string
     {
         global $LANG_SHOP;
 
@@ -284,7 +285,7 @@ class Gateway extends \Shop\Gateway
      *
      * @return  boolean     True if valid, False if not
      */
-    public function hasValidConfig()
+    public function hasValidConfig() : bool
     {
         return !empty($this->getConfig('gateway'));
     }
@@ -296,7 +297,7 @@ class Gateway extends \Shop\Gateway
      *
      * @return  boolean     True if pay-later is supported, False if not
      */
-    public function canPayLater()
+    public function canPayLater() : bool
     {
         return true;
     }

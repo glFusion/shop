@@ -61,7 +61,7 @@ class Gateway extends \Shop\Gateway
      *
      * @param   array   $A      Array of fields from the DB
      */
-    public function __construct($A=array())
+    public function __construct(array $A=array())
     {
         $supported_currency = array(
             'USD', 'AUD', 'CAD', 'EUR', 'GBP', 'JPY', 'NZD', 'CHF', 'HKD',
@@ -149,7 +149,7 @@ class Gateway extends \Shop\Gateway
      *
      * @return  string      Gateway's home page
      */
-    public function getMainUrl()
+    public function getMainUrl() : string
     {
         return $this->gw_url;
     }
@@ -157,15 +157,13 @@ class Gateway extends \Shop\Gateway
 
     /**
      * Get the form action URL.
-     * This function may be overridden by the child class.
-     * The default is to simply return the configured URL
      *
      * This is public so that if it is not declared by the child class,
      * it can be called during IPN processing.
      *
      * @return  string      URL to payment processor
      */
-    public function getActionUrl()
+    public function getActionUrl() : string
     {
         return $this->gw_url . '/cgi-bin/webscr';
     }
@@ -180,7 +178,7 @@ class Gateway extends \Shop\Gateway
      * @param   object      $cart   Shopping Cart Object
      * @return  string      Gateay variable input fields
      */
-    public function gatewayVars($cart)
+    public function gatewayVars(Order $cart) : string
     {
         global $_USER, $_TABLES, $LANG_SHOP;
 
@@ -334,7 +332,7 @@ class Gateway extends \Shop\Gateway
      * @param   array   $fields     Array of data to encrypt into buttons
      * @return  string              Encrypted_value, or empty string on error
      */
-    private function _encButton($fields)
+    private function _encButton(array $fields) : string
     {
         global $_CONF;
 
@@ -630,7 +628,7 @@ class Gateway extends \Shop\Gateway
      * @param   string  $btn_type   Type of button being created
      * @return  array       Array ('cmd'=>command, 'tpl'=>template name
      */
-    private function gwButtonType($btn_type='')
+    private function gwButtonType(string $btn_type='') : array
     {
         switch ($btn_type) {
         case 'donation':
@@ -659,7 +657,7 @@ class Gateway extends \Shop\Gateway
      * @uses    Gateway::getDscp()
      * @return  array       Array of name=>value pairs
      */
-    public function thanksVars()
+    public function thanksVars() : array
     {
         $R = array(
             'gateway_url'   => self::getMainUrl(),
@@ -676,7 +674,7 @@ class Gateway extends \Shop\Gateway
      * @param   string  $email  Email address to check (receiver_email)
      * @return  boolean         True if valid, False if not.
      */
-    public function isBusinessEmail($email)
+    public function isBusinessEmail(string $email) : bool
     {
         switch ($email) {
         case $this->getConfig('receiver_email'):
@@ -725,7 +723,7 @@ class Gateway extends \Shop\Gateway
      * @param   float   $amount     Total puchase amount.
      * @return  object  $this
      */
-    private function setReceiver($amount)
+    private function setReceiver(float $amount) : self
     {
         // If the order amount exceeds the micro account threshold,
         // or no micro receiver email is specified, return prod.
@@ -751,7 +749,7 @@ class Gateway extends \Shop\Gateway
      * @param   array   $data       Array of original IPN data
      * @return  array               Name=>Value array of data for display
      */
-    public function ipnlogVars($data)
+    public function ipnlogVars(array $data) : array
     {
         if (!is_array($data)) {
             return array();
@@ -789,7 +787,7 @@ class Gateway extends \Shop\Gateway
      *
      * @return  string      HTML for logo image
      */
-    public function getLogo()
+    public function getLogo() : string
     {
         return COM_createImage(
             'https://www.paypalobjects.com/webstatic/en_US/i/buttons/buy-logo-large.png"',
@@ -809,7 +807,7 @@ class Gateway extends \Shop\Gateway
      *
      * @return  string  Message text
      */
-    protected function getInstructions()
+    protected function getInstructions() : string
     {
         return $this->adminWarnBB();
     }
@@ -821,7 +819,7 @@ class Gateway extends \Shop\Gateway
      * @param   string  $to     Target version
      * @return  boolean     True on success, False on error
      */
-    protected function _doUpgrade()
+    protected function _doUpgrade() : bool
     {
         global $_TABLES;
 
@@ -854,7 +852,7 @@ class Gateway extends \Shop\Gateway
      *
      * @return  boolean     True if valid, False if not
      */
-    public function hasValidConfig()
+    public function hasValidConfig() : bool
     {
         return !empty($this->getConfig('receiver_email'));
     }

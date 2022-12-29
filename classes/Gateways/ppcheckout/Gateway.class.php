@@ -17,6 +17,7 @@ use Shop\Address;
 use Shop\Currency;
 use Shop\Order;
 use Shop\Shipper;
+use Shop\Gateway as GW;
 use Shop\Models\OrderStatus;
 use Shop\Models\CustomInfo;
 use Shop\Template;
@@ -60,7 +61,7 @@ class Gateway extends \Shop\Gateway
      *
      * @param   array   $A      Array of fields from the DB
      */
-    public function __construct($A=array())
+    public function __construct(array $A=array())
     {
         $supported_currency = array(
             'USD', 'AUD', 'CAD', 'EUR', 'GBP', 'JPY', 'NZD', 'CHF', 'HKD',
@@ -137,7 +138,7 @@ class Gateway extends \Shop\Gateway
      *
      * @return  string      Gateway's home page
      */
-    public function getMainUrl()
+    public function getMainUrl() : string
     {
         return $this->gw_url;
     }
@@ -150,7 +151,7 @@ class Gateway extends \Shop\Gateway
      * @param   string  $text   Optional button text override
      * @return  string      HTML for checkout button
      */
-    public function checkoutButton($Cart, $text='')
+    public function checkoutButton(Order $Cart, string $text='') : string
     {
         static $have_js = false;
 
@@ -199,7 +200,7 @@ class Gateway extends \Shop\Gateway
      * @param   object      $cart   Shopping Cart Object
      * @return  string      Gateay variable input fields
      */
-    public function gatewayVars($cart)
+    public function gatewayVars(Order $cart) : string
     {
         return '';
     }
@@ -213,7 +214,7 @@ class Gateway extends \Shop\Gateway
      * @param   array   $data       Array of original IPN data
      * @return  array               Name=>Value array of data for display
      */
-    public function ipnlogVars($data)
+    public function ipnlogVars(array $data) : array
     {
         $retval = array();
         /*if (!is_array($data)) {
@@ -248,7 +249,7 @@ class Gateway extends \Shop\Gateway
      *
      * @return  string  API token value
      */
-    public function getBearerToken()
+    public function getBearerToken() : string
     {
         $cache_key = 'paypal-oath2-token';
         $auth = Cache::get($cache_key);
@@ -292,7 +293,7 @@ class Gateway extends \Shop\Gateway
      * @param   integer $due_days   Due days (terms)
      * @return  string      Proper terms string for Paypal
      */
-    private function getInvoiceTerms($due_days=0)
+    private function getInvoiceTerms(int $due_days=0) : string
     {
         $due_days = (int)$due_days;
         if ($due_days == 0) {
@@ -319,7 +320,7 @@ class Gateway extends \Shop\Gateway
      * @param   object  $terms_gw   Invoice terms gateway, for config values
      * @return  boolean     True on success, False on error
      */
-    public function createInvoice($Order, $terms_gw)
+    public function createInvoice(Order $Order, GW $terms_gw) : bool
     {
         global $_CONF, $LANG_SHOP;
 
@@ -510,7 +511,7 @@ class Gateway extends \Shop\Gateway
      *
      * @return  string      API URL
      */
-    public function getApiUrl()
+    public function getApiUrl() : string
     {
         return $this->api_url;
     }
@@ -521,7 +522,7 @@ class Gateway extends \Shop\Gateway
      *
      * @return  string      Webhook ID from Paypal
      */
-    public function getWebhookID()
+    public function getWebhookID() : string
     {
         return $this->getConfig('webhook_id');
     }
@@ -532,7 +533,7 @@ class Gateway extends \Shop\Gateway
      *
      * @return  object      Paypal API client
      */
-    public function getApiClient()
+    public function getApiClient() : object
     {
         static $apiClient = NULL;
         if ($apiClient === NULL) {
@@ -560,7 +561,7 @@ class Gateway extends \Shop\Gateway
      * @param   string  $authorizationId    Paypal-provided authorization ID
      * @return  object      Response to capture request
      */
-    public function captureAuth($authorizationId)
+    public function captureAuth(string $authorizationId) : object
     {
         $client = $this->getApiClient();
         $request = new \PayPalCheckoutSdk\Payments\AuthorizationsCaptureRequest($authorizationId);
@@ -582,7 +583,7 @@ class Gateway extends \Shop\Gateway
      * @param   string  $captureId  Paypal payment ID
      * @return  string      JSON response string
      */
-    public function getCaptureDetails($captureId)
+    public function getCaptureDetails(string $captureId) : string
     {
         $client = $this->getApiClient();
         $request = new \PayPalCheckoutSdk\Payments\CapturesGetRequest($captureId);
@@ -604,7 +605,7 @@ class Gateway extends \Shop\Gateway
      * @param   string  $orderId    Paypal order ID (not the plugin order_id)
      * @return  string      JSON response string
      */
-    public function getOrderDetails($orderId)
+    public function getOrderDetails(string $orderId) : string
     {
         $client = $this->getApiClient();
         $request = new \PayPalCheckoutSdk\Orders\OrdersGetRequest($orderId);
@@ -626,7 +627,7 @@ class Gateway extends \Shop\Gateway
      * @param   string  $whId       Webhook ID (`WH-XXXX...`)
      * @return  string      JSON response string
      */
-    public function getWebhookDetails($whId)
+    public function getWebhookDetails(string $whId) : string
     {
         $access_token = $this->getBearerToken();
         $ch = curl_init();
@@ -649,7 +650,7 @@ class Gateway extends \Shop\Gateway
      *
      * @return  boolean     True if valid, False if not
      */
-    public function hasValidConfig()
+    public function hasValidConfig() : bool
     {
         return !empty($this->getConfig('webhook_id')) &&
             !empty($this->getConfig('api_username')) &&

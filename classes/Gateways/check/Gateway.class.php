@@ -13,6 +13,7 @@
  */
 namespace Shop\Gateways\check;
 use Shop\Config;
+use Shop\Order;
 use Shop\Models\ProductType;
 use Shop\Template;
 use Shop\Log;
@@ -40,7 +41,7 @@ class Gateway extends \Shop\Gateway
      *
      * @param   array   $A      Array of fields from the DB
      */
-    public function __construct($A=array())
+    public function __construct(array $A=array())
     {
         global $LANG_SHOP;
 
@@ -70,7 +71,7 @@ class Gateway extends \Shop\Gateway
      *
      * @return  string      Gateway's website URL
      */
-    private function getMainUrl()
+    private function getMainUrl() : string
     {
         global $_CONF;
         return $_CONF['site_url'];
@@ -86,7 +87,7 @@ class Gateway extends \Shop\Gateway
      * @param   string  $btn_type       Button Type (optional)
      * @return  string                  HTML for button code
      */
-    private function _getButton($btn_type)
+    private function _getButton(string $btn_type) : string
     {
         global $_USER;
 
@@ -123,7 +124,7 @@ class Gateway extends \Shop\Gateway
      *
      * @return  string      Payment URL
      */
-    public function getActionUrl()
+    public function getActionUrl() : string
     {
         return $this->gw_url . '/index.php';
     }
@@ -137,10 +138,10 @@ class Gateway extends \Shop\Gateway
      * @param   array   $A      Optionally override the $_GET parameters
      * @return  array           Array of standard name=>value pairs
      */
-    public function thanksVars($A='')
+    public function thanksVars(?array $A=NULL) : array
     {
         if (empty($A)) {
-            $A = $_GET;     // Amazon's returnUrl uses $_GET
+            $A = $_GET;
         }
         list($currency, $amount) = preg_split('/\s+/', $A['transactionAmount']);
         $amount = COM_numberFormat($amount, 2);
@@ -161,7 +162,7 @@ class Gateway extends \Shop\Gateway
      * @param   string  $btn_type   Button type, typically from product record
      * @return  string              Valid button type
      */
-    private function gwButtonType($btn_type)
+    private function gwButtonType(string $btn_type) : string
     {
         switch ($btn_type) {
         case 'donation':
@@ -183,7 +184,7 @@ class Gateway extends \Shop\Gateway
      * @param   float   $price      Item price
      * @param   integer $qty        Quantity
      */
-    private function _addItem($item_id, $price, $qty=0)
+    private function _addItem($item_id, float $price, int $qty=0) : void
     {
         if ($qty == 0) $qty = 1;
         $qty = (float)$qty;
@@ -202,7 +203,7 @@ class Gateway extends \Shop\Gateway
      * @param   array   $data       Array of original IPN data
      * @return  array               Name=>Value array of data for display
      */
-    public function ipnlogVars($data)
+    public function ipnlogVars(array $data) : array
     {
         if (!is_array($data)) {
             return array();
@@ -224,7 +225,7 @@ class Gateway extends \Shop\Gateway
      *
      * @param   array   $vals   IPN variables
      */
-    public function handlePurchase($vals = array())
+    public function handlePurchase(array $vals = array()) : string
     {
         $cart_id = SHOP_getVar($vals, 'cart_id');
         if (empty($cart_id)) {
@@ -257,7 +258,7 @@ class Gateway extends \Shop\Gateway
      *
      * @param   array   $vals   IPN variables
      */
-    private function _handlePurchase($vals)
+    private function _handlePurchase(array $vals) : void
     {
         global $_TABLES, $_CONF;
 
@@ -439,7 +440,7 @@ class Gateway extends \Shop\Gateway
      * @param   object  $cart   Shopping cart
      * @return  string          HTML for input vars
      */
-    public function gatewayVars($cart)
+    public function gatewayVars(Order $cart) : string
     {
         $gatewayVars = array(
             '<input type="hidden" name="processorder" value="' . $this->gw_name . '" />',
@@ -456,11 +457,9 @@ class Gateway extends \Shop\Gateway
      *
      * @return  boolean     True
      */
-    public function allowNoIPN()
+    public function allowNoIPN() : bool
     {
         return true;
     }
 
-}   // class check
-
-?>
+}

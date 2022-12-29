@@ -12,11 +12,12 @@
  * @filesource
  */
 namespace Shop\Gateways\_coupon;
-use Shop\Cart;
+use Shop\Order;
 use Shop\Products\Coupon;
 use Shop\Currency;
 use Shop\Payment;
 use Shop\Models\PayoutHeader;
+use Shop\Models\PaymentRadio;
 
 
 /**
@@ -44,7 +45,7 @@ class Gateway extends \Shop\Gateway
      *
      * @param   array   $A      Array of fields from the DB
      */
-    public function __construct($A=array())
+    public function __construct(array $A=array())
     {
         global $LANG_SHOP;
 
@@ -74,7 +75,7 @@ class Gateway extends \Shop\Gateway
      * @param   boolean $selected   Indicate if this should be the selected option
      * @return  string      HTML for the radio button or checkbox
      */
-    public function checkoutRadio($Cart, $selected = false)
+    public function checkoutRadio(Order $Cart, bool $selected = false) : ?PaymentRadio
     {
         global $LANG_SHOP;
 
@@ -84,7 +85,7 @@ class Gateway extends \Shop\Gateway
         $gc_bal = Coupon::getUserBalance();
         if ($gc_bal == 0) {
             // No gift card balance to apply, no selection to show
-            return false;
+            return NULL;
         }
 
         // Get the amount that can be paid by gift card,
@@ -93,10 +94,10 @@ class Gateway extends \Shop\Gateway
 
         // If no gift card amount can be applied, don't show this gateway option
         if ($gc_can_apply == 0) {
-            return false;
+            return NULL;
         }
 
-        $retval = new \Shop\Models\PaymentRadio;
+        $retval = new PaymentRadio;
         $retval['gw_name'] = $this->gw_name;
         $retval['varname'] = 'by_gc';
         // Create the radio button or checkbox as appropriate based
@@ -144,7 +145,7 @@ class Gateway extends \Shop\Gateway
      * @param   object  $cart   Shopping cart
      * @return  string          HTML for input vars
      */
-    public function gatewayVars($cart)
+    public function gatewayVars(Order $cart) : string
     {
         global $_USER;
 
@@ -167,7 +168,7 @@ class Gateway extends \Shop\Gateway
      * @param   float   $total  Total order amount (not used here)
      * @return  boolean     True if access is allowed, False if not
      */
-    public function hasAccess($total = 0)
+    public function hasAccess(float $total = 0) : bool
     {
         return true;
     }
@@ -180,7 +181,7 @@ class Gateway extends \Shop\Gateway
      * @param   object  $Order  Order object
      * @return  string      Redirect URL
      */
-    public function confirmOrder($Order)
+    public function confirmOrder(Order $Order) : string
     {
         global $_CONF;
 
@@ -220,7 +221,7 @@ class Gateway extends \Shop\Gateway
      * @param   object  $cart   Shopping cart object
      * @return  string  Javascript commands.
      */
-    public function getCheckoutJS($cart)
+    public function getCheckoutJS(Order $cart) : string
     {
         return '';
     }
