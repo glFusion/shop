@@ -29,6 +29,7 @@ class GatewayInfo extends DataArray
             'type' => 'github',
             'project_id' => '',
         ),
+        'shop_version' => 'unset',
     );
 
 }
