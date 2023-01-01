@@ -19,6 +19,7 @@ use Shop\Models\Token;
 use Shop\Models\ReferralTag;
 use Shop\Models\Session;
 use Shop\Models\AffiliateSale;
+use Shop\Util\JSON;
 use glFusion\Database\Database;
 //use glFusion\Notifier;
 
@@ -191,7 +192,7 @@ class Order
      * @var string */
     private $pmt_method = '';
 
-    /** Payment method text description
+    /** Payment method text description.
      * @var string */
     private $pmt_dscp = '';
 
@@ -728,7 +729,7 @@ class Order
         $this->status   = $A->getString('status');
         $this->pmt_method = $A->getString('pmt_method');
         $this->pmt_dscp = $A->getString('pmt_dscp');
-        $this->pmt_txn_id = $A->getString('pmt_txn_id');
+        //$this->pmt_txn_id = $A->getString('pmt_txn_id');
         $this->currency = $A->getString('currency', $_SHOP_CONF['currency']);
         $dt = $A->getInt('order_date');
         if ($dt > 0) {
@@ -895,7 +896,7 @@ class Order
      * Finalized (paid, shipped, etc.) orders cannot  be removed.
      * Trying to delete a nonexistant order returns true.
      *
-     * @param   string  $order_id       Order ID, taken from $_SESSION if empty
+     * @param   string  $order_id       Order ID, taken from user's session if empty
      * @return  boolean     True on success, False on error.
      */
     public static function Delete($order_id = '')
@@ -4225,55 +4226,16 @@ class Order
              ->setToken()
              ->Save(false);
 
+        if (!empty($this->pmt_method)) {
+            $GW = Gateway::getInstance($this->pmt_method);
+            if ($GW->getName() != '') { // got a valid gateway
+                $GW->cancelCheckout($this);
+            }
+        }
+
         Session::set('cart_id', $this->order_id);
         Session::set('order_id', $this->order_id);
         return $this;
-    }
-
-
-    /**
-     * Add a session variable.
-     *
-     * @param   string  $key    Name of variable
-     * @param   mixed   $value  Value to set
-     */
-    public static function XsetSession($key, $value)
-    {
-        if (!isset($_SESSION[self::$session_var])) {
-            $_SESSION[self::$session_var] = array();
-        }
-        $_SESSION[self::$session_var][$key] = $value;
-    }
-
-
-    /**
-     * Retrieve a session variable.
-     *
-     * @param   string  $key    Name of variable
-     * @return  mixed       Variable value, or NULL if it is not set
-     */
-    public static function XgetSession($key)
-    {
-        if (isset($_SESSION[self::$session_var][$key])) {
-            return $_SESSION[self::$session_var][$key];
-        } else {
-            return NULL;
-        }
-    }
-
-
-    /**
-     * Remove a session variable.
-     *
-     * @param   string  $key    Name of variable
-     */
-    public static function XclearSession($key=NULL)
-    {
-        if ($key === NULL) {
-            unset($_SESSION[self::$session_var]);
-        } else {
-            unset($_SESSION[self::$session_var][$key]);
-        }
     }
 
 

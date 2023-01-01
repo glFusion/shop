@@ -48,6 +48,7 @@ Release TBD
   * Allow disabling individual options and hide them from the product detail.
   * Add a hidden secret value to verify order during certain operations.
   * Fill in checkboxes and text fields when viewing an order item from an order.
+  * Cancel checkout session with payment provider if checkout is canceled.
 
 ## v1.4.1
 Release 2022-04-07

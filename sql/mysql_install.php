@@ -227,7 +227,7 @@ $_SQL = array(
   `tax_handling` tinyint(1) unsigned NOT NULL DEFAULT 0,
   `shipping_method` varchar(20) DEFAULT NULL,
   `shipping_dscp` varchar(120) DEFAULT NULL,
-  `gw_order_ref` varchar(128) DEFAULT NULL,
+  `gw_order_ref` text DEFAULT NULL,
   `referral_token` varchar(40) NOT NULL DEFAULT '',
   `referrer_uid` int(11) unsigned NOT NULL DEFAULT 0,
   `referral_exp` int(11) unsigned NOT NULL DEFAULT 0,
@@ -991,6 +991,7 @@ $SHOP_UPGRADE['1.5.0'] = array(
     "ALTER TABLE {$_TABLES['shop.orders']} CHANGE `billto_id` `billto_id` int(11) NOT NULL DEFAULT 0",
     "ALTER TABLE {$_TABLES['shop.orders']} CHANGE `shipto_id` `shipto_id` int(11) NOT NULL DEFAULT 0",
     "ALTER TABLE {$_TABLES['shop.orders']} ADD `secret` varchar(20) AFTER `token`",
+    "ALTER TABLE {$_TABLES['shop.orders']} CHANGE gw_order_ref gw_order_ref text",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `prod_rule` int(11) unsigned NOT NULL DEFAULT 0 AFTER `zone_rule`",
     "ALTER TABLE {$_TABLES['shop.categories']} ADD `prod_rule` int(11) unsigned NOT NULL DEFAULT 0 AFTER `zone_rule`",
 

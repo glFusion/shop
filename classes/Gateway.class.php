@@ -6,7 +6,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2011-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.4.1
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -2131,6 +2131,17 @@ class Gateway
         } else {
             return NULL;
         }
+    }
+
+
+    /**
+     * Cancel a checkout session.
+     * No-op by default, may be implemented by each gateway.
+     *
+     * @param   object  $Cart   Cart object
+     */
+    public function cancelCheckout(Order $Cart) : void
+    {
     }
 
 }
