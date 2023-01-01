@@ -2050,7 +2050,7 @@ class Gateway
                 $_TABLES['shop.customerXgateway'],
                 array(
                     'email' => $Info['email'],
-                    'gw_id' => $this->gw_id,
+                    'gw_id' => $this->gw_name,
                     'cust_id' => $Info['cust_id'],
                     'uid' => $Info['uid'],
                 ),
@@ -2071,7 +2071,7 @@ class Gateway
                     ),
                     array(
                         'email' => $Info['email'],
-                        'gw_id' => $this->gw_id,
+                        'gw_id' => $this->gw_name,
                     ),
                     array(
                         Database::STRING,
