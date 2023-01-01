@@ -13,10 +13,13 @@
  * @filesource
  */
 namespace Shop;
+use glFusion\FileSystem;
+use glFusion\Database\Database;
 use Shop\Config;
 use Shop\Cart;
 use Shop\Order;
 use Shop\Product;
+use Shop\Customer;
 use Shop\Log;
 use Shop\Models\OrderStatus;
 use Shop\Models\ProductType;
@@ -26,9 +29,8 @@ use Shop\Models\PayoutHeader;
 use Shop\Models\PaymentRadio;
 use Shop\Models\GatewayInfo;
 use Shop\Models\DataArray;
+use Shop\Models\CustomerGateway;
 use Shop\Cache;
-use glFusion\FileSystem;
-use glFusion\Database\Database;
 
 
 /**
@@ -1787,7 +1789,7 @@ class Gateway
     public function getCodeVersion() : string
     {
         // Some backwards compatibility
-        if (isset($this->GatewayInfo['version']) && $this->GatewayInfo['version'] != 'unset') {
+        if ($this->GatewayInfo['version'] != 'unset') {
             return $this->GatewayInfo['version'];
         } elseif (isset($this->VERSION)) {
             // legacy
@@ -1798,6 +1800,23 @@ class Gateway
             // should happen only once.
             Log::system(Log::ERROR, var_export($this->readJSON(),true));
             return 'unknown';
+        }
+    }
+
+
+    /**
+     * Get the required shop version.
+     * Default is the current plugin code version unless the gateway
+     * has a different version set.
+     *
+     * @return  string      Required plugin version for the gateway
+     */
+    public function getShopVersion() : string
+    {
+        if ($this->GatewayInfo['shop_version'] == 'unset') {
+            return Config::get('pi_version');   // use installed plugin version
+        } else {
+            return $this->GatewayInfo['shop_version'];
         }
     }
 
@@ -2012,6 +2031,106 @@ class Gateway
             $retval['version'] = Config::get('pi_version');
         }
         return $retval;
+    }
+
+
+    /**
+     * Save the customer id, email and gateway's customer ID in the table.
+     *
+     * @param   object  $Customer   Customer object, to get uid and email
+     * @return  boolean     True on success, False on error
+     */
+    protected function saveCustomerInfo(CustomerGateway $Info) : bool
+    {
+        global $_TABLES;
+
+        $db = Database::getInstance();
+        try {
+            $db->conn->insert(
+                $_TABLES['shop.customerXgateway'],
+                array(
+                    'email' => $Info['email'],
+                    'gw_id' => $this->gw_id,
+                    'cust_id' => $Info['cust_id'],
+                    'uid' => $Info['uid'],
+                ),
+                array(
+                    Database::STRING,
+                    Database::STRING,
+                    Database::STRING,
+                    Database::INTEGER,
+                )
+            );
+        } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $e) {
+            try {
+                $db->conn->update(
+                    $_TABLES['shop.customerXgateway'],
+                    array(
+                        'cust_id' => $Info['cust_id'],
+                        'uid' => $Info['uid'],
+                    ),
+                    array(
+                        'email' => $Info['email'],
+                        'gw_id' => $this->gw_id,
+                    ),
+                    array(
+                        Database::STRING,
+                        Database::INTEGER,
+                        Database::STRING,
+                        Database::STRING,
+                    )
+                );
+            } catch (\Throwable $e) {
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                return false;
+            }
+        } catch (\Throwable $e) {
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return false;
+        }
+        return true;
+    }
+
+
+    /**
+     * Find a customer's gateway ID from the local table.
+     *
+     * @param   Customer    $Customer   Customer object
+     * @return  string      Customer ID, if found.
+     */
+    protected function getCustomerId(Customer $Customer) : ?string
+    {
+        global $_TABLES;
+
+        $values = array($this->gw_name);
+        $types = array(Database::STRING);
+        if ($Customer->getUid() > 1) {
+            // Logged-in user, locate by user ID.
+            $where = 'uid = ?';
+            $values[] = $Customer->getUid();
+            $types[] = Database::INTEGER;
+        } else {
+            // Anonymous user, locate by the user-supplied email address.
+            $where = 'email = ?';
+            $values[] = $Customer->getEmail();
+            $types[] = Database::STRING;
+        }
+        try {
+            $row = Database::getInstance()->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.customerXgateway']}
+                WHERE gw_id = ? AND $where",
+                $values,
+                $types
+            )->fetchAssociative();
+        } catch (\Throwable $e) {
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $row = false;
+        }
+        if (is_array($row)) {
+            return new CustomerGateway($row);
+        } else {
+            return NULL;
+        }
     }
 
 }

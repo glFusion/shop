@@ -3,9 +3,9 @@
  * Class to handle user account info for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2011-2021 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2011-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.1
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -181,45 +181,6 @@ class Customer
 
 
     /**
-     * Set the customer reference ID for a payment gateway.
-     * This stores the customer ID returned from the payment gateway
-     * when a customer record is created during invoicing.
-     *
-     * @param   string  $gw_id      ID of gateway
-     * @param   string  $cust_id    Gateway's reference ID
-     * @return  object  $this
-     */
-    public function setGatewayId($gw_id, $cust_id)
-    {
-        global $_TABLES;
-
-        $gw_id = DB_escapeString($gw_id);
-        $cust_id = DB_escapeString($cust_id);
-        $sql = "INSERT INTO {$_TABLES['shop.customerXgateway']} SET
-            uid = {$this->uid},
-            gw_id = '$gw_id',
-            cust_id = '$cust_id'
-            ON DUPLICATE KEY UPDATE
-            cust_id = '$cust_id'";
-        //echo $sql;die;
-        DB_query($sql);
-        return $this;
-    }
-
-
-    /**
-     * Get the customer reference ID for a payment gateway.
-     *
-     * @param   string  $gw_id      ID of gateway
-     * @return  string      Customer ID, NULL if not set
-     */
-    public function getGatewayId(string $gw_id) : string
-    {
-        return $this->gw_ids->getString($gw_id);
-    }
-
-
-    /**
      * Get the customer's full name from the glFusion profile.
      *
      * @return  string      Full name
@@ -334,6 +295,19 @@ class Customer
             $retval->setName($this->fullname);
             return $retval;
         }
+    }
+
+
+    /**
+     * Set the customer's email.
+     *
+     * @param   string  $email  Email address
+     * @return  object  $this
+     */
+    public function setEmail(string $email) : self
+    {
+        $this->email = $email;
+        return $this;
     }
 
 

@@ -11,11 +11,11 @@
  * @filesource
  */
 namespace Shop\Upgrades;
+use glFusion\Database\Database;
 use Shop\Config;
 use Shop\OrderItem;
 use Shop\ProductVariant;
-use glFusion\Database\Database;
-use glFusion\Log\Log;
+use Shop\Log;
 
 
 class v1_5_0 extends Upgrade
@@ -73,6 +73,10 @@ class v1_5_0 extends Upgrade
                 $SHOP_UPGRADE['1.5.0'][] = "ALTER TABLE {$_TABLES['shop.orderstatus']} DROP KEY `{$key['index_name']}`";
             }
         }
+
+        // See if we already have the customer email column in the gateway
+        // cross-reference.
+        $have_custGWemail = self::tableHasColumn('shop.customerXgateway', 'email');
 
         if (!self::doUpgradeSql(self::$ver, self::$dvlp)) {
             return false;
@@ -237,6 +241,35 @@ class v1_5_0 extends Upgrade
             }
         }
 
+        if (!$have_custGWemail) {
+            // Add the emails of known customers to the table.
+            try {
+                $rows = $db->conn->executeQuery(
+                    "SELECT uid FROM {$_TABLES['shop.customerXgateway']} WHERE uid > 1"
+                )->fetchAllAssociative();
+            } catch (\Throwable $e) {
+                Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $rows = false;
+            }
+            if (is_array($rows)) {
+                foreach ($rows as $row) {
+                    $email = $db->getItem($_TABLES['users'], 'email', array('uid' => $row['uid']));
+                    if (!empty($email)) {
+                        try {
+                            $db->conn->update(
+                                $_TABLES['shop.customerXgateway'],
+                                array('email' => $email),
+                                array('uid' => $row['uid']),
+                                array(Database::STRING, Database::INTEGER)
+                            );
+                        } catch (\Throwable $e) {
+                            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                            // Just go on to the next
+                        }
+                    }
+                }
+            }
+        }
         return self::setVersion(self::$ver);
     }
 

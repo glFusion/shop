@@ -470,9 +470,10 @@ $_SQL = array(
 
 'shop.customerXgateway' => "CREATE TABLE `{$_TABLES['shop.customerXgateway']}` (
   `uid` int(11) unsigned NOT NULL,
+  `email` varchar(127) NOT NULL DEFAULT '',
   `gw_id` varchar(40) NOT NULL,
   `cust_id` varchar(128) DEFAULT NULL,
-  PRIMARY KEY (`uid`,`gw_id`)
+  UNIQUE KEY `email_gw` (`email`,`gw_id`)
 ) ENGINE=MyISAM",
 
 'shop.payments' => "CREATE TABLE `{$_TABLES['shop.payments']}` (
@@ -1009,6 +1010,9 @@ $SHOP_UPGRADE['1.5.0'] = array(
     "ALTER TABLE {$_TABLES['shop.orderstatus']} CHANGE notify_buyer notify_buyer tinyint(1) unsigned not null default 0",
     "ALTER TABLE {$_TABLES['shop.orderstatus']} CHANGE notify_admin notify_admin tinyint(1) unsigned not null default 0",
     "ALTER TABLE {$_TABLES['shop.ipnlog']} ADD `status_msg` varchar(255) NOT NULL DEFAULT '' AFTER `order_id`",
+    "ALTER TABLE {$_TABLES['shop.customerXgateway']} DROP PRIMARY KEY",
+    "ALTER TABLE {$_TABLES['shop.customerXgateway']} ADD email varchar(127) NOT NULL DEFAULT '' AFTER uid",
+    "ALTER TABLE {$_TABLES['shop.customerXgateway']} ADD UNIQUE IF NOT EXISTS `email_gw` (`email`, `gw_id`)",
 );
 
 

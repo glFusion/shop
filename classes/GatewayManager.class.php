@@ -45,7 +45,7 @@ class GatewayManager
      * @param   boolean $enabled    True to get only enabled gateways
      * @return  array       Array of gateways, enabled or all
      */
-    public static function getAll($enabled = false)
+    public static function getAll(bool $enabled = false) : array
     {
         global $_TABLES;
 
@@ -100,7 +100,7 @@ class GatewayManager
      *
      * @param   array   $data_arr   Reference to data array
      */
-    private static function getUninstalled(&$data_arr)
+    private static function getUninstalled(array &$data_arr) : void
     {
         global $LANG32;
 
@@ -137,7 +137,7 @@ class GatewayManager
      *
      * @param   array   $data_arr   Reference to data array
      */
-    private static function getInstalled(&$data_arr) : void
+    private static function getInstalled(array &$data_arr) : void
     {
         global $_TABLES;
 
@@ -166,6 +166,7 @@ class GatewayManager
                         'grp_name' => $A['grp_name'],
                         'version' => $A['version'],
                         'code_version' => $gw->getCodeVersion(),
+                        'shop_version' => $gw->getShopVersion(),
                     );
                 }
             }
@@ -178,7 +179,7 @@ class GatewayManager
      *
      * @return  string      HTML for the gateway listing
      */
-    public static function adminList()
+    public static function adminList() : string
     {
         global $_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN,
             $LANG32;
@@ -285,7 +286,7 @@ class GatewayManager
      * @param   array   $extra      Extra information passed in verbatim
      * @return  string              HTML for field display in the table
      */
-    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr, $extra)
+    public static function getAdminField(string $fieldname, $fieldvalue, array $A, array $icon_arr, array $extra) : string
     {
         global $_CONF, $LANG_SHOP, $LANG_ADMIN;
 
@@ -336,8 +337,7 @@ class GatewayManager
                         'url' => Config::get('admin_url') . '/gateways.php?gwupgrade=' . $A['id'],
                     ) );
                     $retval .= $A['code_version'];
-                }
-                if (!COM_checkVersion($A['code_version'], $A['available'])) {
+                } elseif (!COM_checkVersion($A['code_version'], $A['available'])) {
                     $retval .= ' ' . FieldList::buttonLink(array(
                         'text' => $A['available'],
                         'url' => $A['upgrade_url'],
@@ -549,7 +549,7 @@ class GatewayManager
      *
      * @param   array   $data_arr   Reference to data array
      */
-    private static function _checkAvailableVersions(&$data_arr) : void
+    private static function _checkAvailableVersions(array &$data_arr) : void
     {
         global $_VARS;
 
