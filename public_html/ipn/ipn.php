@@ -43,4 +43,3 @@ if (!empty($gateway)) {
         $IPN->Response($IPN->Process());
     }
 }
-

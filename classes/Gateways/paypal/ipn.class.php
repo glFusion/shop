@@ -180,32 +180,6 @@ class ipn extends \Shop\IPN
 
 
     /**
-     * Confirms that payment status is complete.
-     * Complete means not 'denied', 'failed', 'pending', etc.
-     *
-     * @param   string  $payment_status     Payment status to verify
-     * @return  boolean                     True if complete, False otherwise
-     */
-    private function XXisStatusCompleted($payment_status)
-    {
-        return ($payment_status == 'Completed');
-    }
-
-
-    /**
-     * Checks if payment status is reversed or refunded.
-     * For example, some sort of cancelation.
-     *
-     * @param   string  $payment_status     Payment status to check
-     * @return  boolean                     True if reversed or refunded
-     */
-    private function XXisStatusReversed($payment_status)
-    {
-        return ($payment_status == 'Reversed' || $payment_status == 'Refunded');
-    }
-
-
-    /**
      * Process an incoming IPN transaction.
      * Do the following:
      * - Verify IPN
