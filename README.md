@@ -20,7 +20,7 @@ gateway configuration. You should also sign up for a developer or
 sandbox account for testing.
 
 If you use the Bad Behavior plugin, be sure that you whitelist your Shop IPN
-URL (`shop/ipn/*provider*.php`). Bad Behavior may otherwise block IPN messages
+URL (`shop/ipn/ipn.php`). Bad Behavior may otherwise block IPN messages
 from your gateway provider.
 
 This version of the Shop plugin requires at least version 1.0.10 of the lgLib plugin for supporting functions.
