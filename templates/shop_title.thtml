@@ -27,10 +27,10 @@
 		<a href="{site_url}/shop/index.php" class="uk-button uk-button-primary uk-button-small">{$LANG_SHOP['storefront']}</a>
 {!endif}
 {!if link_account}
-		<a href="{site_url}/shop/account.php" class="uk-button uk-button-primary uk-button-small">{$LANG01[47]}</a>
+		<a href="{site_url}/shop/account.php" class="uk-button uk-button-primary">{$LANG01[47]}</a>
 {!endif}
 
-		<a class="uk-button uk-button-success uk-button-small shop_cart_vis"
+		<a class="uk-button uk-button-success shop_cart_vis"
 			id="link_cart" href="{site_url}/shop/cart.php"
 {!if link_cart}
 {!else}
