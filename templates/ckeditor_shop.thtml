@@ -7,7 +7,7 @@ function loadEditor(id) {
     		{ name: 'document', items: [ 'Source' ] },
     		[ 'Cut', 'Copy', 'Paste', '-', 'Undo', 'Redo' ],
     		{ name: 'basicstyles', items: [ 'Bold', 'Italic', 'Underline' ] },
-    		{ name: 'forum', items : [ 'Smiley','NumberedList', 'BulletedList', 'Image','SpecialChar' ] },
+    		{ name: 'forum', items : [ 'Link', 'Smiley','NumberedList', 'BulletedList', 'Image','SpecialChar' ] },
     	],
         contentsCss: [ '{css_url}' ],
         bodyClass: 'forumpost',
