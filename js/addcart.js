@@ -77,22 +77,6 @@ function SHOP_delFromCart(oi_id)
 
 
 /**
- * Set the visibility of the cart block so it only appears if there are items.
- * @todo: deprecate in favor of all_setvis_cart_links()
- */
-function blk_setvis_shop_cart(newvis)
-{
-    blk = document.getElementById("shop_cart");
-    if (typeof(blk) != 'undefined' && blk != null) {
-        blk.style.display = newvis;
-    }
-    btn = document.getElementById("link_cart");
-    if (typeof(btn) != 'undefined' && btn != null) {
-        btn.style.display = newvis == "block" ? "" : "none";
-    }
-}
-
-/**
  * Set the visibility for all cart-view buttons, blocks, links, etc.
  * Need to set the shop_cart ID to show/hide the PHP block, which doesn't
  * have a CSS class.

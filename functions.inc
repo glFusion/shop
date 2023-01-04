@@ -948,10 +948,9 @@ function phpblock_shop_cart()
     $T = new Shop\Template;
     $T->set_file('shopping_cart', 'blk_cart.thtml');
     $contents = phpblock_shop_cart_contents();
-    $vis = empty($contents) ? 'none' : 'block';
     $T->set_var(array(
         'cart_contents' => $contents,
-        'visibility'    => $vis,
+        'is_visible'    => !empty($contents),
         'cart_url'      => COM_buildUrl(Config::get('url') . '/cart.php'),
     ) );
     $T->parse('output', 'shopping_cart');

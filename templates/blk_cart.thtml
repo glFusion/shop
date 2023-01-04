@@ -1,12 +1,12 @@
 {# begin {templatelocation} #}
 <div class="shopBlock" id="shopCartBlockContents">
-  {cart_contents}
+	{cart_contents}
 </div>
 <span class="aligncenter">
-  <a href="{cart_url}">{$LANG_SHOP['viewcart']}</a>
+	<a href="{cart_url}">{$LANG_SHOP['viewcart']}</a>
 </span>
 <script>
 // Set the initial block visibility when the page is displayed
-blk_setvis_shop_cart("{visibility}");
+all_setvis_cart_links({is_visible});
 </script>
 {# end {templatelocation} #}
