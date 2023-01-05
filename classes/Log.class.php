@@ -90,12 +90,21 @@ class Log extends \glFusion\Log\Log
     }
 
 
+    public static function alert(
+        $logEntry = '',
+        $context = array(),
+        $extra = array()
+    ) {
+        parent::write('shop', Log::ALERT, $logEntry, $context, $extra);
+    }
+
+
     public static function debug(
         $logEntry = '',
         $context = array(),
         $extra = array()
     ) {
-        parent::write('shop', Log::DEBUG, $logEntry, $context, $extra);
+        parent::write('shop_debug', Log::DEBUG, $logEntry, $context, $extra);
     }
 
 }
