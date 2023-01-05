@@ -100,6 +100,14 @@ Log::config('shop',
       'level' => Config::get('log_level'),
     )
 );
+Log::config('shop_debug',
+    array(
+      'type'  => 'file',
+      'path'  => $_CONF['path_log'],
+      'file'  => 'shop_debug.log',
+      'level' => Config::get('log_level'),
+    )
+);
 
 //  Set user ID = 1 for anonymous users.
 if (empty($_USER['uid']) || $_USER['uid'] < 2) {

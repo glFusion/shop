@@ -25,19 +25,21 @@ if (isset($_GET['_gw'])) {
 }
 
 if (empty($gw_name)) {
+    $log_fn = 'Shop\Log::alert';
     $log_level = Log::ALERT;
-    Log::write('shop', Log::ALERT, "Gateway not specified in Webhook message data");
+    $log_fn("Gateway not specified in Webhook message data");
 } else {
+    $log_fn = 'Shop\Log::debug';
     $log_level = Log::DEBUG;
-    Log::debug("Received $gw_name Webhook:");
+    $log_fn("Received $gw_name Webhook:");
 }
 
 // Log everything before instantiating the webhook handler in case
 // something goes wrong later.
-Log::write('shop', $log_level, "Got Webhook Headers: " . var_export($_SERVER,true));
-Log::write('shop', $log_level, "Got Webhook GET: " . var_export($_GET, true));
-Log::write('shop', $log_level, "Got Webhook POST: " . var_export($_POST, true));
-Log::write('shop', $log_level, "Got php:://input: " . var_export(@file_get_contents('php://input'), true));
+$log_fn("Got Webhook Headers: " . var_export($_SERVER,true));
+$log_fn("Got Webhook GET: " . var_export($_GET, true));
+$log_fn("Got Webhook POST: " . var_export($_POST, true));
+$log_fn("Got php:://input: " . var_export(@file_get_contents('php://input'), true));
 
 // Get the complete IPN message prior to any processing
 $status = true;

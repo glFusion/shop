@@ -13,7 +13,7 @@
  */
 namespace Shop;
 use glFusion\Database\Database;
-use glFusion\Log\Log;
+use Shop\Log;
 use Shop\Models\DataArray;
 
 
