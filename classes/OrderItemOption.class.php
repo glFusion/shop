@@ -3,15 +3,18 @@
  * Class to manage options/attributes associated with order line items.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019-2021 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.4.0
+ * @version     v1.5.0
  * @since       v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
+use glFusion\Database\Database;
+use Shop\Log;
+use Shop\Models\DataArray;
 
 
 /**
@@ -68,27 +71,29 @@ class OrderItemOption
      * @param   integer $item   OrderItemObject record ID or array
      * @uses    self::Load()
      */
-    function __construct($item = 0)
+    public function __construct(int $item = 0)
     {
-        if (is_numeric($item) && $item > 0) {
-            // Got an item ID, read from the DB
-            $status = $this->Read($item);
-            if (!$status) {
-                $this->isEmpty = true;
-                $this->oi_id = 0;
-            } else {
-                $this->isEmpty = false;
-            }
-        } elseif (is_array($item)) {
-            // Got an item record, just set the variables
-            if (!isset($item['product_id']) && isset($item['item_id'])) {
-                // extract the item_id with options into the product ID
-                list($this->product_id) = explode('|', $item['item_id']);
-            }
-            $this->setVars($item);
+        $status = $this->Read($item);
+        if (!$status) {
+            $this->isEmpty = true;
+            $this->oi_id = 0;
+        } else {
             $this->isEmpty = false;
         }
-        //$this->product = Product::getByID($this->product_id);
+    }
+
+
+    /**
+     * Create an instance from an array, e.g. from a database record.
+     *
+     * @param   array   $A      Array of values
+     * @return  object      new OrderItem object
+     */
+    public static function fromArray(array $A) : self
+    {
+        $retval = new self;
+        $retval->setVars(new DataArray $A);
+        return $retval;
     }
 
 
@@ -98,21 +103,24 @@ class OrderItemOption
     * @param    integer $rec_id     DB record ID of item
     * @return   boolean     True on success, False on failure
     */
-    public function Read($rec_id)
+    public function Read(int $rec_id) : bool
     {
         global $_SHOP_CONF, $_TABLES;
 
-        $rec_id = (int)$rec_id;
-        $sql = "SELECT * FROM {$_TABLES['shop.oi_opts']}
-                WHERE oio_id = $rec_id";
-        //echo $sql;die;
-        $res = DB_query($sql);
-        if ($res) {
-            $status = $this->setVars(DB_fetchArray($res, false));
-            if ($status) {
-                $this->unTaint();
-            }
-            return $status;
+        try {
+            $row = Database::getInstance()->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.oi_opts']} WHERE oio_id = ?",
+                array($rec_id),
+                array(Database::INTEGER)
+            )->fetchAssociative();
+        } catch (\Throwable $e) {
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $row = false;
+        }
+        if (is_array($row)) {
+            $this->setVars(new DataArray($row));
+            $this->unTaint();
+            return true;
         } else {
             return false;
         }
@@ -125,15 +133,15 @@ class OrderItemOption
      * @param   array   $A      Array of values
      * @return  object  $this
      */
-    public function setVars($A)
+    public function setVars(DataArray $A) : self
     {
-        $this->oio_id = (int)$A['oio_id'];
-        $this->oi_id = (int)$A['oi_id'];
-        $this->pog_id = (int)$A['pog_id'];
-        $this->pov_id = (int)$A['pov_id'];
-        $this->oio_name = $A['oio_name'];
-        $this->oio_value = $A['oio_value'];
-        $this->oio_price = $A['oio_price'];
+        $this->oio_id = $A->getInt('oio_id');
+        $this->oi_id = $A->getInt('oi_id');
+        $this->pog_id = $A->getInt('pog_id');
+        $this->pov_id = $A->getInt('pov_id');
+        $this->oio_name = $A->getString('oio_name');
+        $this->oio_value = $A->getString('oio_value');
+        $this->oio_price = $A->getFloat('oio_price');
         return $this;
     }
 
@@ -197,14 +205,22 @@ class OrderItemOption
         //$cache_key = "oio_item_{$Item->id}";
         //$retval = Cache::get($cache_key);
         //if ($retval === NULL) {
-            //$retval = array();
-            $sql = "SELECT * FROM {$_TABLES['shop.oi_opts']}
-                WHERE oi_id = {$item_id}
-                ORDER BY oio_id ASC";
-            $res = DB_query($sql);
-            while ($A = DB_fetchArray($res, false)) {
-                $retval[$item_id][] = new self($A);
+        //$retval = array();
+        try {
+            $rows = Database::getInstance()->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.oi_opts']} WHERE oi_id = {$item_id} ORDER BY oio_id ASC",
+                array($item_id),
+                array(Database::INTEGER)
+            )->fetchAllAssociative();
+        } catch (\Throwable $e) {
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $rows = false;
+        }
+        if (is_array($rows)) {
+            foreach ($rows as $row) {
+                $retval[$item_id][] = self::fromArray($row);
             }
+        }
         //    Cache::set($cache_key, $retval, array('order_' . $Item->order_id));
         //}
         return $retval[$item_id];
@@ -216,26 +232,35 @@ class OrderItemOption
      *
      * @return  boolean     True on success, False on DB error
      */
-    public function Save()
+    public function Save() : bool
     {
         global $_TABLES;
 
-        $sql = "INSERT INTO {$_TABLES['shop.oi_opts']} SET
-            oi_id = '{$this->oi_id}',
-            pog_id = '{$this->pog_id}',
-            pov_id = '{$this->pov_id}',
-            oio_name = '" . DB_escapeString($this->oio_name) . "',
-            oio_value = '" . DB_escapeString($this->oio_value) . "',
-            oio_price = '{$this->oio_price}'";
-        Log::debug($sql);
-        DB_query($sql, 1);  // ignore dup key issues.
-        if (!DB_error()) {
-            if ($this->oio_id == 0) {
-                $this->oio_id = DB_insertID();
-            }
+        try {
+            Database::getInstance()->insert(
+                $_TABLES['shop.oi_opts'],
+                array(
+                    'oi_id' => $this->oi_id,
+                    'pog_id' => $this->pog_id,
+                    'pov_id' => $this->pov_id,
+                    'oio_name' => $this->oio_name,
+                    'oio_value' => $this->oio_value,
+                    'oio_price' => $this->oio_price,
+                ),
+                array(
+                    Database::INTEGER,
+                    Database::INTEGER,
+                    Database::INTEGER,
+                    Database::STRING,
+                    Database::STRING,
+                    Database::STRING,
+                    Database::STRING,
+                )
+            );
+            $this->oio_id = $db->conn->lastInserId();
             return true;
-        } else {
-            Log::error($sql);
+        } catch (\Throwable $e) {
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return false;
         }
     }
@@ -250,7 +275,7 @@ class OrderItemOption
      * @param   string  $value      Value of custom field
      * @return  object  $this
      */
-    public function setOpt($pov_id, $name='', $value='')
+    public function setOpt(int $pov_id, string $name='', string $value='') : self
     {
         if ($pov_id > 0) {
             $POV = new ProductOptionValue($pov_id);
@@ -278,13 +303,24 @@ class OrderItemOption
     /**
      * Delete all options related to a specified OrderItem.
      *
-     * @param   integer $oi_id      OrderItem record ID
+     * @param   integer $oi_id  OrderItem record ID
+     * @param   boolean     True on success, False on error
      */
-    public static function deleteItem($oi_id)
+    public static function deleteItem(int $oi_id) : bool
     {
         global $_TABLES;
 
-        DB_delete($_TABLES['shop.oi_opts'], 'oi_id', (int)$oi_id);
+        try {
+            Database::getInstance()->delete(
+                $_TABLES['shop.oi_opts'],
+                array('oi_id' => $oi_id),
+                array(Database::INTEGER)
+            );
+            return true;
+        } catch (\Throwable $e) {
+            Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return false;
+        }
     }
 
 
@@ -294,7 +330,7 @@ class OrderItemOption
      * @param   object  $Attr2  Second attribute to check
      * @return  boolean     True if the objects match, False if not.
      */
-    public function Matches($Attr2)
+    public function Matches(self $Attr2) : bool
     {
         $flds_to_check = array(
             'pog_id', 'pov_id',
