@@ -92,7 +92,7 @@ class OrderItemOption
     public static function fromArray(array $A) : self
     {
         $retval = new self;
-        $retval->setVars(new DataArray $A);
+        $retval->setVars(new DataArray($A));
         return $retval;
     }
 
