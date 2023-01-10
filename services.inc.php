@@ -184,6 +184,7 @@ function service_getUrl_shop($args, &$output, &$svc_msg)
 
     switch ($type) {
     case 'ipn':
+    case 'payment':
         if ($id != '') {
             $url = Shop\IPN::getDetailUrl($id);
         }
