@@ -215,7 +215,7 @@ class ipnlog extends \Shop\Report
         $res = DB_query($sql);
         $A = DB_fetchArray($res, false);
         if (empty($A)) {
-            return "Nothing Found";
+            return SHOP_errorMessage($LANG_SHOP['no_data']);
         }
 
         // Allow all json-encoded data to be available to the template

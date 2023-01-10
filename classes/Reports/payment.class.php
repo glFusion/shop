@@ -264,7 +264,7 @@ class payment extends \Shop\Report
             $A = false;
         }
         if (empty($A)) {
-            return "Nothing Found";
+            return SHOP_errorMessage($LANG_SHOP['no_data']);
         }
 
         try {
