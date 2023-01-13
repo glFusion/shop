@@ -38,6 +38,22 @@ class orderlist extends \Shop\Report
         OrderStatus::REFUNDED,
     );
 
+    private $email = '';
+
+
+    /**
+     * Set the email to check, for anon orders to be shown to logged-in users.
+     *
+     * @param   string  $email  Email address
+     * @return  object  $this
+     */
+    public function setEmail(string $email) : self
+    {
+        $this->email = $email;
+        return $this;
+    }
+
+
     /**
      * Create and render the report contents.
      *
@@ -202,9 +218,17 @@ class orderlist extends \Shop\Report
         }
 
         $where = "$status_sql (ord.order_date >= '$from_date' AND ord.order_date <= '$to_date')";
+        $where_uid = array();
         if ($this->uid > 0) {
-            $where .= " AND uid = {$this->uid}";
+            $where_uid[] = "uid = {$this->uid}";
         }
+        if ($this->email != '') {
+            $where_uid[] = "buyer_email = '{$this->email}'";
+        }
+        if (!empty($where_uid)) {
+            $where .= " AND (" . implode(' OR ', $where_uid) . ") ";
+        }
+
         if ($this->paid_status == 2) {
             $where .= " HAVING paid >= sales_amt";
         } elseif ($this->paid_status == 1) {
@@ -214,7 +238,6 @@ class orderlist extends \Shop\Report
             'table' => 'shop.orders',
             'sql' => $sql,
             'query_fields' => array(
-                'order_id',
                 'billto_name', 'billto_company', 'billto_address1',
                 'billto_address2','billto_city', 'billto_state',
                 'billto_country', 'billto_zip',
