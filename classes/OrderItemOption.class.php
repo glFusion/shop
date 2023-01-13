@@ -208,7 +208,7 @@ class OrderItemOption
         //$retval = array();
         try {
             $rows = Database::getInstance()->conn->executeQuery(
-                "SELECT * FROM {$_TABLES['shop.oi_opts']} WHERE oi_id = {$item_id} ORDER BY oio_id ASC",
+                "SELECT * FROM {$_TABLES['shop.oi_opts']} WHERE oi_id = ? ORDER BY oio_id ASC",
                 array($item_id),
                 array(Database::INTEGER)
             )->fetchAllAssociative();
