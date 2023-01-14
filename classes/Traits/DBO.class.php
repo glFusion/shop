@@ -104,6 +104,7 @@ trait DBO
             $stmt = false;
         }
 
+        $clearcache = false;
         if ($stmt) {
             $order = 10;
             $stepNumber = 10;
@@ -116,12 +117,16 @@ trait DBO
                             array($f_id => $A[$f_id]),
                             array(Database::INTEGER, Database::STRING)
                         );
+                        $clearcache = true;
                     } catch (\Exception $e) {
                         Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                     }
                 }
                 $order += $stepNumber;
             }
+        }
+        if ($clearcache) {
+            Cache::clear(static::$TABLE);
         }
     }
 
