@@ -3,9 +3,9 @@
  * Testing gateway to handle free orders. Based on the Test gateway.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright  Copyright (c) 2018-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -17,6 +17,7 @@ use Shop\Coupon;
 use Shop\Currency;
 use Shop\Template;
 use Shop\Product;
+use Shop\Models\DataArray;
 
 
 /**
@@ -100,15 +101,18 @@ class Gateway extends \Shop\Gateway
      * a new button will be created.
      *
      * @param   object  $P      Product Item object
-     * @param   float   $price  Optional override price
+     * @param   DataArray   $Props  Optional override properties
      * @return  string          HTML code for the button.
      */
-    public function ProductButton(Product $P, ?float $price=NULL) : string
+    public function ProductButton(Product $P, ?DataArray $Props=NULL) : string
     {
         global $_USER, $LANG_SHOP;
 
         if ($P->getPrice() > 0 || $P->isPhysical()) {
             return '';    // Not for items that require shipping.
+        }
+        if (!$Props) {
+            $Props = new DataArray;
         }
         $cust = array(
             'uid' => $_USER['uid'],
@@ -125,7 +129,7 @@ class Gateway extends \Shop\Gateway
             '<input type="hidden" name="payer_email" value="' . $_USER['email'] . '" />',
             '<input type="hidden" name="item_number" value="' . $P->getID() . '" />',
             '<input type="hidden" name="quantity" value="1" />',
-            '<input type="hidden" name="return" value="' . SHOP_URL . '/index.php?thanks=free" />',
+            '<input type="hidden" name="return" value="' . $Props->getString('return_url', SHOP_URL . '/index.php?thanks=free') . '" />',
             '<input type="hidden" name="cmd" value="buy_now" />',
             '<input type="hidden" name="ipn_type" value="buy_now" />',
         );

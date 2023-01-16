@@ -7,9 +7,9 @@
  * a live site!
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright  Copyright (c) 2018-2019 Lee Garner <lee@leegarner.com>
+ * @copyright  Copyright (c) 2018-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -21,6 +21,7 @@ use Shop\Coupon;
 use Shop\Currency;
 use Shop\Template;
 use Shop\Product;
+use Shop\Models\DataArray;
 use Shop\Models\Token;      // to create unique transaction IDs
 
 
@@ -108,10 +109,10 @@ class Gateway extends \Shop\Gateway
      * a new button will be created.
      *
      * @param   object  $P      Product Item object
-     * @param   float   $price  Optional override price
+     * @param   DataArray   $Props  Optional override values
      * @return  string          HTML code for the button.
      */
-    public function ProductButton(Product $P, ?float $price=NULL) : string
+    public function ProductButton(Product $P, ?DataArray $Props=NULL) : string
     {
         global $LANG_SHOP, $_CONF;
 
@@ -119,27 +120,29 @@ class Gateway extends \Shop\Gateway
         if ($P->isPhysical()) return '';
         $btn_type = $P->getBtnType();
         if (empty($btn_type)) return '';
-
+        if (!$Props) {
+            $Props = new DataArray;
+        }
         $this->AddCustom('transtype', $btn_type);
         $gateway_vars = '';
 
         if (empty($gateway_vars)) {
-            $vars = array();
-            $vars['cmd'] = $btn_type;
-            $vars['business'] = $_CONF['site_mail'];
-            $vars['item_number'] = htmlspecialchars($P->getID());
-            $vars['item_name'] = htmlspecialchars($P->getShortDscp());
-            $vars['currency_code'] = $this->currency_code;
-            $vars['custom'] = $this->custom->encode();
-            $vars['return'] = SHOP_URL . '/index.php?thanks=shop';
-            $vars['cancel_return'] = SHOP_URL;
-            $vars['amount'] = $P->getPrice();
-            $vars['pmt_gross'] = $P->getPrice();
-            $vars['ipn_type'] = 'buy_now';  // force type for IPN processor.
-            $vars['txn_id'] = uniqid();     // Bogus transaction ID.
-            $vars['quantity'] = 1;
-            $vars['notify_url'] = $this->getIpnUrl();
-
+            $vars = array(
+                'cmd' => $btn_type,
+                'business' => $_CONF['site_mail'],
+                'item_number' => htmlspecialchars($P->getID()),
+                'item_name' => htmlspecialchars($P->getShortDscp()),
+                'currency_code' => $this->currency_code,
+                'custom' => $this->custom->encode(),
+                'return' => $Props->getString('return_url', SHOP_URL . '/index.php?thanks=shop'),
+                'cancel_return' => $Props->getString('cancel_url', SHOP_URL . '/index.php'),
+                'amount' => $Props->getFloat('amount', $P->getPrice()),
+                'pmt_gross' => $Props->getFloat('amount', $P->getPrice()),
+                'ipn_type' => 'buy_now',  // force type for IPN processor.
+                'txn_id' => uniqid(),     // Bogus transaction ID.
+                'quantity' => 1,
+                'notify_url' => $this->getIpnUrl(),
+            );
             if ($P->getWeight() > 0) {
                 $vars['weight'] = $P->getWeight();
             } else {

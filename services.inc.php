@@ -6,7 +6,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2011-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.4.1
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -51,11 +51,6 @@ function service_genButton_shop(array $args, &$output, &$svc_msg) : int
 
     $args = new DataArray($args);
     $price = $args->getFloat('amount', NULL);
-    /*if (isset($args['amount'])) {
-        $price = $args['amount'];
-    } else {
-        $price = NULL;
-    }*/
 
     $btn_type = $args->getString('btn_type', 'buy_now');
     //$btn_type = isset($args['btn_type']) ? $args['btn_type'] : 'buy_now';
@@ -66,13 +61,22 @@ function service_genButton_shop(array $args, &$output, &$svc_msg) : int
         return PLG_RET_OK;
     }
 
+    // Make sure the site_url is provided in the urls, if used.
+    foreach (array('return_url', 'cancel_url') as $url) {
+        if (isset($args[$url])) {
+            if (substr_compare($args[$url], $_CONF['site_url'], 0, NULL, true) != 0) {
+                $args[$url] = $_CONF['site_url'] . '/' . $args[$url];
+            }
+        }
+    }
+
     // Create the immediate purchase button, if requested.  As soon as a
     // gateway supplies the requested button type, break from the loop.
     if (!empty($btn_type)) {
         foreach (Shop\GatewayManager::getAll(true) as $gw) {
             if ($gw->Supports('external') && $gw->Supports($btn_type)) {
                 $P = Shop\Product::getByID($args['item_number']);
-                $output['buy_now'] = $gw->ProductButton($P, $price);
+                $output['buy_now'] = $gw->ProductButton($P, $args);
                 break;
             }
         }
@@ -623,5 +627,3 @@ if (
         return plugin_getCurrency_shop();
     }
 }
-
-?>

@@ -3,9 +3,9 @@
  * Class to manage payment by gift card.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -14,6 +14,7 @@
 namespace Shop\Gateways\_internal;
 use Shop\Template;
 use Shop\Product;
+use Shop\Models\DataArray;
 
 
 /**
@@ -89,10 +90,10 @@ class Gateway extends \Shop\Gateway
      * @uses    Gateway::_ReadButton()
      * @uses    Gateway::_SaveButton()
      * @param   object  $P      Product Item object
-     * @param   float   $price  Optional override price
+     * @param   DataArray   $vars   Optional overrides (price, return urls, etc.)
      * @return  string          HTML code for the button.
      */
-    public function ProductButton(Product $P, ?float $price=NULL) : string
+    public function ProductButton(Product $P, ?DataArray $Props=NULL) : string
     {
         global $LANG_SHOP;
 
@@ -101,24 +102,27 @@ class Gateway extends \Shop\Gateway
         // Make sure we want to create a buy_now-type button
         $btn_type = $P->getBtnType();
         if (empty($btn_type)) return '';
+        if (!$Props) {
+            $Props= new DataArray;
+        }
 
         $btn_info = self::gwButtonType($btn_type);
         $this->AddCustom('transtype', $btn_type);
         $gateway_vars = '';
 
         if (empty($gateway_vars)) {
-            $vars = array();
-            $vars['cmd'] = $btn_info['cmd'];
-            $vars['item_number'] = htmlspecialchars($P->getID());
-            $vars['item_name'] = htmlspecialchars($P->getShortDscp());
-            $vars['currency_code'] = $this->currency_code;
-            $vars['custom'] = $this->custom->encode();
-            $vars['return'] = SHOP_URL . '/index.php?thanks=shop';
-            $vars['cancel_return'] = SHOP_URL;
-            $vars['amount'] = $P->getPrice();
-            $vars['notify_url'] = $this->ipn_url;
-            $vars['ipn_type'] = 'buy_now';      // Force the IPN type
-
+            $vars = array(
+                'cmd' => $btn_info['cmd'],
+                'item_number' => htmlspecialchars($P->getID()),
+                'item_name' => htmlspecialchars($P->getShortDscp()),
+                'currency_code' => $this->currency_code,
+                'custom' => $this->custom->encode(),
+                'return' => $Props->getString('return_url', SHOP_URL . '/index.php?thanks=shop'),
+                'cancel_return' => $Props->getString('cancel_url', SHOP_URL . '/index.php'),
+                'amount' => $Props->getFloat('amount', $P->getPrice()),
+                'notify_url' => $this->ipn_url,
+                'ipn_type' => 'buy_now',      // Force the IPN type
+            );
             // Get the allowed buy-now quantity. If not defined, set
             // undefined_quantity.
             $qty = $P->getFixedQuantity();

@@ -858,9 +858,10 @@ class Gateway
      * Each gateway must implement its own function for payment buttons.
      *
      * @param   object  $P      Instance of a Product object for the product
+     * @param   DataArray   $Props  Option override values
      * @return  string          Complete HTML for the "Buy Now"-type button
      */
-    public function ProductButton(Product $P, ?float $price=NULL) : string
+    public function ProductButton(Product $P, ?DataArray $Props=NULL) : string
     {
         return '';
     }
@@ -1572,9 +1573,14 @@ class Gateway
      */
     protected function returnUrl(string $cart_id, string $token) : string
     {
-        return SHOP_URL . '/index.php?thanks=' . $this->gw_name .
-            '/' . $cart_id .
-            '/' . $token;
+        $retval = SHOP_URL . '/index.php?thanks=' . $this->gw_name;
+        if (!empty($cart_id)) {
+            $retval .= '/' . $cart_id;
+            if (!empty($token)) {
+                $retval .= '/' . $token;
+            }
+        }
+        return $retval;
     }
 
 

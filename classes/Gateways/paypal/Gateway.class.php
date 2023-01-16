@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.4.1
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -476,12 +476,15 @@ class Gateway extends \Shop\Gateway
      * @param   object  $P      Product Item object
      * @return  string          HTML code for the button.
      */
-    public function ProductButton(Product $P, ?float $set_price = NULL) : string
+    public function ProductButton(Product $P, ?DataArray $Props=NULL) : string
     {
         global $LANG_SHOP;
 
         $btn_type = $P->getBtnType();
         if (empty($btn_type)) return '';
+        if (!$Props) {
+            $Props = new DataArray;      // so get* functions will work
+        }
 
         // Make sure we want to create a buy_now-type button.
         // Not for items that require shipping or free products.
@@ -501,12 +504,11 @@ class Gateway extends \Shop\Gateway
             'item_name' => htmlspecialchars($P->getShortDscp()),
             'currency_code' => $this->currency_code,
             'custom' => $this->custom->encode(),
-            'return' => $this->returnUrl('', ''),
-            'cancel_return' => $P->getCancelUrl(),
-            'amount' => $set_price !=- NULL ? $set_price : $P->getSalePrice(),
+            'return' => $Props->getString('return_url', $this->returnUrl('', '')),
+            'cancel_return' => $Props->getString('cancel_url', $P->getCancelUrl()),
+            'amount' => $Props->getFloat('amount', $P->getSalePrice()),
             'notify_url' => $this->ipn_url,
         );
-
         // Get the allowed buy-now quantity. If not defined, set
         // undefined_quantity.
         $qty = $P->getFixedQuantity();
