@@ -254,7 +254,7 @@ class ipnlog extends \Shop\Report
                 }
             }
             if ($ipn) {
-                $T->set_var('ipn_data', print_r($ipn, true));
+                $T->set_var('ipn_data', var_export($ipn, true));
             }
             $retval = $T->parse('output', 'report');
         }
