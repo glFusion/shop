@@ -223,6 +223,7 @@ default:
     $R = \Shop\Report::getInstance('orderlist');
     $R->setAdmin(false);
     $R->setParams();
+    $R->setEmail($_USER['email']);
     $R->setAllowedStatuses(array_keys(OrderStatus::getCustomerViewable()));
     $content .= $R->Render();
     $menu_opt = $LANG_SHOP['purchase_history'];
