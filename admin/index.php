@@ -824,7 +824,6 @@ case 'carrier_config':
     break;
 
 case 'wfadmin':
-    //$content .= Shop\Workflow::adminList();
     $content .= Shop\Models\OrderStatus::adminList();
     break;
 

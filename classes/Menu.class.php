@@ -374,19 +374,14 @@ class Menu
                 'active' => $view == 'shipments' ? true : false,
             ),
             array(
-                'url' => SHOP_ADMIN_URL . '/payments.php?payments=x',
+                'url' => SHOP_ADMIN_URL . '/payments.php?payments',
                 'text' => $LANG_SHOP['payments'],
                 'active' => $view == 'payments' ? true : false,
             ),
             array(
-                'url' => SHOP_ADMIN_URL . '/payments.php?webhooks=x',
+                'url' => SHOP_ADMIN_URL . '/payments.php?webhooks',
                 'text' => $LANG_SHOP['webhooks'],
                 'active' => $view == 'webhooks' ? true : false,
-            ),
-            array(
-                'url' => SHOP_ADMIN_URL . '/index.php?wfadmin=x',
-                'text' => $LANG_SHOP['statuses'],
-                'active' => $view == 'wfadmin' ? true : false,
             ),
         );
         return self::_makeSubMenu($menu_arr);
