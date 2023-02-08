@@ -4335,7 +4335,7 @@ class Order
                 $_TABLES['shop.orders'],
                 array('uid' => $uid),
                 array('uid' => 1, 'buyer_email' => $email),
-                array(Database::INTEGER, Database::STRING)
+                array(Database::INTEGER, Database::INTEGER, Database::STRING)
             );
         } catch (\Exception $e) {
             Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
