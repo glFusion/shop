@@ -73,7 +73,7 @@
 
 		<div class="uk-form-row uk-margin">
 			<label class="uk-form-label" for="cat_id">{$LANG_SHOP['category']}:
-				<span id="cat_id" class="tooltip_cfg tooltipstered"></span>
+				<span id="category" class="tooltip_cfg tooltipstered"></span>
 			</label>
 			<div class="uk-form-controls">
 				<input type="hidden" name="selected_cats" />
