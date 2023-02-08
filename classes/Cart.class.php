@@ -869,11 +869,28 @@ class Cart extends Order
      * Delete all carts.
      * Called from the special administrative functions, may be needed after upgrading.
      */
-    public static function Purge()
+    public static function Purge() : void
     {
         global $_TABLES;
-        DB_delete($_TABLES['shop.orders'], 'status', OrderStatus::CART);
-        Log::info("All carts for all users deleted");
+
+        $db = Database::getInstance();
+        try {
+            $db->conn->executeStatement(
+                "DELETE FROM {$_TABLES['shop.orderitems']} WHERE order_id IN (
+                    SELECT order_id FROM {$_TABLES['shop.orders']} WHERE status = ?
+                )",
+                array(OrderStatus::CART),
+                array(Database::STRING)
+            );
+            $db->conn->delete(
+                $_TABLES['shop.orders'],
+                array('status' => OrderStatus::CART),
+                array(Database::STRING)
+            );
+            Log::info("All carts for all users deleted");
+        } catch (\Throwable $e) {
+            Log::error(__METHOD__ . ': ' . $e->getMessage());
+        }
     }
 
 
