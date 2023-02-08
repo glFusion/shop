@@ -52,8 +52,8 @@ class table extends \Shop\Tax
                     $sql,
                     array(
                         $this->Address->getCountry(),
-                        $this->Address->getPostal(),
-                        $this->Address->getPostal(),
+                        $this->Address->getZip5(),
+                        $this->Address->getZip5(),
                     ),
                     array(Database::STRING, Database::STRING, Database::STRING)
                 )->fetchAssociative();
