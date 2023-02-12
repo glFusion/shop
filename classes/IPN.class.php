@@ -766,7 +766,7 @@ class IPN
      * @uses    self::createOrder()
      * @return  boolean     True if processed successfully, False if not
      */
-    protected function handlePurchase()
+    protected function handlePurchase() : bool
     {
         global $_TABLES, $_CONF, $LANG_SHOP;
 
@@ -776,6 +776,11 @@ class IPN
             return false;
         } else {
             $order_id  = $this->Order->getOrderId();
+            if ($this->Order->getUid() == 1) {
+                // Try to set the user ID from the email addr if anon.
+                $this->Order->setUidFromEmail();
+            }
+
             // Now all of the items are in the order object, check for sufficient
             // funds. If OK, then save the order and call each handlePurchase()
             // for each item.

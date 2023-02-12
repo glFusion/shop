@@ -1208,9 +1208,14 @@ class Order
      * @param   boolean $notify         True to notify the buyer, False to not.
      * @return  string      New status, old status if not updated.
      */
-    public function updateStatus(string $newstatus, bool $log = true, bool $notify=true) : string
+    public function updateStatus(?string $newstatus=NULL, bool $log = true, bool $notify=true) : string
     {
         global $_TABLES, $LANG_SHOP, $_SHOP_CONF;
+
+        // No status passed in, just return the current status.
+        if (empty($newstatus)) {
+            return $this->status;
+        }
 
         // When orders are paid by IPN, move the status to "processing"
         if ($newstatus == 'paid') {
@@ -1371,7 +1376,7 @@ class Order
      *
      * @return  integer     Count of actual orders
      */
-    public static function countActiveByUser($uid)
+    public static function countActiveByUser(int $uid) : int
     {
         global $_TABLES;
 
@@ -3096,11 +3101,9 @@ class Order
      * @param   integer $uid    User ID
      * @return  object  $this
      */
-    public function setUid($uid)
+    public function setUid(int $uid) : self
     {
-        if ($this->uid != $uid) {
-            $this->uid = (int)$uid;
-        }
+        $this->uid = (int)$uid;
         return $this;
     }
 
@@ -4196,7 +4199,7 @@ class Order
             }
 
             // Update the order status and date
-            $this->setStatus($newstatus, true, false)->setOrderDate()->Save(false);
+            $this->setStatus($newstatus, true, false)->setOrderDate()->Save();
 
             Log::debug("Cart {$this->order_id} status changed from $oldstatus to $newstatus");
         }
@@ -4340,6 +4343,30 @@ class Order
         } catch (\Exception $e) {
             Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
+    }
+
+
+    /**
+     * Set the user ID from the buyer_email value.
+     * Used to link orders to the site member when purchasing anonymously.
+     *
+     * @return  integer     Site member user ID, zero if not found.
+     */
+    public function setUidFromEmail() : int
+    {
+        global $_TABLES;
+
+        $db = Database::getInstance();
+        $uid = (int)$db->getItem(
+            $_TABLES['users'],
+            'uid',
+            array('email' => $this->buyer_email),
+            array(Database::STRING)
+        );
+        if ($uid > 0) {
+            $this->setUid($uid);
+        }
+        return $uid;
     }
 
 
@@ -4514,7 +4541,7 @@ class Order
             $last_mod = SHOP_now();
             $last_mod->setTimestamp($ts);
             $last_mod = $last_mod->toMySQL(false);
-            $qb->andWhere('ord.last_mod < :last_mod')
+            $qb->andWhere('ord.last_mod >= :last_mod')
                ->setParameter('last_mod', $last_mod, Database::STRING);
         }
         if (isset($params['status'])) {

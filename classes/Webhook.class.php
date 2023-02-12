@@ -622,6 +622,13 @@ abstract class Webhook
             if ($this->Order->getShipto()->getID() == 0) {
                 $this->Order->setShipto($Customer->getDefaultAddress('billto'));
             }
+        } else {
+            // If an anonymous buyer, see if the order can be linked to an
+            // existing user by email address
+            $uid = $this->Order->setUidFromEmail();
+            if ($uid > 1) {
+                $this->Order->Save(false);
+            }
         }
 
         if (
