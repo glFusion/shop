@@ -1601,9 +1601,9 @@ class Gateway
      * @param   object  $Order  Order object
      * @return  boolean     False, indicating no action was taken
      */
-    public function processOrder(Order $Order) : bool
+    public function processOrder(Order $Order) : ?int
     {
-        return false;
+        return NULL;
     }
 
 

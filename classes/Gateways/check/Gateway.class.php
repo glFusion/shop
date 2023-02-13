@@ -462,4 +462,16 @@ class Gateway extends \Shop\Gateway
         return true;
     }
 
+
+    /**
+     * Update the order status to `pending` while waiting for a check.
+     *
+     * @param   object  $Order  Order object
+     * @return  integer     New order status, NULL for no change
+     */
+    public function processOrder(Order $Order) : ?int
+    {
+        return OrderStatus::PENDING;
+    }
+
 }

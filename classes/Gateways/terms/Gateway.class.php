@@ -153,9 +153,9 @@ class Gateway extends \Shop\Gateway
      * calls on it to create the invoice.
      *
      * @param   object  $Order  Order object
-     * @return  boolean     True on success, False on error
+     * @return  integer     New order status, NULL for no change
      */
-    public function processOrder(Order $Order) : bool
+    public function processOrder(Order $Order) : ?int
     {
         $gw_name = $this->getConfig('gateway');
         if (empty($gw_name)) {
@@ -165,12 +165,13 @@ class Gateway extends \Shop\Gateway
         if ($gw && $gw->Supports($this->gw_name)) {
             $status = $gw->createInvoice($Order, $this);
         } else {
-            $status = false;
+            $status = NULL;
         }
         if ($status) {      // if invoice creation was successful
-            $Order->updateStatus($this->getConfig('after_inv_status'));
+            return $this->getConfig('after_inv_status');
+        } else {
+            return NULL;
         }
-        return $status;
     }
 
 
