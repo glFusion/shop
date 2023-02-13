@@ -217,11 +217,9 @@ case 'finalizecart':
     $status_msg = '';
     $status = false;
     if (!$Order->isNew()) {
-        $status = Shop\Gateway::getInstance($Order->getPmtMethod())
-            ->processOrder($Order);
-        if (!$status) {
-            $Order->setFinal();
-        }
+        $GW = Shop\Gateway::getInstance($Order->getPmtMethod());
+        $status = $GW->processOrder($Order);
+        $Order->updateStatus($status);
     }
     $output = array(
         'status' => $status,

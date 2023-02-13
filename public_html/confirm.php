@@ -38,7 +38,6 @@ if (!empty($order_id)) {
     $Order = Shop\Order::getInstance($order_id);
     if (!$Order->isNew() && $Order->getSecret() == $secret) {
         $GW = Shop\Gateway::getInstance($Order->getPmtMethod());
-        $Order->setFinal();
         $redirect = $GW->confirmOrder($Order);
         if (!empty($redirect)) {
             echo COM_refresh($redirect);
