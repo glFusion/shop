@@ -512,7 +512,7 @@ class Shipment
             'direction' => 'DESC',
         );
 
-        if ($order_id != 'x') {
+        if (!empty($order_id)) {
             $filter = "WHERE shp.order_id = '" . DB_escapeString($order_id) . "'";
             $title = $LANG_SHOP['order'] . ' ' . $order_id;
             $Order = Order::getInstance($order_id);
@@ -571,7 +571,6 @@ class Shipment
             $header_arr, $text_arr, $query_arr, $defsort_arr,
             '', $extra, $options, ''
         );
-
         $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
         return $display;
     }

@@ -83,10 +83,10 @@ case 'shipments':
 default:
     // View admin list of shipments
     SHOP_setUrl();
-    if ($actionval != 'x') {
+    if (!empty($actionval)) {   // getting shipments for a single order
         $Order = Shop\Order::getInstance($actionval);
         $content .= Shop\Menu::viewOrder($view, $Order);
-    } else {
+    } else {                    // getting all shipments
         $content .= Shop\Menu::adminOrders($view);
     }
     $content .= Shop\Shipment::adminList($actionval);
@@ -104,5 +104,3 @@ if (!empty($msg)) {
 $display .= $content;
 $display .= COM_siteFooter();
 echo $display;
-
-?>
