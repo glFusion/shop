@@ -1,7 +1,7 @@
 # Shop plugin for glFusion - Changelog
 
 ## v1.5.0
-Release TBD
+Release 2023-02-23
   * Require glFusion 2.0.0+
   * Save shipping units and weights with orderitems to facilitate injected products from plugins.
   * Don't calculate shipping where units = 0, use only fixed if present.
@@ -49,6 +49,7 @@ Release TBD
   * Add a hidden secret value to verify order during certain operations.
   * Fill in checkboxes and text fields when viewing an order item from an order.
   * Cancel checkout session with payment provider if checkout is canceled.
+  * Link anonymous orders to site members by email address if possible.
 
 ## v1.4.1
 Release 2022-04-07

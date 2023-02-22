@@ -6,9 +6,9 @@
  * glFusion configuration system, such as allowed file types.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2022 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2023 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.1
+ * @version     v1.5.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -20,7 +20,7 @@ if (!defined ('GVERSION')) {
 
 global $_DB_table_prefix, $_TABLES;
 
-Shop\Config::set('pi_version', '1.4.1.10');
+Shop\Config::set('pi_version', '1.4.1.11');
 Shop\Config::set('gl_version', '2.0.0');
 
 $_SHOP_table_prefix = $_DB_table_prefix . 'shop_';
@@ -75,6 +75,7 @@ $_TABLES['shop.plugin_products'] = $_SHOP_table_prefix . 'plugin_products';
 $_TABLES['shop.product_rules'] = $_SHOP_table_prefix . 'product_rules';
 $_TABLES['shop.prodXcbox'] = $_SHOP_table_prefix . 'prodXcbox';
 $_TABLES['shop.invoices'] = $_SHOP_table_prefix . 'invoices';
+//$_TABLES['shop.slips'] = $_SHOP_table_prefix . 'slips';
 
 // Deprecate eventually
 $_TABLES['shop.prod_attr']    = $_SHOP_table_prefix . 'product_attributes';
