@@ -337,7 +337,7 @@ class GatewayManager
                         'url' => Config::get('admin_url') . '/gateways.php?gwupgrade=' . $A['id'],
                     ) );
                     $retval .= $A['code_version'];
-                } elseif (!COM_checkVersion($A['code_version'], $A['available'])) {
+                } elseif (!COM_checkVersion($A['version'], $A['available'])) {
                     $retval .= ' ' . FieldList::buttonLink(array(
                         'text' => $A['available'],
                         'url' => $A['upgrade_url'],
@@ -430,7 +430,7 @@ class GatewayManager
             ) );
             $upload->setFieldName('gw_file');
             if (!$upload->setPath($_CONF['path_data'] . 'temp')) {
-                Log::error("Error setting temp path: " . $upload->printErrors(false));
+                Log::system(Log::ERROR, "Error setting temp path: " . $upload->printErrors(false));
             }
 
             $filename = $_FILES['gw_file']['name'];
@@ -438,12 +438,12 @@ class GatewayManager
             $upload->uploadFiles();
 
             if ($upload->areErrors()) {
-                Log::error("Errors during upload: " . $upload->printErrors());
+                Log::system(Log::ERROR, "Errors during upload: " . $upload->printErrors());
                 return false;
             }
             $Finalfilename = $_CONF['path_data'] . 'temp/' . $filename;
         } else {
-            Log::error("No file found to upload");
+            Log::system(Log::ERROR, "No file found to upload");
             return false;
         }
 
@@ -453,19 +453,19 @@ class GatewayManager
         }
         $tmp = FileSystem::mkTmpDir();
         if ($tmp === false) {
-            Log::error("Failed to create temp directory");
+            Log::system(Log::ERROR, "Failed to create temp directory");
             return false;
         }
         $tmp_path = $_CONF['path_data'] . $tmp;
         if (!COM_decompress($Finalfilename, $tmp_path)) {
-            Log::error("Failed to decompress $Finalfilename into $tmp_path");
+            Log::system(Log::ERROR, "Failed to decompress $Finalfilename into $tmp_path");
             FileSystem::deleteDir($tmp_path);
             return false;
         }
         @unlink($Finalfilename);
 
         if (!$dh = @opendir($tmp_path)) {
-            Log::error("Failed to open $tmp_path");
+            Log::system(Log::ERROR, "Failed to open $tmp_path");
             return false;
         }
         $upl_path = $tmp_path;
@@ -481,7 +481,7 @@ class GatewayManager
         closedir($dh);
 
         if (empty($upl_path)) {
-            Log::error("Could not find upload path under $tmp_path");
+            Log::system(Log::ERROR, "Could not find upload path under $tmp_path");
             return false;
         }
 
