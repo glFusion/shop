@@ -270,6 +270,30 @@ class v1_5_0 extends Upgrade
                 }
             }
         }
+
+        // Fix the Authorize.Net gateway file if it has not been updated.
+        // The version included in previous versions does not have the
+        // correct function declarations. Otherwise, the gateway manager
+        // admin list will throw errors.
+        foreach (array('authorizenet', 'square', 'stripe') as $gwname) {
+            $path = Config::get('path') . 'classes/Gateways/' . $gwname;
+            $file = $path . '/gateway.json';
+            if (is_dir($path) && is_file($file)) {
+                $json = @file_get_contents($file);
+                $arr = @json_decode($json, true);
+                if (is_array($arr) && !isset($arr['version'])) {
+                    // Original gateway file from 1.4.1 and prior. Replace
+                    // the gateway class with the updated one.
+                    $arr['version'] = '1.3.0';  // to force upgrade option
+                    copy(__DIR__ . '/files/1.5.0/' . $gwname . '_gw.class.php', $path . '/Gateway.class.php');
+                    $json = @json_encode($arr);
+                    if ($json) {
+                        @file_put_contents($file, $json);
+                    }
+                }
+            }
+        }
+
         return self::setVersion(self::$ver);
     }
 

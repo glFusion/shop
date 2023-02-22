@@ -17,6 +17,7 @@ use Shop\Log;
 use Shop\Cache;
 use Shop\Gateway;
 use Shop\GatewayManager;
+use Shop\Config;
 
 
 /** Include the table creation strings */
@@ -255,7 +256,7 @@ class Upgrade
 
         $paths = array(
             // private/plugins/shop
-            SHOP_PI_PATH => array(
+            Config::get('path') => array(
                 // 0.7.1
                 'shop_functions.inc.php',
                 // 1.0.0
@@ -318,7 +319,7 @@ class Upgrade
         foreach ($paths as $path=>$files) {
             foreach ($files as $file) {
                 if (file_exists("$path/$file")) {
-                    Log::system(Log::ERROR, "removing $path/$file");
+                    Log::system(Log::INFO, "removing $path/$file");
                     self::delPath("$path/$file");
                 }
             }
