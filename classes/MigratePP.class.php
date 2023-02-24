@@ -3,21 +3,17 @@
  * Migrate data from the Paypal plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2023 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.5.0
  * @since       v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
+use Shop\Models\DataArray;
 
-
-/**
- * Include plugin configuration
- */
-require_once __DIR__  . '/../shop.php';
 
 /**
  * Class to migrate data from Paypal 0.6.0 or 0.6.1 to the current version of Shop
@@ -46,8 +42,7 @@ class MigratePP
         // Clear out the Shop tables and insert data from Paypal.
         // These tables have the same schema between Paypal 0.6.0 and Shop.
         $tables = array(
-            'order_log', 'orderstatus',
-            'currency',
+            'order_log', 'currency',
         );
         foreach ($tables as $table) {
             if (!self::migrateTable($table)) {
@@ -64,6 +59,9 @@ class MigratePP
             return false;
         }
         if (!self::migrateOrderItems()) {
+            return false;
+        }
+        if (!self::migrateOrderStatus()) {
             return false;
         }
         if (!self::migrateOrderItemOptions()) {
@@ -338,15 +336,40 @@ class MigratePP
         return self::_dbExecute(array(
             "TRUNCATE $shop",
             "INSERT INTO $shop
-                (id, order_id, product_id, description, quantity, txn_id,
-                txn_type, expiration, base_price, price, qty_discount,
+                (id, order_id, product_id, description, quantity,
+                expiration, base_price, price, qty_discount,
                 taxable, token, options, options_text,
                 extras, shipping, handling, tax)
             SELECT
-                id, order_id, product_id, description, quantity, txn_id,
-                txn_type, expiration, price, price, 0,
+                id, order_id, product_id, description, quantity,
+                expiration, price, price, 0,
                 taxable, token, options, options_text,
                 extras, shipping, handling, tax
+            FROM $pp",
+        ) );
+    }
+
+    /**
+     * Migrate Order Statuses. Adds the fields not found in Paypal.
+     *
+     * @return  boolean     True on success, False on failure
+     */
+    public static function migrateOrderStatus()
+    {
+        global $_TABLES;
+
+        Log::info("Migrating Order Statuses ...");
+        // This version renames the "purchases" table to "orderitems".
+        // Adds: qty_discounts, base_price
+        // Removes: status
+        $shop = $_TABLES['shop.orderstatus'];
+        $pp = $_TABLES['paypal.orderstatus'];
+        return self::_dbExecute(array(
+            "TRUNCATE $shop",
+            "INSERT INTO $shop
+                (id, orderby, enabled, name, notify_buyer, notify_admin)
+            SELECT
+                id, orderby, enabled, name, notify_buyer, notify_admin
             FROM $pp",
         ) );
     }
@@ -517,7 +540,7 @@ class MigratePP
         foreach ($items as $item_id=>$opts) {
             $opts['onhand'] = Product::getById($item_id)->getOnhand();
             $PV = new ProductVariant;
-            $PV->saveNew($opts);
+            $PV->saveNew(new DataArray($opts));
         }
 
         // Now reorder the option values since there may be duplicate
@@ -644,8 +667,9 @@ class MigratePP
         return self::_dbExecute(array(
             "TRUNCATE {$_TABLES['shop.ipnlog']}",
             "INSERT INTO {$_TABLES['shop.ipnlog']}
+                (id, ip_addr, ts, verified, txn_id, gateway, event, ipn_data, order_id, status_msg)
                 SELECT
-                    id, ip_addr, ts, verified, txn_id, gateway, '', ipn_data, ''
+                    id, ip_addr, ts, verified, txn_id, gateway, '', ipn_data, '', ''
                 FROM {$_TABLES['paypal.ipnlog']}",
         ) );
     }
@@ -935,5 +959,3 @@ class MigratePP
     }
 
 }
-
-?>
