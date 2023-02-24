@@ -38,6 +38,10 @@ class GatewayManager
         'check', 'terms', '_internal', 'free',
     );
 
+    /** Collection of error messages.
+     * @var array */
+    private $_errors = array();
+
 
     /**
      * Get all gateways into a static array.
@@ -405,9 +409,9 @@ class GatewayManager
      *
      * @return  boolean     True on success, False on error
      */
-    public static function upload() : bool
+    public function upload() : bool
     {
-        global $_CONF;
+        global $_CONF, $LANG_SHOP;
 
         $retval = '';
 
@@ -439,11 +443,13 @@ class GatewayManager
 
             if ($upload->areErrors()) {
                 Log::system(Log::ERROR, "Errors during upload: " . $upload->printErrors());
+                $this->addError($LANG_SHOP['err_occurred']);
                 return false;
             }
             $Finalfilename = $_CONF['path_data'] . 'temp/' . $filename;
         } else {
             Log::system(Log::ERROR, "No file found to upload");
+            $this->addError("No file found to upload");
             return false;
         }
 
@@ -453,12 +459,14 @@ class GatewayManager
         }
         $tmp = FileSystem::mkTmpDir();
         if ($tmp === false) {
-            Log::system(Log::ERROR, "Failed to create temp directory");
+            Log::system(Log::ERROR, 'Failed to create temp directory');
+            $this->addError('Failed to create temp directory');
             return false;
         }
         $tmp_path = $_CONF['path_data'] . $tmp;
         if (!COM_decompress($Finalfilename, $tmp_path)) {
             Log::system(Log::ERROR, "Failed to decompress $Finalfilename into $tmp_path");
+            $this->addError("Failed to decompress $Finalfilename into $tmp_path");
             FileSystem::deleteDir($tmp_path);
             return false;
         }
@@ -466,6 +474,7 @@ class GatewayManager
 
         if (!$dh = @opendir($tmp_path)) {
             Log::system(Log::ERROR, "Failed to open $tmp_path");
+            $this->addError("Failed to open $tmp_path");
             return false;
         }
         $upl_path = $tmp_path;
@@ -482,6 +491,7 @@ class GatewayManager
 
         if (empty($upl_path)) {
             Log::system(Log::ERROR, "Could not find upload path under $tmp_path");
+            $this->addError("Could not find upload path under $tmp_path");
             return false;
         }
 
@@ -493,6 +503,17 @@ class GatewayManager
             if ($json) {
                 $json = @json_decode($json, true);
                 if ($json) {
+                    if (!isset($json['shop_version'])) {
+                        $json['shop_version'] = '0.0.0';
+                    }
+                    if (
+                        !COM_checkVersion($json['shop_version'], Config::get('pi_version'))
+                    ) {
+                        $this->addError(
+                            sprintf($LANG_SHOP['err_gw_version'], Config::get('pi_version'), $json['shop_version'])
+                        );
+                        return false;
+                    }
                     $gw_name = $json['name'];
                     $gw_path = Config::get('path') . 'classes/Gateways/' . $gw_name;
                     $status = $fs->dirCopy($upl_path, $gw_path);
@@ -518,9 +539,14 @@ class GatewayManager
             }
             return true;
         } else {
-            foreach ($fs->getErrors() as $msg) {
-                Log::system(Log::ERROR, __METHOD__ . ': ' . $msg);
+            $errors = $fs->getErrors();
+            if (!empty($errors)) {
+                foreach ($fs->getErrors() as $msg) {
+                    Log::system(Log::ERROR, __METHOD__ . ': ' . $msg);
+                }
+                $this->addError($LANG_SHOP['err_occurred']);
             }
+            // Otherwise the error message has already been added. 
             return false;
         }
     }
@@ -658,4 +684,20 @@ class GatewayManager
         );
     }
 
+
+    public function getErrors(bool $format)
+    {
+        if ($format && !empty($this->_errors)) {
+            return '<ul><li>' . implode('</li></li>', $this->_errors) . '</li></ul>';
+        } else {
+            return $this->_errors;
+        }
+    }
+
+
+    private function addError(string $msg) : void
+    {
+        $this->_errors[] = $msg;
+    }
+            
 }

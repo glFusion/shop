@@ -53,11 +53,12 @@ case 'gwupgrade':
     break;
 
 case 'gwupload':
-    $status = GatewayManager::upload();
+    $Mgr = new GatewayManager;
+    $status = $Mgr->upload();
     if ($status) {
         SHOP_setMsg("The gateway was successfully uploaded");
     } else {
-        SHOP_setMsg("The gateway could not be uploaded");
+        SHOP_setMsg($Mgr->getErrors(true));
     }
     echo COM_refresh(SHOP_ADMIN_URL . '/gateways.php');
     break;

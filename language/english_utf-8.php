@@ -801,6 +801,8 @@ $LANG_SHOP = array (
 'view_oi_as_ordered' => 'View the item as it was ordered',
 'avail_for_order' => 'available for order',
 'avail_in_stock' => 'in stock',
+'err_gw_version' => 'The uploaded gateway must support Shop v%s, v%s provided.',
+'err_occurred' => 'An error occurred, check the system log.',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
