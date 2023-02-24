@@ -403,7 +403,7 @@ class ProductOptionValue
      * @param   integer $id         ID number of element to modify
      * @return  integer     New value, or old value upon failure
      */
-    public static function toggleEnabled(string $oldvalue, int $id) : int
+    public static function toggleEnabled(int $oldvalue, int $id) : int
     {
         $newval = self::_toggle($oldvalue, 'enabled', $id);
         if ($newval != $oldvalue) {

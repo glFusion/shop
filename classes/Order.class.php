@@ -899,11 +899,11 @@ class Order
      * @param   string  $order_id       Order ID, taken from user's session if empty
      * @return  boolean     True on success, False on error.
      */
-    public static function Delete($order_id = '')
+    public static function Delete(?string $order_id=NULL) : bool
     {
         global $_TABLES;
 
-        if ($order_id == '') {
+        if (empty($order_id)) {
             $order_id = Session::get('order_id');
         }
         if (!$order_id) {

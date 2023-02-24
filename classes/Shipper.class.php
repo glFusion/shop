@@ -651,6 +651,7 @@ class Shipper
                        ->setParameter('now', time(), Database::INTEGER);
                 }
                 if ($units > -1) {
+                    // use STRING because $units is a float
                     $qb->andWhere('min_units <= :units')
                        ->andWhere('max_units >= :units')
                        ->setParameter('units', $units, Database::STRING);

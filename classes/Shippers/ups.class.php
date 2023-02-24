@@ -19,6 +19,7 @@ use Shop\Company;
 use Shop\Models\ShippingQuote;
 use Shop\Package;
 use Shop\Log;
+use Shop\Tracking;
 
 
 /**
@@ -164,17 +165,17 @@ class ups extends \Shop\Shipper
      * @param   string  $tracking   Single tracking number
      * @return  object      Tracking object
      */
-    public function getTracking($tracking)
+    public function getTracking(string $tracking) : Tracking
     {
         global $_CONF, $LANG_SHOP;
 
         // Attempt to get from cache
-        $Tracking = \Shop\Tracking::getCache($this->key, $tracking);
+        $Tracking = Tracking::getCache($this->key, $tracking);
         if ($Tracking !== NULL) {
             return $Tracking;
         }
 
-        $Tracking = new \Shop\Tracking;
+        $Tracking = new Tracking;
         if (!$this->hasValidConfig()) {
             $Tracking->addError('Invalid Configuration');
             return $Tracking;
