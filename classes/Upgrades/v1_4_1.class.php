@@ -18,12 +18,11 @@ use Shop\Log;
 
 class v1_4_1 extends Upgrade
 {
-    private static $ver = '1.4.1';
-
     public static function upgrade()
     {
-        global $_TABLES, $SHOP_UPGRADE;
+        global $_TABLES;
 
+        self::$ver = '1.4.1';
         $c = \config::get_instance();
 
         // Set the shipping units value into each order item.

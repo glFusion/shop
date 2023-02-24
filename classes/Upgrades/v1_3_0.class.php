@@ -19,11 +19,11 @@ use Shop\Log;
 
 class v1_3_0 extends Upgrade
 {
-    private static $ver = '1.3.0';
-
     public static function upgrade()
     {
         global $_TABLES;
+
+        self::$ver = '1.3.0';
 
         $upd_shipping = !self::tableHasColumn('shop.orders', 'shipping_method');
         $upd_oi_sku = !self::tableHasColumn('shop.orderitems', 'sku');

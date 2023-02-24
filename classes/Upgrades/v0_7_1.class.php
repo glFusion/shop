@@ -15,11 +15,11 @@ namespace Shop\Upgrades;
 
 class v0_7_1 extends Upgrade
 {
-    private static $ver = '0.7.1';
-
     public static function upgrade()
     {
         global $_TABLES;
+
+        self::$ver = '0.7.1';
 
         // See if the shipper_id column is already in place. If not then
         // the shipper info will be moved from the info array to the new column

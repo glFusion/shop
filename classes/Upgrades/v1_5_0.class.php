@@ -20,12 +20,11 @@ use Shop\Log;
 
 class v1_5_0 extends Upgrade
 {
-    private static $ver = '1.5.0';
-
     public static function upgrade()
     {
-        global $_TABLES, $SHOP_UPGRADE;
+        global $_TABLES;
 
+        self::$ver = '1.5.0';
         $db = Database::getInstance();
         $admin_email = Config::get('admin_email_addr');
         $shop_email = Config::get('shop_email');
@@ -40,19 +39,24 @@ class v1_5_0 extends Upgrade
         // Update the payment ref_id column in the IPN log.
         $upd_ref_id = !self::tableHasColumn('shop.ipnlog', 'ref_id');
         if (!self::tableHasColumn('shop.orderstatus', 'order_valid')) {
-            $SHOP_UPGRADE[self::$ver][] = "UPDATE {$_TABLES['shop.orderstatus']}
-                SET order_valid = 0 WHERE name IN ('refunded', 'canceled')";
+            self::addSql(
+                "UPDATE {$_TABLES['shop.orderstatus']} SET order_valid = 0 WHERE name IN ('refunded', 'canceled')"
+            );
         }
         if (!self::tableHasColumn('shop.orderstatus', 'order_valid')) {
-            $SHOP_UPGRADE[self::$ver][] = "UPDATE {$_TABLES['shop.orderstatus']}
-                SET aff_eligible = 1 WHERE name IN ('processing', 'shipped', 'closed', 'invoiced')";
+            self::addSql(
+                "UPDATE {$_TABLES['shop.orderstatus']}
+                    SET aff_eligible = 1 WHERE name IN ('processing', 'shipped', 'closed', 'invoiced')"
+            );
         }
         if ($upd_ref_id) {
             // For gateways that have only one webhook sent, do it the easy way.
             // Update the more complicated gateways after the column is added.
-            $SHOP_UPGRADE[self::$ver][] = "UPDATE {$_TABLES['shop.ipnlog']}
-                SET ref_id = txn_id WHERE gateway IN
-                ('paypal', 'test', 'check', 'coingate', 'authorizenet', 'paylike');";
+            self::addSql(
+                "UPDATE {$_TABLES['shop.ipnlog']}
+                    SET ref_id = txn_id WHERE gateway IN
+                    ('paypal', 'test', 'check', 'coingate', 'authorizenet', 'paylike');"
+            );
         }
         global $_DB_name;
         try {
@@ -70,13 +74,37 @@ class v1_5_0 extends Upgrade
         }
         if (!empty($keys)) {
             foreach ($keys as $key) {
-                $SHOP_UPGRADE['1.5.0'][] = "ALTER TABLE {$_TABLES['shop.orderstatus']} DROP KEY `{$key['index_name']}`";
+                self::addSql(
+                    "ALTER TABLE {$_TABLES['shop.orderstatus']} DROP KEY `{$key['index_name']}`"
+                );
             }
         }
 
         // See if we already have the customer email column in the gateway
         // cross-reference.
         $have_custGWemail = self::tableHasColumn('shop.customerXgateway', 'email');
+
+        // Fix for the modular gateways that don't have type hints in function
+        // declarations.
+        // The gateway file will be replaced with the latest version, and
+        // disabled to require updating.
+        // Otherwise, the gateway manager admin list will throw errors.
+        foreach (array('authorizenet', 'square', 'stripe') as $gwname) {
+            $path = Config::get('path') . 'classes/Gateways/' . $gwname;
+            $file = $path . '/gateway.json';
+            if (is_dir($path) && is_file($file)) {
+                $json = @file_get_contents($file);
+                $arr = @json_decode($json, true);
+                if (is_array($arr) && !isset($arr['version'])) {
+                    // Original gateway file from 1.4.1 and prior. Replace
+                    // the gateway class with the updated one.
+                    copy(__DIR__ . '/files/' . self::$ver . '/' . $gwname . '_gw.class.php', $path . '/Gateway.class.php');
+                    self::addSql(
+                        "UPDATE {$_TABLES['shop.gateways']} SET enabled = 0 WHERE id = '$gwname'"
+                    );
+                }
+            }
+        }
 
         if (!self::doUpgradeSql(self::$ver, self::$dvlp)) {
             return false;
@@ -266,29 +294,6 @@ class v1_5_0 extends Upgrade
                             Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
                             // Just go on to the next
                         }
-                    }
-                }
-            }
-        }
-
-        // Fix the Authorize.Net gateway file if it has not been updated.
-        // The version included in previous versions does not have the
-        // correct function declarations. Otherwise, the gateway manager
-        // admin list will throw errors.
-        foreach (array('authorizenet', 'square', 'stripe') as $gwname) {
-            $path = Config::get('path') . 'classes/Gateways/' . $gwname;
-            $file = $path . '/gateway.json';
-            if (is_dir($path) && is_file($file)) {
-                $json = @file_get_contents($file);
-                $arr = @json_decode($json, true);
-                if (is_array($arr) && !isset($arr['version'])) {
-                    // Original gateway file from 1.4.1 and prior. Replace
-                    // the gateway class with the updated one.
-                    $arr['version'] = '1.3.0';  // to force upgrade option
-                    copy(__DIR__ . '/files/1.5.0/' . $gwname . '_gw.class.php', $path . '/Gateway.class.php');
-                    $json = @json_encode($arr);
-                    if ($json) {
-                        @file_put_contents($file, $json);
                     }
                 }
             }

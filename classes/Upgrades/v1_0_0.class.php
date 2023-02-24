@@ -18,44 +18,58 @@ use Shop\Log;
 
 class v1_0_0 extends Upgrade
 {
-    private static $ver = '1.0.0';
-
     public static function upgrade()
     {
-        global $_TABLES, $SHOP_UPGRADE, $_SHOP_CONF;
+        global $_TABLES, $_SHOP_CONF;
+
+        self::$ver = '1.0.0';
 
         if (!DB_checkTableExists('shop.prod_opt_grps')) {
             // Initial populate of the new attribute group table
             // The table won't exist yet, these statememts get appended
             // to the upgrade SQL.
-            $SHOP_UPGRADE[self::$current_ver][] = "INSERT INTO {$_TABLES['shop.prod_opt_grps']} (pog_name) (SELECT DISTINCT attr_name FROM {$_TABLES['shop.prod_opt_vals']})";
-            $SHOP_UPGRADE[self::$current_ver][] = "UPDATE {$_TABLES['shop.prod_opt_vals']} AS pov INNER JOIN (SELECT pog_id,pog_name FROM {$_TABLES['shop.prod_opt_grps']}) AS pog ON pov.attr_name=pog.pog_name SET pov.pog_id = pog.pog_id";
+            self::addSql(
+                "INSERT INTO {$_TABLES['shop.prod_opt_grps']} (pog_name)
+                     (SELECT DISTINCT attr_name FROM {$_TABLES['shop.prod_opt_vals']})"
+            );
+            self::addSql(
+                "UPDATE {$_TABLES['shop.prod_opt_vals']} AS pov INNER JOIN
+                    (SELECT pog_id,pog_name FROM {$_TABLES['shop.prod_opt_grps']}) AS pog
+                    ON pov.attr_name=pog.pog_name SET pov.pog_id = pog.pog_id"
+            );
         }
 
         // This has to be done after updating the attribute group above
         if (self::tableHasColumn('shop.prod_opt_vals', 'attr_name')) {
-            $SHOP_UPGRADE[self::$current_ver][] = "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP attr_name";
+            self::addSql("ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP attr_name");
         }
 
         // Now that the pog_id field has been populated we can add the unique index.
         if (self::tableHasIndex('shop.prod_opt_vals', 'item_id')) {
-            $SHOP_UPGRADE[self::$current_ver][] = "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP KEY `item_id`";
+            self::addSql("ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP KEY `item_id`");
         }
 
-        $SHOP_UPGRADE[self::$current_ver][] = "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} ADD UNIQUE `item_id` (`item_id`,`pog_id`,`pov_value`)";
+        self::addSql(
+            "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} ADD UNIQUE `item_id` (`item_id`,`pog_id`,`pov_value`)"
+        );
 
         if (self::columnType('shop.sales', 'start') != 'datetime') {
             $tz_offset = $_CONF['_now']->format('P', true);
-            $SHOP_UPGRADE[self::$current_ver][] = "ALTER TABLE {$_TABLES['shop.sales']} ADD st_tmp datetime after `start`";
-            $SHOP_UPGRADE[self::$current_ver][] = "ALTER TABLE {$_TABLES['shop.sales']} ADD end_tmp datetime after `end`";
-            $SHOP_UPGRADE[self::$current_ver][] = "UPDATE {$_TABLES['shop.sales']} SET
+            self::addSql("ALTER TABLE {$_TABLES['shop.sales']} ADD st_tmp datetime after `start`");
+            self::addSql("ALTER TABLE {$_TABLES['shop.sales']} ADD end_tmp datetime after `end`");
+            self::addSql(
+                "UPDATE {$_TABLES['shop.sales']} SET
                 st_tmp = convert_tz(from_unixtime(start), @@session.time_zone, '$tz_offset'),
-                end_tmp = convert_tz(from_unixtime(end), @@session.time_zone, '$tz_offset')";
-            $SHOP_UPGRADE[self::$current_ver][] = "ALTER TABLE {$_TABLES['shop.sales']} DROP start, DROP end";
-            $SHOP_UPGRADE[self::$current_ver][] = "ALTER TABLE {$_TABLES['shop.sales']} CHANGE st_tmp start datetime NOT NULL DEFAULT '1970-01-01 00:00:00'";
-            $SHOP_UPGRADE[self::$current_ver][] = "ALTER TABLE {$_TABLES['shop.sales']} CHANGE end_tmp end datetime NOT NULL DEFAULT '9999-12-31 23:59:59'";
+                end_tmp = convert_tz(from_unixtime(end), @@session.time_zone, '$tz_offset')"
+            );
+            self::addSql("ALTER TABLE {$_TABLES['shop.sales']} DROP start, DROP end");
+            self::addSql(
+                "ALTER TABLE {$_TABLES['shop.sales']} CHANGE st_tmp start datetime NOT NULL DEFAULT '1970-01-01 00:00:00'"
+            );
+            self::addSql(
+                "ALTER TABLE {$_TABLES['shop.sales']} CHANGE end_tmp end datetime NOT NULL DEFAULT '9999-12-31 23:59:59'"
+            );
         }
-
 
         // Make a note if the OrderItemOptions table exists.
         // Will use this after all the other SQL updates are done if necessary.

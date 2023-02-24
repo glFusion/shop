@@ -48,6 +48,11 @@ class Upgrade
      * @var boolean */
     protected static $dvlp = false;
 
+    /** Current target version.
+     * Set by the child class.
+     */
+    protected static $ver = 'undef';
+
 
     /**
      * Perform all upgrades to get from $current_ver to $code_ver.
@@ -96,22 +101,50 @@ class Upgrade
         plugin_postinstall_shop(true);
 
         // Check and set the version if not already up to date.
-        // For code-only updates with no SQL changes
-        if (!COM_checkVersion(self::$current_ver, self::$code_ver)) {
+        // For code-only updates with no SQL changes, and for development
+        // updates where the update function may set the version to the
+        // future release. Don't use COM_checkVersion() since current_ver may
+        // be greather than code_ver.
+        if (self::$current_ver != self::$code_ver) {
             if (!self::setVersion(self::$code_ver)) return false;
             self::$current_ver = self::$code_ver;
         }
 
-        // Clear caches, update the configuration options, delete old files.
-        Cache::clear();
+        // Update the global plugin config.
         self::updateConfig();
+
+        // Upgrade all the bundled plugins.
         GatewayManager::upgradeAll(self::$current_ver);
+
+        // Remove deprecated files.
         self::removeOldFiles();
-        CTL_clearCache();   // clear cache to ensure CSS updates come through
-        Log::system(Log::INFO, "Successfully updated the {$_SHOP_CONF['pi_display_name']} Plugin");
+
+        // Clear caches, update the configuration options, delete old files.
+        CACHE_clear();
+
         // Set a message in the session to replace the "has not been upgraded" message
         SHOP_setMsg("Shop Plugin has been updated to " . self::$current_ver, 'info', 1);
+        Log::system(Log::INFO, "Successfully updated the {$_SHOP_CONF['pi_display_name']} Plugin");
         return true;
+    }
+
+
+    /**
+     * Append a SQL statement to be executed during the upgrade.
+     *
+     * @param   string  $sql    SQL statement to append
+     * @return  boolean     True on success, False if upgrade array not found
+     */
+    public static function addSql(string $sql) : bool
+    {
+        global $SHOP_UPGRADE;
+
+        if (isset($SHOP_UPGRADE[self::$ver]) && is_array($SHOP_UPGRADE[self::$ver])) {
+            $SHOP_UPGRADE[self::$ver][] = $sql;
+            return true;
+        } else {
+            return false;
+        }
     }
 
 
@@ -201,6 +234,7 @@ class Upgrade
             // Set in-memory config vars to avoid tripping SHOP_isMinVersion();
             $_SHOP_CONF['pi_version'] = $ver;
             $_PLUGIN_INFO[self::$pi_name]['pi_version'] = $ver;
+            self::$current_ver = $ver;
             return true;
         }
     }
