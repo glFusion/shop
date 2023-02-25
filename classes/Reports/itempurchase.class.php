@@ -273,7 +273,7 @@ class itempurchase extends \Shop\Report
                             is_array($extras['options']) &&
                             in_array($opt_id, $extras['options'])
                         ) {
-                            $cbox_flds[$opt_id] = 'X';
+                            $cbox_flds[$opt_id] = '1';
                         } else {
                             $cbox_flds[$opt_id] = '';
                         }
