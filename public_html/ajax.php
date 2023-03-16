@@ -21,9 +21,8 @@ use Shop\Models\Request;
 $Request = Request::getInstance();
 // Make sure this is called via Ajax
 if (!$Request->isAjax()) {
-    COM_404();
+//    COM_404();
 }
-
 $uid = (int)$_USER['uid'];
 
 $action = $Request->getString('action');
@@ -253,11 +252,11 @@ case 'validateOpts':
     $qty = $Request->getInt('quantity', 1);
     $attribs = array('checkbox' => array());
     $PVI = new Shop\Models\ProductVariantInfo;
+    $Options = $Request->getArray('options');
     $Extras = $Request->getArray('extras');
     if (isset($Extras['options'])) {
         $attribs['checkbox'] = $Extras['options'];
     }
-    $Options = $Request->getArray('options');
     if (!empty($Options)) {
         // Checking a product that has options, see if the variant is in stock
         $PV = Shop\ProductVariant::getByAttributes($item_number, $Options);
@@ -269,6 +268,15 @@ case 'validateOpts':
             'quantity' => $qty,
             'checkbox' => $attribs['checkbox'],
         ) );
+    }
+    if (!empty($Extras['options'])) {
+        $CBoxes = Shop\Models\ProductCheckbox::getByProduct($item_number);
+        foreach ($Extras['options'] as $opt_id) {
+            if (isset($CBoxes[$opt_id])) {
+                $PVI['orig_price'] += $CBoxes[$opt_id]->getPrice();
+                $PVI['sale_price'] += $CBoxes[$opt_id]->getPrice();
+            }
+        }
     }
     $output = $PVI->toArray();
     break;
