@@ -134,6 +134,7 @@ $LANG_SHOP = array (
 'del_item'          => 'Delete this item',
 'q_del_item'        => 'Bist Du sicher, dass Du dieses Produkt löschen möchtest?',
 'q_del_items'       => 'Are you sure you want to delete all selected items?',
+'change_permanent'  => 'This change cannot be undone.',
 'clearform'         => 'Zurücksetzen',
 'del_item_instr'    => 'Produkte, die keine Käufe haben, können gelöscht werden. Wenn ein Produkt bereits gekauft wurde, kann es nur deaktiviert werden.',
 'del_cat_instr'     => 'Kategorien, die Produkte enthalten, können nicht gelöscht werden.',
@@ -801,6 +802,10 @@ $LANG_SHOP = array (
 'view_oi_as_ordered' => 'View the item as it was ordered',
 'avail_for_order' => 'available for order',
 'avail_in_stock' => 'in stock',
+'orig_price' => 'Original Price',
+'dscp_wfadmin' => 'Manage order statuses. Indicate which statuses cause a buyer or admin notification and which statuses indicate accepted orders',
+'err_gw_version' => 'The uploaded gateway must support Shop v%s, v%s provided.',
+'err_occurred' => 'An error occurred, check the system log.',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -995,6 +1000,16 @@ $LANG_confignames['shop'] = array(
 'order_id_format' => 'Format for order reference ID',
 'order_id_prefix' => 'Order ID Prefix',
 'virt_ord_paid_status' => 'Status for virtual-only orders when paid',
+'fset_address_required' => 'Address Elements Required',
+'req_addr_name' => 'Require Name',
+'req_addr_company' => 'Require Company',
+'req_addr_address1' => 'Require Street Line 1',
+'req_addr_address2' => 'Require Street Line 2',
+'req_addr_city' => 'Require City',
+'req_addr_state' => 'Require State',
+'req_addr_country' => 'Require Country',
+'req_addr_zip' => 'Require Postal Code',
+'req_addr_phone' => 'Require Telephone Number',
 );
 
 /** Language strings for the subgroup names in the config section */

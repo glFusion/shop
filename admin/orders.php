@@ -3,9 +3,9 @@
  * Manage orders.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2020-2021 Lee Garner
+ * @copyright   Copyright (c) 2020-2023 Lee Garner
  * @package     shop
- * @version     v1.3.1
+ * @version     v1.5.0
  * @since       v1.2.3
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -40,9 +40,10 @@ if (isset($Request['msg'])) $msg[] = $Request->getString('msg');
 // and $view we don't tend to conflict with glFusion's $mode.
 $expected = array(
     // Actions to perform
-    'delete',
+    'delete', 'oi_update', 'oi_delete',
     // Views to display
     'packinglist', 'edit', 'shipments', 'list', 'order',
+    'oi_edit',
 );
 list($action, $actionval) = $Request->getAction($expected, 'orders');
 $view = $action;
@@ -75,6 +76,38 @@ case 'updstatus':
     if ($actionval != '') {
         $view = 'run';
     }
+    break;
+
+case 'oi_update':
+    $item_id = $Request->getInt('item_number');
+    $order_id = $Request->getString('order_id');
+    $OI = new Shop\OrderItem($Request->getInt('oi_id'));
+    if ($OI->getId() > 0) {
+        $OI->setOptionsFromPOV($Request->getArray('options'));
+        $OI->setExtras($Request->getArray('extras'));
+        $OI->setBasePrice($Request->getFloat('price'));
+        $OI->setQuantity($Request->getFloat('quantity'), $Request->getFloat('price'));
+        $OI->setSku();
+        $OI->Save();
+        // Now update the order for totals, etc.
+        $Order = new Shop\Order($order_id);
+        if ($Order->getOrderID() == $order_id) {
+            $Order->Save();
+        }
+    }
+    echo COM_refresh(Shop\Config::get('admin_url') . '/orders.php?order=' . $order_id);
+    break;
+
+case 'oi_delete':
+    $OI = new Shop\OrderItem($actionval);
+    if ($OI->getId() == $actionval) {
+        $OI->Delete();
+        $Order = new Shop\Order($OI->getOrderId());
+        if ($Order->getOrderID() == $OI->getOrderId()) {
+            $Order->Save();
+        }
+    }
+    echo COM_refresh(Shop\Config::get('admin_url') . '/orders.php?order=' . $OI->getOrderId());
     break;
 
 default:

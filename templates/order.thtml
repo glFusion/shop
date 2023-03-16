@@ -82,8 +82,8 @@
                     <div class="uk-grid">
                         <div class="uk-width-1-1 uk-width-medium-1-2 uk-width-1-2@m cart-item-product">
                             <div class="cart-item-image">
-{!if embargoed}
                                 <a href="{del_item_url}">
+{!if embargoed}
                                     <i class="uk-icon uk-icon-ban uk-icon-medium uk-text-danger tooltip"
                                     title="{$LANG_SHOP_HELP['hlp_rules_item']}"></i>
                                 </a>
@@ -99,7 +99,9 @@
 {!else}
                                 {item_dscp}
 {!endif}
-
+{!if is_admin}
+								{adm_edit_icon}&nbsp;{adm_delete_icon}
+{!endif}
 {!if is_file}
                                 &nbsp;&nbsp;<a href="{site_url}/shop/download.php?id={item_id}&token={token}"><button class="uk-button uk-button-primary uk-button-mini">{$LANG_SHOP['download']}</button></a>
 {!endif}
@@ -324,4 +326,38 @@
     </div>
     </div>
 </div>
+<script>
+function popupOIeditor(oi_id)
+{
+    $.ajax({
+        type: "POST",
+        //dataType: "json",
+        url: site_admin_url + "/plugins/shop/ajax.php?action=oi_edit&oi_id=" + oi_id,
+        //data: data,
+        success: function(result) {
+            try {
+                if (result.status == true) {
+					modal = Shop.modal(result.form, {bgClose:true});
+					return false;
+                } else {
+                    /*var input = document.createElement("input");
+                    input.type = "hidden";
+                    input.name = "{action}";
+                    input.value = "x";;
+                    form.appendChild(input);
+                    form.submit();*/
+                }
+            } catch(err) {
+				console.log(err);
+            }
+        },
+        error: function(a,b,c) {
+            console.log(a);
+            console.log(b);
+            console.log(c);
+        }
+    });
+    return true;
+}
+</script>
 {# end {templatelocation} #}

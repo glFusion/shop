@@ -50,6 +50,8 @@ Release 2023-02-23
   * Fill in checkboxes and text fields when viewing an order item from an order.
   * Cancel checkout session with payment provider if checkout is canceled.
   * Link anonymous orders to site members by email address if possible.
+  * Disable non-bundled gateways during upgrade to avoid PHP errors due to type hints.
+  * Allow admins to edit order items on invoices. Payment adjustments must be done manually.
 
 ## v1.4.1
 Release 2022-04-07

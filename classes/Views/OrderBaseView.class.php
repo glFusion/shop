@@ -1,17 +1,18 @@
 <?php
 /**
- * Class to present an view of an order
+ * Class to present an view of an order.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2021 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2023 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.1
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop\Views;
+use Shop\Config;
 use Shop\Currency;
 use Shop\Workflow;
 use Shop\Shipment;
@@ -426,7 +427,6 @@ class OrderBaseView
         $this->TPL->set_block('order', 'ItemRow', 'iRow');
         foreach ($this->Order->getItems() as $Item) {
             $P = $Item->getProduct();
-
             $img = $P->getImage('', $_SHOP_CONF['order_tn_size']);
             if (!empty($img['url'])) {
                 $img_url = COM_createImage(
@@ -492,8 +492,10 @@ class OrderBaseView
                 ) );
             }
 
+            $item_id = $Item->getID();      // since used so often
             $this->TPL->set_var(array(
-                'cart_item_id'  => $Item->getID(),
+                'cart_item_id'  => $item_id,
+                'oi_id'         => $item_id,    // record ID, better name
                 'fixed_q'       => $P->getFixedQuantity(),
                 'item_id'       => htmlspecialchars($Item->getProductID()),
                 'item_dscp'     => htmlspecialchars($Item->getDscp()),
@@ -501,13 +503,29 @@ class OrderBaseView
                 'item_quantity' => $Item->getQuantity(),
                 'item_total'    => $this->Currency->FormatValue($item_total),
                 'is_admin'      => $this->isAdmin,
+                'adm_edit_icon'     => FieldList::edit(array(
+                    'attr' => array(
+                        'onclick' => "popupOIeditor('$item_id');",
+                        'title' => $LANG_SHOP['remove_item'],
+                        'class' => 'tooltip',
+                    )
+                )),
+                'adm_delete_icon'   => FieldList::delete(array(
+                    'delete_url' => Config::get('admin_url') . '/orders.php?order_id=' . $this->order_id . '&oi_delete=' . $item_id,
+                    'attr' => array(
+                        'onclick' => "return confirm('{$LANG_SHOP['q_del_item']} {$LANG_SHOP['change_permanent']}')",
+
+                        'title' => $LANG_SHOP['remove_item'],
+                        'class' => 'tooltip',
+                    )
+                )),
                 'is_file'       => $Item->canDownload(),
                 'taxable'       => $this->Order->getTaxRate() > 0 ? $Item->isTaxable() : 0,
                 'token'         => $Item->getToken(),
                 'item_options'  => $Item->getOptionDisplay(),
                 'item_extras'   => $Item->getExtraDisplay(),
                 'sku'           => $Item->getSKU(),
-                'item_link'     => $P->withOrderItem($Item->getID())->getLink(),
+                'item_link'     => $P->withOrderItem($item_id)->getLink(),
                 'pi_url'        => SHOP_URL,
                 'is_invoice'    => $this->is_invoice,
                 'del_item_url'  => COM_buildUrl(SHOP_URL . "/cart.php?action=delete&id={$Item->getID()}"),

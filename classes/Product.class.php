@@ -3,7 +3,7 @@
  * Class to manage products.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2022 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2023 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     v1.5.0
  * @since       v0.7.0
@@ -2844,13 +2844,17 @@ class Product
      * Returns "Undefined" if for some reason the field isn't defined.
      *
      * @param   integer $key    Array key into the $custom fields
-     * @return  string      Custom field name, or "undefined"
+     * @return  array|string    Custom field name, or "undefined"
      */
     public function getCustom($key=NULL)
     {
         static $custom = NULL;
         if ($custom === NULL) {
-            $custom = explode('|', $this->custom);
+            if (!empty($this->custom)) {
+                $custom = explode('|', $this->custom);
+            } else {
+                $custom = array();
+            }
         }
         if ($key === NULL) {
             return $custom;

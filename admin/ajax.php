@@ -378,6 +378,14 @@ case 'getUnpaidOrders':
     }
     break;
 
+case 'oi_edit':
+    $OI = new Shop\OrderItem(43);
+    $retval = array(
+        'status' => true,       // maybe check form validity later
+        'form' => $OI->edit(),
+    );
+    break;
+
 case 'toggle':
     $oldval = $Request->getInt('oldval');
     $id = $Request->getInt('id');

@@ -3,7 +3,7 @@
  * Class to manage order line items.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018-2022 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2023 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     v1.5.0
  * @since       v0.7.0
@@ -404,6 +404,17 @@ class OrderItem
             $this->Variant = ProductVariant::getInstance($this->getVariantId());
         }
         return $this->Variant;
+    }
+
+
+    /**
+     * Get the order ID of the related order.
+     *
+     * @return  string      Order ID
+     */
+    public function getOrderId() : string
+    {
+        return $this->order_id;
     }
 
 
@@ -814,6 +825,7 @@ class OrderItem
     public function setVariant(ProductVariant $PV) : object
     {
         $this->Variant = $PV;
+        $this->variant_id = $PV->getID();
         return $this;
     }
 
@@ -1080,28 +1092,27 @@ class OrderItem
      * @param   array   $opts   Array of ProductOptionValues
      * @return  object  $this
      */
-    public function setOptionsFromPOV(array $opts) : self
+    public function setOptionsFromPOV(array $opt_ids) : self
     {
-        if (empty($opts)) {
+        if (empty($opt_ids)) {
             return $this;
         }
-        if (is_string($opts)) {
+        if (is_string($opt_ids)) {
             // todo: deprecate
-            $opt_ids = explode(',', $opts);
-            $opts = array();
-            foreach($opt_ids as $opt_id) {
-                $opts[] = new ProductOptionValue($opt_id);
-            }
+            $opt_ids = explode(',', $opt_ids);
         }
-
-        if (is_array($opts)) {
-            foreach ($opts as $POV) {
-                $OIO = new OrderItemOption;
-                $OIO->setOpt($POV->getID());
-                $OIO->setOrderItemID($this->id);
-                $this->options[] = $OIO;
-            }
+        $POVs= array();
+        foreach($opt_ids as $opt_id) {
+            $POVs[] = new ProductOptionValue($opt_id);
         }
+        foreach ($POVs as $POV) {
+            $OIO = new OrderItemOption;
+            $OIO->setOpt($POV->getID());
+            $OIO->setOrderItemID($this->id);
+            $this->options[] = $OIO;
+        }
+        $PV = ProductVariant::getByAttributes($this->product_id, $opt_ids);
+        $this->setVariant($PV);
         return $this;
     }
 
@@ -1200,6 +1211,10 @@ class OrderItem
                 $opts[] = array('name' => $Opt->getName(), 'value' => $Opt->getValue());
             }
         }
+        if ($this->variant_id > 0 && $this->Variant) {
+            $opts = array_merge($opts, $this->Variant->getDscp());
+        }
+
         if (!empty($opts)) {
             // This is double work, but saves instantiating the template if not needed.
             $T = new Template;
@@ -1300,6 +1315,7 @@ class OrderItem
      */
     public function setOptionsText($value=array()) : self
     {
+        echo __FUNCTION__ . ' deprecated';die;
         if (is_string($value)) {    // convert to array
             $value = JSON::decode($value);
             if (!$value) $value = array();
@@ -1698,6 +1714,221 @@ class OrderItem
     {
         $this->_tainted = false;
         return $this;
+    }
+
+
+    /**
+     * Display the detail page for the product.
+     *
+     * @return  string      HTML for the product page.
+     */
+    public function edit() : string
+    {
+        global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP;
+
+        $retval = '';
+        $Cur = Currency::getInstance();
+
+        foreach ($this->getOptions() as $OIO) {
+            if ($OIO->getOptionID() > 0) {    // not a custom text field
+                $this->sel_opts[] = $OIO->getOptionID();
+            }
+        }
+        if (isset($this->getExtras()['options']) && is_array($this->getExtras()['options'])) {
+            $sel_cbOpts = $this->getExtras()['options'];
+        }
+        if (isset($this->getExtras()['custom']) && is_array($this->getExtras()['custom'])) {
+            $sel_customStrings = $this->getExtras()['custom'];
+        }
+
+        // Set the template dir based on the configured template version
+        $T = new Template('admin/');
+        $T->set_file(array(
+            'oi_form'   => 'oi_edit.thtml',
+        ) );
+
+        // Get custom text input fields.
+        // Pre-filled values come from the OrderItem object, if any.
+        // Otherwise they're blank. Known issue: Anon users have no access
+        // to the OI object so the fields won't be pre-filled for them.
+        $T->set_block('oi_form', 'CustAttrib', 'cAttr');
+        $text_field_names = $this->Product->getCustom();
+        if (isset($this->extras['custom']) && is_array($this->extras['custom'])) {
+            $customStrings = $this->extras['custom'];
+        } else {
+            $customStrings = array();
+        }
+        foreach ($text_field_names as $id=>$text_field_name) {
+            if (isset($customStrings[$id])) {
+                $val = $customStrings[$id];
+            } else {
+                $val = '';
+            }
+            $T->set_var(array(
+                'fld_id'    => "cust_text_fld_$id",
+                'fld_name'  => htmlspecialchars($text_field_name),
+                'fld_val'   => htmlspecialchars($val),
+            ) );
+            $T->parse('cAttr', 'CustAttrib', true);
+        }
+
+        // Get the product options, if any, and set them into the form
+        $pv_opts = array();     // Collect options to find the product variant
+        $sel_opts = array();    // Collect the select product option IDs
+        $T->set_block('oi_form', 'OptionGroup', 'AG');
+        $options_map = array();
+        if ($this->variant_id > 0) {
+            $this->Variant = ProductVariant::getInstance($this->variant_id);
+            foreach ($this->Product->getVariants() as $PV) {
+                $opts = $PV->getOptions();
+                if (is_array($opts)) {
+                    foreach ($opts as $Opt) {
+                        if (!$Opt->isEnabled()) {
+                            continue;
+                        }
+                        $pog_id = $Opt->getGroupId();
+                        $pov_id = $Opt->getID();
+                        if (!isset($options_map[$pog_id])) {
+                            $options_map[$pog_id] = array();
+                        }
+                        $options_map[$pog_id][] = $pov_id;
+                    }
+                }
+            }
+            $VarOptions = $this->Variant->getOptions();
+            if (!empty($VarOptions)) {
+                foreach ($VarOptions as $POV) {
+                    $sel_opts[] = $POV->getId();
+                }
+            }
+        }
+
+        foreach (ProductOptionGroup::getByProduct($this->product_id) as $OG) {
+            if (count($OG->getOptions()) < 1 || !isset($options_map[$OG->getID()])) {
+                // Could happen if options are removed leaving an empty option group.
+                continue;
+            }
+
+            // Most options use the option group name as the prompt
+            $display_name = $OG->getName();
+            $T->set_block('oi_form', 'Option' . $OG->getType(), 'optSel');
+            switch ($OG->getType()) {
+            case 'select':
+            case 'radio':
+                // First find the selected option.
+                // Check that the option is included in the variant, this could
+                // get out of sync if variants are created with more options
+                // later and the default variant doesn' thave them.
+                if ($this->variant_id > 0 && isset($VarOptions[$OG->getName()])) {
+                    $sel_opt = $VarOptions[$OG->getName()]->getID();
+                } else {
+                    $sel_opt = 0;
+                }
+                $ogOpts = $OG->getOptions();
+                foreach ($ogOpts as $Opt) {
+                    if (in_array($Opt->getID(), $sel_opts)) {
+                        $sel_opt = $Opt->getID();
+                    }
+                }
+                if (!$sel_opt) {    // no selected attribute found
+                    $sel_opt = reset($ogOpts)->getID();
+                }
+                foreach ($ogOpts as $Opt) {
+                    if (!in_array($Opt->getID(), $options_map[$OG->getID()])) {
+                        continue;
+                    }
+                    $T->set_var(array(
+                        'opt_id' => $Opt->getID(),
+                        'opt_str' => htmlentities($Opt->getValue(), ENT_QUOTES | ENT_HTML5),
+                        'radio_selected' => $Opt->getID() == $sel_opt ? 'checked="checked"' : '',
+                        'select_selected' => $Opt->getID() == $sel_opt ? 'selected="selected"' : '',
+                    ) );
+                    $T->parse('optSel', 'Option' . $OG->getType(), true);
+                }
+                $pv_opts[] = $sel_opt;
+                break;
+            case 'checkbox':
+                foreach ($OG->getOptions() as $Opt) {
+                    $checked = in_array($Opt->getID(), $this->sel_opts) ? 'checked="checked"' : '';
+                    $T->set_var(array(
+                        'opt_id' => $Opt->getID(),
+                        'opt_str' => htmlspecialchars($Opt->getValue()),
+                        'checked' => $checked,
+                    ) );
+                    $T->parse('optSel', 'Option' . $OG->getType(), true);
+                }
+                break;
+
+            case 'text':
+                $display_name = current($OG->getOptions())->getValue();
+                $T->set_var('var_name', 'text_option_' . $OG->getID());
+                break;
+            }
+            $T->set_var(array(
+                'og_id'     => $OG->getID(),
+                'og_name'   => $display_name,
+                'og_type'   => $OG->getType(),
+            ) );
+            $T->parse('AG', 'OptionGroup', true);
+            $T->clear_var('optSel');
+        }
+
+        $cbOpts = ProductCheckbox::getByProduct($this->product_id);
+        if (!empty($cbOpts)) {
+            $T->set_block('oi_form', 'checkboxGroups', 'cbGroup');
+            $cbrk = NULL;
+            foreach ($cbOpts as $Opt) {
+                if ($cbrk != $Opt->getGroupID()) {
+                    $cbrk = $Opt->getGroupID();
+                    $T->set_var('cb_group_name', $Opt->getGroupName());
+                    $T->set_block('oi_form', 'checkboxOptions', 'cbOptions');
+                }
+                $T->set_var(array(
+                    'option_dscp' => $Opt->getOptionValue(),
+                    'option_id' => $Opt->getOptionID(),
+                    'option_chk' => in_array($Opt->getOptionID(), $sel_cbOpts) ? 'checked="checked"' : '',
+                ) );
+                $T->parse('cbOptions', 'checkboxOptions', true);
+                if ($cbrk != $Opt->getGroupID()) {
+                    $T->parse('cbGroup', 'checkboxGroups', true);
+                    //$T->clear_var('cbOptions');
+                }
+            }
+            $T->parse('cbGroup', 'checkboxGroups', true);
+        }
+
+        $T->set_var(array(
+            'order_id'          => $this->order_id,
+            'oi_id'             => $this->id,
+            'item_id'           => $this->product_id,
+            'frm_id'            => 'oi_edit_' . uniqid(),
+            'product_name'      => $this->Product->getName(),
+            'product_dscp'      => $this->Product->getShortDscp(),
+            'have_attributes'   => $this->Product->getOptions(),
+            'cur_decimals'      => $Cur->Decimals(),
+            'sku'               => $this->sku,
+            'short_description' => $this->Product->getDscp(),
+            'description'       => $this->Product->getShortDscp(),
+            'orig_price'        => $Cur->FormatValue($this->price),
+            'new_price'         => $Cur->FormatValue($this->price),
+            'sku'               => $this->Product->getName(),
+            'quantity'          => $this->quantity,
+        ) );
+
+        /*$T->set_block('oi_form', 'SpecialFields', 'SF');
+        foreach ($this->Product->getCustom() as $fld) {
+            $T->set_var(array(
+                'sf_name'   => $fld['name'],
+                'sf_text'   => $fld['text'],
+                'sf_class'  => isset($fld['class']) ? $fld['class'] : '',
+                'sf_help'   => $fld['help'],
+                'sf_type'   => isset($fld['type']) ? $fld['type'] : 'textarea',
+            ) );
+            $T->parse('SF', 'SpecialFields', true);
+        }*/
+
+        $retval .= $T->parse('output', 'oi_form');
+        return $retval;
     }
 
 }
