@@ -31,15 +31,21 @@ var Shop = (function() {
 		},
 		modal: function(content="", opts={}) {
 			if ('bgClose' in opts) {
-				closeVal = opts.bgClose;
+				var closeVal = opts.bgClose;
 			} else {
-				closeVal = false;
+				var closeVal = false;
+			}
+			if ('title' in opts) {
+				var header = '<div class="uk-modal-header"><h2>' + opts.title + '</h2></div>';
+			} else {
+				var header = '';
 			}
 			if (typeof(UIkit.modal.blockUI) == 'function') {
-				var modal = UIkit.modal.blockUI(content);
+				content = header + content;
+				var modal = UIkit.modal.blockUI(content, {'bgclose':closeVal});
 			} else if (typeof(UIkit.modal.dialog) == 'function') {
-				content = '<div class="uk-modal-body uk-text-large uk-text-center">' + content + '&nbsp;&nbsp;</div>';
-				var modal = UIkit.modal.dialog(content, {'bgClose':closeVal});
+				content = header + '<div class="uk-modal-body uk-text-large uk-text-center">' + content + '&nbsp;&nbsp;</div>';
+				var modal = UIkit.modal.dialog(content, {'bgclose':closeVal});
 			}
 		},
 		// Display a spinner in a modal dialog during processing.

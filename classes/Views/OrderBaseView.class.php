@@ -504,9 +504,10 @@ class OrderBaseView
                 'item_total'    => $this->Currency->FormatValue($item_total),
                 'is_admin'      => $this->isAdmin,
                 'adm_edit_icon'     => FieldList::edit(array(
+                    'url' => '#!',
                     'attr' => array(
                         'onclick' => "popupOIeditor('$item_id');",
-                        'title' => $LANG_SHOP['remove_item'],
+                        'title' => $LANG_SHOP['edit_item'],
                         'class' => 'tooltip',
                     )
                 )),
