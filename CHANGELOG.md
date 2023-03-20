@@ -1,7 +1,7 @@
 # Shop plugin for glFusion - Changelog
 
 ## v1.5.0
-Release 2023-02-23
+Release TBD
   * Require glFusion 2.0.0+
   * Save shipping units and weights with orderitems to facilitate injected products from plugins.
   * Don't calculate shipping where units = 0, use only fixed if present.
@@ -52,6 +52,7 @@ Release 2023-02-23
   * Link anonymous orders to site members by email address if possible.
   * Disable non-bundled gateways during upgrade to avoid PHP errors due to type hints.
   * Allow admins to edit order items on invoices. Payment adjustments must be done manually.
+  * Add public link to order on admin view, to easily send to customers if needed.
 
 ## v1.4.1
 Release 2022-04-07

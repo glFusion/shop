@@ -345,7 +345,7 @@ class OrderBaseView
      */
     protected function _renderCommon()
     {
-        global $_SHOP_CONF;
+        global $_SHOP_CONF, $LANG_SHOP;
 
         $this->TPL->set_var(array(
             'pi_url'        => SHOP_URL,
@@ -359,6 +359,14 @@ class OrderBaseView
             'order_date'    => $this->Order->getOrderDate()->format($_SHOP_CONF['datetime_fmt'], true),
             'order_date_tip' => $this->Order->getOrderDate()->format($_SHOP_CONF['datetime_fmt'], false),
             'order_number'  => $this->Order->getOrderID(),
+            'order_pub_link' => FieldList::link(array(
+                'url' => COM_buildUrl(Config::get('url') . '/order.php?mode=view&id=' . $this->Order->getOrderID() . '&token=' . $this->Order->getToken()),
+                'attr' => array(
+                    'target' => '_new',
+                    'title' => $LANG_SHOP['order_pub_link'],
+                    'class' => 'tooltip',
+                ),
+            ) ),
         ) );
     }
 

@@ -255,4 +255,28 @@ class FieldList extends \glFusion\FieldList
         return $t->finish($t->get_var('output'));
     }
 
+
+    public static function link($args)
+    {
+        $t = self::init();
+        $t->set_block('field','field-link');
+
+        $t->set_var(array(
+            'url' => $args['url'],
+        ) );
+
+        if (isset($args['attr']) && is_array($args['attr'])) {
+            $t->set_block('field-link','attr','attributes');
+            foreach($args['attr'] AS $name => $value) {
+                $t->set_var(array(
+                    'name' => $name,
+                    'value' => $value)
+                );
+                $t->parse('attributes','attr',true);
+            }
+        }
+        $t->parse('output','field-link',true);
+        return $t->finish($t->get_var('output'));
+    }
+
 }
