@@ -344,7 +344,17 @@ class DataArray implements \ArrayAccess, \Iterator
         }
     }
 
-    public function rewind(): void
+    /**
+     * Reset the array.
+     * Base function is to empty the array, child classes that have
+     * specific array structures should implement their own reset() function.
+     */
+    public function reset() : void
+    {
+        $this->properties = array();
+    }
+
+    public function rewind() : void
     {
         reset($this->properties);
     }
