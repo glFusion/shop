@@ -378,6 +378,22 @@ case 'getUnpaidOrders':
     }
     break;
 
+case 'uid_edit':
+    $T = new Shop\Template('admin');
+    $T->set_file('form', 'uid_edit.thtml');
+    $T->set_var(array(
+        'order_id' => $Request->getString('order_id'),
+        'purch_name' => $Request->getString('name'),
+        'purch_uid' => $Request->getInt('uid'),
+        'buyer_select' => Shop\Customer::getOptionList($Request->getInt('uid')),
+    ) );
+    $T->parse('output', 'form');
+    $retval = array(
+        'status' => true,
+        'form' => $T->finish($T->get_var('output')),
+    );
+    break;
+
 case 'oi_edit':
     $OI = new Shop\OrderItem(43);
     $retval = array(

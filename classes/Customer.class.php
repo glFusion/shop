@@ -964,4 +964,34 @@ class Customer
         return $retval;
     }
 
+
+    /**
+     * Get an option list of site members.
+     * Similar to COM_optionList but includes both the fullname and username.
+     *
+     * @param   integer $sel_uid    Optional preselected user ID
+     * @return  string      Option elements for a Select
+     */
+    public static function getOptionList(int $sel_uid = 0) : string
+    {
+        global $_TABLES;
+
+        $retval = '';
+        try {
+            $stmt = Database::getInstance()->conn->executeQuery(
+                "SELECT uid, username, fullname FROM {$_TABLES['users']} ORDER BY fullname ASC"
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $stmt = false;
+        }
+        if ($stmt) {
+            while ($row = $stmt->fetchAssociative()) {
+                $sel = $row['uid'] == $sel_uid ? 'selected="selected"' : '';
+                $retval .= "<option value=\"{$row['uid']}\" $sel>{$row['fullname']} ({$row['username']})</option>" . LB;
+            }
+        }
+        return $retval;
+    }
+
 }

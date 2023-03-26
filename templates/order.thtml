@@ -270,7 +270,10 @@
 			<p><b>{$LANG_SHOP['ship_via']}:</b> {ship_method}</p>
 	{!endif}
 	{!if is_admin}
-			<p id="orderPurchaser">{$LANG_SHOP['purchaser']}: <a href="{site_url}/users.php?mode=profile&uid={purch_uid}">{purch_name} ({purch_uid})</a></p>
+			<p id="orderPurchaser">
+				{$LANG_SHOP['purchaser']}: <a href="{site_url}/users.php?mode=profile&uid={purch_uid}">{purch_name} ({purch_uid})</a>
+				<i class="uk-icon uk-icon-edit" onclick="popupUIDeditor();"></i>
+			</p>
 			<p>
 			<form class="uk-form" action="{site_admin_url}/plugins/shop/index.php" method="post">
 				<input type="hidden" name="order_id" value="{order_number}" />
@@ -326,10 +329,8 @@
 function popupOIeditor(oi_id)
 {
 	$.ajax({
-		type: "POST",
-		//dataType: "json",
+		type: "get",
 		url: site_admin_url + "/plugins/shop/ajax.php?action=oi_edit&oi_id=" + oi_id,
-		//data: data,
 		success: function(result) {
 			try {
 				if (result.status == true) {
@@ -337,15 +338,35 @@ function popupOIeditor(oi_id)
 						bgClose:true,
 						title:"{$LANG_SHOP['edit_item']} {sku}"
 					});
-					return false;
-				} else {
-					/*var input = document.createElement("input");
-					input.type = "hidden";
-					input.name = "{action}";
-					input.value = "x";;
-					form.appendChild(input);
-					form.submit();*/
 				}
+				return false;
+			} catch(err) {
+				console.log(err);
+			}
+		},
+		error: function(a,b,c) {
+			console.log(a);
+			console.log(b);
+			console.log(c);
+		}
+	});
+	return true;
+}
+
+function popupUIDeditor()
+{
+	$.ajax({
+		type: "get",
+		url: site_admin_url + "/plugins/shop/ajax.php?action=uid_edit&order_id={order_number_esc}&name={purch_name}&uid={purch_uid}",
+		success: function(result) {
+			try {
+				if (result.status == true) {
+					modal = Shop.modal(result.form,	{
+						bgClose:true,
+						title:"{$LANG_SHOP['change_buyer_uid']}: {purch_name} ({purch_uid})"
+					});
+				}
+				return false;
 			} catch(err) {
 				console.log(err);
 			}

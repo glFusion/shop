@@ -811,6 +811,7 @@ $LANG_SHOP = array (
 'err_gw_version' => 'The uploaded gateway must support Shop v%s, v%s provided.',
 'err_occurred' => 'An error occurred, check the system log.',
 'order_pub_link' => 'Public link to view the order',
+'change_buyer_uid' => 'Change Buyer User ID',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

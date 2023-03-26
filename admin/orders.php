@@ -40,7 +40,7 @@ if (isset($Request['msg'])) $msg[] = $Request->getString('msg');
 // and $view we don't tend to conflict with glFusion's $mode.
 $expected = array(
     // Actions to perform
-    'delete', 'oi_update', 'oi_delete',
+    'delete', 'oi_update', 'oi_delete', 'uid_update',
     // Views to display
     'packinglist', 'edit', 'shipments', 'list', 'order',
     'oi_edit',
@@ -108,6 +108,12 @@ case 'oi_delete':
         }
     }
     echo COM_refresh(Shop\Config::get('admin_url') . '/orders.php?order=' . $OI->getOrderId());
+    break;
+
+case 'uid_update':
+    $Order = Shop\Order::getInstance($Request->getString('order_id'));
+    $Order->setUid($Request->getInt('uid'))->Save();
+    echo COM_refresh(Shop\Config::get('admin_url') . '/orders.php?order=' . $Request->getString('order_id'));
     break;
 
 default:
