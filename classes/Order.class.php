@@ -3,7 +3,7 @@
  * Order class for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2022 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2023 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     v1.5.0
  * @since       v0.7.0
@@ -4565,5 +4565,142 @@ class Order
         return $retval;
     }
 
+
+    /**
+     * Add a single item to the order, from a product detail page.
+     * Formats the argument array to match the format used by the Order class
+     * and calls that class's addItem() function to actually add the item.
+     *
+     * Some values are straight from the item table, but may be overridden
+     * to handle special cases or customization.
+     *
+     * @param  array   $args   Array of arguments. item_number is required.
+     * @return  integer     New item quantity, NULL on error
+     */
+    public function addItemFromForm(DataArray $args) : ?int
+    {
+        global $_SHOP_CONF, $_USER;
+
+        $need_save = false;     // assume the cart doesn't need to be re-saved
+        $item_id = $args['item_number'];    // may contain options
+        $P = Product::getByID($item_id);
+        $quantity   = $args->getFloat('quantity', $P->getMinOrderQty());
+        $override   = isset($args['override']) ? $args['price'] : NULL;
+        $extras     = $args->getArray('extras');
+        $options    = $args->getArray('options');
+        $item_name  = $args->getString('item_name');
+        $uid        = $args->getInt('uid', 1);
+        $taxable    = $args->getInt('taxable');
+        $options_text = $args->getArray('options_text');
+        $shipping   = $args->getFloat('shipping');
+        $shipping_units = $args->getFloat('shipping_units', $P->getShippingUnits());
+        $shipping_weight= $args->getFloat('shipping_weight', $P->getWeight());
+        $options_price = 0;
+
+        if (isset($args['description'])) {
+            $item_dscp  = $args['description'];
+        } elseif (isset($args['short_dscp'])) {
+            $item_dscp  = $args['short_dscp'];
+        } else {
+            $item_dscp = '';
+        }
+        if (isset($args['variant'])) {
+            $PV = ProductVariant::getInstance($args->getInt('variant'));
+        } elseif (!Product::isPluginItem($P->getID())) {
+            $PV = ProductVariant::getByAttributes($P->getID(), $options);
+        } else {
+            $PV = new ProductVariant;
+        }
+        if (!is_array($this->Items)) {
+            $this->Items = array();
+        }
+
+        // Extract the attribute IDs from the options array to create
+        // the item_id.
+        // This is for the product variant.
+        // Options are an array(id1, id2, id3, ...)
+        $opts = array();
+        if (is_array($options) && !empty($options)) {
+            foreach($options as $opt_id) {
+                $opts[$opt_id] = new ProductOptionValue($opt_id);
+            }
+            // Add the option numbers to the item ID to create a new ID
+            // to check whether the product already exists in the cart.
+            //$opt_str = implode(',', $options);
+            //$item_id .= '|' . $opt_str;
+        }
+        if (isset($args['extras']['options']) && is_array($args['extras']['options'])) {
+            // Checkbox option IDs. Get the item options to check against
+            // for pricing.
+            $cBoxes = ProductCheckbox::getByProduct($args['item_number']);
+            foreach ($args['extras']['options'] as $opt_id) {
+                if (isset($cBoxes[$opt_id])) {
+                    $opts[$opt_id] = new ProductOptionValue($opt_id);
+                    $opt_price = $cBoxes[$opt_id]->getPrice();
+                    $opts[$opt_id]->withPrice($opt_price);
+                    $options_price += $opt_price;
+                }
+            }
+        }
+
+        if ($PV->getID() > 0) {
+            $P->setVariant($PV);
+            $item_id .= '|' . $PV->getID();
+        }
+
+        // Look for identical items, including options (to catch
+        // attributes). If found, just update the quantity.
+        if ($P->cartCanAccumulate()) {
+            $have_id = $this->Contains($item_id, $extras, $options_text);
+        } else {
+            $have_id = false;
+        }
+
+        $quantity = $P->validateOrderQty($quantity);
+        if ($have_id !== false) {
+            $new_quantity = $this->Items[$have_id]->getQuantity();
+            $new_quantity += $quantity;
+            $this->Items[$have_id]->setQuantity($new_quantity, $override);
+            $this->Items[$have_id]->Save();     // to save updated order value
+        } elseif ($quantity == 0) {
+            return NULL;
+        } else {
+            $tmp = new DataArray(array(
+                'item_id'   => $item_id,
+                'quantity'  => $quantity,
+                'name'      => $P->getName($item_name),
+                'description' => $P->getDscp($item_dscp),
+                'variant_id' => $PV->getID(),
+                'options'   => $opts,
+                'options_text' => $options_text,
+                'extras'    => $extras,
+                'override'  => $override,
+                'options_price' => $options_price,
+                'shipping'  => $shipping,
+                'shipping_units' => $shipping_units,
+                'shipping_weight' => $shipping_weight,
+                'taxable'   => $P->isTaxable() ? 1 : 0,
+            ) );
+            if (Product::isPluginItem($item_id)) {
+                if (isset($args['price'])) {
+                    $tmp['price'] = (float)$args['price'];
+                }
+                if (isset($args['taxable'])) {
+                    $tmp['taxable'] = $args['taxable'] ? 1 : 0;
+                }
+            }
+            self::addItem($tmp);
+            $this->Taint();
+            $new_quantity = $quantity;
+        }
+        if ($this->applyQtyDiscounts($item_id)) {
+            // If discount pricing was recalculated, save the new item prices
+            $this->Taint();
+        }
+        $P->reserveStock($quantity);
+        // If an update was done that requires re-saving the cart, do it now
+        $this->saveIfTainted(true);
+        return $new_quantity;
+    }
 
 }

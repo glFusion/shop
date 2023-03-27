@@ -28,6 +28,7 @@
 	<div style="text-align:right;">
 		{linkPrint}
 	{!if is_admin}
+		<i class="uk-icon uk-icon-plus-circle uk-text-success" onclick="popupOIadd();"></i>
 		{linkPackingList}
 		{!if itemsToShip}
 		<br />
@@ -326,6 +327,33 @@
 	</div>
 </div>
 <script>
+function popupOIadd()
+{
+	$.ajax({
+		type: "get",
+		url: site_admin_url + "/plugins/shop/ajax.php?action=oi_add&order_id={order_number}",
+		success: function(result) {
+			try {
+				if (result.status == true) {
+					modal = Shop.modal(result.form,	{
+						bgClose:true,
+						title:"{$LANG_SHOP['new_item']}"
+					});
+				}
+				return false;
+			} catch(err) {
+				console.log(err);
+			}
+		},
+		error: function(a,b,c) {
+			console.log(a);
+			console.log(b);
+			console.log(c);
+		}
+	});
+	return true;
+}
+
 function popupOIeditor(oi_id)
 {
 	$.ajax({

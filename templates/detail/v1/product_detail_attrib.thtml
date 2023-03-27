@@ -21,7 +21,12 @@
 		});
 	</script>
 </div>
-{!endif}<form id="{frm_id}" class="uk-form uk-form-horizontal" action="{site_url}/shop/index.php" method="post">
+{!endif}
+{!if admin_adding}
+<form class="uk-form uk-form-stacked" method="post" id="{frm_id}" action="{action_url}">
+{!else}
+<form id="{frm_id}" class="uk-form uk-form-horizontal" action="{site_url}/shop/index.php" method="post">
+{!endif}
 	<input type="hidden" name="item_number" value="{id}" />
 	<input type="hidden" name="has_options" value="{have_attributes}" />
 

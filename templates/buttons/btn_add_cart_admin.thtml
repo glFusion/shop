@@ -1,0 +1,29 @@
+{# begin {templatelocation} #}
+<form id="{pi}" style="display:inline;" action="{action_url}" method="post" class="uk-form">
+	<input type="hidden" name="order_id" value="{order_id}" />
+	<input type="hidden" name="item_name" value="{item_name}" />
+	<input type="hidden" name="item_number" value="{item_number}" />
+	<input type="hidden" name="short_dscp" value="{short_description}" />
+	<input type="hidden" name="item_type" value='{item_type}' />
+	<input type="hidden" name="amount" value="{amount}" />
+	<input type="hidden" name="custom" value='{custom}' />
+	<input type="hidden" name="base_price" value="{base_price}" />
+{!if unique}
+	<input type="hidden" name="unique" value="{unique}" />
+{!endif}
+	<div class="uk-form-row uk-margin-small frmAddCart {tpl_ver}">
+		<div>
+{!if quantity}
+			<input type="hidden" name="quantity" value="{quantity}" />
+			{$LANG_SHOP['qty']}: {quantity}
+{!else}
+			<input class="uk-input uk-form-width-small" name="quantity" type="number" min="{min_ord_qty}" onchange="ProcessForm(this.form.id);"
+				value="{min_ord_qty}"/>
+{!endif}
+			&nbsp;&nbsp;<button type="submit" name="oi_add" class="uk-button uk-button-small uk-button-success">
+				<i class="uk-icon uk-icon-shopping-cart">&nbsp;</i>{$LANG_SHOP['add_to_cart']}
+			</button>
+		</div>
+	</div>
+</form>
+{# end {templatelocation} #}

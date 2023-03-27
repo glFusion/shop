@@ -40,10 +40,10 @@ if (isset($Request['msg'])) $msg[] = $Request->getString('msg');
 // and $view we don't tend to conflict with glFusion's $mode.
 $expected = array(
     // Actions to perform
-    'delete', 'oi_update', 'oi_delete', 'uid_update',
+    'delete', 'oi_update', 'oi_delete', 'uid_update', 'oi_add',
     // Views to display
     'packinglist', 'edit', 'shipments', 'list', 'order',
-    'oi_edit',
+    'oi_add_form',
 );
 list($action, $actionval) = $Request->getAction($expected, 'orders');
 $view = $action;
@@ -78,17 +78,79 @@ case 'updstatus':
     }
     break;
 
+case 'oi_add_form':
+    $item_id = $Request->getInt('item_id');
+    if (!empty($item_id)) {
+        $P = Shop\Product::getByID($item_id);
+        $P->isAdminAdding = true;
+        $content .= $P->withOrderId($Request->getString('order_id'))->Detail();
+    }
+    break;
+
+case 'oi_add':      // Add an item to a customer's order
+    $order_id = $Request->getString('order_id');
+    $item_number = $Request->getString('item_number');
+    $P = Shop\Product::getByID($item_number);
+    if ($P->isNew()) {
+        // Invalid product ID passed
+        //echo json_encode(array('content' => '', 'statusMessage' => ''));
+        exit;
+    }
+    $item_name = $Request->getString('item_name', $P->getName());
+    $Order = Shop\Order::getInstance($order_id);
+    $req_qty = $Request->getInt('quantity', $P->getMinOrderQty());
+    $unique = $Request->getInt('_unique', $P->isUnique());
+    if ($unique && $Order->Contains($Request->getString('item_number')) !== false) {
+        // Do nothing if only one item instance may be added
+        /*$output = array(
+            'content' => phpblock_shop_cart_contents(),
+            'statusMessage' => 'Only one instance of this item may be added.',
+            'ret_url' => $Request->getString('_ret_url'),
+            'unique' => true,
+        );*/
+        break;
+    }
+
+    $args = new Shop\Models\DataArray(array(
+        'item_number'   => $item_number,     // isset ensured above
+        'item_name'     => $item_name,
+        'short_dscp'    => $Request->getString('short_dscp', $P->getDscp()),
+        'quantity'      => $req_qty,
+        'price'         => $P->getPrice(),
+        'options'       => $Request->getArray('options'),
+        //'cboptions'     => $Request->getArray('cboptions'),
+        'extras'        => $Request->getArray('extras'),
+        'tax'           => $Request->getFloat('tax'),
+    ));
+
+    $new_qty = $Order->addItemFromForm($args);
+    $msg = $LANG_SHOP['msg_item_added'];
+    if ($new_qty === false) {
+        $msg = $LANG_SHOP['out_of_stock'];
+    } elseif ($new_qty < $req_qty) {
+        // TODO: better handling of adjustments.
+        // This really only handles changes to the initial qty.
+        $msg .= ' ' . $LANG_SHOP['qty_adjusted'];
+    }
+    echo COM_refresh(Shop\Config::get('admin_url') . '/orders.php?order=' . $order_id);
+    break;
+
 case 'oi_update':
     $item_id = $Request->getInt('item_number');
     $order_id = $Request->getString('order_id');
-    $OI = new Shop\OrderItem($Request->getInt('oi_id'));
+    $oi_id = $Request->getInt('oi_id');
+    $OI = new Shop\OrderItem($oi_id);
     if ($OI->getId() > 0) {
+        Shop\OrderItemOption::deleteItem($oi_id);
         $OI->setOptionsFromPOV($Request->getArray('options'));
         $OI->setExtras($Request->getArray('extras'));
         $OI->setBasePrice($Request->getFloat('price'));
         $OI->setQuantity($Request->getFloat('quantity'), $Request->getFloat('price'));
         $OI->setSku();
         $OI->Save();
+        foreach ($OI->getOptions() as $idx=>$OIO) {
+            $OIO->saveIfTainted();
+        }
         // Now update the order for totals, etc.
         $Order = new Shop\Order($order_id);
         if ($Order->getOrderID() == $order_id) {

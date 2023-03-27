@@ -394,8 +394,22 @@ case 'uid_edit':
     );
     break;
 
+case 'oi_add':          // select an item to add to a customer's order
+    $T = new Shop\Template('admin');
+    $T->set_file('form', 'oi_add.thtml');
+    $T->set_var(array(
+        'order_id' => $Request->getString('order_id'),
+        'product_select' => Shop\Product::getOptionList($Request->getInt('uid')),
+    ) );
+    $T->parse('output', 'form');
+    $retval = array(
+        'status' => true,
+        'form' => $T->finish($T->get_var('output')),
+    );
+    break;
+
 case 'oi_edit':
-    $OI = new Shop\OrderItem(43);
+    $OI = new Shop\OrderItem($Request->getInt('oi_id'));
     $retval = array(
         'status' => true,       // maybe check form validity later
         'form' => $OI->edit(),

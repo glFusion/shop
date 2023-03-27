@@ -205,7 +205,11 @@ class Product
 
     /** Indicate whether the current user is an administrator.
      * @var boolean */
-    public $isAdmin;
+    public $isAdmin = false;
+
+    /** Indicate whether this is an administrator adding to a buyer's order.
+     * @var boolean */
+    public $isAdminAdding = false;
 
     /** Indicate that this is a new record.
      * @var boolean */
@@ -258,6 +262,10 @@ class Product
     /** Query string, if any.
      * @var string */
     protected $query = '';
+
+    /** Order ID where a product is to be added to an existing order.
+     * @var string */
+    protected $order_id = '';
 
     /** OrderItem ID to get previously-ordered options.
      * @var integer */
@@ -2173,7 +2181,13 @@ class Product
             $T->parse('SF', 'SpecialFields', true);
         }
 
-        $buttons = $this->PurchaseLinks(Views::DETAIL, $frm_id);
+        if ($this->isAdmin && $this->isAdminAdding) {
+            $buttons = $this->adminAddToOrder($this->order_id);
+            $T->set_var('admin_adding', true);
+            $T->set_var('action_url', Config::get('admin_url') . '/orders.php?oi_add&order_id=' . $this->order_id);
+        } else {
+            $buttons = $this->PurchaseLinks(Views::DETAIL, $frm_id);
+        }
         $T->set_block('product', 'BtnBlock', 'Btn');
         foreach ($buttons as $name=>$html) {
             if ($name == 'add_cart') {
@@ -2414,6 +2428,36 @@ class Product
             ) );
             $buttons['add_cart'] = $T->parse('', 'cart');
         }
+        return $buttons;
+    }
+
+
+    /**
+     * Create the add-to-card when an admin is adding to a customer's order.
+     *
+     * @param   string  $order_id   Order ID
+     * @return  array       Array of buttons (only the add_cart button)
+     */
+    public function adminAddToOrder(string $order_id) : array
+    {
+        $T = new Template;
+        $T->set_file(array(
+            'cart'  => 'buttons/btn_add_cart_admin.thtml',
+        ) );
+        $btn_class = 'success';
+        $T->set_var(array(
+            'order_id'      => $order_id,
+            'item_name'     => htmlspecialchars($this->name),
+            'item_number'   => $this->id,
+            'short_description' => htmlspecialchars($this->short_description),
+            'amount'        => $this->getSalePrice(),
+            'base_price'    => $this->getPrice(),
+            'action_url'    => Config::get('admin_url') . '/orders.php',
+            'quantity'      => $this->getFixedQuantity(),
+            'max_ord_qty'   => $this->getMaxOrderQty(),
+            'min_ord_qty'   => $this->min_ord_qty,
+        ) );
+        $buttons = array('add_cart' => $T->parse('', 'cart'));
         return $buttons;
     }
 
@@ -4941,6 +4985,20 @@ class Product
 
 
     /**
+     * Set the order ID to use when adding the item.
+     * Used for additions to a customer order by an admin.
+     *
+     * @param   string  $order_id   Order ID
+     * @return  object  $this
+     */
+    public function withOrderId(string $order_id) : self
+    {
+        $this->order_id = $order_id;
+        return $this;
+    }
+
+
+    /**
      * Enable or disable purchasing this product.
      * Normal used to display the product, but not allow purchasing, since
      * the default for canPurchase is true.
@@ -5108,6 +5166,37 @@ class Product
             $pv_id = $PV->getID();
         }
         Stock::reserve($this->id, $pv_id, $qty);
+    }
+
+
+    /**
+     * Get the options for a product selection dropdown.
+     * Similar to COM_optionList() but provides both the short description
+     * and SKU.
+     *
+     * @param   integer $sel_id     Optional preselected item ID
+     * @return  string      HTML for the selection options
+     */
+    public static function getOptionList(int $sel_id = 0) : string
+    {
+        global $_TABLES;
+
+        $retval = '';
+        try {
+            $stmt = Database::getInstance()->conn->executeQuery(
+                "SELECT id, name, short_description FROM {$_TABLES['shop.products']} ORDER BY name ASC"
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $stmt = false;
+        }
+        if ($stmt) {
+            while ($row = $stmt->fetchAssociative()) {
+                $sel = $row['id'] == $sel_id ? 'selected="selected"' : '';
+                $retval .= "<option value=\"{$row['id']}\" $sel>{$row['name']} ({$row['short_description']})</option>" . LB;
+            }
+        }
+        return $retval;
     }
 
 }

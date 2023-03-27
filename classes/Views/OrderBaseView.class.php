@@ -686,7 +686,7 @@ class OrderBaseView
                 'discount_icon' => 'D',
                 'discount_tooltip' => $price_tooltip,
                 'token'         => $item->getToken(),
-                //'item_options'  => $P->getOptionDisplay($item),
+                'item_options'  => $P->getOptionDisplay($item),
                 'item_options'  => $item->getOptionDisplay(),
                 'sku'           => $item->getSKU(),
                 'item_link'     => $P->withOrderItem($item->getID())->getLink(),

@@ -186,7 +186,7 @@ class OrderItemOption
      * @param   object  $OI OrderItem object
      * @return  array       Array of OrderItemOption objects
      */
-    public static function getOptionsForItem(OrderItem $OI)
+    public static function getOptionsForItem(OrderItem $OI) : array
     {
         global $_TABLES;
 
@@ -236,8 +236,9 @@ class OrderItemOption
     {
         global $_TABLES;
 
+        $db = Database::getInstance();
         try {
-            Database::getInstance()->insert(
+            $db->conn->insert(
                 $_TABLES['shop.oi_opts'],
                 array(
                     'oi_id' => $this->oi_id,
@@ -257,7 +258,7 @@ class OrderItemOption
                     Database::STRING,
                 )
             );
-            $this->oio_id = $db->conn->lastInserId();
+            $this->oio_id = $db->conn->lastInsertId();
             return true;
         } catch (\Throwable $e) {
             Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
@@ -311,7 +312,7 @@ class OrderItemOption
         global $_TABLES;
 
         try {
-            Database::getInstance()->delete(
+            Database::getInstance()->conn->delete(
                 $_TABLES['shop.oi_opts'],
                 array('oi_id' => $oi_id),
                 array(Database::INTEGER)
@@ -500,6 +501,17 @@ class OrderItemOption
 
 
     /**
+     * Get the OptionGroup record ID.
+     *
+     * @return  integer OptionGroup ID
+     */
+    public function getOptionGroupId() : int
+    {
+        return $this->pog_id;
+    }
+
+
+    /**
      * Set the OptionValue record ID.
      *
      * @param   integer $id     OptionValue ID
@@ -509,6 +521,17 @@ class OrderItemOption
     {
         $this->pov_id = $id;
         return $this;
+    }
+
+
+    /**
+     * Get the OptionValue record ID.
+     *
+     * @return  integer OptionValue ID
+     */
+    public function getOptionValueId() : int
+    {
+        return $this->pov_id;
     }
 
 
@@ -526,6 +549,17 @@ class OrderItemOption
 
 
     /**
+     * Get the Option Name text.
+     *
+     * @return  string      Option Name
+     */
+    public function getOptionName() : string
+    {
+        return $this->opt_name;
+    }
+
+
+    /**
      * Set the Option Value text.
      *
      * @param   string  $value  Option Value
@@ -539,6 +573,17 @@ class OrderItemOption
 
 
     /**
+     * Get the Option Value text.
+     *
+     * @return  string      Option value text
+     */
+    public function getOptionValue() : string
+    {
+        return $this->opt_value;
+    }
+
+
+    /**
      * Set the Option Price amount.
      *
      * @param   float   $value  Option price impact
@@ -548,6 +593,34 @@ class OrderItemOption
     {
         $this->oio_price = $value;
         return $this;
+    }
+
+
+    /**
+     * Get the Option Price.
+     *
+     * @return  float       Option price impact
+     */
+    public function getOptionPrice() : float
+    {
+        return $this->opt_price;
+    }
+
+
+    /**
+     * Copy all option values to another option.
+     * Does not copy the orderitem ID.
+     *
+     * @param   OrderItemOption $Dst    Destination OrderItemObject
+     */
+    public function copyValsTo(OrderItemOption $Dst) : void
+    {
+        $Dst->withOptionGroupId($this->pog_id)
+            ->withOptionValueId($this->pov_id)
+            ->withOptionName($this->oio_name)
+            ->withOptionValue($this->oio_value)
+            ->withOptionPrice($this->oio_price)
+            ->Taint();
     }
 
 }

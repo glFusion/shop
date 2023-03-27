@@ -1201,6 +1201,7 @@ class OrderItem
     {
         $retval = '';
         $opts = array();    // local var to collect option names and values
+
         if (!empty($this->options_text)) {
             foreach ($this->options_text as $key=>$val) {
                 $opts[] = array('name' => $key, 'value' => $val);
@@ -1211,9 +1212,9 @@ class OrderItem
                 $opts[] = array('name' => $Opt->getName(), 'value' => $Opt->getValue());
             }
         }
-        if ($this->variant_id > 0 && $this->Variant) {
+        /*if ($this->variant_id > 0 && $this->Variant) {
             $opts = array_merge($opts, $this->Variant->getDscp());
-        }
+        }*/
 
         if (!empty($opts)) {
             // This is double work, but saves instantiating the template if not needed.
