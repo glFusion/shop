@@ -1,6 +1,6 @@
 <?php
 /**
- * Class to handle custom order information.
+ * Class to handle information about product variants.
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2020-2022 Lee Garner <lee@leegarner.com>
@@ -35,10 +35,9 @@ class ProductVariantInfo extends DataArray
         'images'    => array(),
     );
 
+
     /**
-     * Initialize the properties from a supplied string or array.
-     *
-     * @param   string|array    $val    Optonal initial properties
+     * Initialize the properties.
      */
     public function __construct()
     {
@@ -46,7 +45,10 @@ class ProductVariantInfo extends DataArray
     }
 
 
-    public function reset()
+    /**
+     * Reset the properties.
+     */
+    public function reset() : void
     {
         global $LANG_SHOP;
 

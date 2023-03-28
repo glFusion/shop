@@ -214,9 +214,9 @@ class ProductVariant
      *
      * @param   DataArray   $A  Array of values
      * @param   boolean $fromDB True if reading from DB, false if from form
-     * @return  boolean     True on success, False if $A is not an array
+     * @return  object  $this
      */
-    public function setVars(DataArray $A, $fromDB=true)
+    public function setVars(DataArray $A, bool $fromDB=true) : self
     {
         $pfx = $fromDB ? '' : 'pv_';
         $this
@@ -348,7 +348,7 @@ class ProductVariant
      *
      * @return  array       Array of Option Value record IDs.
      */
-    private function _optsInUse()
+    private function _optsInUse() : array
     {
         $retval = array();
         if ($this->Options === NULL) {
@@ -367,7 +367,7 @@ class ProductVariant
      * @param   integer $rec_id     Record ID
      * @return  object  $this
      */
-    public function setId($rec_id)
+    public function setId(int $rec_id) : self
     {
         $this->pv_id = (int)$rec_id;
         return $this;
@@ -380,7 +380,7 @@ class ProductVariant
      * @param   integer $rec_id     Record ID
      * @return  object  $this
      */
-    public function setItemId($rec_id)
+    public function setItemId(int $rec_id) : self
     {
         $this->item_id = (int)$rec_id;
         return $this;
@@ -393,7 +393,7 @@ class ProductVariant
      * @param   array|string    $dscp   Array or JSON string
      * @return  object      $this
      */
-    public function setDscp($dscp)
+    public function setDscp(string $dscp) : self
     {
         if (is_array($dscp)) {
             $this->dscp = $dscp;
@@ -410,7 +410,7 @@ class ProductVariant
      * @param   float   $price      Price impact
      * @return  object  $this
      */
-    public function setPrice($price)
+    public function setPrice(float $price) : self
     {
         $this->price = (float)$price;
         return $this;
@@ -423,7 +423,7 @@ class ProductVariant
      * @param   float   $weight     Weight impact in KG or LB
      * @return  object  $this
      */
-    public function setWeight($weight)
+    public function setWeight(float $weight) : self
     {
         $this->weight = (float)$weight;
         return $this;
@@ -436,7 +436,7 @@ class ProductVariant
      * @param   float   $units      Additional shipping units for this variant
      * @return  object  $this
      */
-    public function setShippingUnits($units)
+    public function setShippingUnits(float $units) : self
     {
         $this->units= (float)$units;
         return $this;
@@ -449,7 +449,7 @@ class ProductVariant
      * @param   boolean $flag   True to track qty onhand, False to not
      * @return  object  $this
      */
-    public function setTrackOnhand($flag)
+    public function setTrackOnhand(bool $flag) : self
     {
         $this->track_onhand = $flag ? 1 : 0;
         return $this;
@@ -461,7 +461,7 @@ class ProductVariant
      *
      * @return  boolean     1 to track by variant, 0 to track by product.
      */
-    public function getTrackOnhand()
+    public function getTrackOnhand() : bool
     {
         return $this->track_onhand ? 1 : 0;
     }
@@ -473,7 +473,7 @@ class ProductVariant
      * @param   float   $qty    Number of units on hand
      * @return  object  $this
      */
-    public function XsetOnhand($qty)
+    public function XsetOnhand(float $qty) : self
     {
         if (is_object($this->Stock)) {
             $this->Stock->withOnhand($qty);
@@ -488,7 +488,7 @@ class ProductVariant
      *
      * @return  float       Quantity onhand
      */
-    public function getOnhand()
+    public function getOnhand() : float
     {
         if (is_object($this->Stock)) {
             return $this->Stock->getOnhand();
@@ -505,7 +505,7 @@ class ProductVariant
      * @param   float   $qty    Quantity reserved.
      * @return  object  $this
      */
-    public function XsetReserved($qty)
+    public function XsetReserved(float $qty) : self
     {
         if (is_object($this->Stock)) {
             $this->Stock->withReserved($qty);
@@ -520,7 +520,7 @@ class ProductVariant
      *
      * @return  float       Quantity onhand
      */
-    public function getReserved()
+    public function getReserved() : float
     {
         if (is_object($this->Stock)) {
             return $this->Stock->getReserved();
@@ -536,7 +536,7 @@ class ProductVariant
      * @param   float   $reorder    Reorder quantity
      * @return  object  $this
      */
-    public function XsetReorder($reorder)
+    public function XsetReorder(float $reorder) : self
     {
         if (is_object($this->Stock)) {
             $this->Stock->withReorder($reorder);
@@ -551,7 +551,7 @@ class ProductVariant
      *
      * @return  float       Quantity onhand
      */
-    public function getReorder()
+    public function getReorder() : float
     {
         if (is_object($this->Stock)) {
             return $this->Stock->getReorder();
@@ -567,7 +567,7 @@ class ProductVariant
      * @param   integer $enabled    0 for disabled, nonzero for enabled
      * @return  object  $this
      */
-    public function setEnabled($enabled)
+    public function setEnabled(bool $enabled) : self
     {
         $this->enabled = $enabled == 0 ? 0 : 1;
         return $this;
@@ -580,7 +580,7 @@ class ProductVariant
      * @param   string  $sku        SKU for this variant
      * @return  object  $this
      */
-    public function setSku($sku)
+    public function setSku(string $sku) : self
     {
         $this->sku = $sku;
         return $this;
@@ -592,7 +592,7 @@ class ProductVariant
      *
      * @return  string      SKU for this variant
      */
-    public function getSku()
+    public function getSku() : string
     {
         return $this->sku;
     }
@@ -604,7 +604,7 @@ class ProductVariant
      * @param   string  $ref    Supplier reference number
      * @return  object  $this
      */
-    public function setSupplierRef($ref)
+    public function setSupplierRef(string $ref) : self
     {
         $this->supplier_ref = $ref;
         return $this;
@@ -616,7 +616,7 @@ class ProductVariant
      *
      * @return  string      Supplier reference number
      */
-    public function getSupplierRef()
+    public function getSupplierRef() : string
     {
         return $this->supplier_ref;
     }
@@ -628,7 +628,7 @@ class ProductVariant
      *
      * @return  string  Lead time if out of stock
      */
-    public function getLeadTime()
+    public function getLeadTime() : string
     {
         // if ($this->lead_time == '') {        // todo
         // return $this->lead_time;
@@ -676,7 +676,7 @@ class ProductVariant
      *
      * @return  array       Array of description fields
      */
-    public function getDscp()
+    public function getDscp() : array
     {
         return $this->dscp;
     }
@@ -687,7 +687,7 @@ class ProductVariant
      *
      * @return  string      HTML version of the description
      */
-    public function getDscpHTML()
+    public function getDscpHTML() : string
     {
         $retval = '';
         foreach ($this->dscp as $dscp) {
@@ -703,7 +703,7 @@ class ProductVariant
      *
      * @return  string      One-line description
      */
-    public function getDscpString()
+    public function getDscpString() : string
     {
         $retval = array();
         foreach ($this->dscp as $dscp) {
@@ -721,7 +721,7 @@ class ProductVariant
      * @access  public  To be called during upgrade
      * @return  object  $this
      */
-    public function makeDscp()
+    public function makeDscp() : self
     {
         $this->dscp = array();
         foreach ($this->Options as $name=>$POV) {
@@ -739,7 +739,7 @@ class ProductVariant
      *
      * @return  string      HTML for edit form
      */
-    public static function Create()
+    public static function Create() : string
     {
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_SYSTEM;
 
@@ -792,7 +792,7 @@ class ProductVariant
      * @param   integer $id Optional ID, current record used if zero
      * @return  string      HTML for edit form
      */
-    public function Edit()
+    public function Edit() : string
     {
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_SYSTEM;
 
@@ -877,7 +877,7 @@ class ProductVariant
      * @param   array   $pv_ids     Array of variant IDs
      * @return  string      HTML for edit form
      */
-    public static function bulkEdit($pv_ids)
+    public static function bulkEdit(array $pv_ids) : string
     {
         if (empty($pv_ids)) {
             return '';
@@ -1107,9 +1107,14 @@ class ProductVariant
         }
         if (!empty($vals)) {
             $sql_vals = implode(',', $vals);
-            $sql = "INSERT IGNORE INTO {$_TABLES['shop.variantXopt']}
-                (pv_id, pov_id) VALUES $sql_vals";
-            DB_query($sql);
+            try {
+                Database::getInstance()->conn->executeStatement(
+                    "INSERT IGNORE INTO {$_TABLES['shop.variantXopt']}
+                    (pv_id, pov_id) VALUES $sql_vals"
+                );
+            } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $k) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            }
         }
         self::reOrder($item_id);
         Cache::clear(self::$TABLE);
@@ -1254,13 +1259,26 @@ class ProductVariant
      *
      * @param   integer $id     Variant record ID
      */
-    public static function Delete($id)
+    public static function Delete(int $id) : void
     {
         global $_TABLES;
 
-        $id = (int)$id;
-        DB_delete($_TABLES['shop.product_variants'], 'pv_id', $id);
-        DB_delete($_TABLES['shop.variantXopt'], 'pv_id', $id);
+        $db = Database::getInstance();
+        try {
+            $db->conn->delete(
+                $_TABLES['shop.product_variants'],
+                array('pv_id' => $id),
+                array(Database::INTEGER)
+            );
+            $db->conn->delete(
+                $_TABLES['shop.variantXopt'],
+                array('pv_id' => $id),
+                array(Database::INTEGER)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return;
+        }
         Stock::deleteByVariant($id);
         Cache::clear(self::$TABLE);
     }
@@ -1271,11 +1289,19 @@ class ProductVariant
      *
      * @param   integer $opt_id     Option value record ID
      */
-    public static function deleteOptionValue($opt_id)
+    public static function deleteOptionValue(int $opt_id) : void
     {
         global $_TABLES;
 
-        DB_delete($_TABLES['shop.variantXopt'], 'pov_id', (int)$opt_id);
+        try {
+            $db->conn->delete(
+                $_TABLES['shop.variantXopt'],
+                array('pov_id' => $opt_id),
+                array(Database::INTEGER)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
     }
 
 
@@ -1284,7 +1310,7 @@ class ProductVariant
      *
      * @return  float       Item Price impact
      */
-    public function getPrice()
+    public function getPrice() : float
     {
         return (float)$this->price;
     }
@@ -1295,7 +1321,7 @@ class ProductVariant
      *
      * @return  float       Weight impact
      */
-    public function getWeight()
+    public function getWeight() : float
     {
         return (float)$this->weight;
     }
@@ -1306,7 +1332,7 @@ class ProductVariant
      *
      * @return  float       Shipping Units impact
      */
-    public function getShippingUnits()
+    public function getShippingUnits() : float
     {
         return (float)$this->shipping_units;
     }
@@ -1315,9 +1341,9 @@ class ProductVariant
     /**
      * Get the product ID for this variant.
      *
-     * @return  string      Product ID
+     * @return  integer     Product ID
      */
-    public function getItemId()
+    public function getItemId() : int
     {
         return $this->item_id;
     }
@@ -1328,7 +1354,7 @@ class ProductVariant
      *
      * @return  integer     DB record ID
      */
-    public function getID()
+    public function getID() : int
     {
         return (int)$this->pv_id;
     }
@@ -1361,7 +1387,7 @@ class ProductVariant
      * TODO: implement DB field
      * @return  array       Array of integer image IDs.
      */
-    public function getImageIDs()
+    public function getImageIDs() : array
     {
         return $this->images;
     }
@@ -1373,14 +1399,14 @@ class ProductVariant
      * @param   float   $price  New net price
      * @return  object  $this
      */
-    public function setNetPrice($price)
+    public function setNetPrice(float $price) : self
     {
         $this->net_price = $price;
         return $this;
     }
 
 
-    public function getStock()
+    public function getStock() : Stock
     {
         return $this->Stock;
     }
@@ -1393,24 +1419,41 @@ class ProductVariant
     {
         global $_TABLES;
 
-        $sql = "SELECT pv_id, orderby
+        $db = Database::getInstance();
+        try {
+            $stmt = $db->conn->executeQuery(
+                "SELECT pv_id, orderby
                 FROM {$_TABLES['shop.product_variants']}
-                WHERE item_id= '{$item_id}'
-                ORDER BY orderby ASC;";
-        $result = DB_query($sql);
+                WHERE item_id= ?
+                ORDER BY orderby ASC;",
+                array($item_id),
+                array(Database::INTEGER)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return;
+        }
 
         $order = 10;        // First orderby value
         $stepNumber = 10;   // Increment amount
         $changed = false;   // Assume no changes
-        while ($A = DB_fetchArray($result, false)) {
-            if ($A['orderby'] != $order) {  // only update incorrect ones
-                $changed = true;
-                $sql = "UPDATE {$_TABLES['shop.product_variants']}
-                    SET orderby = '$order'
-                    WHERE pv_id = '{$A['pv_id']}'";
-                DB_query($sql);
+        if ($stmt) {
+            while ($A = $stmt->fetchAssociative()) {
+                if ($A['orderby'] != $order) {  // only update incorrect ones
+                    $changed = true;
+                    try {
+                        $db->conn->update(
+                            $_TABLES['shop.product_variants'],
+                            array('orderby' => $order),
+                            array('pv_id' => $A['pv_id']),
+                            array(Database::INTEGER, Database::INTEGER)
+                        );
+                    } catch (\Throwable $e) {
+                        Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                    }
+                    $order += $stepNumber;
+                }
             }
-            $order += $stepNumber;
         }
         if ($changed) {
             Cache::clear(self::$TABLE);
@@ -1423,7 +1466,7 @@ class ProductVariant
      *
      * @param   string  $where  Direction to move (up or down)
      */
-    public function moveRow($where)
+    public function moveRow(string $where) : void
     {
         global $_TABLES;
 
@@ -1440,11 +1483,17 @@ class ProductVariant
         }
 
         if (!empty($oper)) {
-            $sql = "UPDATE {$_TABLES['shop.product_variants']}
+            try {
+                Database::getInstance()->conn->executeStatement(
+                    "UPDATE {$_TABLES['shop.product_variants']}
                     SET orderby = orderby $oper 11
-                    WHERE pv_id = '{$this->pv_id}'";
-            //echo $sql;die;
-            DB_query($sql);
+                    WHERE pv_id = ?",
+                    array($this->pv_id),
+                    array(Database::INTEGER)
+                );
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            }
             self::reOrder($this->item_id);
         }
     }
@@ -1857,7 +1906,7 @@ class ProductVariant
      * @param   array   $input  Array of arrays
      * @return  array   Array of cartesian products
      */
-    private static function _cartesian($input)
+    private static function _cartesian(array $input) : array
     {
         $result = array(array());
 
@@ -1882,7 +1931,7 @@ class ProductVariant
      * @param   integer $id         ID number of element to modify
      * @return  integer     New value, or old value upon failure
      */
-    public static function toggleEnabled($oldvalue, $id)
+    public static function toggleEnabled(int $oldvalue, int $id) : int
     {
         $newval = self::_toggle($oldvalue, 'enabled', $id);
         if ($newval != $oldvalue) {
@@ -1899,16 +1948,25 @@ class ProductVariant
      *
      * @param   integer $item_id    Product ID
      */
-    public static function deleteByProduct($item_id)
+    public static function deleteByProduct(int $item_id) : void
     {
         global $_TABLES;
 
-        $item_id = (int)$item_id;
-        $sql = "SELECT pv_id FROM {$_TABLES['shop.product_variants']}
-            WHERE item_id = $item_id";
-        $res = DB_query($sql);
-        while ($A = DB_fetchArray($res, false)) {
-            self::Delete($A['pv_id']);
+        try {
+            $stmt = Database::getInstance()->conn->executeQuery(
+                "SELECT pv_id FROM {$_TABLES['shop.product_variants']}
+                WHERE item_id = ?",
+                array($item_id),
+                    array(Database::INTEGER)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $stmt = false;
+        }
+        if ($stmt) {
+            while ($A = $stmt->fetchAssociative()) {
+                self::Delete($A['pv_id']);
+            }
         }
     }
 
@@ -1922,7 +1980,7 @@ class ProductVariant
      * @param   integer $dst    Destination product ID
      * @param   boolean $del_existing   True to remove existing values in dst
      */
-    public static function cloneProduct($src, $dst, $del_existing=false)
+    public static function cloneProduct(int $src, int $dst, bool $del_existing=false) : void
     {
         global $_TABLES;
 
@@ -1950,22 +2008,41 @@ class ProductVariant
             } else {
                 $sku = '';
             }
-            $sql = "INSERT INTO {$_TABLES['shop.product_variants']} (
-                    item_id, sku, price, weight, shipping_units, onhand,
-                    reorder, enabled, supplier_ref, img_ids
-                )
-                SELECT $dst, '$sku', price, weight, shipping_units, onhand, reorder, enabled, supplier_ref, img_ids
-                FROM {$_TABLES['shop.product_variants']}
-                WHERE pv_id = {$PV->getID()}";
-            DB_query($sql);
-            $pv_id = DB_insertID();
-            $sql = "INSERT INTO {$_TABLES['shop.variantXopt']} (pv_id, pov_id)
-                SELECT $pv_id, pov_id FROM {$_TABLES['shop.variantXopt']} WHERE pv_id = {$PV->getID()}";
-            DB_query($sql);
+            $db = Database::getInstance();
+            try {
+                $db->conn->executeStatement(
+                    "INSERT INTO {$_TABLES['shop.product_variants']} (
+                        item_id, sku, price, weight, shipping_units, onhand,
+                        reorder, enabled, supplier_ref, img_ids
+                    )
+                    SELECT ?, ?, price, weight, shipping_units, onhand, reorder, enabled, supplier_ref, img_ids
+                    FROM {$_TABLES['shop.product_variants']}
+                    WHERE pv_id = ?",
+                    array($dst, $sku, $PV->getID()),
+                    array(Database::INTEGER, Database::STRING, Database::INTEGER)
+                );
+                $pv_id = $db->conn->lastInsertId();
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $pv_id = 0;
+            }
+            if ($pv_id > 0) {
+                try {
+                    $db->conn->executeStatement(
+                        "INSERT INTO {$_TABLES['shop.variantXopt']} (pv_id, pov_id)
+                        SELECT ?, pov_id FROM {$_TABLES['shop.variantXopt']} WHERE pv_id = ?",
+                        array($pv_id, $PV->getID()),
+                        array(Database::INTEGER, Database::INTEGER)
+                    );
+                } catch (\Throwable $e) {
+                    Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                }
+            }
         }
         Cache::clear(Product::$TABLE);
         Cache::clear(self::$TABLE);
     }
+
 
     /**
      * Update the SKU value when the product SKU has changed.
@@ -1975,7 +2052,7 @@ class ProductVariant
      * @param   string  $old_sku    Original product SKU
      * @param   string  $new_sku    New product SKU
      */
-    public function updateSKU($old_sku, $new_sku)
+    public function updateSKU(string $old_sku, string $new_sku) : void
     {
         $len = strlen($old_sku);
         if (substr($this->getSku(), 0, $len) == $old_sku) {

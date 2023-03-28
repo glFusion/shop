@@ -352,25 +352,22 @@ class AffiliatePayment
     {
         global $_TABLES;
 
-        $db = Database::getInstance();
+        $qb = Database::getInstance()->conn->createQueryBuilder();
         try {
-            $stmt = $db->conn->executeQuery(
-                "SELECT p.*, u.fullname, u.email
-                FROM {$_TABLES['shop.affiliate_payments']} p
-                LEFT JOIN {$_TABLES['users']} u
-                    ON u.uid = p.aff_pmt_uid
-                WHERE aff_pmt_txn_id = ''
-                ORDER BY aff_pmt_method ASC"
-            );
+            $qb->select('p,*', 'u.fullname', 'u.email')
+               ->from($_TABLES['shop.affiliate_payments'], 'p')
+               ->leftJoin('p', $_TABLES['users'], 'u', 'u.uid = p.aff_pmt_uid')
+               ->where("aff_pmt_txn_id = ''")
+               ->orderBy('aff_pmt_method', 'ASC');
+            $stmt = $qb->execute();
         } catch (\Exception $e) {
             Log::system(Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $stmt = false;
         }
-        if ($stmt) {
+        if (!$stmt) {
             return;
         }
 
-        $res = DB_query($sql);
         $cbrk = 0;
         $Payouts = array();
         while ($A = $stmt->fetchAssociative()) {

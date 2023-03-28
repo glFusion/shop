@@ -207,22 +207,44 @@ class ProductCheckbox
     }
 
 
+    /**
+     * Get the ProductOptionValue ID for this checkbox.
+     *
+     * @return  integer     Option value ID
+     */
     public function getOptionID() : int
     {
         return $this->pov_id;
     }
 
+
+    /**
+     * Get the ProductOptionValue text for this checkbox.
+     *
+     * @return  string      Option text
+     */
     public function getOptionValue() : string
     {
         return $this->pov_value;
     }
 
+
+    /**
+     * Get the ProductOptionGroup record ID related to this option.
+     *
+     * @return  integer     Option group ID
+     */
     public function getGroupID() : int
     {
         return $this->pog_id;
     }
 
 
+    /**
+     * Get the ProductOptionGroup name (prompt) for this option.
+     *
+     * @return  string      Option group name
+     */
     public function getGroupName() : string
     {
         return $this->pog_name;
@@ -258,6 +280,7 @@ class ProductCheckbox
         try {
             $db->conn->executeStatement($sql, $values, $types);
         } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $k) {
+            // Can only happen when enabling
             try {
                 $db->conn->update(
                     $_TABLES['shop.prodXcbox'],
@@ -276,6 +299,12 @@ class ProductCheckbox
     }
 
 
+    /**
+     * Delete all the checkbox options for a single item.
+     *
+     * @param   integer $item_id    Item catalog ID
+     * @return  boolean     True on success, False on error
+     */
     public static function deleteByItem(int $item_id) : bool
     {
         global $_TABLES;
@@ -295,6 +324,13 @@ class ProductCheckbox
     }
 
 
+    /**
+     * Add a new checkbox option for a product.
+     *
+     * @param   integer $item_id    Item catalog ID
+     * @param   array   $ids        Array of option ID=>enabled flag
+     * @param   array   $prices     Array of prices
+     */
     public static function add(int $item_id, array $ids, array $prices) : void
     {
         global $_TABLES;
@@ -491,21 +527,30 @@ class ProductCheckbox
      * @param   integer $pog_id     ProductOptionGroup ID
      * @return  array       Array of ProductOptionValue objects
      */
-    public static function getByGroup($pog_id)
+    public static function getByGroup(int $pog_id) : array
     {
         global $_TABLES;
 
-        $pog_id = (int)$pog_id;
         $cache_key = 'options_' . $pog_id;
         $opts = Cache::get($cache_key);
         if ($opts === NULL) {
             $opts = array();
-            $sql = "SELECT cb.* FROM {$_TABLES['shop.cb']} pov
-                WHERE pov.pog_id = $pog_id
-                ORDER BY pov.orderby ASC";
-            $res = DB_query($sql);
-            while ($A = DB_fetchArray($res, false)) {
-                $opts[$A['pov_id']] = new self($A);
+            try {
+                $stmt = Database::getInstance()->conn->executeQuery(
+                    "SELECT cb.* FROM {$_TABLES['shop.cb']} pov
+                    WHERE pov.pog_id = ?
+                    ORDER BY pov.orderby ASC",
+                    array($pog_id),
+                    array(Database::INTEGER)
+                );
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $stmt = false;
+            }
+            if ($stmt) {
+                while ($A = $stmt->fetchAssociative()) {
+                    $opts[$A['pov_id']] = new self($A);
+                }
             }
             Cache::set($cache_key, $opts, array('shop.products', 'shop.prod_opt_vals'));
         }

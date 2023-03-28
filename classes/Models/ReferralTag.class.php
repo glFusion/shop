@@ -21,14 +21,17 @@ use Shop\Config;
  */
 class ReferralTag extends Token
 {
+    /** Cookie name.
+     * @const string */
     const VAR_NAME = 'glShopReferrer';
+
 
     /**
      * Set the referral token.
      *
      * @param   string  $token  Referral token value
      */
-    public static function set($token)
+    public static function set(string $token) : void
     {
         $exp_days = max(Config::get('aff_cookie_exp_days'), .25);
         SEC_setCookie(
@@ -45,7 +48,7 @@ class ReferralTag extends Token
      *
      * @return  string  Referral token
      */
-    public static function get()
+    public static function get() : string
     {
         if (isset($_COOKIE[self::VAR_NAME])) {
             return $_COOKIE[self::VAR_NAME];
@@ -58,7 +61,7 @@ class ReferralTag extends Token
     /**
      * Delete a referrer token.
      */
-    public static function remove()
+    public static function remove() : void
     {
         SEC_setCookie(
             self::VAR_NAME,

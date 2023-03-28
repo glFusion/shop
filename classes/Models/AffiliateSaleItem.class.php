@@ -4,16 +4,19 @@
  * Products may have different reward levels.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2021 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2021-2023 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.5.0
  * @since       v1.3.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop\Models;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 use Shop\Customer;
+use Shop\OrderItem;
 
 
 /**
@@ -50,39 +53,66 @@ class AffiliateSaleItem
     /**
      * Initialize the properties from a supplied string or array.
      *
-     * @param   string|array    $val    Optonal initial properties
+     * @param   integer $id     Optional ID to read
      */
-    public function __construct($id = 0)
+    public function __construct(?int $id = NULL)
     {
-        if (is_array($id)) {
-            $this->setVars($id);
-        } elseif ($id > 0) {
-            $this->aff_item_id = (int)$id;
-            $sql = "SELECT * FROM {$_TABLES['shop.affiliate_saleitems']}
-                WHERE aff_item_id = {$this->aff_item_id}";
-            $res = DB_query($sql);
-            if (DB_numRows($res) == 1) {
-                $A = DB_fetchArray($res, false);
-                $this->setVars($A);
+        if ($id) {
+            $this->aff_item_id = $id;
+            try {
+                $row = Database::getInstance()->conn->executeQuery(
+                    "SELECT * FROM {$_TABLES['shop.affiliate_saleitems']}
+                    WHERE aff_item_id = ?",
+                    array($this->aff_item_id),
+                    array(Database::INTEGER)
+                )->fetchAssociative();
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $row = false;
+            }
+            if (is_array($row)) {
+                $this->setVars($row);
             }
         }
     }
 
 
-    public function getByAffiliateSale($sale_id)
+    public function getByAffiliateSale(int $sale_id) : array
     {
         global $_TABLES;
 
-        $retval = new self;
-            $sql = "SELECT * FROM {$_TABLES['shop.affiliate_saleitems']}
-                WHERE aff_sale_id = '" . DB_escapeString($_id) . "'";
-            $res = DB_query($sql);
-            if (DB_numRows($res) > 0) {
-                $A = DB_fetchArray($res, false);
-                $retval->setVars($A);
+        $retval = array();
+        try {
+            $rows = Database::getInstance()->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.affiliate_saleitems']}
+                WHERE aff_sale_id = ?",
+                array($sale_id),
+                array(Database::INTEGER)
+            )->fetchAllAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $rows = false;
+        }
+        if (is_array($rows)) {
+            foreach ($rows as $row) {
+                $retval[$row['aff_item_id']] = self::fromArray($row);
             }
-            return $retval;
+        }
+        return $retval;
+    }
 
+
+    /**
+     * Create a sale from an array of values, e.g. from the DB.
+     *
+     * @param   array   $A      Array of records
+     * @return  object  $this
+     */
+    public static function fromArray(array $A) : self
+    {
+        $retval = new self;
+        $retval->setVars($A);
+        return $retval;
     }
 
 
@@ -110,7 +140,7 @@ class AffiliateSaleItem
      * @param   integer $id     Record ID
      * @return  object  $this
      */
-    public function withId($id)
+    public function withId(int $id) : self
     {
         $this->aff_item_id = (int)$id;
         return $this;
@@ -123,7 +153,7 @@ class AffiliateSaleItem
      * @param   string  $id     OrderItem Record ID
      * @return  object  $this
      */
-    public function withOrderItemId($id)
+    public function withOrderItemId(int $id) : self
     {
         $this->aff_oi_id = (int)$id;
         return $this;
@@ -136,7 +166,7 @@ class AffiliateSaleItem
      * @param   float   $total      Qualifying total amount
      * @return  object  $this
      */
-    public function withItemTotal($total)
+    public function withItemTotal(float $total) : self
     {
         $this->aff_item_total = (float)$total;
         return $this;
@@ -148,7 +178,7 @@ class AffiliateSaleItem
      *
      * @return  float       Extension amount (price * quantity)
      */
-    public function getItemTotal()
+    public function getItemTotal() : float
     {
         return (float)$this->aff_item_total;
     }
@@ -162,14 +192,19 @@ class AffiliateSaleItem
      * @param   float   $total      Total payment amount
      * @return  object  $this
      */
-    public function withItemPayment($total)
+    public function withItemPayment(float $total) : self
     {
         $this->aff_item_pmt = (float)$total;
         return $this;
     }
 
 
-    public function getItemPayment()
+    /**
+     * Get the total item payment amount.
+     *
+     * @return  float       Payment amount
+     */
+    public function getItemPayment() : float
     {
         return (float)$this->aff_item_pmt;
     }
@@ -181,7 +216,7 @@ class AffiliateSaleItem
      * @param   integer $id     AffiliateSale record ID
      * @return  object  $this
      */
-    public function withSaleId($id)
+    public function withSaleId(int $id) : self
     {
         $this->aff_sale_id = (int)$id;
         return $this;
@@ -194,7 +229,7 @@ class AffiliateSaleItem
      * @param   float   $pct    Affiliate payment rate
      * @return  object  $this
      */
-    public function withPercent($pct)
+    public function withPercent(float $pct) : self
     {
         $this->aff_percent = (float)$pct;
         return $this;
@@ -208,7 +243,7 @@ class AffiliateSaleItem
      * @param   object  $OrderItem  OrderItem object
      * @return  object  AffiliateSale object
      */
-    public static function create($OrderItem)
+    public static function create(OrderItem $OrderItem) : AffiliateSaleItem
     {
         global $_SHOP_CONF;
 
@@ -233,34 +268,49 @@ class AffiliateSaleItem
     /**
      * Save the current object to the database.
      *
-     * @return  boolean     True on success, False on failure
+     * @return  integer     Record ID
      */
-    public function Save()
+    public function Save() : int
     {
         global $_TABLES;
 
-        if ($this->aff_item_id == 0) {
-            $sql1 = "INSERT INTO {$_TABLES['shop.affiliate_saleitems']} SET ";
-            $sql3 = '';
-        } else {
-            $sql1 = "UPDATE {$_TABLES['shop.affiliate_saleitems']} SET ";
-            $sql3 = " WHERE aff_item_id = {$this->aff_item_id}";
-        }
-        $sql2 = "aff_item_id = {$this->aff_item_id},
-            aff_oi_id = {$this->aff_oi_id},
-            aff_item_total = {$this->aff_item_total},
-            aff_item_pmt = {$this->aff_item_pmt},
-            aff_percent = {$this->aff_percent},
-            aff_sale_id = {$this->aff_sale_id}";
-        $sql = $sql1 . $sql2 . $sql3;
-        //echo $sql;die;
-        $res = DB_query($sql, 1);
-        if (!DB_error()) {
+        $db = Database::getInstance();
+        $values = array(
+            'aff_oi_id' => $this->aff_oi_id,
+            'aff_item_total' => $this->aff_item_total,
+            'aff_item_pmt' => $this->aff_item_pmt,
+            'aff_percent' => $this->aff_percent,
+            'aff_sale_id' => $this->aff_sale_id,
+        );
+        $types = array(
+            Database::INTEGER,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::INTEGER,
+        );
+        try {
             if ($this->aff_item_id == 0) {
-                $this->aff_item_id = DB_insertId();
+                $db->conn->insert(
+                    $_TABLES['shop.affiliate_saleitems'],
+                    $values,
+                    $types
+                );
+                $this->aff_item_id = $db->conn->lastInsertId();
+            } else {
+                $types[] = Database::INTEGER;
+                $db->conn->update(
+                    $_TABLES['shop.affiliate_saleitems'],
+                    $values,
+                    array('aff_item_id' => $this->aff_item_id),
+                    $types
+                );
             }
+            return $this->aff_item_id;
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return 0;
         }
-        return $this->aff_item_id;
     }
 
 }
