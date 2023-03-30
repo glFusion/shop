@@ -21,7 +21,7 @@ use Shop\Models\Request;
 $Request = Request::getInstance();
 // Make sure this is called via Ajax
 if (!$Request->isAjax()) {
-//    COM_404();
+    COM_404();
 }
 $uid = (int)$_USER['uid'];
 
