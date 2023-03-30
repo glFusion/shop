@@ -3,9 +3,9 @@
  * Common admistrative AJAX functions.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2023 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -414,6 +414,42 @@ case 'oi_edit':
         'status' => true,       // maybe check form validity later
         'form' => $OI->edit(),
     );
+    break;
+
+case 'ord_addr_edit':
+    $retval = array(
+        'status' => false,
+        'title' => $LANG_ADMIN['edit'] . ': ',
+        'form' => '',
+    );
+    $addr_type = $Request->getString('type');
+    $order_id = $Request->getString('order_id');
+    $Order = Shop\Order::getInstance($order_id);
+    if ($Order->getOrderId() == $order_id) {
+        $Addr = $Order->getAddress($addr_type);
+        $T = new Shop\Template('admin');
+        $T->set_file('form', 'addr_edit.thtml');
+        $T->set_var(array(
+            'addr_id' => 0,         // customizing the address
+            'name' => $Addr->getName(),
+            'company' => $Addr->getCompany(),
+            'address1' => $Addr->getAddress1(),
+            'address2' => $Addr->getAddress2(),
+            'city' => $Addr->getCity(),
+            'state' => $Addr->getState(),
+            'zip' => $Addr->getPostal(),
+            'country_options' => Shop\Country::optionList($Addr->getCountry()),
+            'state_options' => Shop\State::optionList($Addr->getCountry(), $Addr->getState()),
+            'phone' => $Addr->getPhone(),
+            'pi_admin_url' => Shop\Config::get('admin_url'),
+            'order_id' => $order_id,
+            'ad_type' => $addr_type,
+        ) );
+        $T->parse('output', 'form');
+        $retval['status'] = true;
+        $retval['form'] = $T->finish($T->get_var('output'));
+        $retval['title'] .= $LANG_SHOP[$addr_type];
+    }
     break;
 
 case 'toggle':

@@ -828,9 +828,9 @@ class Address
         if (!$have_state_country) {
             $loc = GeoLocator::getProvider()->geoLocate();
             if ($loc['ip'] != '') {
-                $A['country'] = $loc['country_code'];
-                $A['state'] = $loc['state_code'];
-                $A['city'] = $loc['city_name'];
+                $this->setCountry($loc['country_code']);
+                $this->setState($loc['state_code']);
+                $this->setCity($loc['city_name']);
             } else {
                 $this->setState(Config::get('state'))
                      ->setCountry(Config::get('country'));
@@ -1106,7 +1106,7 @@ class Address
      * @param   boolean $all    True to include uid, defaults, etc.
      * @return  boolean     True on match, False if any fields differ
      */
-    public function Matches($Addr, $all=false)
+    public function Matches(self $Addr, bool $all=false) : bool
     {
         // Check all address fields, return false if any don't match
         if (
