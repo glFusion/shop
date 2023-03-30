@@ -43,7 +43,7 @@ $expected = array(
     'delete', 'oi_update', 'oi_delete', 'uid_update', 'oi_add',
     // Views to display
     'packinglist', 'edit', 'shipments', 'list', 'order',
-    'oi_add_form',
+    'oi_add_form', 'ord_addr_update',
 );
 list($action, $actionval) = $Request->getAction($expected, 'orders');
 $view = $action;
@@ -85,6 +85,31 @@ case 'oi_add_form':
         $P->isAdminAdding = true;
         $content .= $P->withOrderId($Request->getString('order_id'))->Detail();
     }
+    break;
+
+case 'ord_addr_update':
+    $save = false;
+    $order_id = $Request->getString('order_id');
+    $addr_type = $Request->getString('ad_type');
+    $Order = Shop\Order::getInstance($order_id);
+    if ($Order->getOrderId() == $order_id) {
+        $Addr = new Shop\Address;
+        $Addr->fromArray($Request->toArray());
+        if ($addr_type == 'billto') {
+            $Orig = $Order->getBillto();
+            if (!$Addr->Matches($Orig)) {
+                $Order->setBillto($Addr);
+                $Order->Save();
+            }
+        } elseif ($addr_type == 'shipto') {
+            $Orig = $Order->getShipto();
+            if (!$Addr->Matches($Orig)) {
+                $Order->setShipto($Addr);
+                $Order->Save();
+            }
+        }
+    }
+    echo COM_refresh(Shop\Config::get('admin_url') . '/orders.php?order=' . $order_id);
     break;
 
 case 'oi_add':      // Add an item to a customer's order

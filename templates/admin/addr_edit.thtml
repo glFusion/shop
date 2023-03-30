@@ -1,0 +1,84 @@
+{# begin {templatelocation} #}
+<form id="cust_addr_frm" action="{pi_admin_url}/orders.php" method="post" class="uk-form uk-form-horizontal">
+	<input type="hidden" name="order_id" value="{order_id}" />
+	<input type="hidden" name="ad_type" value="{ad_type}" />
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label" for="name">{$LANG_SHOP['fullname']}</label>
+		<div class="uk-form-controls">
+			<input type="text" id="name" name="name" value="{name}" size="60" maxlength="255" />
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label" for="company">{$LANG_SHOP['company']}</label>
+		<div class="uk-form-controls">
+			<input type="text" id="company" name="company" size="60" value="{company}" />
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label" for="address1">{$LANG_SHOP['address1']}</label>
+		<div class="uk-form-controls">
+			<input type="text" id="address1" name="address1" size="60" value="{address1}" />
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label" for="address2">{$LANG_SHOP['address2']}</label>
+		<div class="uk-form-controls">
+			<input type="text" id="address2" name="address2" size="60" value="{address2}" />
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label" for="countrySelect">{$LANG_SHOP['country']}</label>
+		<div class="uk-form-controls">
+			<select id="countrySelect" name="country"
+				onchange='chgCountrySel(this.value)' class="shopStateSelect">
+				{country_options}
+			</select>
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin" id="stateSelectDiv" style="display:{state_sel_vis};">
+		<label class="uk-form-label" for="state">{$LANG_SHOP['state']}
+		</label>
+		<div class="uk-form-controls">
+			<select id="stateSelect" name="state" class="shopStateSelect">
+				{state_options}
+			</select>
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label" for="city">{$LANG_SHOP['city']}</label>
+		<div class="uk-form-controls">
+			<input type="text" id="city" name="city" size="60" value="{city}" />
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label" for="zip">{$LANG_SHOP['zip']}</label>
+		<div class="uk-form-controls">
+			<input type="text" id="zip" name="zip" size="60" value="{zip}" />
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label" for="zip">{$LANG_SHOP['phone']}</label>
+		<div class="uk-form-controls">
+			<input type="text" id="phone" name="phone" size="60" value="{phone}" />
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label">&nbsp;</label>
+		<div class="uk-form-controls">
+			<button class="uk-button uk-button-success" type="submit" name="ord_addr_update">{$LANG_ADMIN['submit']}</button>
+			<button class="uk-button uk-button-primary" type="reset">{$LANG_ADMIN['reset']}</button>
+			<button type="button" class="uk-button uk-button-default uk-modal-close">{$LANG_ADMIN['cancel']}</button>
+		</div>
+	</div>
+</form>
+ {# end {templatelocation} #}

@@ -28,7 +28,6 @@
 	<div style="text-align:right;">
 		{linkPrint}
 	{!if is_admin}
-		<i class="uk-icon uk-icon-plus-circle uk-text-success" onclick="popupOIadd();"></i>
 		{linkPackingList}
 		{!if itemsToShip}
 		<br />
@@ -48,12 +47,18 @@
 		<div uk-grid class="uk-grid uk-child-width-1-1 uk-child-width-1-2@m uk-grid-width-medium-1-2 uk-grid-width-1-1">
 			<div class="orderAddress">
 				<span class="header">{$LANG_SHOP['bill_to']}:</span>&nbsp;
+{!if is_admin}
+				<i class="uk-icon uk-icon-edit uk-icon-hover tooltip" title="{$LANG_ADMIN['edit']}" onclick="popupAddrEditor('billto');"></i>
+{!endif}
 				<br />{billto_addr}
 				<br /><br />{payer_email}
 			</div>
 
 			<div class="orderAddress">
 				<span class="header">{$LANG_SHOP['ship_to']}:</span>&nbsp;
+{!if is_admin}
+				<i class="uk-icon uk-icon-edit uk-icon-hover tooltip" title="{$LANG_ADMIN['edit']}" onclick="popupAddrEditor('shipto');"></i>
+{!endif}
 				<br />{shipto_addr}
 			</div>
 		</div>
@@ -72,7 +77,10 @@
 		<div class="cart">
 			<div class="cart-items">
 				<div uk-grid class="uk-grid uk-margin uk-hidden-small">
-					<div class="uk-width-1-2@m uk-width-medium-3-6 aligncenter">{$LANG_SHOP['description']}</div>
+					<div class="uk-width-1-2@m uk-width-medium-3-6 aligncenter">
+						<i class="uk-icon uk-icon-plus-circle uk-text-success tooltip" title="{$LANG_SHOP['new_item']}" onclick="popupOIadd();"></i>
+						{$LANG_SHOP['description']}
+					</div>
 					<div class="uk-width-1-6@m uk-width-medium-1-6 cart-item-price">{$LANG_SHOP['price']}</div>
 					<div class="uk-width-1-6@m uk-width-medium-1-6 cart-item-quantity">{$LANG_SHOP['quantity']}</div>
 					<div class="uk-width-1-6@m uk-width-medium-1-6 cart-item-total">{$LANG_SHOP['total']}</div>
@@ -407,5 +415,37 @@ function popupUIDeditor()
 	});
 	return true;
 }
+
+function popupAddrEditor(type)
+{
+	if (type != 'billto') {
+		type = 'shipto';
+	}
+
+	$.ajax({
+		type: "get",
+		url: site_admin_url + "/plugins/shop/ajax.php?action=ord_addr_edit&type=" + type + "&order_id={order_number}",
+		success: function(result) {
+			try {
+				if (result.status == true) {
+					modal = Shop.modal(result.form,	{
+						bgClose:true,
+						title: result.title
+					});
+				}
+				return false;
+			} catch(err) {
+				console.log(err);
+			}
+		},
+		error: function(a,b,c) {
+			console.log(a);
+			console.log(b);
+			console.log(c);
+		}
+	});
+	return true;
+}
+
 </script>
 {# end {templatelocation} #}
