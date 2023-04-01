@@ -379,7 +379,7 @@ case 'getUnpaidOrders':
     break;
 
 case 'uid_edit':
-    $T = new Shop\Template('admin');
+    $T = new Shop\Template('admin/order');
     $T->set_file('form', 'uid_edit.thtml');
     $T->set_var(array(
         'order_id' => $Request->getString('order_id'),
@@ -395,7 +395,7 @@ case 'uid_edit':
     break;
 
 case 'oi_add':          // select an item to add to a customer's order
-    $T = new Shop\Template('admin');
+    $T = new Shop\Template('admin/order');
     $T->set_file('form', 'oi_add.thtml');
     $T->set_var(array(
         'order_id' => $Request->getString('order_id'),
@@ -416,6 +416,29 @@ case 'oi_edit':
     );
     break;
 
+case 'ord_instr_edit':
+    $order_id = $Request->getString('order_id');
+    $Order = Shop\Order::getInstance($order_id);
+    if ($Order->getOrderId() == $order_id) {
+        $T = new Shop\Template('admin/order');
+        $T->set_file('form', 'instr_edit.thtml');
+        $T->set_var(array(
+            'order_id' => $Request->getString('order_id'),
+            'instructions' => $Order->getInstructions(),
+        ) );
+        $T->parse('output', 'form');
+        $retval = array(
+            'status' => true,
+            'form' => $T->finish($T->get_var('output')),
+        );
+    } else {
+        $retval = array(
+            'status' => false,
+            'form' => '',
+        );
+    }
+    break;
+
 case 'ord_addr_edit':
     $retval = array(
         'status' => false,
@@ -427,7 +450,7 @@ case 'ord_addr_edit':
     $Order = Shop\Order::getInstance($order_id);
     if ($Order->getOrderId() == $order_id) {
         $Addr = $Order->getAddress($addr_type);
-        $T = new Shop\Template('admin');
+        $T = new Shop\Template('admin/order');
         $T->set_file('form', 'addr_edit.thtml');
         $T->set_var(array(
             'addr_id' => 0,         // customizing the address

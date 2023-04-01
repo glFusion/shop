@@ -1743,7 +1743,7 @@ class OrderItem
         }
 
         // Set the template dir based on the configured template version
-        $T = new Template('admin/');
+        $T = new Template('admin/order');
         $T->set_file(array(
             'oi_form'   => 'oi_edit.thtml',
         ) );
