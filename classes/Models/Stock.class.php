@@ -76,7 +76,7 @@ class Stock
             $A = false;
         }
         if (is_array($A)) {
-            $this->setVars($A);
+            $this->setVars(new DataArray($A));
         }
     }
 
@@ -90,7 +90,7 @@ class Stock
     public static function createFromArray(array $A) : self
     {
         $retval = new self;
-        $retval->setVars($A);
+        $retval->setVars(new DataArray($A));
         return $retval;
     }
 
@@ -98,20 +98,20 @@ class Stock
     /**
      * Set all the object properties.
      *
-     * @param   array   $A      Array of properties
+     * @param   DataArray   $A  Array of properties
      * @return  object  $this
      */
-    public function setVars(array $A) : self
+    public function setVars(DataArray $A) : self
     {
         if (isset($A['stk_id'])) {
-            $this->withStockId($A['stk_id']);
+            $this->withStockId($A->getInt('stk_id'));
         }
         // The rest should be present always
-        $this->withItemId($A['stk_item_id'])
-             ->withVariantId($A['stk_pv_id'])
-             ->withOnhand($A['qty_onhand'])
-             ->withReserved($A['qty_reserved'])
-             ->withReorder($A['qty_reorder']);
+        $this->withItemId($A->getInt('stk_item_id'))
+             ->withVariantId($A->getInt('stk_pv_id'))
+             ->withOnhand($A->getFloat('qty_onhand'))
+             ->withReserved($A->getFloat('qty_reserved'))
+             ->withReorder($A->getFloat('qty_reorder'));
         return $this;
     }
 
