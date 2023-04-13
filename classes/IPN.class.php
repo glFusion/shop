@@ -30,6 +30,7 @@ use Shop\Models\OrderStatus;
 use Shop\Models\CustomInfo;
 use Shop\Models\DataArray;
 use Shop\Models\IPN as IPNModel;
+use Shop\Models\Debug;
 
 
 // this file can't be used on its own
@@ -706,7 +707,7 @@ class IPN
     {
         global $_TABLES;
 
-        if (Config::get('sys_test_ipn')) {
+        if (Config::get('sys_test_ipn') & Debug::IGNORE_DUP) {
             // Special config value set only in config.php for IPN testing
             return true;
         }
