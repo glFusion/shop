@@ -78,7 +78,9 @@
 			<div class="cart-items">
 				<div uk-grid class="uk-grid uk-margin uk-hidden-small">
 					<div class="uk-width-1-2@m uk-width-medium-3-6 aligncenter">
+{!if is_admin}
 						<i class="uk-icon uk-icon-plus-circle uk-text-success tooltip" title="{$LANG_SHOP['new_item']}" onclick="popupOIadd();"></i>
+{!endif}
 						{$LANG_SHOP['description']}
 					</div>
 					<div class="uk-width-1-6@m uk-width-medium-1-6 cart-item-price">{$LANG_SHOP['price']}</div>
