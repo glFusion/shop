@@ -114,7 +114,7 @@ class Upgrade
         self::updateConfig();
 
         // Upgrade all the bundled plugins.
-        GatewayManager::upgradeAll(self::$current_ver);
+        GatewayManager::upgradeBundled(self::$current_ver);
 
         // Remove deprecated files.
         self::removeOldFiles();

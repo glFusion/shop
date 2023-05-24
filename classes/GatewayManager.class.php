@@ -18,6 +18,7 @@ use glFusion\Database\Database;
 use Shop\Config;
 use Shop\Cache;
 use Shop\Log;
+use Shop\Collections\GatewayCollection;
 
 
 /**
@@ -557,12 +558,12 @@ class GatewayManager
      *
      * @param   string  $to     New version
      */
-    public static function upgradeAll() : void
+    public static function upgradeBundled(string $to) : void
     {
-        foreach (self::getAll() as $gw) {
-            if ($gw->isBundled()) {
-                $gw->doUpgrade();
-            }
+        $Coll = new GatewayCollection;
+        $gateways = $Coll->withBundled()->getObjects();
+        foreach ($gateways as $gw) {
+            $gw->doUpgrade();
         }
     }
 
