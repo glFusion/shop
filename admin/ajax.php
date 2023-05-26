@@ -453,7 +453,7 @@ case 'ord_addr_edit':
         $T = new Shop\Template('admin/order');
         $T->set_file('form', 'addr_edit.thtml');
         $T->set_var(array(
-            'addr_id' => 0,         // customizing the address
+            'addr_id' => -1,         // customizing the address
             'name' => $Addr->getName(),
             'company' => $Addr->getCompany(),
             'address1' => $Addr->getAddress1(),
