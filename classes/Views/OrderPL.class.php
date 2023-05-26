@@ -17,6 +17,7 @@ namespace Shop\Views;
 use Shop\Shipper;
 use Shop\Order;
 use Shop\Template;
+use Shop\Models\Request;
 
 
 /**
@@ -76,9 +77,9 @@ class OrderPL extends Shipment
 
         $T->set_var(array(
             'shipment_id'   => $this->shipment_id,
-            'pi_url'        => SHOP_URL,
-            'account_url'   => COM_buildUrl(SHOP_URL . '/account.php'),
-            'pi_admin_url'  => SHOP_ADMIN_URL,
+            'pi_url'        => Config::get('url'),
+            'account_url'   => Config::get('url') . '/account.php',
+            'pi_admin_url'  => Config::get('admin_url'),
             'order_date'    => $this->Order->getOrderDate()->format($_SHOP_CONF['datetime_fmt'], true),
             'order_date_tip' => $this->Order->getOrderDate()->format($_SHOP_CONF['datetime_fmt'], false),
             'order_id'      => $this->Order->order_id,

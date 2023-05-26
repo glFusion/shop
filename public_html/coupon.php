@@ -32,20 +32,10 @@ if (COM_isAnonUser()) {
 }
 $content = '';
 
-// Retrieve and sanitize input variables.  Typically _GET, but may be _POSTed.
-COM_setArgNames(array('mode', 'id'));
-foreach (array('mode', 'id') as $varname) {
-    if (isset($_GET[$varname])) {
-        $$varname = COM_applyFilter($_GET[$varname]);
-    } else {
-        $$varname = COM_getArgument($varname);
-    }
-}
-if (empty($mode)) {
-    $mode = 'redeem';
-}
+$Request = Shop\Models\Request::getInstance();
+$Request->withArgNames(array('mode', 'id'));
 
-switch ($mode) {
+switch ($Request->getString('mode', 'redeem')) {
 case 'redeem':
 default:
     // Submit a gift code for redemption
@@ -59,7 +49,7 @@ default:
     }
     $T->set_var(array(
         'gc_bal' => $C->Format(\Shop\Products\Coupon::getUserBalance($_USER['uid'])),
-        'code' => $id,
+        'code' => $Request->getString('id'),
         'maxlen' => $maxlen,
     ) );
     $content .= $T->finish($T->parse('output', 'tpl'));

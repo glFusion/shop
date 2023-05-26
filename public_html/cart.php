@@ -42,8 +42,8 @@ $expected = array(
 list($action, $actionval) = $Request->getAction($expected);
 if ($action == '') {
     // Not defined in URL arguments
-    COM_setArgNames(array('action', 'id', 'token'));
-    $action = COM_getArgument('action');
+    $Request->withArgNames(array('action', 'id', 'token'));
+    $action = $Request->getString('action');
 }
 if ($action == '') {
     // Still no defined action, set to "view"
@@ -69,7 +69,7 @@ case 'update':
 
 case 'delete':
     // Delete a single item from the cart
-    $id = COM_getArgument('id');
+    $id = $Request->getInt('id');
     \Shop\Cart::getInstance()->Remove($id);
     $return_url = $Request->getString('return');
     if (!empty($return_url)) {

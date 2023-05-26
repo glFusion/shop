@@ -23,6 +23,7 @@ use Shop\Company;
 use Shop\IPN;
 use Shop\FieldList;
 use Shop\Models\OrderStatus;
+use Shop\Models\Request;
 
 
 /**
@@ -348,9 +349,9 @@ class OrderBaseView
         global $_SHOP_CONF, $LANG_SHOP;
 
         $this->TPL->set_var(array(
-            'pi_url'        => SHOP_URL,
-            'account_url'   => COM_buildUrl(SHOP_URL . '/account.php'),
-            'pi_admin_url'  => SHOP_ADMIN_URL,
+            'pi_url'        => Config::get('url'),,
+            'account_url'   => Config::get('url') . '/account.php',
+            'pi_admin_url'  => Config::get('admin_url'),
             'not_anon'      => !COM_isAnonUser(),
             'linkPackingList' => \Shop\Order::linkPackingList($this->order_id),
             'linkPrint'     => \Shop\Order::linkPrint($this->order_id, $this->Order->getToken()),
@@ -361,7 +362,7 @@ class OrderBaseView
             'order_number'  => $this->Order->getOrderID(),
             'order_number_esc' => urlencode($this->Order->getOrderID()),
             'order_pub_link' => FieldList::link(array(
-                'url' => COM_buildUrl(Config::get('url') . '/order.php?mode=view&id=' . $this->Order->getOrderID() . '&token=' . $this->Order->getToken()),
+                'url' => Request::buildUrl(Config::get('url') . '/order.php?mode=view&id=' . $this->Order->getOrderID() . '&token=' . $this->Order->getToken()),
                 'attr' => array(
                     'target' => '_new',
                     'title' => $LANG_SHOP['order_pub_link'],
@@ -536,12 +537,12 @@ class OrderBaseView
                 'item_extras'   => $Item->getExtraDisplay(),
                 'sku'           => $Item->getSKU(),
                 'item_link'     => $P->withOrderItem($item_id)->getLink(),
-                'pi_url'        => SHOP_URL,
+                'pi_url'        => Config::get('url'),
                 'is_invoice'    => $this->is_invoice,
-                'del_item_url'  => COM_buildUrl(SHOP_URL . "/cart.php?action=delete&id={$Item->getID()}"),
+                'del_item_url'  => Request::buildUrl(Config::get('url') . "/cart.php?action=delete&id={$Item->getID()}"),
                 'embargoed'     => $Item->getInvalid(),
                 'del_item_link' => FieldList::delete(array(
-                    'delete_url' => COM_buildUrl(SHOP_URL . "/cart.php?action=delete&id={$Item->getID()}"),
+                    'delete_url' => Config::get((Config::get('url') . "/cart.php?action=delete&id={$Item->getID()}"),
                     'attr' => array(
                         'title' => $LANG_SHOP['remove_item'],
                         'class' => 'tooltip',
@@ -690,9 +691,9 @@ class OrderBaseView
                 'item_options'  => $item->getOptionDisplay(),
                 'sku'           => $item->getSKU(),
                 'item_link'     => $P->withOrderItem($item->getID())->getLink(),
-                'pi_url'        => SHOP_URL,
+                'pi_url'        => Config::get('url'),
                 'is_invoice'    => $is_invoice,
-                'del_item_url'  => COM_buildUrl(SHOP_URL . "/cart.php?action=delete&id={$item->getID()}"),
+                'del_item_url'  => Request::buildUrl(Config::get('url') . "/cart.php?action=delete&id={$item->getID()}"),
             ) );
             if ($P->isPhysical()) {
                 $no_shipping = 0;
@@ -731,9 +732,9 @@ class OrderBaseView
             'billto_phone'  => $this->Order->getBillto()->toText('phone'),
             'shipto_addr'   => $this->Order->getShipto()->toHTML(),
             'shipto_phone'  => $this->Order->getShipto()->toText('phone'),
-            'pi_url'        => SHOP_URL,
-            'account_url'   => COM_buildUrl(SHOP_URL . '/account.php'),
-            'pi_admin_url'  => SHOP_ADMIN_URL,
+            'pi_url'        => Config::get('url'),
+            'account_url'   => Config::get('url') . '/account.php',
+            'pi_admin_url'  => Config::get('admin_url'),
             'shipper_id'    => $this->Order->getShipperID(),
             'total'         => $Currency->Format($total),
             'not_final'     => !$this->isFinalView,

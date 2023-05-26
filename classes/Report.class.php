@@ -794,7 +794,7 @@ class Report
                 $url = SHOP_ADMIN_URL . '/orders.php?order=' . $fieldvalue;
                 $opts = array('target' => '_blank');
             } else {
-                $url = COM_buildUrl(SHOP_URL . '/order.php?mode=view&id=' . $fieldvalue);
+                $url = Request::buildUrl(Config::get('url') . '/order.php?mode=view&id=' . $fieldvalue);
                 $opts = array();
             }
             $retval = COM_createLink($fieldvalue, $url, $opts);

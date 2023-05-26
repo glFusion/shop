@@ -378,7 +378,7 @@ class Product
         $this->isNew = true;
         $this->pi_name = $_SHOP_CONF['pi_name'];
         $this->btn_text = '';
-        $this->cancel_url = SHOP_URL . '/index.php';
+        $this->cancel_url = Config::get('url') . '/index.php';
 
         // Disable affiliate bonuses if the program is disabled.
         if (Config::get('aff_enabled')) {
@@ -1218,7 +1218,7 @@ class Product
         } else {
             SHOP_setMsg($this->Errors, 'error');
             Log::error(__METHOD__ . ": Update of product {$this->id} failed.");
-            echo COM_refresh(SHOP_ADMIN_URL . '/index.php?return=products&editproduct=x&id=' . $this->id);
+            echo COM_refresh(Config::get('admin_url') . '/index.php?return=products&editproduct=x&id=' . $this->id);
             return false;
         }
     }
@@ -1536,11 +1536,11 @@ class Product
             'price'         => Currency::getInstance()->FormatValue($this->price),
             'file'          => htmlspecialchars($this->filename, ENT_QUOTES, COM_getEncodingt()),
             'expiration'    => $this->expiration,
-            'action_url'    => SHOP_ADMIN_URL . '/index.php',
+            'action_url'    => Config::get('admin_url') . '/index.php',
             'file_selection' => $this->FileSelector(),
             'keywords'      => htmlspecialchars($this->keywords, ENT_QUOTES, COM_getEncodingt()),
             'currency'      => $_SHOP_CONF['currency'],
-            //'pi_url'        => SHOP_URL,
+            //'pi_url'        => Config::get('url'),
             'doc_url'       => SHOP_getDocURL('product_form', $_CONF['language']),
             'prod_type'     => $this->prod_type,
             'weight'        => $this->weight,
@@ -1565,7 +1565,7 @@ class Product
             'custom' => $this->custom,
             'avail_beg'     => self::_InputDtFormat($this->avail_beg),
             'avail_end'     => self::_InputDtFormat($this->avail_end),
-            'ret_url'       => SHOP_getUrl(SHOP_ADMIN_URL . '/index.php?products'),
+            'ret_url'       => SHOP_getUrl(Config::get('admin_url') . '/index.php?products'),
             'variant_list'  => $this->id > 0 ? ProductVariant::adminList($this->id) : ProductVariant::Create(),
             'cboptions_list' => ProductCheckbox::adminList($this->id),
             'nonce'         => Images\Product::makeNonce(),
@@ -1668,7 +1668,7 @@ class Product
             $DT = new Template;
             $DT->set_file('stable', 'sales_table.thtml');
             $DT->set_var('edit_sale_url',
-                SHOP_ADMIN_URL . '/index.php?sales');
+                Config::get('admin_url') . '/index.php?sales');
             $DT->set_block('stable', 'SaleList', 'SL');
             foreach ($Disc as $D) {
                 if ($D->getValueType() == 'amount') {
@@ -2124,7 +2124,7 @@ class Product
             foreach ($this->Categories as $Cat) {
                 $catnames[] = COM_createLink(
                     $Cat->getName(),
-                    SHOP_URL . '/index.php?category=' . $Cat->getID()
+                    Config::get('url') . '/index.php?category=' . $Cat->getID()
                 );
             }
             $catnames = implode(', ', $catnames);
@@ -2231,7 +2231,7 @@ class Product
         if ($this->isAdmin) {
             // Add the quick-edit link for administrators
             $T->set_var(array(
-                'pi_admin_url'  => SHOP_ADMIN_URL,
+                'pi_admin_url'  => Config::get('admin_url'),
                 'can_edit'      => 'true',
                 'from_url'      => COM_getCurrentUrl(),
             ) );
@@ -2348,7 +2348,7 @@ class Product
             // Free, or unexpired downloads for non-anymous
             $T = new Template('buttons');
             $T->set_file('download', 'btn_download.thtml');
-            $T->set_var('action_url', SHOP_URL . '/download.php');
+            $T->set_var('action_url', Config::get('url') . '/download.php');
             $T->set_var('id', $this->id);
             $buttons['download'] = $T->parse('', 'download');
             $add_cart = false;
@@ -2414,7 +2414,7 @@ class Product
                 'short_description' => htmlspecialchars($this->short_description),
                 'amount'        => $this->getSalePrice(),
                 'base_price'    => $this->getPrice(),
-                'action_url'    => SHOP_URL . '/index.php',
+                'action_url'    => Config::get('url') . '/index.php',
                 //'form_url'  => $this->hasOptions() ? '' : 'true',
                 //'form_url'  => false,
                 'form_url'  => $add_form_url,
@@ -3424,7 +3424,7 @@ class Product
 
     /**
      * Get the affiliate referral link for the product.
-     * Does not use COM_buildUrl().
+     * Does not use Request::buildUrl().
      *
      * @return  string      Affiliate referral URL
      */
@@ -3444,14 +3444,14 @@ class Product
     public function getLink()
     {
         $id = Config::get('use_sku') ? $this->name : $this->id;
-        $url = SHOP_URL . '/detail.php?id=' . $id;
+        $url = Config::get('url') . '/detail.php?id=' . $id;
         if ($this->oi_id > 0 || $this->query != '') {
             $url .= '&oi_id=' . (int)$this->oi_id;
             if ($this->query != '') {
                 $url .= '&query=' . $this->query;
             }
         }
-        return COM_buildUrl($url);
+        return Request::buildUrl($url);
     }
 
 
@@ -3891,7 +3891,7 @@ class Product
      */
     public function getCancelUrl()
     {
-        return ($this->cancel_url) ? $this->cancel_url : SHOP_URL . '/index.php';
+        return ($this->cancel_url) ? $this->cancel_url : Config::get('url') . '/index.php';
     }
 
 
@@ -3907,7 +3907,7 @@ class Product
 
         if (empty($ids)) {
             SHOP_setMsg("No products selected");
-            echo COM_refresh(SHOP_ADMIN_URL . '/index.php?products');
+            echo COM_refresh(Config::get('admin_url') . '/index.php?products');
         }
         $ids = implode(',', $ids);
         $T = new Template;
@@ -4139,7 +4139,7 @@ class Product
         );
         $display .= FieldList::buttonLink(array(
             'text' => $LANG_SHOP['new_item'],
-            'url' => SHOP_ADMIN_URL . '/index.php?editproduct=x',
+            'url' => Config::get('admin_url') . '/index.php?editproduct=x',
             'style' => 'success',
         ) );
 
@@ -4172,7 +4172,7 @@ class Product
 
         $text_arr = array(
             'has_extras' => true,
-            'form_url' => SHOP_ADMIN_URL . "/index.php?products&cat_id=$cat_id&brand+id=$brand_id&supplier_id=$supplier_id",
+            'form_url' => Config::get('admin_url') . "/index.php?products&cat_id=$cat_id&brand+id=$brand_id&supplier_id=$supplier_id",
         );
 
         $bulk_update = FieldList::button(array(
@@ -4230,7 +4230,7 @@ class Product
         //$filter .= FieldList::select(array(
             'name' => 'cat_id',
             'onchange' => "javascript: document.location.href='" .
-                SHOP_ADMIN_URL . "/index.php?products" .
+                Config::get('admin_url') . "/index.php?products" .
                 "&amp;brand_id=$brand_id" .
                 "&amp;supplier_id=$supplier_id" .
                 "&amp;cat_id='+this.options[this.selectedIndex].value",
@@ -4250,7 +4250,7 @@ class Product
         $filter .= FieldList::select(array(
             'name' => 'brand_id',
             'onchange' => "javascript: document.location.href='" .
-                SHOP_ADMIN_URL . '/index.php?products' .
+                Config::get('admin_url') . '/index.php?products' .
                 "&amp;cat_id=$cat_id" .
                 "&amp;supplier_id=$supplier_id" .
                 "&amp;brand_id='+this.options[this.selectedIndex].value",
@@ -4270,7 +4270,7 @@ class Product
         $filter .= FieldList::select(array(
             'name' => 'supplier_id',
             'onchange' => "javascript: document.location.href='" .
-                SHOP_ADMIN_URL . '/index.php?products' .
+                Config::get('admin_url') . '/index.php?products' .
                 "&amp;brand_id=$brand_id" .
                 "&amp;cat_id=$cat_id" .
                 "&amp;supplier_id='+this.options[this.selectedIndex].value",
@@ -4311,20 +4311,20 @@ class Product
         switch($fieldname) {
         case 'copy':
             $retval .= FieldList::copy(array(
-                'url' => SHOP_ADMIN_URL . "/index.php?prod_clone=x&amp;id={$A['id']}",
+                'url' => Config::get('admin_url') . "/index.php?prod_clone=x&amp;id={$A['id']}",
             ) );
             break;
 
         case 'edit':
             $retval .= FieldList::edit(array(
-                'url' => SHOP_ADMIN_URL . "/index.php?return=products&editproduct=x&amp;id={$A['id']}",
+                'url' => Config::get('admin_url') . "/index.php?return=products&editproduct=x&amp;id={$A['id']}",
             ) );
             break;
 
         case 'delete':
             if (!\Shop\Product::isUsed($A['id'])) {
                 $retval .= FieldList::delete(array(
-                    'delete_url' => SHOP_ADMIN_URL. '/index.php?deleteproduct=x&amp;id=' . $A['id'],
+                    'delete_url' => Config::get('admin_url'). '/index.php?deleteproduct=x&amp;id=' . $A['id'],
                     'attr' => array(
                         'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                         'title' => $LANG_SHOP['del_item'],
@@ -4376,7 +4376,7 @@ class Product
         case 'name':
             $retval = COM_createLink(
                 $fieldvalue,
-                SHOP_ADMIN_URL . '/report.php?run=itempurchase&item_id=' . $A['id'],
+                Config::get('admin_url') . '/report.php?run=itempurchase&item_id=' . $A['id'],
                 array(
                     'class' => 'tooltip',
                     'title' => $LANG_SHOP['item_history'],
@@ -4395,7 +4395,7 @@ class Product
         case 'cat_name':
             $retval = COM_createLink(
                 $fieldvalue,
-                SHOP_ADMIN_URL . '/index.php?cat_id=' . $A['cat_id']
+                Config::get('admin_url') . '/index.php?cat_id=' . $A['cat_id']
             );
             break;
 
@@ -4403,7 +4403,7 @@ class Product
             $id = $_SHOP_CONF['use_sku'] ? $A['name'] : $A['id'];
             $retval = COM_createLink(
                 $fieldvalue,
-                SHOP_URL . '/detail.php?id=' . $id,
+                Config::get('url') . '/detail.php?id=' . $id,
                 array(
                     'class' => 'tooltip',
                     'title' => $LANG_SHOP['see_details'],

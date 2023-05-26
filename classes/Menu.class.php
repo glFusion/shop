@@ -14,6 +14,8 @@
 namespace Shop;
 use Shop\Template;
 use Shop\Cart;
+use Shop\Models\Request;
+use Shop\Config;
 
 
 /**
@@ -41,16 +43,16 @@ class Menu
         }
         $menu_arr = array(
             array(
-                'url'  => SHOP_URL . '/index.php',
+                'url'  => Config::get('url') . '/index.php',
                 'text' => $LANG_SHOP['back_to_catalog'],
             ),
             array(
-                'url'  => COM_buildUrl(SHOP_URL . '/account.php?mode=orderhist'),
+                'url'  => Request::buildUrl(Config::get('url') . '/account.php?mode=orderhist'),
                 'text' => $LANG_SHOP['purchase_history'],
                 'active' => $view == 'orderhist' ? true : false,
             ),
             array(
-                'url' => COM_buildUrl(SHOP_URL . '/account.php?mode=addresses'),
+                'url' => Request::buildUrl(Config::get('url') . '/account.php?mode=addresses'),
                 'text' => $LANG_SHOP['addresses'],
                 'active' => $view == 'addresses' ? true : false,
             ),
@@ -60,7 +62,7 @@ class Menu
         if (Config::get('gc_enabled')) {
             $active = $view == 'couponlog' ? true : false;
             $menu_arr[] = array(
-                'url'  => COM_buildUrl(SHOP_URL . '/account.php?mode=couponlog'),
+                'url'  => Request::buildUrl(Config::get('url') . '/account.php?mode=couponlog'),
                 'text' => $LANG_SHOP['gc_activity'],
                 'active' => $active,
                 'link_admin' => plugin_ismoderator_shop(),
@@ -72,7 +74,7 @@ class Menu
             $Aff = new Affiliate($_USER['uid']);
             if ($Aff->isValid()) {
                 $menu_arr[] = array(
-                    'url' => COM_buildUrl(SHOP_URL . '/affiliate.php'),
+                    'url' => Config::get('url') . '/affiliate.php',
                     'text' => $LANG_SHOP['affiliates'],
                     'active' => $view == 'affiliate' ? true : false,
                 );

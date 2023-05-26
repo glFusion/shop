@@ -177,17 +177,17 @@ class Request extends DataArray
 
 
     /**
-    * Builds crawler friendly URL if URL rewriting is enabled.
-    *
-    * This function will attempt to build a crawler friendly URL. If this feature is
-    * disabled because of platform issue it just returns original $url value.
-    *
-    * https://site.com/index.php?a=1&b=2 becomes https://site.com/index.php/1/2
-    *
-    * @param    string  $url    URL to try and convert
-    * @return   string      Rewritten if _isenabled is true otherwise original url
-    */
-    public function buildUrl(string $url) : string
+     * Builds crawler friendly URL if URL rewriting is enabled.
+     *
+     * This function will attempt to build a crawler friendly URL. If this feature is
+     * disabled because of platform issue it just returns original $url value.
+     *
+     * https://site.com/index.php?a=1&b=2 becomes https://site.com/index.php/1/2
+     *
+     * @param    string  $url    URL to try and convert
+     * @return   string      Rewritten if _isenabled is true otherwise original url
+     */
+    public static function buildUrl(string $url) : string
     {
         global $_CONF;
 

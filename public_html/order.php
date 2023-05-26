@@ -24,32 +24,15 @@ if (
     exit;
 }
 
-$Request = Request::getInstance();
+$Request = Request::getInstance()->withArgNames(array('mode', 'id', 'token'));;
 $page_title = '';
 $action = '';
 $actionval = '';
 $view = '';
 
-COM_setArgNames(array('mode', 'id', 'token'));
-
-$mode = $Request->getString('mode', COM_getArgument('mode'));
-$id = $Request->getString('id', COM_getArgument('id'));
-$token = $Request->getString('token', COM_getArgument('token'));
-/*if (isset($Request['mode'])) {
-    $mode = COM_applyFilter($Request['mode']);
-} else {
-    $mode = COM_getArgument('mode');
-}
-if (isset($_GET['id'])) {
-    $id = COM_sanitizeID($_GET['id']);
-} else {
-    $id = COM_applyFilter(COM_getArgument('id'));
-}
-if (isset($_GET['token'])) {
-    $token = COM_sanitizeID($_GET['token']);
-} else {
-    $token = COM_applyFilter(COM_getArgument('token'));
-}*/
+$mode = $Request->getString('mode');
+$id = $Request->getString('id');
+$token = $Request->getString('token');
 if (empty($mode) && !empty($id)) {
     $mode = 'view';
 }

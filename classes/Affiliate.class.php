@@ -14,6 +14,7 @@
 namespace Shop;
 use glFusion\Database\Database;
 use Shop\Log;
+use Shop\Models\Request;
 
 
 /**
@@ -231,7 +232,7 @@ class Affiliate
 
         $text_arr = array(
             'has_extras' => true,
-            'form_url' => SHOP_ADMIN_URL . "/affiliates.php?$sess_key",
+            'form_url' => Config::get('admin_url') . "/affiliates.php?$sess_key",
         );
         if ($pending_payout) {
             $text_arr['form_url'] .= '&method=' . $pending_payout;
@@ -374,7 +375,7 @@ class Affiliate
 
         $text_arr = array(
             'has_extras' => false,
-            'form_url' => SHOP_ADMIN_URL . '/affiliate.php?sales=x',
+            'form_url' => Config::get('admin_url') . '/affiliate.php?sales=x',
         );
         $extras = array(
             'Currency' => $Cur,
@@ -430,7 +431,7 @@ class Affiliate
         case 'fullname':
             $retval = COM_createLink(
                 $fieldvalue,
-                SHOP_ADMIN_URL . '/affiliates.php?uid=' . $A['uid']
+                Config::get('admin_url') . '/affiliates.php?uid=' . $A['uid']
             );
             break;
         case 'comm_due':
@@ -450,9 +451,9 @@ class Affiliate
             break;
         case 'description':
             $id = Config::get('use_sku') ? $A['sku'] : $A['product_id'];
-            $url = SHOP_URL . '/detail.php?id=' . $id;
+            $url = Config::get('url') . '/detail.php?id=' . $id;
             $url .= '&oi_id=' . $A['oi_id'];
-            $url = COM_buildUrl($url);
+            $url = Request::buildUrl($url);
             $retval = COM_createLink(
                 $fieldvalue,
                 $url

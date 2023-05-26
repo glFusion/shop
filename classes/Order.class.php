@@ -14,6 +14,7 @@
 namespace Shop;
 use Shop\Models\OrderStatus;
 use Shop\Models\DataArray;
+use Shop\Models\Request;
 use Shop\Models\CustomInfo;
 use Shop\Models\Token;
 use Shop\Models\ReferralTag;
@@ -2825,13 +2826,16 @@ class Order
      * @param   boolean $token  True to include the token
      * @return  string      URL to the view/print page
      */
-    public function buildUrl($view, $token=true)
+    public function buildUrl(string $view, bool $token=true) : string
     {
-        $url = SHOP_URL . "/order.php?mode=$view&id={$this->order_id}";
+        $q = array(
+            'mode' => $view,
+            'id' => $this->order_id,
+        );
         if ($token) {
-            $url .= "&token={$this->token}";
+            $q['token'] = $this->token;
         }
-        return COM_buildUrl($url);
+        return Request::buildUrl(Config::get('url') . '/' . http_build_query($q));
     }
 
 
@@ -3045,15 +3049,20 @@ class Order
      * @param   string  $target     Target, defaule = "_blank"
      * @return  string      Complete tag
      */
-    public static function linkPrint($order_id, $token='', $target = '_blank')
+    public static function linkPrint(string $order_id, string $token='', string $target = '_blank') : string
     {
         global $LANG_SHOP;
 
-        $url = SHOP_URL . '/order.php?mode=pdforder&id=' . $order_id;
-        if ($token != '') $url .= '&token=' . $token;
+        $q = array(
+            'mode' => 'pdforder',
+            'id' => $order_id,
+        );
+        if ($token != '') {
+            $q['token'] = $token;
+        }
         return COM_createLink(
             FieldList::print(),
-            COM_buildUrl($url),
+            Request::buildUrl(Config::get('url') . '/' . http_build_query($q)),
             array(
                 'class' => 'tooltip',
                 'title' => $LANG_SHOP['print'],

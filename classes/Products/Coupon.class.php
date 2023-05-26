@@ -22,6 +22,7 @@ use Shop\Template;
 use Shop\OrderItem;
 use Shop\Order;
 use Shop\Models\IPN;
+use Shop\Models\Request;
 use Shop\FieldList;
 use Shop\Company;
 use Shop\Currency;
@@ -991,11 +992,11 @@ class Coupon extends \Shop\Product
      */
     public static function redemptionUrl(?string $code = '') : string
     {
-        $url = SHOP_URL . '/coupon.php?mode=redeem';
+        $url = Config::get('url') . '/coupon.php?mode=redeem';
         if (!empty($code)) {
             $url .= '&id=' . $code;
         }
-        return COM_buildUrl($url);
+        return Request::buildUrl($url);
     }
 
 
@@ -1135,7 +1136,7 @@ class Coupon extends \Shop\Product
 
         $text_arr = array(
             'has_extras' => true,
-            'form_url' => SHOP_ADMIN_URL . '/index.php?coupons=x',
+            'form_url' => Config::get('admin_url') . '/index.php?coupons=x',
         );
 
         $bulk_update = FieldList::button(array(
@@ -1174,7 +1175,7 @@ class Coupon extends \Shop\Product
         $display .= '<h2>' . $LANG_SHOP['couponlist'] . '</h2>';
         $display .= '<div>' . FieldList::buttonLink(array(
             'text' => $LANG_SHOP['send_giftcards'],
-            'url' => SHOP_ADMIN_URL . '/index.php?sendcards_form=x',
+            'url' => Config::get('admin_url') . '/index.php?sendcards_form=x',
             'style' => 'primary',
         ) ) .
         '</div>';
@@ -1217,7 +1218,7 @@ class Coupon extends \Shop\Product
                     $username[$fieldvalue] = COM_getDisplayName($fieldvalue);
                 }
                 $retval = COM_createLink($username[$fieldvalue],
-                    SHOP_ADMIN_URL . "/index.php?coupons=x&filter=$fieldname&value=$fieldvalue",
+                    Config::get('admin_url') . "/index.php?coupons=x&filter=$fieldname&value=$fieldvalue",
                     array(
                         'title' => 'Click to filter by ' . $fieldname,
                         'class' => 'tooltip',

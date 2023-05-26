@@ -16,14 +16,9 @@
 require_once '../../lib-common.php';
 use Shop\Log;
 
-$gw_name = '';
-COM_setArgNames(array('_gw', 'testhook'));
-if (isset($_GET['_gw'])) {
-    $gw_name = $_GET['_gw'];
-} else {
-    $gw_name = COM_getArgument('_gw');
-}
-
+$Request = Shop\Models\Request::getInstance()
+    ->withArgNames(array('_gw', 'testhook'));
+$gw_name = $Request->getString('_gw');
 if (empty($gw_name)) {
     $log_fn = 'Shop\Log::alert';
     $log_level = Log::ALERT;

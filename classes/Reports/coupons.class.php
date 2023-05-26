@@ -12,6 +12,8 @@
  * @filesource
  */
 namespace Shop\Reports;
+use Shop\Models\Request;
+
 
 /**
  * Class for Coupon activity report
@@ -63,7 +65,7 @@ class coupons extends \Shop\Report
         if ($this->isAdmin) {
             // Get the URL with query string, but remove the query for use
             // in the form_url.
-            $url = SHOP_ADMIN_URL . '/report.php?' . self::getQueryString(array('q'=>''));
+            $url = Config::get('admin_url') . '/report.php?' . self::getQueryString(array('q'=>''));
             //$url = $_SERVER['REQUEST_URI'];
             $this->setExtra('uid_link', $_CONF['site_url'] . '/users.php?mode=profile&uid=');
             $cust_hdr = array(
@@ -79,7 +81,7 @@ class coupons extends \Shop\Report
                 ),
             );
         } else {
-            $url = SHOP_URL . '/account.php?mode=couponlog';
+            $url = Config::get('url') . '/account.php?mode=couponlog';
             $cust_hdr = array();
         }
         $header_arr = array(
@@ -213,7 +215,7 @@ class coupons extends \Shop\Report
             case 'gc_applied':
                 $var = COM_createLink(
                     $A['order_id'],
-                    COM_buildUrl(SHOP_URL . '/order.php?mode=view&id=' . $A['order_id'])
+                    Request::buildUrl(Config::get('url') . '/order.php?mode=view&id=' . $A['order_id'])
                 );
                 break;
             case 'gc_voided':
@@ -241,10 +243,10 @@ class coupons extends \Shop\Report
 
         case 'code':
             if ($extra['isAdmin']) {
-                $url = SHOP_ADMIN_URL . '/report.php?' . self::getQueryString(array('q'=>$fieldvalue));
-                //$url = SHOP_ADMIN_URL . '/report.php?' . self::getQueryString();
+                $url = Config::get('admin_url') . '/report.php?' . self::getQueryString(array('q'=>$fieldvalue));
+                //$url = Config::get('admin_url') . '/report.php?' . self::getQueryString();
             } else {
-                $url = SHOP_URL . '/account.php?mode=couponlog&code=' . $fieldvalue;
+                $url = Config::get('url') . '/account.php?mode=couponlog&code=' . $fieldvalue;
             }
             $retval = COM_createLink(
                 $fieldvalue,

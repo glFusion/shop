@@ -25,28 +25,19 @@ if (
     exit;
 }
 
-COM_setArgNames(array('id', 'oi_id', 'query'));
-if (isset($_GET['item_id'])) {
+$Request = Shop\Models\Request::getInstance()
+    ->withArgNames(array('id', 'oi_id', 'query'));
+$id = $Request->getString('item_id');
+if (!empty($id)) {
     // Force reading the item by it's record ID regardless of the use_sku setting.
     // Set $_SHOP_CONF['use_sku'] to false to get the Product class to use the ID.
-    $id = $_GET['item_id'];
     Shop\Config::set('use_sku', false);
-} elseif (isset($_GET['id'])) {
-    $id = $_GET['id'];
 } else {
-    $id = COM_getArgument('id');
+    $id = $Request->getString('id');
 }
 
-if (isset($_GET['oi_id'])) {
-    $oi_id = (int)$_GET['oi_id'];
-} else {
-    $oi_id = (int)COM_getArgument('oi_id');
-}
-if (isset($_GET['query'])) {
-    $query = $_GET['query'];
-} else {
-    $query = COM_getArgument('query');
-}
+$oi_id = $Request->getInt('oi_id');
+$query = $Request->getString('query');
 
 $content = '';
 $breadcrumbs = '';

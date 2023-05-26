@@ -20,6 +20,7 @@ use Shop\Models\OrderStatus;
 use Shop\Models\DataArray;
 use Shop\Models\Request;
 use Shop\Template;
+use Shop\Config;
 
 // If plugin is installed but not enabled, display an error and exit gracefully
 if (
@@ -29,7 +30,7 @@ if (
     COM_404();
     exit;
 }
-$Request = Request::getInstance();
+$Request = Request::getInstance()->withArgNames(array('mode', 'id'));
 
 // For anonymous, this may be a valid selection coming from an email link.
 // Put up a message indicating that they need to log in.
@@ -48,17 +49,9 @@ $expected = array(
     'orderhist', 'addresses', 'editaddr',
 );
 list($mode, $actionval) = $Request->getAction($expected);
-
 if ($mode == '') {
-    // Retrieve and sanitize input variables.
-    COM_setArgNames(array('mode', 'id'));
-    foreach (array('mode', 'id') as $varname) {
-        if (isset($Request[$varname])) {
-            $$varname = COM_applyFilter($Request[$varname]);
-        } else {
-            $$varname = COM_getArgument($varname);
-        }
-    }
+    $mode = $Request->getString('mode');
+    $id = $Request->getString('id');
 }
 if (empty($mode)) {
     $mode = 'orderhist';
@@ -114,8 +107,8 @@ case 'redeem':
     }
     // Redirect back to the provided view, or to the default page
     SHOP_setMsg($msg, $type, $persist);
-    echo COM_refresh(COM_buildUrl(
-        SHOP_URL . '/account.php?mode=couponlog'
+    echo COM_refresh(Request::buildUrl(
+        Config::get('url') . '/account.php?mode=couponlog'
     ) );
     break;
 
@@ -124,13 +117,13 @@ case 'delbutton_x':
     if (isset($Request['delitem']) && is_array($Request['delitem'])) {
         Shop\Address::deleteMulti($Request['delitem']);
     }
-    echo COM_refresh(SHOP_URL . '/account.php?addresses');
+    echo COM_refresh(Config::get('url') . '/account.php?addresses');
     break;
 
 case 'deladdr':
     // Delete one single address
     Shop\Address::deleteMulti(array($id));
-    echo COM_refresh(SHOP_URL . '/account.php?addresses');
+    echo COM_refresh(Config::get('url') . '/account.php?addresses');
     break;
 
 case 'savevalidated':
@@ -172,7 +165,7 @@ case 'saveaddr':
 case 'editaddr':
     $Addr = Shop\Address::getInstance($id);
     if ($id > 0 && $Addr->getUid() != $_USER['uid']) {
-        echo COM_refresh(SHOP_URL . '/account.php?addresses');
+        echo COM_refresh(Config::get('url') . '/account.php?addresses');
     }
     $content .= Shop\Menu::User('none');
     $content .= $Addr->Edit();

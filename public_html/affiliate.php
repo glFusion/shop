@@ -39,15 +39,10 @@ if ($Aff->getAffiliateId() == Shop\Affiliate::REJECTED) {
     COM_404();
 }
 
-// Retrieve and sanitize input variables.  Typically _GET, but may be _POSTed.
-COM_setArgNames(array('mode', 'id', 'register'));
-foreach (array('mode', 'id') as $varname) {
-    if (isset($_GET[$varname])) {
-        $$varname = COM_applyFilter($_GET[$varname]);
-    } else {
-        $$varname = COM_getArgument($varname);
-    }
-}
+$Request = Shop\Models\Request::getInstance()
+    ->withArgNames(array('mode', 'id', 'register'));
+$mode = $Request->getString('mode');
+$id = $Request->getString('id');
 if (empty($mode)) {
     // Figure out what the user can do here.
     $Aff = new Shop\Affiliate();

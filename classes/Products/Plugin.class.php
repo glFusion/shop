@@ -169,7 +169,7 @@ class Plugin extends \Shop\Product
             $this->rating = $A->getFloat('rating');
             // Set enabled flag, assume true unless set
             $this->enabled = $A->getBool('enabled', true);
-            $this->cancel_url = $A->getString('cancel_url', SHOP_URL . '/index.php');
+            $this->cancel_url = $A->getString('cancel_url', Config::get('url') . '/index.php');
             if (isset($A['canApplyDC']) && !$A['canApplyDC']) {
                 $this->canApplyDC = false;
             }
@@ -225,7 +225,7 @@ class Plugin extends \Shop\Product
                 $this->rating = $A->getFloat('rating');
                 // Set enabled flag, assume true unless set
                 $this->enabled = $A->getBool('enabled', true);
-                $this->cancel_url = $A->getString('cancel_url', SHOP_URL . '/index.php');
+                $this->cancel_url = $A->getString('cancel_url', Config::get('url') . '/index.php');
                 if (isset($A['canApplyDC']) && !$A['canApplyDC']) {
                     $this->canApplyDC = false;
                 }
@@ -450,14 +450,16 @@ class Plugin extends \Shop\Product
     public function getLink()
     {
         if ($this->_have_detail_svc) {
-            $url = SHOP_URL . '/detail.php?id=' . $this->item_id;
+            $params = array('id' => $this->item_id);
             if ($this->oi_id > 0 || $this->query != '') {
-                $url .= '&oi_id=' . (int)$this->oi_id;
+                $params['oi_id'] = (int)$this->oi_id;
                 if ($this->query != '') {
+                    $params['query'] = urlencode($this->query);
                     $url .= '&query=' . $this->query;
                 }
             }
-            return COM_buildUrl($url);
+            $url = Config::get('url') . '/detail.php?' . http_build_query($params);
+            return Request::buildUrl($url);
         } else {
             return $this->url;
         }
@@ -665,7 +667,7 @@ class Plugin extends \Shop\Product
         );
         $display .= FieldList::buttonLink(array(
             'text' => $LANG_SHOP['new_item'],
-            'url' => SHOP_ADMIN_URL . '/index.php?pi_edit=0',
+            'url' => Config::get('admin_url') . '/index.php?pi_edit=0',
             'style' => 'success',
         ) );
 
@@ -687,7 +689,7 @@ class Plugin extends \Shop\Product
 
         $text_arr = array();
 /*            'has_extras' => true,
-            'form_url' => SHOP_ADMIN_URL . "/index.php?products&cat_id=$cat_id&brand+id=$brand_id&supplier_id=$supplier_id",
+            'form_url' => Config::get('admin_url') . "/index.php?products&cat_id=$cat_id&brand+id=$brand_id&supplier_id=$supplier_id",
         );
  */
         $options = array(
@@ -729,13 +731,13 @@ class Plugin extends \Shop\Product
         switch($fieldname) {
         case 'copy':
             $retval .= FieldList::copy(array(
-                'url' => SHOP_ADMIN_URL . "/index.php?prod_clone=x&amp;id={$A['id']}",
+                'url' => Config::get('admin_url') . "/index.php?prod_clone=x&amp;id={$A['id']}",
             ) );
             break;
 
         case 'edit':
             $retval .= FieldList::edit(array(
-                'url' => SHOP_ADMIN_URL . "/index.php?return=products&pi_edit={$A['id']}",
+                'url' => Config::get('admin_url') . "/index.php?return=products&pi_edit={$A['id']}",
             ) );
             break;
         case 'prod_type':
@@ -760,7 +762,7 @@ class Plugin extends \Shop\Product
             break;
         case 'delete':
             $retval .= FieldList::delete(array(
-                'delete_url' => SHOP_ADMIN_URL. '/index.php?pi_del=' . $A['id'],
+                'delete_url' => Config::get('admin_url'). '/index.php?pi_del=' . $A['id'],
                 'attr' => array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                     'title' => $LANG_SHOP['del_item'],
