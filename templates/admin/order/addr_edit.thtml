@@ -2,6 +2,7 @@
 <form id="cust_addr_frm" action="{pi_admin_url}/orders.php" method="post" class="uk-form uk-form-horizontal">
 	<input type="hidden" name="order_id" value="{order_id}" />
 	<input type="hidden" name="ad_type" value="{ad_type}" />
+	<input type="hidden" name="addr_id" value="{addr_id}" />
 
 	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label" for="name">{$LANG_SHOP['fullname']}</label>
