@@ -50,23 +50,23 @@ $mainview = '';   // default main menu selection
 
 switch ($action) {
 case 'savepayment':
-    $Pmt = Shop\Payment::getInstance($_POST['pmt_id']);
-    $Pmt->setAmount($_POST['amount'])
-        ->setMethod($_POST['gw_id'])
-        ->setGateway($_POST['gw_id'])
-        ->setRefID($_POST['ref_id'])
-        ->setOrderID($_POST['order_id'])
-        ->setUID($_USER['uid'])
-        ->setIsMoney(isset($_POST['is_money']) ? 1 : 0)
-        ->setComment($_POST['comment']);
+    $Pmt = Shop\Payment::getInstance($Request->getInt('pmt_id'));
+    $Pmt->setAmount($Request->getFloat('amount'))
+        ->setMethod($Request->getString('gw_id'))
+        ->setGateway($Request->getString('gw_id'))
+        ->setRefID($Request->getString('ref_id'))
+        ->setOrderID($Request->getString('order_id'))
+        ->setUID((int)$_USER['uid'])
+        ->setIsMoney($Request->getInt('is_money', 0))
+        ->setComment($Request->getString('comment'));
     $Pmt->Save();
-    echo COM_refresh(SHOP_ADMIN_URL . '/payments.php?payments=' . $_POST['order_id']);
+    echo COM_refresh(SHOP_ADMIN_URL . '/payments.php?payments=' . $Request->getString('order_id');
     break;
 
 case 'delete':
 case 'delpayment':
     Shop\Payment::delete($actionval);
-    echo COM_refresh(SHOP_ADMIN_URL . '/payments.php?payments=' . $_GET['order_id']);
+    echo COM_refresh(SHOP_ADMIN_URL . '/payments.php?payments=' . $Request->getString('order_id'));
     break;
 
 default:
@@ -82,13 +82,7 @@ case 'newpayment':
     break;
 
 case 'ipndetail':
-    $val = NULL;
-    foreach (array('id', 'txn_id') as $key) {
-        if (isset($_GET[$key])) {
-            $val = $_GET[$key];
-            break;
-        }
-    }
+    $val = $Request->getString('id', $Request->getString('txn_id', NULL));
     if ($val !== NULL) {
         $content .= \Shop\Report::getInstance('ipnlog')->RenderDetail($val, $key);
         break;
@@ -137,5 +131,3 @@ if (!empty($msg)) {
 $display .= $content;
 $display .= COM_siteFooter();
 echo $display;
-
-?>

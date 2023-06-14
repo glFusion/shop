@@ -24,14 +24,8 @@ if (
     COM_404();
     exit;
 }
-
-COM_setArgNames(array('type'));
-if (isset($_GET['type'])) {
-    $type = $_GET['type'];
-} else {
-    $type = COM_getArgument('type');
-}
-
-$Feed = new Shop\Feeds\Catalog($type);
+$Request = new Shop\Models\Request;
+$Request->withArgNames(array('type'));
+$Feed = new Shop\Feeds\Catalog($Request->getString('type'));
 echo $Feed->Render();
 exit;
