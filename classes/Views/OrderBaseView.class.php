@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2023 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.5.0
+ * @version     v1.5.8
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -346,10 +346,10 @@ class OrderBaseView
      */
     protected function _renderCommon()
     {
-        global $_SHOP_CONF, $LANG_SHOP;
+        global $LANG_SHOP;
 
         $this->TPL->set_var(array(
-            'pi_url'        => Config::get('url'),,
+            'pi_url'        => Config::get('url'),
             'account_url'   => Config::get('url') . '/account.php',
             'pi_admin_url'  => Config::get('admin_url'),
             'not_anon'      => !COM_isAnonUser(),
@@ -357,8 +357,8 @@ class OrderBaseView
             'linkPrint'     => \Shop\Order::linkPrint($this->order_id, $this->Order->getToken()),
             'print_url'     => $this->Order->buildUrl('print'),
             'return_url'    => SHOP_getUrl(),
-            'order_date'    => $this->Order->getOrderDate()->format($_SHOP_CONF['datetime_fmt'], true),
-            'order_date_tip' => $this->Order->getOrderDate()->format($_SHOP_CONF['datetime_fmt'], false),
+            'order_date'    => $this->Order->getOrderDate()->format(Config::get('datetime_fmt'), true),
+            'order_date_tip' => $this->Order->getOrderDate()->format(Config::get('datetime_fmt'), false),
             'order_number'  => $this->Order->getOrderID(),
             'order_number_esc' => urlencode($this->Order->getOrderID()),
             'order_pub_link' => FieldList::link(array(
@@ -421,7 +421,7 @@ class OrderBaseView
      */
     protected function _renderItems()
     {
-        global $_SHOP_CONF, $LANG_SHOP;
+        global $LANG_SHOP;
 
         $no_shipping = 1;   // no shipping unless physical item ordered
         $subtotal = 0;
@@ -437,7 +437,7 @@ class OrderBaseView
         $this->TPL->set_block('order', 'ItemRow', 'iRow');
         foreach ($this->Order->getItems() as $Item) {
             $P = $Item->getProduct();
-            $img = $P->getImage('', $_SHOP_CONF['order_tn_size']);
+            $img = $P->getImage('', Config::get('order_tn_size'));
             if (!empty($img['url'])) {
                 $img_url = COM_createImage(
                     $img['url'],
@@ -542,7 +542,7 @@ class OrderBaseView
                 'del_item_url'  => Request::buildUrl(Config::get('url') . "/cart.php?action=delete&id={$Item->getID()}"),
                 'embargoed'     => $Item->getInvalid(),
                 'del_item_link' => FieldList::delete(array(
-                    'delete_url' => Config::get((Config::get('url') . "/cart.php?action=delete&id={$Item->getID()}"),
+                    'delete_url' => Config::get(Config::get('url') . "/cart.php?action=delete&id={$Item->getID()}"),
                     'attr' => array(
                         'title' => $LANG_SHOP['remove_item'],
                         'class' => 'tooltip',
@@ -610,7 +610,7 @@ class OrderBaseView
      */
     public function createHTML()
     {
-        global $_SHOP_CONF, $_USER, $LANG_SHOP;
+        global $_USER, $LANG_SHOP;
 
         $is_invoice = $this->type == 'order';
         $icon_tooltips = array();
@@ -641,7 +641,7 @@ class OrderBaseView
             $P = $item->getProduct();
 
             if ($is_invoice) {
-                $img = $P->getImage('', $_SHOP_CONF['order_tn_size']);
+                $img = $P->getImage('', Config::get('order_tn_size'));
                 if (!empty($img['url'])) {
                     $img_url = COM_createImage(
                         $img['url'],
@@ -738,8 +738,8 @@ class OrderBaseView
             'shipper_id'    => $this->Order->getShipperID(),
             'total'         => $Currency->Format($total),
             'not_final'     => !$this->isFinalView,
-            'order_date'    => $this->Order->getOrderDate()->format($_SHOP_CONF['datetime_fmt'], true),
-            'order_date_tip' => $this->Order->getOrderDate()->format($_SHOP_CONF['datetime_fmt'], false),
+            'order_date'    => $this->Order->getOrderDate()->format(Config::get('datetime_fmt'), true),
+            'order_date_tip' => $this->Order->getOrderDate()->format(Config::get('datetime_fmt'), false),
             'order_number'  => $this->Order->getOrderID(),
             'shipping'      => $Currency->FormatValue($shipping),
             'handling'      => $handling > 0 ? $Currency->FormatValue($handling) : 0,
@@ -756,7 +756,7 @@ class OrderBaseView
             'lang_tax_on_items'  => $LANG_SHOP['sales_tax'],
             'status'        => $this->Order->getStatus(),
             'token'         => $this->Order->getToken(),
-            'allow_gc'      => $_SHOP_CONF['gc_enabled']  && !COM_isAnonUser() ? true : false,
+            'allow_gc'      => Config::get('gc_enabled')  && !COM_isAnonUser() ? true : false,
             //'next_step'     => $step + 1,
             'not_anon'      => !COM_isAnonUser(),
             //'ship_method'   => Shipper::getInstance($this->Order->getShipperId())->getName(),
@@ -792,8 +792,8 @@ class OrderBaseView
             $T->set_var(array(
                 'log_username'  => $L['username'],
                 'log_msg'       => $L['message'],
-                'log_ts'        => $dt->format($_SHOP_CONF['datetime_fmt'], true),
-                'log_ts_tip'    => $dt->format($_SHOP_CONF['datetime_fmt'], false),
+                'log_ts'        => $dt->format(Config::get('datetime_fmt'), true),
+                'log_ts_tip'    => $dt->format(Config::get('datetime_fmt'), false),
             ) );
             $T->parse('Log', 'LogMessages', true);
         }
@@ -919,7 +919,7 @@ class OrderBaseView
      */
     public function _renderLog()
     {
-        global $_SHOP_CONF, $_USER;
+        global $_USER;
 
         // Instantiate a date objet to handle formatting of log timestamps
         $dt = new \Date('now', $_USER['tzid']);
@@ -930,8 +930,8 @@ class OrderBaseView
             $this->TPL->set_var(array(
                 'log_username'  => $L['username'],
                 'log_msg'       => $L['message'],
-                'log_ts'        => $dt->format($_SHOP_CONF['datetime_fmt'], true),
-                'log_ts_tip'    => $dt->format($_SHOP_CONF['datetime_fmt'], false),
+                'log_ts'        => $dt->format(Config::get('datetime_fmt'), true),
+                'log_ts_tip'    => $dt->format(Config::get('datetime_fmt'), false),
             ) );
             $this->TPL->parse('Log', 'LogMessages', true);
         }
