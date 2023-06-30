@@ -409,7 +409,7 @@ function plugin_getuseroption_shop()
         if (Shop\Cart::getCartID() && Shop\Cart::getInstance()->hasItems()) {
             $retval[] = array(
                 $LANG_SHOP['viewcart'],
-                COM_buildUrl(Config::get('url') . '/cart.php'),
+                Config::get('url') . '/cart.php',
             );
         }
     }
@@ -531,7 +531,6 @@ function plugin_autotags_shop ($op, $content = '', $autotag = '')
                 $P  = Shop\Product::getByID($id);
                 if (!$P->isNew()) {
                     $url = $P->getLink();
-                    //$url = COM_buildUrl(Config::get('url') . '/detail.php?id=' . $id);
                     // Allow the author to use different text for the link.  Default
                     // is the stored product name.
                     if (empty($autotag['parm2'])) {
@@ -679,11 +678,12 @@ function plugin_getheadercode_shop() : string
     ));
 
     // Set the affiliate referrer key if provided.
-    $aff_key = Config::get('aff_key', 'shop_ref');
-    if (isset($_GET[$aff_key]) && !empty($_GET[$aff_key])) {
-        $Referrer = Shop\Customer::findByAffiliate($_GET[$aff_key]);
+    // Done here so it will be activated by any URL request.
+    $ref_token = Request::getInstance()->getString(Config::get('aff_key', 'shop_ref'));
+    if (!empty($ref_token)) {
+        $Referrer = Shop\Customer::findByAffiliate($ref_token);
         if ($Referrer && $Referrer->getUid() != $_USER['uid']) {
-            Shop\Models\ReferralTag::set($_GET[$aff_key]);
+            Shop\Models\ReferralTag::set($ref_token);
         }
     }
 
@@ -939,7 +939,7 @@ function plugin_itemdeleted_shop($id, $type)
  */
 function plugin_getcommenturlid_shop()
 {
-    return array(COM_buildUrl(Config::get('url') . '/detail.php'), 'item_id');
+    return array(Config::get('url') . '/detail.php', 'item_id');
 }
 
 
@@ -959,7 +959,7 @@ function phpblock_shop_cart()
     $T->set_var(array(
         'cart_contents' => $contents,
         'is_visible'    => !empty($contents),
-        'cart_url'      => COM_buildUrl(Config::get('url') . '/cart.php'),
+        'cart_url'      => Config::get('url') . '/cart.php',
     ) );
     $T->parse('output', 'shopping_cart');
     return $T->finish ($T->get_var('output'));
@@ -2214,7 +2214,7 @@ function plugin_getiteminfo_shop($id, $what, $uid=0, $options=array())
                 }
             }
             $url_id = Config::get('use_sku') ? $A['name'] : $A['id'];
-            $props['url'] = COM_buildUrl(
+            $props['url'] = Request::buildUrl(
                 $_CONF['site_url'] . '/shop/detail.php?id=' . urlencode($url_id)
             );
 
@@ -2410,6 +2410,47 @@ function plugin_getfeedprovider_shop($format, $A=array())
     } else {
         return NULL;
     }
+}
+
+
+/**
+ * Get mailing list merge fields.
+ *
+ * @param   integer $uid    Member user ID
+ * @param   string  $email  Email address if not a site member
+ * @return  array       Array of name=>value pairs
+ */
+function plugin_getMergeFields_shop(int $uid, string $email=NULL) : array
+{
+    global $_TABLES, $_CONF;
+
+    $retval = array(
+        'lastpurchase' => '',
+        'is_buyer' => 0,
+    );
+
+    $qb = Database::getInstance()->conn->createQueryBuilder();
+    try {
+        $data = $qb->select('order_id, order_date')
+                   ->from($_TABLES['shop.orders'])
+                   ->where('uid = :uid')
+                   ->orWhere('buyer_email = :email')
+                   ->orderby('order_date', 'DESC')
+                   ->setFirstResult(1)
+                   ->setMaxResults(3)
+                   ->setParameter('uid', $uid, Database::INTEGER)
+                   ->setParameter('email', $email, Database::STRING)
+                   ->execute()
+                   ->fetchAssociative();
+    } catch (\Throwable $e) {
+        Log::write('system', Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
+        $data = false;
+    }
+    if (is_array($data)) {      // at least one purchase found
+        $retval['lastpurchase'] = $data['order_date'];
+        $retval['is_buyer'] = 1;
+    }
+    return $retval;
 }
 
 
