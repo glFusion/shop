@@ -114,7 +114,7 @@
 {!else}
 								{item_dscp}
 {!endif}
-{!if is_admin}
+{!!if {is_admin} && {not_plugin} !!}
 								{adm_edit_icon}&nbsp;{adm_delete_icon}
 {!endif}
 {!if is_file}

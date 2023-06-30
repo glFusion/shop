@@ -20,6 +20,7 @@ use Shop\Shipper;
 use Shop\Template;
 use Shop\Gateway;
 use Shop\Company;
+use Shop\Product;
 use Shop\IPN;
 use Shop\FieldList;
 use Shop\Models\OrderStatus;
@@ -513,6 +514,7 @@ class OrderBaseView
                 'item_quantity' => $Item->getQuantity(),
                 'item_total'    => $this->Currency->FormatValue($item_total),
                 'is_admin'      => $this->isAdmin,
+                'not_plugin'    => !Product::isPluginItem($Item->getProductId()),
                 'adm_edit_icon'     => FieldList::edit(array(
                     'url' => '#!',
                     'attr' => array(
