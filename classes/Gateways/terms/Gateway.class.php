@@ -43,7 +43,7 @@ class Gateway extends \Shop\Gateway
      *
      * @param   array   $A      Array of fields from the DB
      */
-    public function __construct(array $A=array())
+    public function __construct($A=array())
     {
         global $LANG_SHOP;
 
@@ -86,7 +86,7 @@ class Gateway extends \Shop\Gateway
      *  @param  object  $cart   Shopping cart
      *  @return string          HTML for input vars
      */
-    public function gatewayVars(Order $Cart) : string
+    public function gatewayVars($Cart) : string
     {
         global $_USER;
 
@@ -101,7 +101,7 @@ class Gateway extends \Shop\Gateway
     }
 
 
-    protected function getConfigOptions(string $name, string $env='global') : array
+    protected function getConfigOptions($name, $env='global') : array
     {
         global $LANG_SHOP;
 
@@ -155,7 +155,7 @@ class Gateway extends \Shop\Gateway
      * @param   object  $Order  Order object
      * @return  integer     New order status, NULL for no change
      */
-    public function processOrder(Order $Order) : ?int
+    public function processOrder($Order) : ?int
     {
         $gw_name = $this->getConfig('gateway');
         if (empty($gw_name)) {
@@ -182,7 +182,7 @@ class Gateway extends \Shop\Gateway
      * @param   object  $Order  Order object
      * @return  string      Redirect URL after confirmation
      */
-    public function confirmOrder(Order $Order) : string
+    public function confirmOrder($Order) : string
     {
         $status = $this->processOrder($Order);
         if ($status) {
@@ -225,7 +225,7 @@ class Gateway extends \Shop\Gateway
      *
      * @return  string      Empty string
      */
-    public function getCheckoutJS(Order $cart) : string
+    public function getCheckoutJS($cart) : string
     {
         return '';
     }
@@ -248,7 +248,7 @@ class Gateway extends \Shop\Gateway
      *
      * @return  boolean     True to process the order, False to hold
      */
-    public function okToProcess(Order $Order) : bool
+    public function okToProcess($Order) : bool
     {
         return true;
     }
@@ -260,7 +260,7 @@ class Gateway extends \Shop\Gateway
      *
      * @return  string  HTML for payment button
      */
-    public function payOnlineButton(Order $Order) : string
+    public function payOnlineButton($Order) : string
     {
         global $LANG_SHOP;
 

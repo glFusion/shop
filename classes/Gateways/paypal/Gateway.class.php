@@ -61,7 +61,7 @@ class Gateway extends \Shop\Gateway
      *
      * @param   array   $A      Array of fields from the DB
      */
-    public function __construct(array $A=array())
+    public function __construct($A=array())
     {
         $supported_currency = array(
             'USD', 'AUD', 'CAD', 'EUR', 'GBP', 'JPY', 'NZD', 'CHF', 'HKD',
@@ -178,7 +178,7 @@ class Gateway extends \Shop\Gateway
      * @param   object      $cart   Shopping Cart Object
      * @return  string      Gateay variable input fields
      */
-    public function gatewayVars(Order $cart) : string
+    public function gatewayVars($cart) : string
     {
         global $_USER, $_TABLES, $LANG_SHOP;
 
@@ -476,7 +476,7 @@ class Gateway extends \Shop\Gateway
      * @param   object  $P      Product Item object
      * @return  string          HTML code for the button.
      */
-    public function ProductButton(Product $P, ?DataArray $Props=NULL) : string
+    public function ProductButton($P, $Props=NULL) : string
     {
         global $LANG_SHOP;
 
@@ -630,7 +630,7 @@ class Gateway extends \Shop\Gateway
      * @param   string  $btn_type   Type of button being created
      * @return  array       Array ('cmd'=>command, 'tpl'=>template name
      */
-    private function gwButtonType(string $btn_type='') : array
+    private function gwButtonType($btn_type='') : array
     {
         switch ($btn_type) {
         case 'donation':
@@ -676,7 +676,7 @@ class Gateway extends \Shop\Gateway
      * @param   string  $email  Email address to check (receiver_email)
      * @return  boolean         True if valid, False if not.
      */
-    public function isBusinessEmail(string $email) : bool
+    public function isBusinessEmail($email) : bool
     {
         switch ($email) {
         case $this->getConfig('receiver_email'):
@@ -699,7 +699,7 @@ class Gateway extends \Shop\Gateway
      * @param   array   $A      Array of name=>value pairs (e.g. $_POST)
      * @return  boolean     True on success, False on error
      */
-    public function saveConfig(?DataArray $A = NULL) : bool
+    public function saveConfig($A = NULL) : bool
     {
         if (!empty($A)) {
             foreach ($this->getConfig() as $name=>$value) {
@@ -725,7 +725,7 @@ class Gateway extends \Shop\Gateway
      * @param   float   $amount     Total puchase amount.
      * @return  object  $this
      */
-    private function setReceiver(float $amount) : self
+    private function setReceiver($amount) : self
     {
         // If the order amount exceeds the micro account threshold,
         // or no micro receiver email is specified, return prod.
@@ -751,7 +751,7 @@ class Gateway extends \Shop\Gateway
      * @param   array   $data       Array of original IPN data
      * @return  array               Name=>Value array of data for display
      */
-    public function ipnlogVars(array $data) : array
+    public function ipnlogVars($data) : array
     {
         if (!is_array($data)) {
             return array();

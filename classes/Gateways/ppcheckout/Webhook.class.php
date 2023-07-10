@@ -16,6 +16,7 @@ use Shop\Payment;
 use Shop\Order;
 use Shop\Log;
 use Shop\Config;
+use Shop\Models\Debug;
 
 
 /**
@@ -338,7 +339,7 @@ class Webhook extends \Shop\Webhook
             return $status;
         }
 
-        if (Config::get('sys_test_ipn')) {
+        if (Config::get('sys_test_ipn') & Debug::IGNORE_VERIFY) {
             $this->setVerified(true);
             return true;
         }

@@ -45,7 +45,7 @@ class Gateway extends \Shop\Gateway
      *
      * @param   array   $A      Array of fields from the DB
      */
-    public function __construct(array $A=array())
+    public function __construct($A=array())
     {
         global $LANG_SHOP;
 
@@ -75,7 +75,7 @@ class Gateway extends \Shop\Gateway
      * @param   boolean $selected   Indicate if this should be the selected option
      * @return  string      HTML for the radio button or checkbox
      */
-    public function checkoutRadio(Order $Cart, bool $selected = false) : ?PaymentRadio
+    public function checkoutRadio($Cart, $selected = false) : ?PaymentRadio
     {
         global $LANG_SHOP;
 
@@ -145,7 +145,7 @@ class Gateway extends \Shop\Gateway
      * @param   object  $cart   Shopping cart
      * @return  string          HTML for input vars
      */
-    public function gatewayVars(Order $cart) : string
+    public function gatewayVars($cart) : string
     {
         global $_USER;
 
@@ -168,7 +168,7 @@ class Gateway extends \Shop\Gateway
      * @param   float   $total  Total order amount (not used here)
      * @return  boolean     True if access is allowed, False if not
      */
-    public function hasAccess(float $total = 0) : bool
+    public function hasAccess($total = 0) : bool
     {
         return true;
     }
@@ -181,7 +181,7 @@ class Gateway extends \Shop\Gateway
      * @param   object  $Order  Order object
      * @return  string      Redirect URL
      */
-    public function confirmOrder(Order $Order) : string
+    public function confirmOrder($Order) : string
     {
         global $_CONF;
 
@@ -221,7 +221,7 @@ class Gateway extends \Shop\Gateway
      * @param   object  $cart   Shopping cart object
      * @return  string  Javascript commands.
      */
-    public function getCheckoutJS(Order $cart) : string
+    public function getCheckoutJS($cart) : string
     {
         return '';
     }
@@ -232,7 +232,7 @@ class Gateway extends \Shop\Gateway
      *
      * @param   array   $Payouts    Array of Payout objects
      */
-    public function sendPayouts(array &$Payouts) : void
+    public function sendPayouts(&$Payouts) : void
     {
         global $_TABLES;
 

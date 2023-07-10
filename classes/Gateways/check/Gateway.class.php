@@ -87,7 +87,7 @@ class Gateway extends \Shop\Gateway
      * @param   string  $btn_type       Button Type (optional)
      * @return  string                  HTML for button code
      */
-    private function _getButton(string $btn_type) : string
+    private function _getButton($btn_type) : string
     {
         global $_USER;
 
@@ -138,7 +138,7 @@ class Gateway extends \Shop\Gateway
      * @param   array   $A      Optionally override the $_GET parameters
      * @return  array           Array of standard name=>value pairs
      */
-    public function thanksVars(?array $A=NULL) : array
+    public function thanksVars($A=NULL) : array
     {
         if (empty($A)) {
             $A = $_GET;
@@ -162,7 +162,7 @@ class Gateway extends \Shop\Gateway
      * @param   string  $btn_type   Button type, typically from product record
      * @return  string              Valid button type
      */
-    private function gwButtonType(string $btn_type) : string
+    private function gwButtonType($btn_type) : string
     {
         switch ($btn_type) {
         case 'donation':
@@ -184,7 +184,7 @@ class Gateway extends \Shop\Gateway
      * @param   float   $price      Item price
      * @param   integer $qty        Quantity
      */
-    private function _addItem($item_id, float $price, int $qty=0) : void
+    private function _addItem($item_id, $price, $qty=0) : void
     {
         if ($qty == 0) $qty = 1;
         $qty = (float)$qty;
@@ -203,7 +203,7 @@ class Gateway extends \Shop\Gateway
      * @param   array   $data       Array of original IPN data
      * @return  array               Name=>Value array of data for display
      */
-    public function ipnlogVars(array $data) : array
+    public function ipnlogVars($data) : array
     {
         if (!is_array($data)) {
             return array();
@@ -225,7 +225,7 @@ class Gateway extends \Shop\Gateway
      *
      * @param   array   $vals   IPN variables
      */
-    public function handlePurchase(array $vals = array()) : string
+    public function handlePurchase($vals = array()) : string
     {
         $cart_id = SHOP_getVar($vals, 'cart_id');
         if (empty($cart_id)) {
@@ -258,7 +258,7 @@ class Gateway extends \Shop\Gateway
      *
      * @param   array   $vals   IPN variables
      */
-    private function _handlePurchase(array $vals) : void
+    private function _handlePurchase($vals) : void
     {
         global $_TABLES, $_CONF;
 
@@ -440,7 +440,7 @@ class Gateway extends \Shop\Gateway
      * @param   object  $cart   Shopping cart
      * @return  string          HTML for input vars
      */
-    public function gatewayVars(Order $cart) : string
+    public function gatewayVars($cart) : string
     {
         $gatewayVars = array(
             '<input type="hidden" name="processorder" value="' . $this->gw_name . '" />',
@@ -469,7 +469,7 @@ class Gateway extends \Shop\Gateway
      * @param   object  $Order  Order object
      * @return  integer     New order status, NULL for no change
      */
-    public function processOrder(Order $Order) : ?int
+    public function processOrder($Order) : ?int
     {
         return OrderStatus::PENDING;
     }

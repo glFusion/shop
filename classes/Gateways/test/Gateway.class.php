@@ -49,7 +49,7 @@ class Gateway extends \Shop\Gateway
      *
      * @param   array   $A      Array of fields from the DB
      */
-    public function __construct(array $A=array())
+    public function __construct($A=array())
     {
         // These are used by the parent constructor, set them first.
         $this->do_redirect = false; // handled internally
@@ -76,7 +76,7 @@ class Gateway extends \Shop\Gateway
      *  @param  object  $cart   Shopping cart
      *  @return string          HTML for input vars
      */
-    public function gatewayVars(Order $cart) : string
+    public function gatewayVars($cart) : string
     {
         global $_USER;
 
@@ -112,7 +112,7 @@ class Gateway extends \Shop\Gateway
      * @param   DataArray   $Props  Optional override values
      * @return  string          HTML code for the button.
      */
-    public function ProductButton(Product $P, ?DataArray $Props=NULL) : string
+    public function ProductButton($P, $Props=NULL) : string
     {
         global $LANG_SHOP, $_CONF;
 
@@ -239,7 +239,7 @@ class Gateway extends \Shop\Gateway
      *
      * @return  boolean     True if access is allowed, False if not
      */
-    public function hasAccess(float $total=0) : bool
+    public function hasAccess($total=0) : bool
     {
         return $this->isEnabled() && SEC_inGroup($this->grp_access);
     }

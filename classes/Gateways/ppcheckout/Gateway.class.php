@@ -61,7 +61,7 @@ class Gateway extends \Shop\Gateway
      *
      * @param   array   $A      Array of fields from the DB
      */
-    public function __construct(array $A=array())
+    public function __construct($A=array())
     {
         $supported_currency = array(
             'USD', 'AUD', 'CAD', 'EUR', 'GBP', 'JPY', 'NZD', 'CHF', 'HKD',
@@ -151,7 +151,7 @@ class Gateway extends \Shop\Gateway
      * @param   string  $text   Optional button text override
      * @return  string      HTML for checkout button
      */
-    public function checkoutButton(Order $Cart, string $text='') : string
+    public function checkoutButton($Cart, $text='') : string
     {
         static $have_js = false;
 
@@ -200,7 +200,7 @@ class Gateway extends \Shop\Gateway
      * @param   object      $cart   Shopping Cart Object
      * @return  string      Gateay variable input fields
      */
-    public function gatewayVars(Order $cart) : string
+    public function gatewayVars($cart) : string
     {
         return '';
     }
@@ -214,7 +214,7 @@ class Gateway extends \Shop\Gateway
      * @param   array   $data       Array of original IPN data
      * @return  array               Name=>Value array of data for display
      */
-    public function ipnlogVars(array $data) : array
+    public function ipnlogVars($data) : array
     {
         $retval = array();
         /*if (!is_array($data)) {
@@ -293,7 +293,7 @@ class Gateway extends \Shop\Gateway
      * @param   integer $due_days   Due days (terms)
      * @return  string      Proper terms string for Paypal
      */
-    private function getInvoiceTerms(int $due_days=0) : string
+    private function getInvoiceTerms($due_days=0) : string
     {
         $due_days = (int)$due_days;
         if ($due_days == 0) {
@@ -320,7 +320,7 @@ class Gateway extends \Shop\Gateway
      * @param   object  $terms_gw   Invoice terms gateway, for config values
      * @return  boolean     True on success, False on error
      */
-    public function createInvoice(Order $Order, GW $terms_gw) : bool
+    public function createInvoice($Order, $terms_gw) : bool
     {
         global $_CONF, $LANG_SHOP;
 
@@ -561,7 +561,7 @@ class Gateway extends \Shop\Gateway
      * @param   string  $authorizationId    Paypal-provided authorization ID
      * @return  object      Response to capture request
      */
-    public function captureAuth(string $authorizationId) : object
+    public function captureAuth($authorizationId) : object
     {
         $client = $this->getApiClient();
         $request = new \PayPalCheckoutSdk\Payments\AuthorizationsCaptureRequest($authorizationId);
@@ -583,7 +583,7 @@ class Gateway extends \Shop\Gateway
      * @param   string  $captureId  Paypal payment ID
      * @return  string      JSON response string
      */
-    public function getCaptureDetails(string $captureId) : string
+    public function getCaptureDetails($captureId) : string
     {
         $client = $this->getApiClient();
         $request = new \PayPalCheckoutSdk\Payments\CapturesGetRequest($captureId);
@@ -605,7 +605,7 @@ class Gateway extends \Shop\Gateway
      * @param   string  $orderId    Paypal order ID (not the plugin order_id)
      * @return  string      JSON response string
      */
-    public function getOrderDetails(string $orderId) : string
+    public function getOrderDetails($orderId) : string
     {
         $client = $this->getApiClient();
         $request = new \PayPalCheckoutSdk\Orders\OrdersGetRequest($orderId);
@@ -627,7 +627,7 @@ class Gateway extends \Shop\Gateway
      * @param   string  $whId       Webhook ID (`WH-XXXX...`)
      * @return  string      JSON response string
      */
-    public function getWebhookDetails(string $whId) : string
+    public function getWebhookDetails($whId) : string
     {
         $access_token = $this->getBearerToken();
         $ch = curl_init();
@@ -664,7 +664,7 @@ class Gateway extends \Shop\Gateway
      * @param   float   $amount     Total payout amount
      * @return  float       Amount of the vendor fee
      */
-    public function calcPayoutFee(float $amount) : float
+    public function calcPayoutFee($amount) : float
     {
         $fee = ((float)$amount * ($this->getConfig('fee_percent') / 100)) +
             $this->getConfig('fee_fixed');
@@ -678,7 +678,7 @@ class Gateway extends \Shop\Gateway
      * @param   float   $amount     Gross payout amount
      * @return  float       Net payout amount
      */
-    public function calcPayout(float $amount) : float
+    public function calcPayout($amount) : float
     {
 
         $payout = (float)$amount - $this->calcPayoutFee($amount);
@@ -691,7 +691,7 @@ class Gateway extends \Shop\Gateway
      *
      * @param   array   $Payouts    Array of Payout objects
      */
-    public function sendPayouts(array &$Payouts) : void
+    public function sendPayouts(&$Payouts) : void
     {
         $A = array(
             'sender_batch_header' => array(
